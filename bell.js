@@ -2,6 +2,11 @@
 // date: 通知の日時 / title: 通知タイトル / body: 内容
 window.BELL_ITEMS = [
   {
+    "date": "2026-10-30 20:46",
+    "title": "Github 公開",
+    "body": "Githubへリポジトリを公開しました。\nUrlは下記の通りです。\nhttps://github.com/kiokucat/k-hub-dev-games-project"
+  },
+  {
     "date": "2026-10-30 19:15",
     "title": "Hub アップデート",
     "body": "Hubをアプデし、新しいお知らせ機能を追加しました。\n\nベル機能の追加\nベル機能というもので、アップデートノートを見れるようになりました。\n\n急上昇と過去10分間のアクセスの追加\n10分間のアクセス数表示と急上昇タブを追加しました。\n(Ctrl+Cなどで保存すると急上昇タブやお知らせタブが見れなくなります)\n\nGithubへの公開\nGithubへ公開をしました。\nリンクは以下です。"
