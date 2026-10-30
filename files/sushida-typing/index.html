@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回転寿司タイピング - 公式サイト</title>
+<style>
+  :root{
+    --washi:#f7f1e3; --washi-deep:#efe6d2;
+    --noren:#1b3350; --noren-deep:#0c1e33; --noren-fab:#234368;
+    --wood:#b8895f; --wood-light:#e3c49a; --wood-deep:#8a5f3c;
+    --urushi:#1b1714; --urushi-soft:#2c2620;
+    --gold:#b8903f; --gold-bright:#d9b56b; --gold-pale:#efd9a4;
+    --shu:#a8402c; --shu-deep:#7e2e20;
+    --matsu:#3c6e52; --matsu-deep:#2a4f3a;
+    --sumi:#2b2622; --sumi-soft:#5b5348;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    margin:0; padding:0; height:100%;
+    background:var(--washi); color:var(--sumi);
+    font-family:"Yu Gothic","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background-image:
+      radial-gradient(circle at 10% 10%, rgba(184,144,63,.03), transparent 30%),
+      radial-gradient(circle at 90% 90%, rgba(60,110,82,.03), transparent 35%);
+  }
+  .container {
+    max-width: 600px;
+    width: 100%;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    border-top: 8px solid var(--noren);
+    text-align: center;
+    position: relative;
+  }
+  .logo-area {
+    margin-bottom: 30px;
+  }
+  h1 {
+    color: var(--noren-deep);
+    font-size: 28px;
+    margin: 0 0 10px 0;
+    letter-spacing: 0.1em;
+    font-weight: bold;
+  }
+  .subtitle {
+    color: var(--gold);
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0;
+    letter-spacing: 0.05em;
+  }
+  .description {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #555;
+    margin: 30px 0;
+    text-align: left;
+    background: var(--washi-deep);
+    padding: 20px;
+    border-radius: 4px;
+  }
+  .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 15px 0;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+  }
+  .btn-primary {
+    background: var(--shu);
+    color: #ffffff;
+  }
+  .btn-primary:hover {
+    background: var(--shu-deep);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: var(--wood);
+    color: #ffffff;
+  }
+  .btn-secondary:hover {
+    background: var(--wood-deep);
+    transform: translateY(-1px);
+  }
+  /* 配布ページ用ボタン：全体の和風トーンに馴染む暖簾の紺色 */
+  .btn-source {
+    background: var(--noren);
+    color: #ffffff;
+  }
+  .btn-source:hover {
+    background: var(--noren-deep);
+    transform: translateY(-1px);
+  }
+  .footer {
+    margin-top: 40px;
+    font-size: 11px;
+    color: #999;
+  }
+    .btn-a {
+    background: var(--shu);
+    color: #ffffff;
+  }
+  .btn-a:hover {
+    background: var(--shu-deep);
+    transform: translateY(-1px);
+  }
+  
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-area">
+    <h1>回転寿司タイピング</h1>
+    <p class="subtitle">〜 爽快タイピングでお寿司をお腹いっぱいに 〜</p>
+    <p class="subtitle">ゴースト機能追加!!!ほかのゴーストと対戦しよう！</p>
+  </div>
+
+  <div class="description">
+    流れてくるお寿司のお皿が通り過ぎる前に、素早く文字を打ち込むタイピングゲームです。白皿、青皿、シルバー皿、ゴールド皿など、お皿の色によってスコアが変化します。ミスなしでコンボを繋げ、高得点を目指しましょう！
+  </div>
+
+  <div class="menu-buttons">
+    <a href="Main/index.html" class="btn btn-primary">🍣 ゲームを始める</a>
+    <a href="hakubutu_kan/index.html" class="btn btn-a">🍣🔩寿司博物館</a>
+    <a href="info/index.html" class="btn btn-secondary">📄 説明を見る</a>
+    <a href="file/ghost_board_debug.html" class="btn btn-secondary">📂ゴーストをダウンロード</a>
+    <a href="source/index.html" class="btn btn-source">📦 ソースコード（ZIP）をダウンロード</a>
+    <a href="https://pvp-sushida.vercel.app" class="btn btn-source">回転寿司 - PVP</a>
+    
+  </div>
+
+  <div class="footer">
+    &copy; 回転寿司タイピング オマージュ作品
+  </div>
+</div>
+
+</body>
+</html>

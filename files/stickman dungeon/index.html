@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>棒人間ダンジョンズ</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#6c4ca4;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:rgba(0,0,0,0);-webkit-touch-callout:none;}
+#screen{position:absolute;left:0;top:0;background:#081820;
+  image-rendering:-webkit-optimize-contrast;image-rendering:-moz-crisp-edges;image-rendering:pixelated;}
+#ctrl{position:absolute;left:0;background:#6c4ca4;border-top:4px solid #2a1a48;box-sizing:border-box;}
+.dp{position:absolute;background:#1c1c28;border-radius:3px;}
+#dc{position:absolute;background:#2c2c3c;border-radius:50%;}
+.pip{position:absolute;background:#ffd84a;border-radius:50%;display:none;}
+.btn{position:absolute;background:#b02466;border:3px solid #5a0f34;border-radius:50%;box-sizing:border-box;
+  color:#f8d8e8;font-family:monospace;font-weight:bold;text-align:center;}
+.btn.on{background:#ff5a9c;}
+.gb{position:absolute;text-align:center;}
+.pill{margin:0 auto;background:#8c8ca4;border:2px solid #2a2a40;border-radius:20px;box-sizing:border-box;
+  -webkit-transform:rotate(-25deg);transform:rotate(-25deg);}
+.pill.on{background:#d0d0ec;}
+.lbl{font-family:monospace;font-weight:bold;color:#e8dcff;margin-top:3px;white-space:nowrap;}
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<div id="ctrl">
+  <div id="dh" class="dp"></div>
+  <div id="dv" class="dp"></div>
+  <div id="dc"></div>
+  <div id="pu" class="pip"></div>
+  <div id="pd" class="pip"></div>
+  <div id="pl" class="pip"></div>
+  <div id="pr" class="pip"></div>
+  <div id="bA" class="btn">A</div>
+  <div id="bB" class="btn">B</div>
+  <div id="gSel" class="gb"><div id="pSel" class="pill"></div><div id="lSel" class="lbl">SELECT</div></div>
+  <div id="gSta" class="gb"><div id="pSta" class="pill"></div><div id="lSta" class="lbl">START</div></div>
+</div>
+<script>
+(function(){
+'use strict';
+
+/* ===================== 基本設定 ===================== */
+var TS = 16, MW = 40, MH = 30, VW = 320, VH = 240;
+var cvs = document.getElementById('screen');
+var ctx = cvs.getContext('2d', {alpha:false});
+cvs.width = VW; cvs.height = VH;
+ctx.imageSmoothingEnabled = false;
+ctx.webkitImageSmoothingEnabled = false;
+
+var COL = {
+  ink:'#081820', white:'#f8f8f0', hud:'#e0f8d0',
+  pl:'#1038c0', en:'#c01818', run:'#e06010', head:'#f8f0d0',
+  hp:'#e83838', exp:'#48c8f0', gold:'#f8e048', dim:'#88a898'
+};
+function rnd(n){ return Math.floor(Math.random()*n); }
+
+/* ===================== ドットフォント ===================== */
+/* ASCII: 5x7字形(送り6px) / カタカナ: 8x8字形(送り8px, 美咲ゴシック風) */
+var FD = {
+'0':[0x0E,0x11,0x13,0x15,0x19,0x11,0x0E],'1':[0x04,0x0C,0x04,0x04,0x04,0x04,0x0E],
+'2':[0x0E,0x11,0x01,0x02,0x04,0x08,0x1F],'3':[0x1F,0x02,0x04,0x02,0x01,0x11,0x0E],
+'4':[0x02,0x06,0x0A,0x12,0x1F,0x02,0x02],'5':[0x1F,0x10,0x1E,0x01,0x01,0x11,0x0E],
+'6':[0x06,0x08,0x10,0x1E,0x11,0x11,0x0E],'7':[0x1F,0x01,0x02,0x04,0x08,0x08,0x08],
+'8':[0x0E,0x11,0x11,0x0E,0x11,0x11,0x0E],'9':[0x0E,0x11,0x11,0x0F,0x01,0x02,0x0C],
+'A':[0x0E,0x11,0x11,0x1F,0x11,0x11,0x11],'B':[0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E],
+'C':[0x0E,0x11,0x10,0x10,0x10,0x11,0x0E],'D':[0x1E,0x11,0x11,0x11,0x11,0x11,0x1E],
+'E':[0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F],'F':[0x1F,0x10,0x10,0x1E,0x10,0x10,0x10],
+'G':[0x0E,0x11,0x10,0x17,0x11,0x11,0x0F],'H':[0x11,0x11,0x11,0x1F,0x11,0x11,0x11],
+'I':[0x0E,0x04,0x04,0x04,0x04,0x04,0x0E],'J':[0x07,0x02,0x02,0x02,0x02,0x12,0x0C],
+'K':[0x11,0x12,0x14,0x18,0x14,0x12,0x11],'L':[0x10,0x10,0x10,0x10,0x10,0x10,0x1F],
+'M':[0x11,0x1B,0x15,0x15,0x11,0x11,0x11],'N':[0x11,0x11,0x19,0x15,0x13,0x11,0x11],
+'O':[0x0E,0x11,0x11,0x11,0x11,0x11,0x0E],'P':[0x1E,0x11,0x11,0x1E,0x10,0x10,0x10],
+'Q':[0x0E,0x11,0x11,0x11,0x15,0x12,0x0D],'R':[0x1E,0x11,0x11,0x1E,0x14,0x12,0x11],
+'S':[0x0F,0x10,0x10,0x0E,0x01,0x01,0x1E],'T':[0x1F,0x04,0x04,0x04,0x04,0x04,0x04],
+'U':[0x11,0x11,0x11,0x11,0x11,0x11,0x0E],'V':[0x11,0x11,0x11,0x11,0x11,0x0A,0x04],
+'W':[0x11,0x11,0x11,0x15,0x15,0x15,0x0A],'X':[0x11,0x11,0x0A,0x04,0x0A,0x11,0x11],
+'Y':[0x11,0x11,0x11,0x0A,0x04,0x04,0x04],'Z':[0x1F,0x01,0x02,0x04,0x08,0x10,0x1F],
+':':[0x00,0x04,0x00,0x00,0x00,0x04,0x00],'/':[0x01,0x02,0x02,0x04,0x08,0x08,0x10],
+'-':[0x00,0x00,0x00,0x1F,0x00,0x00,0x00],'+':[0x00,0x04,0x04,0x1F,0x04,0x04,0x00],
+'!':[0x04,0x04,0x04,0x04,0x04,0x00,0x04],'.':[0x00,0x00,0x00,0x00,0x00,0x0C,0x0C],
+'>':[0x08,0x04,0x02,0x01,0x02,0x04,0x08],'%':[0x19,0x19,0x02,0x04,0x08,0x13,0x13],
+'?':[0x0E,0x11,0x01,0x02,0x04,0x00,0x04],'(':[0x02,0x04,0x08,0x08,0x08,0x04,0x02],
+')':[0x08,0x04,0x02,0x02,0x02,0x04,0x08]
+};
+var KD = {
+'ア':['#######.','.....#..','....#...','..####..','.#..#...','#...#...','....#...','........'],
+'イ':['......#.','....##..','..##.#..','.#...#..','.....#..','.....#..','.....#..','........'],
+'キ':['..#.....','#######.','..#.....','#######.','..#.....','..#.....','..#.....','........'],
+'セ':['..#..#..','#######.','..#..#..','..#..#..','..#..#..','..#...#.','..#...#.','...###..'],
+'ー':['........','........','........','#######.','........','........','........','........'],
+'ブ':['####.#.#','...#.#.#','...#....','..#.....','.#......','#.......','........','........'],
+'テ':['..####..','........','#######.','...#....','...#....','...#....','..#.....','.#......'],
+'ム':['...#....','...#....','..#.....','..#..#..','.#....#.','#######.','........','........'],
+'オ':['....#...','#######.','...##...','..#.#...','.#..#...','....#...','...#....','........'],
+'ワ':['#######.','#.....#.','#.....#.','.....#..','....#...','..##....','##......','........'],
+'ル':['..#..#..','..#..#.#','..#..#.#','..#..#.#','..#..#.#','.##..##.','.#...#..','........'],
+'ク':['...#....','..#.....','.######.','.#....#.','.....#..','....#...','...#....','..#.....'],
+'ス':['#######.','.....#..','....#...','...##...','..#.#...','.#...#..','#.....#.','........'],
+'リ':['.#...#..','.#...#..','.#...#..','.#...#..','.....#..','.....#..','....#...','...#....'],
+'ハ':['........','..#..#..','..#..#..','.#....#.','.#....#.','#......#','#......#','........'],
+'コ':['.######.','......#.','......#.','......#.','......#.','.######.','........','........'],
+'ン':['.#......','..#...#.','......#.','.....#..','....#...','..##....','.#......','........']
+};
+var gcache = {};
+function glyph(ch, col){
+  var k = ch + col, g = gcache[k];
+  if (g) return g;
+  var d = FD[ch] || FD['?'];
+  g = document.createElement('canvas'); g.width = 5; g.height = 7;
+  var c = g.getContext('2d'); c.fillStyle = col;
+  for (var y = 0; y < 7; y++){
+    for (var x = 0; x < 5; x++){
+      if (d[y] & (16 >> x)) c.fillRect(x, y, 1, 1);
+    }
+  }
+  gcache[k] = g;
+  return g;
+}
+function kglyph(ch, col){
+  var k = 'k' + ch + col, g = gcache[k];
+  if (g) return g;
+  var d = KD[ch];
+  g = document.createElement('canvas'); g.width = 8; g.height = 8;
+  var c = g.getContext('2d'); c.fillStyle = col;
+  for (var y = 0; y < 8; y++){
+    for (var x = 0; x < 8; x++){
+      if (d[y].charAt(x) === '#') c.fillRect(x, y, 1, 1);
+    }
+  }
+  gcache[k] = g;
+  return g;
+}
+function txt(s, x, y, col, sc){
+  sc = sc || 1; s = String(s).toUpperCase();
+  var cx = x;
+  for (var i = 0; i < s.length; i++){
+    var ch = s.charAt(i);
+    if (KD[ch]){ ctx.drawImage(kglyph(ch, col), cx, y, 8*sc, 8*sc); cx += 8*sc; }
+    else { if (ch !== ' ') ctx.drawImage(glyph(ch, col), cx, y, 5*sc, 7*sc); cx += 6*sc; }
+  }
+}
+function txtW(s, sc){
+  sc = sc || 1; s = String(s); var w = 0;
+  for (var i = 0; i < s.length; i++) w += (KD[s.charAt(i)] ? 8 : 6)*sc;
+  return w - sc;
+}
+function txtS(s, x, y, col, sc){ sc = sc || 1; txt(s, x+sc, y+sc, COL.ink, sc); txt(s, x, y, col, sc); }
+function txtC(s, y, col, sc){ txtS(s, Math.floor((VW - txtW(s, sc))/2), y, col, sc); }
+
+/* ===================== IndexedDB ===================== */
+var db = null, dbFailed = false, saveData = null, savedFlash = 0;
+function openDB(cb){
+  var idb = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+  if (!idb){ dbFailed = true; cb(); return; }
+  var req;
+  try { req = idb.open('stickman_dungeons', 1); } catch(e){ dbFailed = true; cb(); return; }
+  req.onupgradeneeded = function(ev){
+    var d = ev.target.result;
+    if (!d.objectStoreNames.contains('save')) d.createObjectStore('save', {keyPath:'id'});
+  };
+  req.onsuccess = function(ev){
+    db = ev.target.result;
+    try {
+      var tx = db.transaction('save', 'readonly');
+      var g = tx.objectStore('save').get('main');
+      g.onsuccess = function(){ saveData = g.result || null; cb(); };
+      g.onerror = function(){ cb(); };
+    } catch(e){ cb(); }
+  };
+  req.onerror = function(){ dbFailed = true; cb(); };
+}
+function saveGame(cb){
+  if (!db){ if (cb) cb(false); return; }
+  var bg = [], i;
+  for (i = 0; i < P.bag.length; i++) bg.push(cleanItem(P.bag[i]));
+  var o = {id:'main', ver:3, floor:P.floor, lv:P.lv, exp:P.exp, hp:P.hp, maxHp:P.maxHp, atk:P.atk,
+           coin:P.coin, bag:bg, weapon:cleanItem(P.weapon), armor:cleanItem(P.armor), t:Date.now()};
+  try {
+    var tx = db.transaction('save', 'readwrite');
+    tx.objectStore('save').put(o);
+    tx.oncomplete = function(){ savedFlash = 1.2; saveData = o; if (cb) cb(true); };
+    tx.onerror = function(){ if (cb) cb(false); };
+  } catch(e){ if (cb) cb(false); }
+}
+
+/* ===================== プレイヤー・状態 ===================== */
+/* アイテム全50種: 消耗品16 + 武器19 + 防具15。所持枠は8つで、1つ1つ別個に管理 */
+var BAG_MAX = 8;
+/* 消耗品 [名前, 効果, 値, 出やすさ] */
+var CT = [
+  ['クスリ','heal',15,6],['ハイクスリ','heal',40,3],['MEGA POT','heal',80,1],['ELIXIR','heal',9999,1],
+  ['BREAD','heal',10,5],['APPLE','heal',8,5],['MEAT','heal',25,4],['CHEESE','heal',20,4],
+  ['HERB','heal',12,5],['TONIC','heal',30,3],['SOUP','heal',35,3],['SODA','heal',18,4],
+  ['HP SEED','maxhp',5,1],['POW SEED','atk',1,1],['EXP GEM','exp',10,2],['COIN BAG','coin',15,2]
+];
+/* 武器 [名前, 攻撃, 長さ, 出やすさ] */
+var WT = [
+  ['STICK',1,0,3],['KNIFE',2,-3,4],['DAGGER',2,-2,4],['CLUB',2,1,4],['SWORD',3,2,4],['SPEAR',3,6,3],
+  ['RAPIER',3,4,3],['MACE',4,0,3],['AXE',5,0,3],['SABER',4,3,3],['LANCE',5,7,2],['CLEAVER',6,-1,2],
+  ['KATANA',6,3,2],['FLAIL',6,2,2],['SCYTHE',7,5,2],['HAMMER',7,-1,2],['GLAIVE',8,6,1],
+  ['TRIDENT',8,4,1],['EXCALIB',10,4,1]
+];
+/* 防具 [名前, 防御, 出やすさ] */
+var AT = [
+  ['CLOTH',1,5],['ROBE',1,4],['HIDE',2,4],['LEATHER',2,4],['SCALE',3,3],['CHAIN',3,3],['BRONZE',4,3],
+  ['IRON',4,3],['STEEL',5,2],['GOLD',5,2],['SILVER',6,2],['KNIGHT',6,2],['MITHRIL',8,1],
+  ['CRYSTAL',9,1],['DRAGON',10,1]
+];
+function wAtk(w){ return w.atk + 2*w.lv; }
+function newPlayer(){
+  var w = {k:'w', name:'STICK', atk:1, len:0, lv:0};
+  return {x:0, y:0, fx:0, fy:1, floor:1, lv:1, exp:0, hp:20, maxHp:20, atk:3, coin:0,
+          bag:[{k:'c', id:0}, {k:'c', id:0}], weapon:w, armor:null,
+          atkT:0, atkCd:0, dodgeT:0, dodgeCd:0, inv:0, hurtT:0, kx:0, ky:0, ph:0, mv:false,
+          swAng:0, ddx:0, ddy:0};
+}
+function nz(v, d, mn, mx){ v = Math.floor(Number(v)); if (isNaN(v)) return d; return Math.max(mn, Math.min(mx, v)); }
+function cleanItem(s){
+  if (!s) return null;
+  if (s.k === 'c') return {k:'c', id:nz(s.id, 0, 0, CT.length - 1)};
+  if (s.k === 'a') return {k:'a', name:String(s.name || 'CLOTH').toUpperCase().substr(0, 8), def:nz(s.def, 1, 0, 99)};
+  if (s.k === 'w' || (s.k === undefined && s.name !== undefined && s.atk !== undefined)){
+    return {k:'w', name:String(s.name || 'STICK').toUpperCase().substr(0, 8), atk:nz(s.atk, 1, 0, 999),
+            len:nz(s.len, 0, -6, 12), lv:nz(s.lv, 0, 0, 9)};
+  }
+  return null;
+}
+function applySave(s){
+  P = newPlayer();
+  if (!s) return;
+  P.floor = nz(s.floor, 1, 1, 999);
+  P.lv = nz(s.lv, 1, 1, 99);
+  P.exp = nz(s.exp, 0, 0, 99999);
+  P.maxHp = nz(s.maxHp, 20, 1, 9999);
+  P.hp = nz(s.hp, P.maxHp, 0, P.maxHp);
+  if (P.hp <= 0) P.hp = P.maxHp;
+  P.atk = nz(s.atk, 3, 1, 9999);
+  P.coin = nz(s.coin, 0, 0, 999999);
+  var i, it, n, bag = [], wp = null, ar = null;
+  if (s.bag){
+    for (i = 0; i < s.bag.length && bag.length < BAG_MAX; i++){ it = cleanItem(s.bag[i]); if (it) bag.push(it); }
+    it = cleanItem(s.weapon); if (it && it.k === 'w') wp = it;
+    it = cleanItem(s.armor); if (it && it.k === 'a') ar = it;
+  } else {
+    /* 旧セーブ(ver2以前)からの引き継ぎ */
+    var ws = [];
+    if (s.weapons && s.weapons.length){
+      for (i = 0; i < s.weapons.length && i < 8; i++){ it = cleanItem(s.weapons[i]); if (it && it.k === 'w') ws.push(it); }
+    } else if (s.weapon){
+      it = cleanItem(s.weapon); if (it && it.k === 'w') ws.push(it);
+    }
+    var eq = nz(s.eq, 0, 0, Math.max(0, ws.length - 1));
+    for (i = 0; i < ws.length; i++){
+      if (i === eq) wp = ws[i]; else if (bag.length < BAG_MAX) bag.push(ws[i]);
+    }
+    if (s.items){
+      n = nz(s.items.potion, 0, 0, 99); while (n-- > 0 && bag.length < BAG_MAX) bag.push({k:'c', id:0});
+      n = nz(s.items.hipotion, 0, 0, 99); while (n-- > 0 && bag.length < BAG_MAX) bag.push({k:'c', id:1});
+    }
+  }
+  if (wp) P.weapon = wp;
+  P.armor = ar;
+  P.bag = bag;
+}
+var P = newPlayer();
+var G = {state:'load', t:0, auto:0, msg:'', msgT:0};
+var M = {ms:0, mi:0, wi:0, dp:-1, qi:1, msg:'', msgT:0};
+var U = {msg:'', msgT:0};
+function msg(s){ G.msg = s; G.msgT = 2.2; }
+function mmsg(s){ M.msg = s; M.msgT = 1.6; }
+function umsg(s){ U.msg = s; U.msgT = 1.6; }
+function need(lv){ return 6*lv + lv*lv; }
+function upCost(w){ return 8*(w.lv + 1); }
+
+/* ===================== 入力 ===================== */
+var inp = {u:0, d:0, l:0, r:0, a:0, b:0, sel:0, sta:0};
+var kb = {u:0, d:0, l:0, r:0, a:0, b:0, sel:0, sta:0};
+var tc = {u:0, d:0, l:0, r:0, a:0, b:0, sel:0, sta:0};
+var ed = {u:0, d:0, l:0, r:0};
+var aBuf = 0, bBuf = 0, selBuf = 0, staBuf = 0;
+var W = 320, H = 480, ctrlTop = 240, dpx = 0, dpy = 0, dpS = 100, bAx = 0, bAy = 0, bBx = 0, bBy = 0, btnR = 24;
+var selCx = 0, staCx = 0, gbCy = 0, gbHW = 30, gbHH = 18;
+
+function $(id){ return document.getElementById(id); }
+var elPU = $('pu'), elPD = $('pd'), elPL = $('pl'), elPR = $('pr'),
+    elA = $('bA'), elB = $('bB'), elCtrl = $('ctrl'), elDH = $('dh'), elDV = $('dv'), elDC = $('dc'),
+    elGSel = $('gSel'), elGSta = $('gSta'), elPSel = $('pSel'), elPSta = $('pSta'),
+    elLSel = $('lSel'), elLSta = $('lSta');
+
+function recompute(){
+  var n = {u:kb.u||tc.u, d:kb.d||tc.d, l:kb.l||tc.l, r:kb.r||tc.r,
+           a:kb.a||tc.a, b:kb.b||tc.b, sel:kb.sel||tc.sel, sta:kb.sta||tc.sta};
+  if (n.a && !inp.a) aBuf = 0.15;
+  if (n.b && !inp.b) bBuf = 0.15;
+  if (n.sel && !inp.sel) selBuf = 0.15;
+  if (n.sta && !inp.sta) staBuf = 0.15;
+  if (n.u && !inp.u) ed.u = 1;
+  if (n.d && !inp.d) ed.d = 1;
+  if (n.l && !inp.l) ed.l = 1;
+  if (n.r && !inp.r) ed.r = 1;
+  inp = n;
+  elPU.style.display = n.u ? 'block' : 'none';
+  elPD.style.display = n.d ? 'block' : 'none';
+  elPL.style.display = n.l ? 'block' : 'none';
+  elPR.style.display = n.r ? 'block' : 'none';
+  elA.className = n.a ? 'btn on' : 'btn';
+  elB.className = n.b ? 'btn on' : 'btn';
+  elPSel.className = n.sel ? 'pill on' : 'pill';
+  elPSta.className = n.sta ? 'pill on' : 'pill';
+}
+function d2(x1, y1, x2, y2){ var a = x1-x2, b = y1-y2; return a*a + b*b; }
+function inR(x, y, cx, cy, hw, hh){ return Math.abs(x - cx) < hw && Math.abs(y - cy) < hh; }
+function applyTouches(list){
+  var n = {u:0, d:0, l:0, r:0, a:0, b:0, sel:0, sta:0};
+  for (var i = 0; i < list.length; i++){
+    var t = list[i], x = t.clientX, y = t.clientY;
+    if (inR(x, y, selCx, gbCy, gbHW, gbHH)){ n.sel = 1; }
+    else if (inR(x, y, staCx, gbCy, gbHW, gbHH)){ n.sta = 1; }
+    else if (x < W*0.5 && y >= ctrlTop - 30){
+      var dx = x - dpx, dy = y - dpy, dead = dpS*0.12, adx = Math.abs(dx), ady = Math.abs(dy);
+      if (adx > dead || ady > dead){
+        if (adx > ady*0.5 && adx > dead){ if (dx < 0) n.l = 1; else n.r = 1; }
+        if (ady > adx*0.5 && ady > dead){ if (dy < 0) n.u = 1; else n.d = 1; }
+      }
+    } else {
+      var da = d2(x, y, bAx, bAy), db2 = d2(x, y, bBx, bBy), rr = btnR*1.6;
+      if (da < rr*rr && da <= db2) n.a = 1;
+      else if (db2 < rr*rr) n.b = 1;
+    }
+  }
+  tc = n; recompute();
+}
+function tev(e){ if (e.preventDefault) e.preventDefault(); applyTouches(e.touches); }
+document.addEventListener('touchstart', tev, false);
+document.addEventListener('touchmove', tev, false);
+document.addEventListener('touchend', tev, false);
+document.addEventListener('touchcancel', tev, false);
+var md = false;
+document.addEventListener('mousedown', function(e){ md = true; applyTouches([e]); }, false);
+document.addEventListener('mousemove', function(e){ if (md) applyTouches([e]); }, false);
+document.addEventListener('mouseup', function(){ md = false; applyTouches([]); }, false);
+
+function kset(e, v){
+  var k = e.keyCode, hit = true;
+  if (k === 37 || k === 65) kb.l = v;
+  else if (k === 39 || k === 68) kb.r = v;
+  else if (k === 38 || k === 87) kb.u = v;
+  else if (k === 40 || k === 83) kb.d = v;
+  else if (k === 90 || k === 74 || k === 32) kb.a = v;
+  else if (k === 88 || k === 75) kb.b = v;
+  else if (k === 13) kb.sta = v;
+  else if (k === 16 || k === 67) kb.sel = v;
+  else hit = false;
+  if (hit){ if (e.preventDefault) e.preventDefault(); recompute(); }
+}
+document.addEventListener('keydown', function(e){ kset(e, 1); }, false);
+document.addEventListener('keyup', function(e){ kset(e, 0); }, false);
+
+/* ===================== レイアウト(JSでpx指定) ===================== */
+function place(el, l, t, w, h){
+  el.style.left = Math.round(l) + 'px'; el.style.top = Math.round(t) + 'px';
+  el.style.width = Math.round(w) + 'px'; el.style.height = Math.round(h) + 'px';
+}
+function placeGB(el, pill, lbl, cx, cy, pw, ph){
+  var cw = pw + 28;
+  el.style.width = cw + 'px';
+  el.style.left = Math.round(cx - cw/2) + 'px';
+  el.style.top = Math.round(cy - ctrlTop - (ph + 14)/2) + 'px';
+  pill.style.width = Math.round(pw) + 'px'; pill.style.height = Math.round(ph) + 'px';
+  lbl.style.fontSize = Math.max(8, Math.round(ph*0.8)) + 'px';
+}
+function layout(){
+  W = window.innerWidth || document.documentElement.clientWidth;
+  H = window.innerHeight || document.documentElement.clientHeight;
+  var minCtrl = Math.max(140, H*0.30);
+  var sc = Math.min(W/VW, (H - minCtrl)/VH);
+  if (sc < 0.5) sc = 0.5;
+  var gw = Math.floor(VW*sc), gh = Math.floor(VH*sc);
+  cvs.style.width = gw + 'px'; cvs.style.height = gh + 'px';
+  cvs.style.left = Math.floor((W - gw)/2) + 'px'; cvs.style.top = '0px';
+  ctrlTop = gh;
+  var ch = H - gh;
+  elCtrl.style.top = gh + 'px'; elCtrl.style.width = W + 'px'; elCtrl.style.height = ch + 'px';
+
+  dpS = Math.min(ch*0.72, W*0.38);
+  dpx = W*0.22; dpy = gh + ch*0.46;
+  var T = dpS/3, cx = dpx, cy = dpy - ctrlTop;
+  place(elDH, cx - dpS/2, cy - T/2, dpS, T);
+  place(elDV, cx - T/2, cy - dpS/2, T, dpS);
+  place(elDC, cx - T*0.4, cy - T*0.4, T*0.8, T*0.8);
+  var pp = Math.max(8, T*0.3);
+  place(elPU, cx - pp/2, cy - dpS/2 + 3, pp, pp);
+  place(elPD, cx - pp/2, cy + dpS/2 - 3 - pp, pp, pp);
+  place(elPL, cx - dpS/2 + 3, cy - pp/2, pp, pp);
+  place(elPR, cx + dpS/2 - 3 - pp, cy - pp/2, pp, pp);
+
+  btnR = Math.min(ch*0.16, W*0.1);
+  bAx = W*0.86; bAy = gh + ch*0.36; bBx = W*0.66; bBy = gh + ch*0.58;
+  place(elA, bAx - btnR, bAy - btnR - ctrlTop, btnR*2, btnR*2);
+  place(elB, bBx - btnR, bBy - btnR - ctrlTop, btnR*2, btnR*2);
+  elA.style.lineHeight = (btnR*2 - 6) + 'px'; elB.style.lineHeight = (btnR*2 - 6) + 'px';
+  elA.style.fontSize = Math.round(btnR*0.9) + 'px'; elB.style.fontSize = Math.round(btnR*0.9) + 'px';
+
+  /* SELECT / START (ゲームボーイ風に斜めのピル型を下部中央に) */
+  var pw = Math.max(40, W*0.13), ph = Math.max(11, ch*0.05);
+  selCx = W*0.50; staCx = W*0.68; gbCy = gh + ch*0.88;
+  gbHW = Math.min(pw*0.75, (staCx - selCx)/2 - 2); gbHH = ph + 12;
+  placeGB(elGSel, elPSel, elLSel, selCx, gbCy, pw, ph);
+  placeGB(elGSta, elPSta, elLSta, staCx, gbCy, pw, ph);
+}
+window.addEventListener('resize', layout, false);
+window.addEventListener('orientationchange', function(){ setTimeout(layout, 200); }, false);
+
+/* ===================== ダンジョン生成 ===================== */
+var map = new Array(MW*MH), rooms = [], enemies = [], chests = [], coins = [], stairs = {x:0, y:0};
+var mapCv = document.createElement('canvas'); mapCv.width = MW*TS; mapCv.height = MH*TS;
+
+function solid(px, py){
+  var tx = Math.floor(px/TS), ty = Math.floor(py/TS);
+  if (tx < 0 || ty < 0 || tx >= MW || ty >= MH) return true;
+  return map[ty*MW + tx] === 1;
+}
+function boxHit(x, y, h){ return solid(x-h, y-h) || solid(x+h, y-h) || solid(x-h, y+h) || solid(x+h, y+h); }
+function moveEnt(e, dx, dy, h){
+  if (!boxHit(e.x + dx, e.y, h)) e.x += dx;
+  if (!boxHit(e.x, e.y + dy, h)) e.y += dy;
+}
+function carveH(x1, x2, y){ var a = Math.min(x1, x2), b = Math.max(x1, x2); for (var x = a; x <= b; x++) map[y*MW + x] = 0; }
+function carveV(y1, y2, x){ var a = Math.min(y1, y2), b = Math.max(y1, y2); for (var y = a; y <= b; y++) map[y*MW + x] = 0; }
+
+function spawnEnemy(r){
+  var fl = P.floor, run = (fl >= 2 && Math.random() < 0.3);
+  var hp = 5 + fl*3; if (run) hp = Math.ceil(hp*0.6);
+  enemies.push({x:(r.x + rnd(r.w))*TS + 8, y:(r.y + rnd(r.h))*TS + 8, hp:hp, maxHp:hp,
+    atk:1 + fl, spd:(run ? 52 : 30) + fl*1.5, exp:3 + fl*2, run:run,
+    kx:0, ky:0, hit:0, cd:0, wt:0, dx:0, dy:0, ph:Math.random()*6, stun:0, hitId:-1, dead:false});
+}
+function dropCoins(x, y, n){
+  for (var i = 0; i < n && coins.length < 60; i++){
+    coins.push({x:x + rnd(9) - 4, y:y + rnd(9) - 4, v:1 + (P.floor >> 1) + rnd(2), t:0});
+  }
+}
+
+function genFloor(){
+  var i, x, y, tries = 0;
+  do {
+    for (i = 0; i < MW*MH; i++) map[i] = 1;
+    rooms = [];
+    var t = 0;
+    while (rooms.length < 9 && t < 120){
+      t++;
+      var w = 5 + rnd(6), h = 4 + rnd(4);
+      var rx = 2 + rnd(MW - w - 4), ry = 2 + rnd(MH - h - 4);
+      var ok = true;
+      for (i = 0; i < rooms.length; i++){
+        var q = rooms[i];
+        if (rx < q.x + q.w + 2 && rx + w + 2 > q.x && ry < q.y + q.h + 2 && ry + h + 2 > q.y){ ok = false; break; }
+      }
+      if (ok) rooms.push({x:rx, y:ry, w:w, h:h});
+    }
+    tries++;
+  } while (rooms.length < 4 && tries < 20);
+
+  for (i = 0; i < rooms.length; i++){
+    var r = rooms[i];
+    for (y = r.y; y < r.y + r.h; y++) for (x = r.x; x < r.x + r.w; x++) map[y*MW + x] = 0;
+  }
+  for (i = 1; i < rooms.length; i++){
+    var a = rooms[i-1], b = rooms[i];
+    var ax = a.x + (a.w >> 1), ay = a.y + (a.h >> 1), bx = b.x + (b.w >> 1), by = b.y + (b.h >> 1);
+    carveH(ax, bx, ay); carveV(ay, by, bx);
+  }
+
+  var last = rooms[rooms.length - 1];
+  stairs.x = (last.x + (last.w >> 1))*TS + 8; stairs.y = (last.y + (last.h >> 1))*TS + 8;
+  var r0 = rooms[0];
+  P.x = (r0.x + (r0.w >> 1))*TS + 8; P.y = (r0.y + (r0.h >> 1))*TS + 8;
+  P.kx = 0; P.ky = 0; P.atkT = 0; P.dodgeT = 0;
+
+  enemies = []; chests = []; coins = [];
+  for (i = 1; i < rooms.length; i++){
+    var rr = rooms[i];
+    var n = 1 + rnd(2 + (P.floor >> 1)); if (n > 4) n = 4;
+    for (var k = 0; k < n; k++) spawnEnemy(rr);
+    if (i === 1 || Math.random() < 0.4){
+      var cx = (rr.x + 1 + rnd(rr.w - 2))*TS + 8, cy = (rr.y + 1 + rnd(rr.h - 2))*TS + 8;
+      if (d2(cx, cy, stairs.x, stairs.y) > 400) chests.push({x:cx, y:cy, open:false, r:rnd(100)});
+    }
+  }
+  renderMap();
+}
+
+function renderMap(){
+  var c = mapCv.getContext('2d'), x, y;
+  for (y = 0; y < MH; y++){
+    for (x = 0; x < MW; x++){
+      var px = x*TS, py = y*TS;
+      if (map[y*MW + x] === 0){
+        c.fillStyle = ((x + y) & 1) ? '#d0e8a0' : '#d8f0a8'; c.fillRect(px, py, TS, TS);
+        c.fillStyle = '#b0cc80'; c.fillRect(px + 3, py + 4, 1, 1); c.fillRect(px + 11, py + 10, 1, 1);
+      } else {
+        var below = (y + 1 < MH) && map[(y + 1)*MW + x] === 0;
+        if (below){
+          c.fillStyle = '#48906c'; c.fillRect(px, py, TS, TS);
+          c.fillStyle = '#78c898'; c.fillRect(px, py, TS, 1);
+          c.fillStyle = '#2c6048';
+          c.fillRect(px, py + 7, TS, 1); c.fillRect(px, py + 15, TS, 1);
+          c.fillRect(px + 8, py, 1, 7); c.fillRect(px + 4, py + 8, 1, 7); c.fillRect(px + 12, py + 8, 1, 7);
+        } else {
+          c.fillStyle = '#204838'; c.fillRect(px, py, TS, TS);
+        }
+      }
+    }
+  }
+}
+
+/* ===================== 武器・防具・アイテム ===================== */
+function pickIdx(tb, wi){
+  var tot = 0, i, r;
+  for (i = 0; i < tb.length; i++) tot += tb[i][wi];
+  r = rnd(tot);
+  for (i = 0; i < tb.length; i++){ r -= tb[i][wi]; if (r < 0) return i; }
+  return tb.length - 1;
+}
+function rollWeapon(){
+  var t = WT[pickIdx(WT, 3)];
+  return {k:'w', name:t[0], atk:t[1] + Math.floor((P.floor - 1)*0.8) + rnd(3), len:t[2], lv:0};
+}
+function rollArmor(){
+  var t = AT[pickIdx(AT, 2)];
+  return {k:'a', name:t[0], def:t[1] + Math.floor((P.floor - 1)*0.4) + rnd(2)};
+}
+function rollCons(){ return {k:'c', id:pickIdx(CT, 3)}; }
+function iname(it){ return (it.k === 'c') ? CT[it.id][0] : it.name; }
+function idesc(it){
+  if (it.k === 'w') return 'ATK' + wAtk(it);
+  if (it.k === 'a') return 'DEF' + it.def;
+  var c = CT[it.id], t = c[1];
+  if (t === 'heal') return (c[2] >= 999) ? 'HP FULL' : 'HP+' + c[2];
+  if (t === 'maxhp') return 'MAXHP+' + c[2];
+  if (t === 'atk') return 'ATK+' + c[2];
+  if (t === 'exp') return 'EXP+';
+  return 'COIN+';
+}
+function pdef(){ return P.armor ? P.armor.def : 0; }
+/* 宝箱の中身は生成時に決めた乱数(ch.r)で決定。持ち物が満杯ならアイテムは出さず箱は閉じたまま */
+function openChest(ch){
+  var r = ch.r, it;
+  if (r >= 90){ dropCoins(P.x, P.y, 4 + rnd(3)); msg('COIN!'); return true; }
+  if (P.bag.length >= BAG_MAX){ msg('ITEMS FULL'); return false; }
+  it = (r < 35) ? rollWeapon() : (r < 60) ? rollArmor() : rollCons();
+  P.bag.push(it);
+  msg('GOT ' + iname(it) + '!');
+  return true;
+}
+
+var dtx = [], fx = [], swingId = 0;
+function addDmg(x, y, s, c){ if (dtx.length < 20) dtx.push({x:x, y:y, t:0.7, s:String(s), c:c}); }
+
+function gainExp(n){
+  P.exp += n;
+  while (P.exp >= need(P.lv)){
+    P.exp -= need(P.lv); P.lv++; P.maxHp += 4; P.atk += 1; P.hp = P.maxHp;
+    msg('LEVEL UP! LV ' + P.lv);
+    saveGame();
+  }
+}
+function die(){ G.state = 'dead'; G.t = 2.2; P.atkT = 0; P.dodgeT = 0; }
+function nextFloor(){
+  P.floor++;
+  P.hp = Math.min(P.maxHp, P.hp + Math.ceil(P.maxHp*0.3));
+  genFloor(); saveGame(); msg('FLOOR ' + P.floor);
+}
+function clearBufs(){ aBuf = 0; bBuf = 0; selBuf = 0; staBuf = 0; ed.u = ed.d = ed.l = ed.r = 0; }
+function startNew(){ P = newPlayer(); genFloor(); G.state = 'play'; clearBufs(); saveGame(); msg('FLOOR 1'); }
+function startContinue(){ applySave(saveData); genFloor(); G.state = 'play'; clearBufs(); msg('FLOOR ' + P.floor); }
+
+/* ===================== メニュー / アップグレード ===================== */
+function openMenu(){ G.state = 'menu'; M.ms = 0; M.mi = 0; M.dp = -1; M.msg = ''; M.msgT = 0; clearBufs(); }
+function openUpgrade(){ G.state = 'upgrade'; U.msg = ''; U.msgT = 0; clearBufs(); }
+function closeOverlay(){ G.state = 'play'; clearBufs(); }
+
+function clampCur(){ if (M.wi >= P.bag.length) M.wi = Math.max(0, P.bag.length - 1); }
+/* 持ち物を使う: 武器・防具は装備と入れ替え(外した装備は同じ枠に戻る)、消耗品は消費 */
+function useSlot(i){
+  var it = P.bag[i], old, c, t, before, n;
+  if (!it) return;
+  if (it.k === 'w'){
+    old = P.weapon; P.weapon = it; P.bag[i] = old; mmsg('EQUIPPED!'); saveGame(); return;
+  }
+  if (it.k === 'a'){
+    old = P.armor; P.armor = it;
+    if (old) P.bag[i] = old; else P.bag.splice(i, 1);
+    clampCur(); mmsg('EQUIPPED!'); saveGame(); return;
+  }
+  c = CT[it.id]; t = c[1];
+  if (t === 'heal'){
+    if (P.hp >= P.maxHp){ mmsg('HP FULL'); return; }
+    before = P.hp; P.hp = Math.min(P.maxHp, P.hp + c[2]); mmsg('HP +' + (P.hp - before));
+  } else if (t === 'maxhp'){
+    P.maxHp += c[2]; P.hp += c[2]; mmsg('MAXHP UP!');
+  } else if (t === 'atk'){
+    P.atk += c[2]; mmsg('ATK UP!');
+  } else if (t === 'exp'){
+    n = c[2] + 3*P.floor; mmsg('EXP +' + n); gainExp(n);
+  } else {
+    n = c[2] + 5*P.floor; P.coin += n; mmsg('COIN +' + n);
+  }
+  P.bag.splice(i, 1); clampCur(); saveGame();
+}
+function quitToTitle(){
+  if (!db){ G.state = 'title'; clearBufs(); return; }
+  mmsg('SAVING...');
+  saveGame(function(){ G.state = 'title'; clearBufs(); });
+}
+function menuStep(dt){
+  if (M.msgT > 0) M.msgT -= dt;
+  var u = ed.u, d = ed.d, l = ed.l, r = ed.r, a = aBuf > 0, b = bBuf > 0, st = staBuf > 0, se = selBuf > 0;
+  aBuf = 0; bBuf = 0; staBuf = 0; selBuf = 0;
+  var n;
+  if (M.ms === 0){
+    if (u) M.mi = (M.mi + 2) % 3;
+    if (d) M.mi = (M.mi + 1) % 3;
+    if (b || st){ closeOverlay(); return; }
+    if (a){
+      if (M.mi === 0){ M.ms = 1; M.wi = 0; M.dp = -1; }
+      else if (M.mi === 1){
+        if (!db) mmsg('NO SAVE');
+        else saveGame(function(ok){ mmsg(ok ? 'SAVED!' : 'SAVE FAILED'); });
+      }
+      else { M.ms = 3; M.qi = 1; }
+    }
+  } else if (M.ms === 1){
+    n = P.bag.length;
+    if (n > 0){
+      if (u){ M.wi = (M.wi + n - 1) % n; M.dp = -1; }
+      if (d){ M.wi = (M.wi + 1) % n; M.dp = -1; }
+    }
+    if (st){ closeOverlay(); return; }
+    if (b){ M.ms = 0; M.dp = -1; return; }
+    if (a && n > 0){ M.dp = -1; useSlot(M.wi); }
+    else if (se && n > 0){
+      if (M.dp === M.wi){ P.bag.splice(M.wi, 1); M.dp = -1; clampCur(); mmsg('DROPPED'); saveGame(); }
+      else { M.dp = M.wi; mmsg('DROP? SEL'); }
+    }
+  } else if (M.ms === 3){
+    if (u || d || l || r) M.qi = 1 - M.qi;
+    if (st){ closeOverlay(); return; }
+    if (b){ M.ms = 0; return; }
+    if (a){ if (M.qi === 0) quitToTitle(); else M.ms = 0; }
+  }
+}
+function upgradeStep(dt){
+  if (U.msgT > 0) U.msgT -= dt;
+  var a = aBuf > 0, b = bBuf > 0, st = staBuf > 0, se = selBuf > 0;
+  aBuf = 0; bBuf = 0; staBuf = 0; selBuf = 0;
+  if (b || st || se){ closeOverlay(); return; }
+  if (a){
+    var w = P.weapon;
+    if (w.lv >= 9) umsg('MAX LEVEL');
+    else {
+      var c = upCost(w);
+      if (P.coin >= c){ P.coin -= c; w.lv++; umsg('POWER UP!'); saveGame(); }
+      else umsg('NOT ENOUGH COIN');
+    }
+  }
+}
+
+/* ===================== 更新(プレイ中) ===================== */
+var SW = 0.22;
+function update(dt){
+  var mx = 0, my = 0;
+  if (inp.l) mx -= 1; if (inp.r) mx += 1; if (inp.u) my -= 1; if (inp.d) my += 1;
+  var mv = (mx !== 0 || my !== 0), nx = 0, ny = 0;
+  if (mv){
+    var l = Math.sqrt(mx*mx + my*my); nx = mx/l; ny = my/l;
+    if (P.atkT <= 0 && P.dodgeT <= 0){ P.fx = nx; P.fy = ny; }
+  }
+  P.mv = mv;
+
+  if (aBuf > 0 && P.atkCd <= 0 && P.dodgeT <= 0 && P.atkT <= 0){
+    P.atkT = SW; P.atkCd = 0.32; swingId++; aBuf = 0;
+    P.swAng = Math.atan2(P.fy, P.fx);
+  }
+  if (bBuf > 0 && P.dodgeCd <= 0 && P.dodgeT <= 0){
+    P.dodgeT = 0.2; P.dodgeCd = 0.55; P.inv = Math.max(P.inv, 0.32); P.atkT = 0; bBuf = 0;
+    if (mv){ P.ddx = nx; P.ddy = ny; } else { P.ddx = P.fx; P.ddy = P.fy; }
+  }
+  if (P.atkCd > 0) P.atkCd -= dt;
+  if (P.dodgeCd > 0) P.dodgeCd -= dt;
+  if (P.inv > 0) P.inv -= dt;
+  if (P.hurtT > 0) P.hurtT -= dt;
+
+  var vx = 0, vy = 0;
+  if (P.dodgeT > 0){
+    P.dodgeT -= dt; vx = P.ddx*190; vy = P.ddy*190;
+  } else {
+    var sp = (P.atkT > 0) ? 34 : 68;
+    vx = nx*sp; vy = ny*sp;
+  }
+  P.kx *= Math.max(0, 1 - 9*dt); P.ky *= Math.max(0, 1 - 9*dt);
+  moveEnt(P, (vx + P.kx)*dt, (vy + P.ky)*dt, 4);
+  if (mv || P.dodgeT > 0) P.ph += dt*14;
+
+  var i, e, k;
+  if (P.atkT > 0){
+    P.atkT -= dt;
+    var p = 1 - Math.max(P.atkT, 0)/SW;
+    var ang = P.swAng - 1.2 + 2.4*p;
+    var L = 11 + P.weapon.len;
+    var hx = P.x + Math.cos(ang)*3, hy = P.y - 1 + Math.sin(ang)*3;
+    for (i = 0; i < enemies.length; i++){
+      e = enemies[i];
+      if (e.dead || e.hitId === swingId) continue;
+      for (k = 1; k <= 4; k++){
+        var qx = hx + Math.cos(ang)*(L*k/4), qy = hy + Math.sin(ang)*(L*k/4);
+        if (d2(e.x, e.y, qx, qy) < 64){
+          var dmg = P.atk + wAtk(P.weapon) + rnd(3);
+          e.hp -= dmg; e.hitId = swingId; e.hit = 0.12; e.stun = 0.22;
+          var ddx = e.x - P.x, ddy = e.y - P.y, dd = Math.sqrt(ddx*ddx + ddy*ddy) || 1;
+          e.kx = ddx/dd*110; e.ky = ddy/dd*110;
+          addDmg(e.x, e.y - 10, dmg, '#ffffff');
+          if (e.hp <= 0){
+            e.dead = true; gainExp(e.exp);
+            dropCoins(e.x, e.y, 1 + rnd(2));
+            fx.push({x:e.x, y:e.y, t:0.3});
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  var alive = [];
+  for (i = 0; i < enemies.length; i++){
+    e = enemies[i];
+    if (e.dead) continue;
+    alive.push(e);
+    var ex = e.x - P.x, ey = e.y - P.y, ed2 = ex*ex + ey*ey;
+    if (ed2 > 260*260) continue;
+    if (e.hit > 0) e.hit -= dt;
+    if (e.cd > 0) e.cd -= dt;
+    if (e.stun > 0) e.stun -= dt;
+    e.ph += dt*8;
+    var evx = 0, evy = 0;
+    if (e.stun <= 0){
+      if (ed2 < 110*110){
+        var dist = Math.sqrt(ed2) || 1;
+        evx = -ex/dist*e.spd; evy = -ey/dist*e.spd;
+      } else {
+        e.wt -= dt;
+        if (e.wt <= 0){
+          e.wt = 0.8 + Math.random()*1.4;
+          if (Math.random() < 0.4){ e.dx = 0; e.dy = 0; }
+          else { var aa = Math.random()*6.283; e.dx = Math.cos(aa)*14; e.dy = Math.sin(aa)*14; }
+        }
+        evx = e.dx; evy = e.dy;
+      }
+    }
+    e.kx *= Math.max(0, 1 - 8*dt); e.ky *= Math.max(0, 1 - 8*dt);
+    moveEnt(e, (evx + e.kx)*dt, (evy + e.ky)*dt, 4);
+    if (ed2 < 81 && e.cd <= 0 && P.inv <= 0 && G.state === 'play'){
+      var dm = Math.max(1, e.atk - pdef()); P.hp -= dm; P.inv = 0.7; P.hurtT = 0.7; e.cd = 0.9;
+      var pd = Math.sqrt(ed2) || 1;
+      P.kx = (P.x - e.x)/pd*120; P.ky = (P.y - e.y)/pd*120;
+      addDmg(P.x, P.y - 12, dm, '#ff5050');
+      if (P.hp <= 0){ P.hp = 0; die(); }
+    }
+  }
+  enemies = alive;
+  for (i = 0; i < enemies.length; i++){
+    for (k = i + 1; k < enemies.length; k++){
+      var a = enemies[i], b = enemies[k];
+      var sx = a.x - b.x, sy = a.y - b.y, sd = sx*sx + sy*sy;
+      if (sd < 64 && sd > 0.01){
+        var s = Math.sqrt(sd), push = 18*dt;
+        moveEnt(a, sx/s*push, sy/s*push, 4); moveEnt(b, -sx/s*push, -sy/s*push, 4);
+      }
+    }
+  }
+
+  /* コイン拾い(近づくと吸い寄せ) */
+  for (i = coins.length - 1; i >= 0; i--){
+    var c = coins[i];
+    c.t += dt;
+    var cdx = P.x - c.x, cdy = P.y - c.y, cd = cdx*cdx + cdy*cdy;
+    if (c.t > 0.3 && cd < 900){
+      var cs = Math.sqrt(cd) || 1;
+      c.x += cdx/cs*130*dt; c.y += cdy/cs*130*dt;
+    }
+    if (cd < 64){
+      P.coin += c.v; addDmg(P.x, P.y - 14, '+' + c.v, COL.gold);
+      coins.splice(i, 1);
+    }
+  }
+
+  for (i = 0; i < chests.length; i++){
+    var ch = chests[i];
+    if (!ch.open && Math.abs(P.x - ch.x) < 11 && Math.abs(P.y - ch.y) < 10){
+      if (openChest(ch)){ ch.open = true; saveGame(); }
+    }
+  }
+  if (d2(P.x, P.y, stairs.x, stairs.y) < 100 && G.state === 'play') nextFloor();
+
+  for (i = dtx.length - 1; i >= 0; i--){ dtx[i].t -= dt; dtx[i].y -= 22*dt; if (dtx[i].t <= 0) dtx.splice(i, 1); }
+  for (i = fx.length - 1; i >= 0; i--){ fx[i].t -= dt; if (fx[i].t <= 0) fx.splice(i, 1); }
+}
+
+/* ===================== 描画 ===================== */
+function stick(x, y, col, ph, mv, flash){
+  var s = mv ? Math.sin(ph)*3 : 0;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = flash ? '#ffffff' : col; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 2);
+  ctx.moveTo(x, y + 2); ctx.lineTo(x - 3 + s, y + 7);
+  ctx.moveTo(x, y + 2); ctx.lineTo(x + 3 - s, y + 7);
+  ctx.moveTo(x, y - 3); ctx.lineTo(x - 4, y - s*0.4);
+  ctx.moveTo(x, y - 3); ctx.lineTo(x + 4, y + s*0.4);
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y - 7, 3, 0, 6.2832, false);
+  ctx.fillStyle = flash ? '#ffffff' : COL.head; ctx.fill();
+  ctx.lineWidth = 1.5; ctx.stroke();
+}
+function weapon(x, y, ang, L){
+  var hx = x + Math.cos(ang)*4, hy = y - 2 + Math.sin(ang)*4;
+  var tx = hx + Math.cos(ang)*L, ty = hy + Math.sin(ang)*L;
+  var mxp = hx + Math.cos(ang)*L*0.25, myp = hy + Math.sin(ang)*L*0.25;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#081820'; ctx.lineWidth = 3.5;
+  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(tx, ty); ctx.stroke();
+  ctx.strokeStyle = '#a05820'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(mxp, myp); ctx.stroke();
+  ctx.strokeStyle = '#e8f0f8'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(mxp, myp); ctx.lineTo(tx, ty); ctx.stroke();
+}
+function drawChest(x, y, open){
+  ctx.fillStyle = '#301808'; ctx.fillRect(x - 7, y - 5, 14, 11);
+  ctx.fillStyle = open ? '#807058' : '#a86820'; ctx.fillRect(x - 6, y - 1, 12, 6);
+  ctx.fillStyle = open ? '#605040' : '#d89030'; ctx.fillRect(x - 6, y - 4, 12, open ? 2 : 3);
+  if (!open){ ctx.fillStyle = COL.gold; ctx.fillRect(x - 1, y - 2, 2, 4); }
+  else { ctx.fillStyle = '#201008'; ctx.fillRect(x - 5, y - 2, 10, 2); }
+}
+function drawStairs(x, y){
+  ctx.fillStyle = '#183828'; ctx.fillRect(x - 7, y - 7, 14, 14);
+  for (var i = 0; i < 4; i++){
+    ctx.fillStyle = (i & 1) ? '#306850' : '#58a880';
+    ctx.fillRect(x - 6 + i, y - 6 + i*3, 12 - 2*i, 3);
+  }
+}
+function coinIcon(x, y, r){
+  ctx.fillStyle = '#684800'; ctx.beginPath(); ctx.arc(x, y, r + 1, 0, 6.2832, false); ctx.fill();
+  ctx.fillStyle = COL.gold; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832, false); ctx.fill();
+  ctx.fillStyle = '#c09010'; ctx.fillRect(x - 1, y - r + 1, 1, r*2 - 2);
+}
+var fps = 0, fpsC = 0, fpsT = 0, blink = 0;
+
+function drawHUD(){
+  ctx.fillStyle = COL.ink; ctx.fillRect(0, 0, VW, 17); ctx.fillRect(0, 223, VW, 17);
+  txt('F' + P.floor, 3, 2, COL.hud, 2);
+  txt('LV' + P.lv, 34, 2, COL.hud, 2);
+  ctx.fillStyle = '#403038'; ctx.fillRect(84, 4, 40, 8);
+  ctx.fillStyle = COL.hp; ctx.fillRect(84, 4, Math.floor(40*P.hp/P.maxHp), 8);
+  txt(P.hp + '/' + P.maxHp, 128, 2, COL.hud, 2);
+  var at = 'ATK ' + (P.atk + wAtk(P.weapon));
+  txt(at, VW - 3 - txtW(at, 2), 2, COL.gold, 2);
+
+  var exs = 'XP ' + P.exp + '/' + need(P.lv);
+  txt(exs, 3, 225, COL.exp, 2);
+  var cx = 3 + txtW(exs, 2) + 12;
+  coinIcon(cx + 4, 232, 4);
+  txt('' + P.coin, cx + 13, 225, COL.gold, 2);
+  var wn = P.weapon.name + ' +' + P.weapon.lv;
+  txt(wn, VW - 3 - txtW(wn, 2), 225, COL.hud, 2);
+  if (dbFailed) txt('NO SAVE', 196, 5, COL.hp, 1);
+  else if (savedFlash > 0) txt('SAVED', 196, 5, COL.gold, 1);
+  else txt('FPS ' + fps, 196, 5, '#608070', 1);
+}
+
+var ZOOM = 3;
+function rz(v){ return Math.round(v*ZOOM)/ZOOM; }
+function drawPlay(){
+  var vw = VW/ZOOM, vh = VH/ZOOM;
+  var cx = Math.max(0, Math.min(MW*TS - vw, rz(P.x - vw/2)));
+  var cy = Math.max(0, Math.min(MH*TS - vh, rz(P.y - vh/2)));
+  ctx.save();
+  ctx.scale(ZOOM, ZOOM);
+  ctx.drawImage(mapCv, -cx, -cy);
+  var i, e;
+  drawStairs(rz(stairs.x - cx), rz(stairs.y - cy));
+  for (i = 0; i < chests.length; i++){
+    var c = chests[i];
+    var sx = rz(c.x - cx), sy = rz(c.y - cy);
+    if (sx > -16 && sx < vw + 16 && sy > -16 && sy < vh + 16) drawChest(sx, sy, c.open);
+  }
+  for (i = 0; i < coins.length; i++){
+    var co = coins[i];
+    var kx = rz(co.x - cx), ky = rz(co.y - cy + Math.sin(co.t*6)*1);
+    if (kx > -8 && kx < vw + 8 && ky > -8 && ky < vh + 8) coinIcon(kx, ky, 3);
+  }
+  for (i = 0; i < enemies.length; i++){
+    e = enemies[i];
+    var ex = rz(e.x - cx), ey = rz(e.y - cy);
+    if (ex < -16 || ex > vw + 16 || ey < -16 || ey > vh + 16) continue;
+    stick(ex, ey, e.run ? COL.run : COL.en, e.ph, true, e.hit > 0);
+    if (e.hp < e.maxHp){
+      ctx.fillStyle = COL.ink; ctx.fillRect(ex - 6, ey - 15, 12, 3);
+      ctx.fillStyle = COL.hp; ctx.fillRect(ex - 5, ey - 14, Math.max(1, Math.floor(10*e.hp/e.maxHp)), 1);
+    }
+  }
+  var px = rz(P.x - cx), py = rz(P.y - cy);
+  var show = !(P.hurtT > 0 && (Math.floor(P.hurtT*20) % 2 === 0));
+  if (show){
+    if (P.dodgeT > 0){
+      ctx.save(); ctx.translate(px, py + 2); ctx.rotate((1 - P.dodgeT/0.2)*6.283*(P.ddx >= 0 ? 1 : -1));
+      stick(0, -2, COL.pl, 0, false, false);
+      ctx.restore();
+    } else {
+      stick(px, py, COL.pl, P.ph, P.mv, false);
+      if (P.atkT > 0){
+        var p = 1 - Math.max(P.atkT, 0)/SW, ang = P.swAng - 1.2 + 2.4*p, L = 11 + P.weapon.len;
+        ctx.strokeStyle = '#f8f8a0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(px, py - 1, L + 3, P.swAng - 1.2, ang, false); ctx.stroke();
+        weapon(px, py, ang, L);
+      } else {
+        weapon(px, py, Math.atan2(P.fy, P.fx) + 1.1, (11 + P.weapon.len)*0.7);
+      }
+    }
+  }
+  for (i = 0; i < fx.length; i++){
+    var f = fx[i], fr = 1 - f.t/0.3, fxp = rz(f.x - cx), fyp = rz(f.y - cy);
+    ctx.strokeStyle = '#f8f8f0'; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (var k = 0; k < 6; k++){
+      var a = k*1.0472, r0 = 2 + fr*9;
+      ctx.moveTo(fxp + Math.cos(a)*r0, fyp + Math.sin(a)*r0);
+      ctx.lineTo(fxp + Math.cos(a)*(r0 + 3), fyp + Math.sin(a)*(r0 + 3));
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+  for (i = 0; i < dtx.length; i++){
+    var d = dtx[i];
+    txtS(d.s, Math.round((d.x - cx)*ZOOM) - Math.floor(txtW(d.s, 2)/2), Math.round((d.y - cy)*ZOOM), d.c, 2);
+  }
+  drawHUD();
+  if (G.msgT > 0) txtC(G.msg, 203, COL.gold, 2);
+}
+
+function panel(x, y, w, h){
+  ctx.fillStyle = COL.hud; ctx.fillRect(x - 3, y - 3, w + 6, h + 6);
+  ctx.fillStyle = COL.ink; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+  ctx.fillStyle = '#183828'; ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+}
+
+function drawMenu(){
+  ctx.fillStyle = 'rgba(8,24,32,0.78)'; ctx.fillRect(0, 0, VW, VH);
+  panel(12, 10, 296, 220);
+  var i, yy, w = P.weapon, ar = P.armor;
+  if (M.ms === 0 || M.ms === 3){
+    txt('MENU', 24, 18, COL.gold, 2);
+    var labs = ['アイテム', 'セーブ', 'オワル'];
+    for (i = 0; i < 3; i++){
+      yy = 44 + i*30;
+      var sel = (M.ms === 0 && M.mi === i);
+      if (sel) txt('>', 22, yy + 1, COL.gold, 2);
+      txt(labs[i], 40, yy, sel ? COL.white : COL.dim, 2);
+    }
+    txt('LV ' + P.lv, 166, 20, COL.hud, 2);
+    txt('HP ' + P.hp + '/' + P.maxHp, 166, 38, COL.hud, 2);
+    txt('ATK ' + (P.atk + wAtk(w)), 166, 56, COL.gold, 2);
+    txt('DEF ' + pdef(), 166, 74, COL.exp, 2);
+    coinIcon(172, 100, 4);
+    txt(P.coin + ' コイン', 182, 93, COL.gold, 2);
+    txt(w.name + ' +' + w.lv, 166, 112, COL.white, 2);
+    txt(ar ? ar.name : 'NO ARMOR', 166, 130, COL.white, 2);
+    txt('ITEM ' + P.bag.length + '/' + BAG_MAX, 166, 148, COL.dim, 2);
+    if (M.msgT > 0) txt(M.msg, 24, 172, COL.gold, 2);
+    txt('A:OK B:CLOSE', 24, 206, COL.dim, 2);
+    if (M.ms === 3){
+      panel(40, 70, 240, 90);
+      txtC('QUIT TO TITLE?', 80, COL.white, 2);
+      txtC('(SAVE AND QUIT)', 98, COL.dim, 2);
+      txt(M.qi === 0 ? '>YES' : ' YES', 70, 126, M.qi === 0 ? COL.gold : COL.dim, 2);
+      txt(M.qi === 1 ? '>NO' : ' NO', 190, 126, M.qi === 1 ? COL.gold : COL.dim, 2);
+    }
+  } else if (M.ms === 1){
+    txt('アイテム', 24, 14, COL.gold, 2);
+    txt(P.bag.length + '/' + BAG_MAX, 100, 14, COL.dim, 2);
+    if (M.msgT > 0) txt(M.msg, 150, 14, COL.gold, 2);
+    txt('W:' + w.name + ' +' + w.lv + ' ATK' + wAtk(w), 24, 32, COL.white, 2);
+    txt(ar ? 'A:' + ar.name + ' DEF' + ar.def : 'A:NONE', 24, 48, COL.white, 2);
+    for (i = 0; i < BAG_MAX; i++){
+      yy = 68 + i*15;
+      var it = P.bag[i], on = (i === M.wi);
+      if (on) txt('>', 18, yy, COL.gold, 2);
+      if (!it){ txt('-', 32, yy, '#4c6458', 2); continue; }
+      var cc = (M.dp === i) ? COL.hp : (on ? COL.white : COL.dim);
+      txt(iname(it) + (it.k === 'w' ? ' +' + it.lv : ''), 32, yy, cc, 2);
+      txt(idesc(it), 176, yy, cc, 2);
+    }
+    txt('A:USE B:BACK SEL:DROP', 24, 206, COL.dim, 2);
+  }
+}
+
+function drawUpgrade(){
+  ctx.fillStyle = 'rgba(8,24,32,0.78)'; ctx.fillRect(0, 0, VW, VH);
+  panel(24, 22, 272, 196);
+  var w = P.weapon;
+  txtC('POWER UP', 32, COL.gold, 2);
+  txtC(w.name, 62, COL.white, 2);
+  if (w.lv >= 9){
+    txtC('+' + w.lv + ' MAX!', 84, COL.gold, 2);
+    txtC('ATK ' + (P.atk + wAtk(w)), 104, COL.hud, 2);
+  } else {
+    txtC('+' + w.lv + ' > +' + (w.lv + 1), 84, COL.hud, 2);
+    txtC('ATK ' + (P.atk + wAtk(w)) + ' > ' + (P.atk + wAtk(w) + 2), 104, COL.gold, 2);
+    txtC('COST ' + upCost(w) + ' コイン', 128, (P.coin >= upCost(w)) ? COL.white : COL.hp, 2);
+  }
+  txtC('HAVE ' + P.coin + ' コイン', 148, COL.gold, 2);
+  if (U.msgT > 0) txtC(U.msg, 170, COL.exp, 2);
+  txtC('A:UP B:BACK', 194, COL.dim, 2);
+}
+
+function drawTitle(){
+  ctx.fillStyle = COL.ink; ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = '#183828'; ctx.fillRect(0, 168, VW, 72);
+  ctx.fillStyle = '#306850'; ctx.fillRect(0, 168, VW, 2);
+  txtC('STICKMAN', 26, '#c0e8a0', 3);
+  txtC('DUNGEONS', 54, COL.gold, 3);
+  var bob = Math.floor(Math.sin(blink*4)*1.5);
+  stick(160, 130 + bob, COL.hud, blink*8, true, false);
+  weapon(160, 130 + bob, -0.7, 14);
+  if (G.state === 'load'){
+    txtC('LOADING...', 196, COL.hud, 2);
+  } else {
+    var on = (Math.floor(blink*2) % 2 === 0);
+    if (saveData){
+      if (on) txtC('A:CONTINUE', 174, COL.white, 2);
+      txtC('B:NEW GAME', 192, COL.dim, 2);
+      txtC('F' + saveData.floor + ' LV' + saveData.lv, 210, COL.exp, 2);
+    } else {
+      if (on) txtC('A:START', 186, COL.white, 2);
+      if (dbFailed) txtC('NO SAVE', 210, COL.hp, 2);
+    }
+  }
+}
+
+function render(){
+  if (G.state === 'load' || G.state === 'title'){ drawTitle(); return; }
+  drawPlay();
+  if (G.state === 'menu') drawMenu();
+  else if (G.state === 'upgrade') drawUpgrade();
+  else if (G.state === 'dead'){
+    ctx.fillStyle = 'rgba(8,24,32,0.6)'; ctx.fillRect(0, 0, VW, VH);
+    txtC('YOU DIED', 96, COL.hp, 3);
+    txtC('BACK TO FLOOR 1', 128, COL.hud, 1);
+  }
+}
+
+/* ===================== メインループ(ステート管理) ===================== */
+function step(dt){
+  blink += dt;
+  if (G.msgT > 0) G.msgT -= dt;
+  if (savedFlash > 0) savedFlash -= dt;
+  if (aBuf > 0) aBuf -= dt;
+  if (bBuf > 0) bBuf -= dt;
+  if (selBuf > 0) selBuf -= dt;
+  if (staBuf > 0) staBuf -= dt;
+
+  if (G.state === 'title'){
+    if (aBuf > 0 || staBuf > 0){ aBuf = 0; staBuf = 0; if (saveData) startContinue(); else startNew(); }
+    else if (bBuf > 0){ bBuf = 0; if (saveData) startNew(); }
+  } else if (G.state === 'play'){
+    if (staBuf > 0) openMenu();
+    else if (selBuf > 0) openUpgrade();
+    else {
+      update(dt);
+      G.auto += dt;
+      if (G.auto > 10){ G.auto = 0; saveGame(); }
+    }
+  } else if (G.state === 'menu'){
+    menuStep(dt);
+  } else if (G.state === 'upgrade'){
+    upgradeStep(dt);
+  } else if (G.state === 'dead'){
+    G.t -= dt;
+    if (G.t <= 0){
+      P.floor = 1; P.hp = P.maxHp; P.hurtT = 0; P.inv = 1;
+      genFloor(); G.state = 'play'; clearBufs(); saveGame(); msg('FLOOR 1');
+    }
+  }
+  ed.u = ed.d = ed.l = ed.r = 0;
+}
+var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
+          function(f){ return setTimeout(f, 16); };
+var last = Date.now();
+function loop(){
+  var now = Date.now(), dt = (now - last)/1000; last = now;
+  if (dt > 0.05) dt = 0.05; if (dt <= 0) dt = 0.001;
+  step(dt); render();
+  fpsC++; fpsT += dt;
+  if (fpsT >= 0.5){ fps = Math.round(fpsC/fpsT); fpsC = 0; fpsT = 0; }
+  raf(loop);
+}
+
+function flushSave(){
+  if (G.state === 'play' || G.state === 'menu' || G.state === 'upgrade') saveGame();
+}
+window.addEventListener('pagehide', flushSave, false);
+document.addEventListener('visibilitychange', function(){ if (document.hidden) flushSave(); }, false);
+
+layout();
+openDB(function(){ G.state = 'title'; });
+raf(loop);
+})();
+</script>
+</body>
+</html>

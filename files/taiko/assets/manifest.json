@@ -1,0 +1,10 @@
+{
+  "char": ["n.png"],
+  "gogo": ["gogo_now_frame_1.png", "gogo_now_frame_2.png", "gogo_now_frame_3.png", "gogo_now_frame_4.png", "gogo_now_frame_5.png"],
+  "clear": ["n.png"],
+  "soul": ["soul_new_0.png", "soul_new_1.png", "soul_new_2.png", "soul_new_3.png", "soul_new_4.png", "soul_new_5.png", "soul_new_6.png", "soul_new_7.png"],
+  "fire": ["firework_new_0.png", "firework_new_1.png", "firework_new_2.png", "firework_new_3.png", "firework_new_4.png", "firework_new_5.png", "firework_new_6.png", "firework_new_7.png"],
+  "combo": "combo.png",
+  "badges": { "Easy": "easy.png", "Normal": "normal.png", "Hard": "hard.png", "Oni": "oni.png", "Edit": "edit.png" },
+  "tk": { "frame": "tk_frame.png", "left_don": "tk_left_don.png", "left_ka": "tk_left_ka.png", "right_don": "tk_right_don.png", "right_ka": "tk_right_ka.png" }
+}

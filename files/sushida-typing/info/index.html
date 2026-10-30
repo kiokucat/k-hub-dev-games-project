@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回転寿司タイピング - 公式遊び方ガイド</title>
+<style>
+  :root {
+    --noren: #16324f;
+    --noren-deep: #0d2138;
+    --wood: #b8895f;
+    --wood-light: #d9b48a;
+    --rice: #fbf6ec;
+    --salmon: #e8734a;
+    --nori: #1c1c1c;
+    --gold: #c9992f;
+    --green: #3f7d5c;
+    
+    /* 漆・松葉色のトーン＆マナー */
+    --urushi: #1b1714;
+    --urushi-soft: #2c2620;
+    --matsu: #3c6e52;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--rice); color: var(--nori);
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    line-height: 1.7;
+  }
+  .container {
+    max-width: 720px; margin: 40px auto; padding: 20px;
+    background: #ffffff; border: 2px solid var(--wood); border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+    position: relative;
+  }
+  
+  .top-back-area {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+  .btn-back-title {
+    display: inline-block;
+    background: var(--wood);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 4px;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .btn-back-title:hover {
+    background: #a0744b;
+    transform: translateY(-1px);
+  }
+
+  .header {
+    text-align: center; border-bottom: 3px double var(--wood); padding-bottom: 15px; margin-bottom: 30px;
+    padding-top: 20px;
+  }
+  .header h1 {
+    margin: 0; font-family: "Yu Mincho", serif; font-size: 28px; color: var(--noren);
+  }
+  .header .subtitle { font-size: 13px; color: #666; margin-top: 5px; }
+  
+  h2 {
+    font-family: "Yu Mincho", serif; border-left: 5px solid var(--noren);
+    padding-left: 10px; font-size: 18px; color: var(--noren-deep); margin-top: 30px;
+  }
+  h3 {
+    font-size: 15px; color: var(--noren); margin: 15px 0 5px 0;
+  }
+  p { margin: 10px 0; font-size: 14px; }
+  ul, ol { font-size: 14px; padding-left: 20px; }
+  li { margin-bottom: 8px; }
+
+  /* 漆調HUD解説用スタイル */
+  .hud-panel {
+    background: var(--urushi);
+    color: #ffffff;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 15px 0;
+    border-bottom: 3px solid var(--gold);
+  }
+  .hud-item {
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .hud-item:last-child { margin-bottom: 0; }
+  .hud-label {
+    color: var(--gold-bright);
+    font-weight: bold;
+    display: inline-block;
+    width: 150px;
+  }
+
+  /* 特徴ボックス */
+  .feature-box {
+    background: #fdfaf2; border: 1px dashed var(--wood); border-radius: 8px; padding: 15px; margin: 15px 0;
+  }
+  .feature-title { font-weight: bold; color: var(--salmon); font-size: 15px; margin-bottom: 5px; }
+
+  .highlight { font-weight: bold; color: var(--salmon); }
+  .matsu-text { font-weight: bold; color: var(--matsu); }
+  .code-text { font-family: monospace; background: #eee; padding: 2px 4px; border-radius: 4px; }
+
+  /* ページ切り替え用のスタイル */
+  .guide-page { display: none; }
+  .guide-page.active { display: block; }
+
+  /* 下部ボタンエリア */
+  .nav-action-area {
+    text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px dashed #ddd;
+  }
+  .toggle-btn {
+    background: var(--noren); color: #fff; border: none; padding: 12px 24px;
+    border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .toggle-btn:hover { background: var(--noren-deep); transform: translateY(-1px); }
+  .toggle-btn:active { transform: translateY(1px); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div id="page1" class="guide-page active">
+    <div class="top-back-area">
+      <a href="../index.html" class="btn-back-title">🏠 タイトルにもどる</a>
+    </div>
+
+    <div class="header">
+      <h1>🍣 回転寿司タイピング</h1>
+      <div class="subtitle">〜 流れる寿司をタイピングで獲得せよ！遊び方ガイド 〜</div>
+    </div>
+
+    <h2>■ 基本の操作方法</h2>
+    
+    <h3>タイピングの開始：</h3>
+    <p>レーンを流れるお皿の上に「ネタ（漢字表記）」と、その下に「ローマ字」が表示されます。最初の文字を入力すると、そのお皿の制限時間（レーンから流れるまでの時間）がカウントされ、タイピングがスタートします。</p>
+    
+    <h3>正確なキー入力：</h3>
+    <p>表示されているローマ字をキーボードで正しく入力してください。正解した文字は<span class="matsu-text">松葉色（緑色）</span>に染まり、すべて打ち終えると「完食」となって皿の金額があなたの「獲得金額（スコア）」に加算されます。</p>
+    
+    <h3>文字の柔軟な入力に対応：</h3>
+    <p>「し」を <code class="code-text">si</code> または <code class="code-text">shi</code>、「つ」を <code class="code-text">tu</code> または <code class="code-text">tsu</code> など、一般的な複数のローマ字入力パターンに対応しています。自分が最も打ちやすいスタイルでそのまま入力可能です。</p>
+
+    <h2>■ 画面の見方（HUD：漆調のステータスバーの解説）</h2>
+    <p>ゲーム画面上部の漆調のステータスバーには、プレイを優位に進めるための重要な情報がリアルタイムに表示されています。</p>
+    
+    <div class="hud-panel">
+      <div class="hud-item"><span class="hud-label">💰 獲得金額（スコア）：</span> 現在の合計スコアが表示されます。</div>
+      <div class="hud-item"><span class="hud-label">⏳ 残り時間：</span> 各ステージごとの制限時間です。お皿を完食すると少し回復し、お皿を流してしまう（お残し）と減少します。</div>
+      <div class="hud-item"><span class="hud-label">🔥 コンボ数：</span> ミスをせずに連続で正解している数です。30コンボ達成するごとに制限時間が延長される重要なトリガーとなります。</div>
+    </div>
+
+    <h2>■ スコア（最高金額）を伸ばすための秘訣</h2>
+    
+    <div class="feature-box">
+      <div class="feature-title">【重要】コンボを途切れさせない</div>
+      <p>タイピングを1回でも間違えると、コンボ数がゼロにリセットされ、積み上げたコンボ数が消滅してしまいます。スピードよりも<span class="highlight">「正確に打つこと」</span>を意識することが、残り時間の維持に繋がり、結果的にハイスコアへ繋がります。</p>
+    </div>
+
+    <div class="feature-box">
+      <div class="feature-title">【重要】高級な皿を狙い撃つ</div>
+      <p>お皿のネタによって「一皿の金額」が異なります。大トロやウニなどの高級なネタは文字数が多く制限時間もシビアですが、完食した際に獲得できるスコアが格段に高いため、制限時間に余裕がある状態でこれらを確実に打ち切るのが高得点のコツです。</p>
+    </div>
+  </div>
+
+  <div id="page2" class="guide-page">
+    <div class="top-back-area">
+      <a href="../index.html" class="btn-back-title">🏠 タイトルにもどる</a>
+    </div>
+
+    <div class="header">
+      <h1>🍣 回転寿司タイピング【上級者用】</h1>
+      <div class="subtitle">〜 スコアを極限まで伸ばすための、内部仕様と攻略メソッド 〜</div>
+    </div>
+
+    <h2>■ 上級者設定の特殊操作</h2>
+    
+    <h3>Escキーによる即時帰還（高速リトライ）：</h3>
+    <p>ゲームプレイ中、ミスをしてコンボが途切れた際や、序盤の皿の配分が良くない場合、<code class="code-text">[Esc]</code> キーを押すことでリザルトを挟まずに即座にタイトル画面へ戻ることができます。高得点のための厳選（厳選リトライ）を行う際の必須操作です。</p>
+    
+    <h3>スペースキーによるゲーム開始：</h3>
+    <p>タイトル画面やコース選択画面では、マウスを使わず <code class="code-text">[Space]</code> キー（または <code class="code-text">[Enter]</code> キー）を押すだけで、最後に選択していた設定のまま即座にゲームを開始できます。</p>
+
+    <h2>■ スコアを極限まで引き上げる「プロの技術」</h2>
+
+    <div class="feature-box">
+      <div class="feature-title">【極限技】先読みタイピング（次皿の視認）</div>
+      <p>現在タイピングしているお皿（アクティブなお皿）を打ち切る直前、目線はすでに「次に流れてくるお皿」の文字へ移動させてください。前のお皿を打ち終えたコンマ数秒の硬直を無くし、次の皿の最初の1文字目をノータイムで打ち込むことで、タイムロスを極限まで減らすことができます。</p>
+    </div>
+
+    <div class="feature-box">
+      <div class="feature-title">【維持管理】コンボ継続による制限時間延長</div>
+      <p>ミスなく打ち続けることで、30コンボごとに制限時間が追加されます。上級者帯では「1回のミスタイプ」がコンボ数の断絶に繋がり、時間の枯渇へ直結します。速さよりも「リズム」を重視し、100%確実に打てる速度を維持することが、最終的な最高金額を押し上げる最大の鍵です。</p>
+    </div>
+
+    <div class="feature-box">
+      <div class="feature-title">【タイムマネジメント】皿の見逃し（スルー）の損得勘定</div>
+      <p>文字数が非常に多く単価が低いネタがレーンの最果てにあり、打ち切るのが時間的に厳しいと判断した場合、あえてその皿を無視して次に来る高単価（大トロ・ウニ等）の皿に全神経を集中させる「戦略的見逃し」も、残り時間を無駄に減らさないための重要な高等戦術です。</p>
+    </div>
+
+    <h2>■ 内部システム仕様</h2>
+    <p>お寿司の流れる速度は、コンボ数が高くなればなるほどスピードアップ（最大0.4秒分の短縮）します。1ミスで見逃しも含めて速度は初期値にリセットされます。また、内部では最大60パターンのローマ字表記ゆれ（<code class="code-text">sha</code>/<code class="code-text">sya</code>、長音を省いた <code class="code-text">samon</code> など）を自動判定しています。</p>
+  </div>
+
+  <div class="nav-action-area">
+    <button id="toggleBtn" class="toggle-btn">上級者説明を表示</button>
+  </div>
+
+</div>
+
+<script>
+  const page1 = document.getElementById('page1');
+  const page2 = document.getElementById('page2');
+  const toggleBtn = document.getElementById('toggleBtn');
+
+  toggleBtn.onclick = () => {
+    if (page1.classList.contains('active')) {
+      page1.classList.remove('active');
+      page2.classList.add('active');
+      toggleBtn.textContent = '基本説明に戻る';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      page2.classList.remove('active');
+      page1.classList.add('active');
+      toggleBtn.textContent = '上級者説明を表示';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+</script>
+</body>
+</html>

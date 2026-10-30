@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ランナーバトル - 横スクロール障害物避け</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; overflow:hidden;
+    background: linear-gradient(135deg, #1a1a2e, #16213e 60%, #0f1b33);
+    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
+    color:#fff;
+  }
+  #wrap { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
+  canvas { display:block; background:#0f0f1a; box-shadow:0 0 50px rgba(0,0,0,0.7); border-radius:6px; }
+
+  #overlay {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; text-align:center; gap:16px; z-index:10;
+    background: rgba(8,8,18,0.92); overflow-y:auto; padding:24px;
+  }
+  #overlay h1 {
+    font-size:2.3em; letter-spacing:3px;
+    background: linear-gradient(90deg,#ff5da2,#ffd75d,#5dc8ff,#7dff5d);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: hueShift 5s linear infinite;
+  }
+  @keyframes hueShift { 0%{background-position:0% 50%;} 100%{background-position:300% 50%;} }
+
+  .panel {
+    background:rgba(255,255,255,0.06); padding:22px 28px; border-radius:18px;
+    border:1px solid rgba(255,255,255,0.12); max-width:640px;
+    animation: panelIn 0.35s ease-out;
+    backdrop-filter: blur(6px);
+  }
+  @keyframes panelIn { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  .row { display:flex; gap:10px; justify-content:center; margin:8px 0; flex-wrap:wrap; }
+  button {
+    font-size:1em; padding:10px 18px; border-radius:10px; border:none; cursor:pointer;
+    background:#3a3a5c; color:#fff; transition:transform 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  button:hover { background:#5a5a8c; transform:translateY(-2px); box-shadow:0 4px 14px rgba(255,255,255,0.15); }
+  button:active { transform:translateY(0) scale(0.97); }
+  button.active { background:#ff5da2; box-shadow:0 0 14px rgba(255,93,162,0.6); }
+  button.waiting { background:#ffd75d; color:#222; animation: pulse 0.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1;} 50%{ opacity:0.6;} }
+  #controlsInfo { font-size:0.85em; opacity:0.85; line-height:1.6; }
+  .hidden { display:none !important; }
+
+  #keybindBox { margin-top:10px; text-align:left; }
+  .keybindPlayer { margin:10px 0; padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); }
+  .keybindPlayer .pname { font-weight:bold; margin-bottom:6px; }
+  .keyrow { display:flex; align-items:center; gap:8px; margin:4px 0; font-size:0.85em; }
+  .keyrow span { width:60px; opacity:0.7; }
+  .keyrow button { padding:4px 10px; font-size:0.85em; min-width:70px; }
+
+  #hud {
+    position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between;
+    align-items:flex-start; font-size:0.9em; pointer-events:none; z-index:5;
+  }
+  #scoreBoard { display:flex; flex-direction:column; gap:6px; }
+  .scoreChip {
+    display:flex; align-items:center; gap:6px; padding:4px 10px; border-radius:20px;
+    background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.15);
+    font-weight:bold; font-size:0.85em; transition:opacity 0.2s;
+  }
+  .scoreChip .dot { width:10px; height:10px; border-radius:50%; box-shadow:0 0 8px currentColor; }
+  .scoreChip .itemIcon { filter:drop-shadow(0 0 4px #7dfaff); }
+  #speedTag {
+    padding:5px 12px; border-radius:20px; background:rgba(0,0,0,0.45);
+    border:1px solid rgba(255,255,255,0.15); font-size:0.85em;
+  }
+  #resultBox { font-size:1.05em; line-height:1.8; }
+  #resultBox .rankRow { display:flex; align-items:center; gap:8px; justify-content:center; }
+  #resultBox .rankMedal { font-size:1.2em; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div style="position:relative;">
+    <canvas id="game" width="900" height="600"></canvas>
+
+    <div id="overlay">
+      <h1>🏃 ランナーバトル</h1>
+
+      <div class="panel">
+        <div>プレイ人数</div>
+        <div class="row" id="playerCountRow">
+          <button data-n="1">1人</button>
+          <button data-n="2">2人</button>
+          <button data-n="3">3人</button>
+          <button data-n="4">4人</button>
+        </div>
+        <div id="controlsInfo"></div>
+
+        <div class="row">
+          <button id="toggleKeybind">キー設定を変更</button>
+        </div>
+        <div id="keybindBox" class="hidden"></div>
+
+        <div class="row">
+          <button id="startBtn">スタート</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="hud" class="hidden">
+      <div id="scoreBoard"></div>
+      <div id="speedTag">SPEED x1.00</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const hud = document.getElementById('hud');
+  const scoreBoard = document.getElementById('scoreBoard');
+  const speedTag = document.getElementById('speedTag');
+  const playerCountRow = document.getElementById('playerCountRow');
+  const controlsInfo = document.getElementById('controlsInfo');
+  const startBtn = document.getElementById('startBtn');
+  const toggleKeybindBtn = document.getElementById('toggleKeybind');
+  const keybindBox = document.getElementById('keybindBox');
+
+  const W = canvas.width, H = canvas.height;
+
+  // ---- プレイヤー基本設定(キーバインドは可変) ----
+  const DEFAULT_CONFIGS = [
+    { name: 'P1', color: '#ff5da2', keys: { left:'a', right:'d', jump:'w' } },
+    { name: 'P2', color: '#5dc8ff', keys: { left:'ArrowLeft', right:'ArrowRight', jump:'ArrowUp' } },
+    { name: 'P3', color: '#7dff5d', keys: { left:'j', right:'l', jump:'i' } },
+    { name: 'P4', color: '#ffd75d', keys: { left:'4', right:'6', jump:'8' } }
+  ];
+
+  const PLAYER_CONFIGS = DEFAULT_CONFIGS.map(c => ({
+    name: c.name, color: c.color, keys: { ...c.keys }
+  }));
+
+  const KEY_LABELS = { left:'左', right:'右', jump:'ジャンプ' };
+
+  let numPlayers = 1;
+  let waitingBind = null;
+
+  playerCountRow.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-n]');
+    if (!btn) return;
+    numPlayers = parseInt(btn.dataset.n, 10);
+    [...playerCountRow.children].forEach(b => b.classList.toggle('active', b === btn));
+    updateControlsInfo();
+    renderKeybindBox();
+  });
+
+  function updateControlsInfo() {
+    let lines = [];
+    for (let i = 0; i < numPlayers; i++) {
+      const cfg = PLAYER_CONFIGS[i];
+      lines.push(`${cfg.name}: ${keyDisplay(cfg.keys.left)}/${keyDisplay(cfg.keys.right)} 移動, ${keyDisplay(cfg.keys.jump)} ジャンプ`);
+    }
+    controlsInfo.innerHTML = lines.join('<br>');
+  }
+
+  function keyDisplay(k) {
+    if (k === ' ') return 'Space';
+    if (k.length === 1) return k.toUpperCase();
+    return k;
+  }
+
+  toggleKeybindBtn.addEventListener('click', () => {
+    keybindBox.classList.toggle('hidden');
+    if (!keybindBox.classList.contains('hidden')) renderKeybindBox();
+  });
+
+  function renderKeybindBox() {
+    if (keybindBox.classList.contains('hidden')) return;
+    let html = '';
+    for (let i = 0; i < numPlayers; i++) {
+      const cfg = PLAYER_CONFIGS[i];
+      html += `<div class="keybindPlayer">`;
+      html += `<div class="pname" style="color:${cfg.color}">${cfg.name}</div>`;
+      ['left','right','jump'].forEach(action => {
+        html += `<div class="keyrow"><span>${KEY_LABELS[action]}</span>`;
+        html += `<button data-pi="${i}" data-action="${action}">${keyDisplay(cfg.keys[action])}</button></div>`;
+      });
+      html += `</div>`;
+    }
+    keybindBox.innerHTML = html;
+
+    keybindBox.querySelectorAll('button[data-pi]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (waitingBind && waitingBind.buttonEl) {
+          waitingBind.buttonEl.classList.remove('waiting');
+          const prevCfg = PLAYER_CONFIGS[waitingBind.playerIndex];
+          waitingBind.buttonEl.textContent = keyDisplay(prevCfg.keys[waitingBind.action]);
+        }
+        const pi = parseInt(btn.dataset.pi, 10);
+        const action = btn.dataset.action;
+        waitingBind = { playerIndex: pi, action, buttonEl: btn };
+        btn.classList.add('waiting');
+        btn.textContent = 'キー入力待ち...';
+      });
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (waitingBind) {
+      e.preventDefault();
+      const cfg = PLAYER_CONFIGS[waitingBind.playerIndex];
+      cfg.keys[waitingBind.action] = e.key;
+      waitingBind.buttonEl.classList.remove('waiting');
+      waitingBind.buttonEl.textContent = keyDisplay(e.key);
+      waitingBind = null;
+      updateControlsInfo();
+      return;
+    }
+  }, true);
+
+  playerCountRow.children[0].classList.add('active');
+  updateControlsInfo();
+
+  startBtn.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    hud.classList.remove('hidden');
+    startGame(numPlayers);
+  });
+
+  // ---- 物理・ゲーム定数 ----
+  const GROUND_Y = H * 0.78;
+  const GRAVITY = 2600;
+  const JUMP_VELOCITY = -900;
+  const BASE_SCROLL_SPEED = 320;
+  const SPEED_ACCEL_PER_SEC = 4.5;
+  const MAX_SCROLL_SPEED = 1100;
+  const PLAYER_SIZE = 34;
+  const OBSTACLE_MIN_GAP = 0.6;
+  const OBSTACLE_MAX_GAP = 1.1;
+  const PIT_MIN_GAP = 2.4;
+  const PIT_MAX_GAP = 4.2;
+  const ITEM_MIN_GAP = 3.0;
+  const ITEM_MAX_GAP = 5.5;
+  const MOVE_SPEED = 260;
+  const MOVE_LIMIT_X = W * 0.5 - PLAYER_SIZE; // 画面左半分まで自由移動
+
+  // 鈍化ゾーン(アイテムを持っている時のジャンプで1回だけ発動)
+  const SLOW_ZONE_RADIUS = 46;
+  const SLOW_ZONE_LIFETIME = 2.2;
+  const SLOW_FACTOR = 0.4;
+
+  const keysDown = {};
+  window.addEventListener('keydown', (e) => {
+    if (waitingBind) return;
+    keysDown[e.key] = true;
+    if ([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+  });
+  window.addEventListener('keyup', (e) => { keysDown[e.key] = false; });
+
+  let running = false;
+  let players = [];
+  let obstacles = [];
+  let pits = [];
+  let items = [];
+  let slowZones = [];
+  let scrollSpeed = BASE_SCROLL_SPEED;
+  let elapsedTime = 0;
+  let nextObstacleTimer = 0;
+  let nextPitTimer = 0;
+  let nextItemTimer = 0;
+  let lastTime = 0;
+  let animFrameId = null;
+
+  class Obstacle {
+    constructor(x, w, h) { this.x = x; this.w = w; this.h = h; }
+  }
+  class Pit {
+    constructor(x, w) { this.x = x; this.w = w; }
+  }
+  class Item {
+    constructor(x) { this.x = x; this.y = GROUND_Y - 60; this.r = 12; this.taken = false; this.bob = Math.random() * Math.PI * 2; }
+  }
+  class SlowZone {
+    constructor(x, ownerIndex) {
+      this.x = x;
+      this.y = GROUND_Y - 6;
+      this.r = SLOW_ZONE_RADIUS;
+      this.life = SLOW_ZONE_LIFETIME;
+      this.ownerIndex = ownerIndex;
+    }
+  }
+
+  class Player {
+    constructor(index, cfg) {
+      this.index = index;
+      this.cfg = cfg;
+      this.x = 30 + index * 40;
+      this.groundY = GROUND_Y;
+      this.y = this.groundY - PLAYER_SIZE;
+      this.vy = 0;
+      this.onGround = true;
+      this.alive = true;
+      this.falling = false;
+      this.score = 0;
+      this.hasItem = false;
+      this.runPhase = Math.random() * Math.PI * 2;
+      this.squash = 0; // 着地/離陸の演出用(-1〜1)
+      this.facing = 1;
+    }
+
+    update(dt) {
+      if (!this.alive) return;
+
+      if (this.falling) {
+        this.vy += GRAVITY * dt;
+        this.y += this.vy * dt;
+        if (this.y > H + 60) this.alive = false;
+        return;
+      }
+
+      const k = this.cfg.keys;
+      const left = !!keysDown[k.left];
+      const right = !!keysDown[k.right];
+      const jumpPressed = !!keysDown[k.jump];
+
+      let speedMul = 1;
+      for (const zone of slowZones) {
+        if (zone.ownerIndex === this.index) continue;
+        const dx = this.x - zone.x;
+        const dy = (this.groundY - 6) - zone.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= zone.r) {
+          speedMul = SLOW_FACTOR;
+          break;
+        }
+      }
+
+      const curMoveSpeed = MOVE_SPEED * speedMul;
+      let moving = false;
+      if (left) { this.x -= curMoveSpeed * dt; this.facing = -1; moving = true; }
+      if (right) { this.x += curMoveSpeed * dt; this.facing = 1; moving = true; }
+      this.x = Math.max(6, Math.min(MOVE_LIMIT_X, this.x));
+
+      // 走行アニメーション位相(常に前進している演出、移動中は速く)
+      const animSpeed = (moving ? 9 : 5) * (scrollSpeed / BASE_SCROLL_SPEED);
+      this.runPhase += dt * animSpeed;
+
+      const wasOnGround = this.onGround;
+
+      if (jumpPressed && this.onGround) {
+        this.vy = JUMP_VELOCITY;
+        this.onGround = false;
+        this.squash = -1; // 伸び演出
+        if (this.hasItem) {
+          this.hasItem = false;
+          slowZones.push(new SlowZone(this.x, this.index));
+        }
+      }
+
+      this.vy += GRAVITY * dt;
+      this.y += this.vy * dt;
+      if (this.y >= this.groundY - PLAYER_SIZE) {
+        this.y = this.groundY - PLAYER_SIZE;
+        if (!wasOnGround) this.squash = 1; // 着地の潰れ演出
+        this.vy = 0;
+        this.onGround = true;
+      }
+
+      // 潰れ・伸び演出を時間で減衰
+      this.squash *= Math.max(0, 1 - dt * 6);
+
+      if (this.alive) this.score += dt * 10;
+    }
+
+    checkFallIntoPit() {
+      if (!this.alive || this.falling || !this.onGround) return;
+      for (const pit of pits) {
+        if (this.x + PLAYER_SIZE * 0.5 > pit.x && this.x + PLAYER_SIZE * 0.5 < pit.x + pit.w) {
+          this.falling = true;
+          this.onGround = false;
+          this.vy = 60;
+          break;
+        }
+      }
+    }
+
+    checkCollisions() {
+      if (!this.alive || this.falling) return;
+      const rect = { x: this.x, y: this.y, w: PLAYER_SIZE, h: PLAYER_SIZE };
+      for (const ob of obstacles) {
+        const obRect = { x: ob.x, y: this.groundY - ob.h, w: ob.w, h: ob.h };
+        if (rectsOverlap(rect, obRect)) { this.alive = false; return; }
+      }
+      if (!this.hasItem) {
+        for (const it of items) {
+          if (it.taken) continue;
+          const dx = (this.x + PLAYER_SIZE / 2) - it.x;
+          const dy = (this.y + PLAYER_SIZE / 2) - it.y;
+          if (Math.sqrt(dx * dx + dy * dy) <= it.r + PLAYER_SIZE / 2) {
+            it.taken = true;
+            this.hasItem = true;
+            break;
+          }
+        }
+      }
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = this.alive ? 1 : Math.max(0, 1 - (this.falling ? 0 : 0.7));
+      if (!this.alive && !this.falling) ctx.globalAlpha = 0.3;
+
+      const cx = this.x + PLAYER_SIZE / 2;
+      const stretch = this.squash; // -1(伸び) 〜 +1(潰れ)
+      const bodyW = PLAYER_SIZE * (1 - stretch * 0.18);
+      const bodyH = PLAYER_SIZE * (1 + stretch * 0.22);
+      const baseY = this.y + PLAYER_SIZE - bodyH;
+
+      // 影
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(cx, this.groundY + 4, PLAYER_SIZE * 0.5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 本体
+      const grad = ctx.createLinearGradient(cx - bodyW/2, baseY, cx + bodyW/2, baseY + bodyH);
+      grad.addColorStop(0, this.cfg.color);
+      grad.addColorStop(1, shade(this.cfg.color, -30));
+      ctx.fillStyle = grad;
+      ctx.shadowColor = this.cfg.color;
+      ctx.shadowBlur = this.alive ? 14 : 0;
+      roundRect(ctx, cx - bodyW / 2, baseY, bodyW, bodyH, 8);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // 目(向いている方向を表現)
+      ctx.fillStyle = '#fff';
+      const eyeX = cx + this.facing * bodyW * 0.16;
+      ctx.beginPath();
+      ctx.arc(eyeX, baseY + bodyH * 0.35, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.arc(eyeX + this.facing * 1.5, baseY + bodyH * 0.35, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // アイテム所持インジケーター
+      if (this.hasItem) {
+        ctx.fillStyle = '#7dfaff';
+        ctx.shadowColor = '#7dfaff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(cx, baseY - 10, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // 名前
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(this.cfg.name, cx, this.y - 16);
+      if (!this.alive) {
+        ctx.fillStyle = '#ff4757';
+        ctx.fillText(this.falling ? '落下!' : 'OUT', cx, this.y - 30);
+      }
+      ctx.textAlign = 'left';
+      ctx.restore();
+    }
+  }
+
+  function shade(hex, percent) {
+    const num = parseInt(hex.slice(1), 16);
+    let r = (num >> 16) + percent;
+    let g = ((num >> 8) & 0x00FF) + percent;
+    let b = (num & 0x0000FF) + percent;
+    r = Math.max(0, Math.min(255, r));
+    g = Math.max(0, Math.min(255, g));
+    b = Math.max(0, Math.min(255, b));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function rectsOverlap(a, b) {
+    const pad = 4;
+    return a.x + pad < b.x + b.w &&
+           a.x + a.w - pad > b.x &&
+           a.y + pad < b.y + b.h &&
+           a.y + a.h - pad > b.y;
+  }
+
+  function startGame(n) {
+    numPlayers = n;
+    players = [];
+    obstacles = [];
+    pits = [];
+    items = [];
+    slowZones = [];
+    for (let i = 0; i < n; i++) {
+      players.push(new Player(i, PLAYER_CONFIGS[i]));
+    }
+    scrollSpeed = BASE_SCROLL_SPEED;
+    elapsedTime = 0;
+    nextObstacleTimer = 0.9;
+    nextPitTimer = 2.5;
+    nextItemTimer = 2.0;
+    running = true;
+    lastTime = performance.now();
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    animFrameId = requestAnimationFrame(loop);
+  }
+
+  function loop(now) {
+    if (!running) return;
+    let dt = (now - lastTime) / 1000;
+    lastTime = now;
+    dt = Math.min(dt, 0.05);
+
+    elapsedTime += dt;
+    scrollSpeed = Math.min(MAX_SCROLL_SPEED, BASE_SCROLL_SPEED + elapsedTime * SPEED_ACCEL_PER_SEC * 10);
+
+    update(dt);
+    render();
+
+    const aliveCount = players.filter(p => p.alive).length;
+    if (aliveCount === 0) {
+      endGame();
+      return;
+    }
+
+    animFrameId = requestAnimationFrame(loop);
+  }
+
+  function update(dt) {
+    nextObstacleTimer -= dt;
+    if (nextObstacleTimer <= 0) {
+      const h = 30 + Math.random() * 40;
+      const w = 22 + Math.random() * 20;
+      obstacles.push(new Obstacle(W + 40, w, h));
+      nextObstacleTimer = OBSTACLE_MIN_GAP + Math.random() * (OBSTACLE_MAX_GAP - OBSTACLE_MIN_GAP);
+    }
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      obstacles[i].x -= scrollSpeed * dt;
+      if (obstacles[i].x + obstacles[i].w < -40) {
+        obstacles.splice(i, 1);
+        players.forEach(p => { if (p.alive) p.score += 1; });
+      }
+    }
+
+    nextPitTimer -= dt;
+    if (nextPitTimer <= 0) {
+      const w = 60 + Math.random() * 70;
+      pits.push(new Pit(W + 40, w));
+      nextPitTimer = PIT_MIN_GAP + Math.random() * (PIT_MAX_GAP - PIT_MIN_GAP);
+    }
+    for (let i = pits.length - 1; i >= 0; i--) {
+      pits[i].x -= scrollSpeed * dt;
+      if (pits[i].x + pits[i].w < -40) pits.splice(i, 1);
+    }
+
+    nextItemTimer -= dt;
+    if (nextItemTimer <= 0) {
+      items.push(new Item(W + 40));
+      nextItemTimer = ITEM_MIN_GAP + Math.random() * (ITEM_MAX_GAP - ITEM_MIN_GAP);
+    }
+    for (let i = items.length - 1; i >= 0; i--) {
+      items[i].x -= scrollSpeed * dt;
+      items[i].bob += dt * 4;
+      if (items[i].taken || items[i].x < -40) items.splice(i, 1);
+    }
+
+    for (let i = slowZones.length - 1; i >= 0; i--) {
+      slowZones[i].life -= dt;
+      if (slowZones[i].life <= 0) slowZones.splice(i, 1);
+    }
+
+    players.forEach(p => p.update(dt));
+    players.forEach(p => p.checkFallIntoPit());
+    players.forEach(p => p.checkCollisions());
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#151530');
+    bgGrad.addColorStop(1, '#0c0c1c');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // 速度感を出すスクロールする地面の縞模様
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 2;
+    const stripeOffset = (elapsedTime * scrollSpeed) % 60;
+    for (let x = -stripeOffset; x < W; x += 60) {
+      ctx.beginPath();
+      ctx.moveTo(x, GROUND_Y + 10);
+      ctx.lineTo(x - 20, H);
+      ctx.stroke();
+    }
+
+    // 落とし穴
+    pits.forEach(pit => {
+      const g = ctx.createLinearGradient(0, GROUND_Y, 0, GROUND_Y + 40);
+      g.addColorStop(0, '#000');
+      g.addColorStop(1, '#1a0a24');
+      ctx.fillStyle = g;
+      ctx.fillRect(pit.x, GROUND_Y, pit.w, 40);
+      ctx.strokeStyle = '#442255';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(pit.x, GROUND_Y, pit.w, 40);
+    });
+
+    // 地面ライン(穴の部分は途切れる)
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 2;
+    let gx = 0;
+    const sortedPits = [...pits].sort((a, b) => a.x - b.x);
+    sortedPits.forEach(pit => {
+      ctx.beginPath();
+      ctx.moveTo(gx, GROUND_Y);
+      ctx.lineTo(pit.x, GROUND_Y);
+      ctx.stroke();
+      gx = pit.x + pit.w;
+    });
+    ctx.beginPath();
+    ctx.moveTo(gx, GROUND_Y);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+
+    // 鈍化ゾーン
+    slowZones.forEach(zone => {
+      const alpha = Math.max(0, zone.life / SLOW_ZONE_LIFETIME) * 0.4;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(120,200,255,${alpha})`;
+      ctx.ellipse(zone.x, zone.y, zone.r, zone.r * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // アイテム(浮遊アニメーション)
+    items.forEach(it => {
+      if (it.taken) return;
+      const yy = it.y + Math.sin(it.bob) * 6;
+      ctx.save();
+      ctx.translate(it.x, yy);
+      ctx.rotate(it.bob * 0.5);
+      ctx.fillStyle = '#7dfaff';
+      ctx.shadowColor = '#7dfaff';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(0, -it.r);
+      ctx.lineTo(it.r, 0);
+      ctx.lineTo(0, it.r);
+      ctx.lineTo(-it.r, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // 障害物
+    obstacles.forEach(ob => {
+      const g = ctx.createLinearGradient(ob.x, GROUND_Y - ob.h, ob.x, GROUND_Y);
+      g.addColorStop(0, '#ff6b81');
+      g.addColorStop(1, '#c0392b');
+      ctx.fillStyle = g;
+      roundRect(ctx, ob.x, GROUND_Y - ob.h, ob.w, ob.h, 4);
+      ctx.fill();
+    });
+
+    players.forEach(p => p.draw(ctx));
+
+    // HUD更新
+    renderHud();
+  }
+
+  function renderHud() {
+    scoreBoard.innerHTML = players.map(p => `
+      <div class="scoreChip" style="opacity:${p.alive || p.falling ? 1 : 0.5}">
+        <span class="dot" style="background:${p.cfg.color}; color:${p.cfg.color}"></span>
+        ${p.cfg.name}: ${Math.floor(p.score)}
+        ${p.hasItem ? '<span class="itemIcon">♦</span>' : ''}
+        ${(!p.alive) ? ' ✕' : ''}
+      </div>
+    `).join('');
+    speedTag.textContent = `SPEED x${(scrollSpeed / BASE_SCROLL_SPEED).toFixed(2)}`;
+  }
+
+  function endGame() {
+    running = false;
+    const ranking = [...players].sort((a, b) => b.score - a.score);
+    const medals = ['🥇', '🥈', '🥉', '🏅'];
+    let html = '<div class="panel"><h2 style="margin-bottom:10px;">🏁 ゲーム終了</h2><div id="resultBox">';
+    ranking.forEach((p, i) => {
+      html += `<div class="rankRow" style="color:${p.cfg.color}"><span class="rankMedal">${medals[i] || '🏅'}</span>${p.cfg.name} - スコア ${Math.floor(p.score)}</div>`;
+    });
+    html += '</div><div class="row"><button id="retryBtn">もう一度</button></div></div>';
+
+    overlay.innerHTML = html;
+    overlay.classList.remove('hidden');
+    hud.classList.add('hidden');
+
+    document.getElementById('retryBtn').addEventListener('click', () => {
+      overlay.classList.add('hidden');
+      hud.classList.remove('hidden');
+      startGame(numPlayers);
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

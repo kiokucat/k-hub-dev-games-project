@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゴースト回転台 ｜ 回転寿司タイピング記録掲示板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --washi:#efe3c8; --washi-deep:#e4d3a9;
+    --noren:#1b3350; --noren-deep:#0c1e33;
+    --wood:#b8895f; --wood-light:#e3c49a; --wood-deep:#8a5f3c;
+    --urushi:#1b1714; --urushi-soft:#2c2620;
+    --gold:#b8903f; --gold-bright:#d9b56b; --gold-pale:#efd9a4;
+    --shu:#a8402c; --shu-deep:#7e2e20;
+    --matsu:#3c6e52; --matsu-deep:#2a4f3a;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001s !important; animation-iteration-count:1 !important; transition-duration:.001s !important;}
+  }
+  html,body{margin:0;padding:0;min-height:100%;background:var(--washi-deep);color:var(--urushi);
+    font-family:"Zen Kaku Gothic New","Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;}
+  html{
+    background-image:
+      radial-gradient(circle at 20px 0, rgba(184,144,63,.14) 20px, transparent 21px),
+      radial-gradient(circle at 20px 50px, rgba(184,144,63,.14) 20px, transparent 21px);
+    background-size:40px 46px;
+  }
+  h1,h2,h3{font-family:"Shippori Mincho",serif;margin:0;}
+  #app{max-width:980px;margin:0 auto;padding:0 0 60px;}
+
+  /* ---------- header (noren) ---------- */
+  .noren-head{
+    background:linear-gradient(180deg,var(--noren),var(--noren-deep));
+    color:var(--gold-pale);padding:28px 20px 34px;text-align:center;
+    border-bottom:6px solid var(--gold);position:relative;
+  }
+  .noren-head::after{
+    content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;
+    background:repeating-linear-gradient(90deg,var(--noren) 0 2px,transparent 2px 40px);
+  }
+  .noren-head h1{font-size:clamp(24px,4.5vw,36px);letter-spacing:.08em;}
+  .noren-head .sub{margin-top:8px;font-size:13px;color:var(--gold-bright);letter-spacing:.05em;}
+
+  /* ---------- ticker (conveyor belt) ---------- */
+  .belt{overflow:hidden;background:var(--wood-deep);padding:12px 0;border-bottom:3px solid var(--urushi);}
+  .belt-track{display:flex;gap:22px;width:max-content;animation:beltScroll 34s linear infinite;}
+  .belt:hover .belt-track{animation-play-state:paused;}
+  @keyframes beltScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .plate{
+    flex:0 0 auto;width:150px;background:radial-gradient(ellipse at 50% 40%,#fff 0%,var(--washi) 55%,var(--wood-light) 100%);
+    border-radius:50%;padding:14px 10px;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.25),0 6px 8px rgba(0,0,0,.2);
+    border:3px solid var(--shu);cursor:pointer;
+  }
+  .plate:nth-child(3n+2){border-color:var(--matsu);}
+  .plate:nth-child(3n){border-color:var(--gold);}
+  .plate .p-stage{font-size:11px;font-weight:700;color:var(--urushi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .plate .p-name{font-size:10px;color:var(--noren-deep);margin-top:2px;}
+  .plate .p-money{font-size:12px;color:var(--shu-deep);font-weight:700;margin-top:4px;}
+  .belt-empty{color:var(--gold-pale);font-size:13px;padding:0 20px;}
+
+  main{padding:26px 18px 0;}
+  section.card-box{background:var(--washi);border:1px solid var(--wood);border-radius:6px;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);padding:20px;margin-bottom:22px;}
+  section.card-box h2{font-size:18px;color:var(--noren-deep);border-left:6px solid var(--shu);padding-left:10px;margin-bottom:14px;}
+
+  label{display:block;font-size:13px;color:var(--urushi-soft);margin:10px 0 4px;font-weight:700;}
+  input[type=text],textarea,select{
+    width:100%;padding:9px 10px;border:1px solid var(--wood);border-radius:4px;background:#fff;
+    font-family:inherit;font-size:14px;color:var(--urushi);
+  }
+  textarea{resize:vertical;min-height:60px;}
+  .file-drop{
+    border:2px dashed var(--wood);border-radius:6px;padding:18px;text-align:center;cursor:pointer;
+    background:var(--washi-deep);color:var(--wood-deep);font-size:13px;transition:background .15s;
+  }
+  .file-drop:hover{background:var(--wood-light);}
+  .file-drop.has-file{border-style:solid;border-color:var(--matsu);color:var(--matsu-deep);background:#fff;}
+  .preview-box{margin-top:12px;padding:10px 14px;background:#fff;border:1px solid var(--matsu);border-radius:4px;font-size:13px;line-height:1.7;}
+  .preview-box b{color:var(--matsu-deep);}
+  .preview-box.err{border-color:var(--shu);color:var(--shu-deep);}
+
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:5px;padding:10px 18px;font-size:14px;font-weight:700;letter-spacing:.03em;}
+  .btn-main{background:var(--shu);color:#fff;margin-top:14px;}
+  .btn-main:disabled{background:#b79a8f;cursor:not-allowed;}
+  .btn-main:hover:not(:disabled){background:var(--shu-deep);}
+  .btn-sub{background:var(--wood);color:#fff;}
+  .btn-sub:hover{background:var(--wood-deep);}
+  .btn-ghost{background:transparent;border:1px solid var(--noren);color:var(--noren);}
+
+  .filter-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:end;}
+  .filter-bar > div{flex:1;min-width:160px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .g-card{position:relative;background:var(--washi);border:1px solid var(--wood);border-radius:6px;padding:14px 16px;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:6px;}
+  .g-version{position:absolute;top:10px;right:12px;font-size:10px;font-weight:700;color:#fff;background:var(--noren);
+    padding:2px 9px;border-radius:10px;letter-spacing:.03em;}
+  .g-version.unknown{background:var(--wood-deep);}
+  .g-card .g-stage{font-size:15px;font-weight:700;color:var(--noren-deep);padding-right:52px;}
+  .g-card .g-name{font-size:12px;color:var(--wood-deep);}
+  .g-card .g-msg{font-size:12px;color:var(--urushi-soft);font-style:italic;min-height:16px;}
+  .g-card .g-stats{display:flex;gap:10px;font-size:12px;color:var(--matsu-deep);margin-top:2px;}
+  .g-card .g-date{font-size:11px;color:#8a7f6d;}
+  .g-card .g-actions{display:flex;gap:8px;margin-top:8px;}
+  .g-card .g-actions button{flex:1;padding:7px 8px;font-size:12px;}
+  .empty-note{color:var(--wood-deep);font-size:13px;text-align:center;padding:20px;}
+
+  /* ---------- detail overlay (お品書き＋絵馬棚) ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(12,20,33,.55);display:flex;align-items:flex-start;justify-content:center;
+    padding:40px 14px;overflow-y:auto;z-index:50;}
+  .overlay.hidden{display:none;}
+  .tray{background:var(--washi);border-radius:8px;max-width:640px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.4);
+    border:1px solid var(--wood);overflow:hidden;}
+  .tray-head{background:var(--noren);color:var(--gold-pale);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;}
+  .tray-head h3{font-size:17px;}
+  .tray-close{background:transparent;color:var(--gold-pale);font-size:20px;padding:2px 8px;}
+  .tray-body{padding:18px 20px;}
+  .tray-stats{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--noren-deep);margin-bottom:6px;}
+  .tray-stats b{color:var(--shu-deep);}
+  .tray-msg{background:#fff;border:1px solid var(--wood);border-radius:4px;padding:10px 12px;font-size:13px;margin:10px 0;}
+
+  .ema-rail{height:8px;background:var(--wood-deep);border-radius:2px;margin:18px 0 26px;position:relative;}
+  .ema-rack{display:flex;flex-direction:column;gap:12px;padding-top:14px;}
+  .ema{
+    width:fit-content;min-width:180px;max-width:100%;background:var(--gold-pale);border:2px solid var(--wood-deep);
+    clip-path:polygon(0 12%,50% 0,100% 12%,100% 100%,0 100%);
+    padding:18px 14px 10px;font-size:12px;color:var(--urushi);text-align:left;position:relative;
+    box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+  .ema::before{content:"";position:absolute;top:-14px;left:24px;width:2px;height:14px;background:var(--wood-deep);}
+  .ema .e-name{font-weight:700;color:var(--shu-deep);display:block;margin-bottom:4px;}
+  .ema .e-content{word-break:break-word;line-height:1.5;}
+  .ema-reply-btn{background:transparent;border:none;color:var(--noren);font-size:11px;padding:4px 0 0;font-weight:700;text-decoration:underline;}
+  .no-comments{color:var(--wood-deep);font-size:12px;padding:10px 0;}
+  #replyBanner{display:none;background:var(--wood-light);border-radius:4px;padding:6px 10px;font-size:12px;margin:10px 0;color:var(--urushi-soft);}
+  #replyBanner button{margin-left:8px;padding:2px 8px;font-size:11px;background:var(--wood);color:#fff;}
+
+  .comment-form{margin-top:20px;border-top:1px dashed var(--wood);padding-top:16px;}
+
+  /* ---------- 内緒話（プライベートチャット） ---------- */
+  #chatMessages{max-height:260px;overflow-y:auto;background:#fff;border:1px solid var(--wood);border-radius:4px;padding:10px;margin-bottom:10px;}
+  .chat-msg{margin-bottom:8px;font-size:13px;line-height:1.5;}
+  .chat-msg b{color:var(--shu-deep);}
+  .chat-time{color:#9a8f7c;font-size:10px;margin-left:6px;}
+  .chat-note{font-size:11px;color:var(--wood-deep);margin-top:8px;}
+
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--urushi);color:#fff;
+    padding:10px 20px;border-radius:20px;font-size:13px;box-shadow:0 4px 10px rgba(0,0,0,.3);z-index:100;
+    opacity:0;pointer-events:none;transition:opacity .3s;}
+  #toast.show{opacity:1;}
+
+  footer{text-align:center;font-size:11px;color:var(--wood-deep);padding:20px 0 4px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="noren-head">
+    <h1>幽霊回転台 〜 ゴースト共有掲示板〜</h1>
+    <div class="sub">回転寿司タイピングの .ghost / .ghost-2 / .ghost-3 ファイルを流して、みんなの記録と対戦しよう</div>
+  </header>
+
+  <div class="belt">
+    <div class="belt-track" id="beltTrack">
+      <div class="belt-empty">読み込み中…</div>
+    </div>
+  </div>
+
+  <main>
+    <section class="card-box">
+      <h2>ゴーストを投稿する</h2>
+      <div class="file-drop" id="fileDrop">.ghost / .ghost-2 / .ghost-3 ファイルをクリックして選択</div>
+      <input type="file" id="fileInput" accept=".ghost-3,.ghost-2,.ghost,.txt,.json" style="display:none;">
+      <div id="previewBox" style="display:none;"></div>
+      <div id="manualFields" style="display:none;">
+        <label for="manualStageName">ステージ名（自動解析できなかった場合は手入力してください）</label>
+        <input type="text" id="manualStageName" maxlength="40" placeholder="例：本日のおすすめ 上級">
+      </div>
+
+      <label for="posterName">投稿者名</label>
+      <input type="text" id="posterName" maxlength="16" placeholder="例：しゃりまる">
+
+      <label for="posterMsg">ひとこと（任意）</label>
+      <textarea id="posterMsg" maxlength="140" placeholder="例：ラス皿だけ本気出しました"></textarea>
+
+      <button class="btn-main" id="submitPostBtn" disabled>この記録を流す</button>
+      <div id="postStatus" style="margin-top:8px;font-size:12px;color:var(--wood-deep);"></div>
+    </section>
+
+    <section class="card-box">
+      <h2>並んでいるゴースト</h2>
+      <div class="filter-bar">
+        <div>
+          <label for="stageFilter">ステージで絞り込む</label>
+          <select id="stageFilter"><option value="">すべて</option></select>
+        </div>
+        <div>
+          <label for="sortSelect">並び順</label>
+          <select id="sortSelect">
+            <option value="new">新着順</option>
+            <option value="money">稼いだ金額順</option>
+          </select>
+        </div>
+        <div><button class="btn-sub" id="refreshBtn">更新</button></div>
+      </div>
+      <div style="height:16px;"></div>
+      <div class="grid" id="grid"><div class="empty-note">読み込み中…</div></div>
+    </section>
+    <section class="card-box" id="chatSection">
+      <h2>🔒 内緒話（合言葉チャット）</h2>
+      <div id="chatJoinBox">
+        <label for="chatRoomInput">合言葉（部屋の名前）</label>
+        <input type="text" id="chatRoomInput" maxlength="40" placeholder="例：しゃりまるとねこまる">
+        <label for="chatMyName">あなたの名前</label>
+        <input type="text" id="chatMyName" maxlength="16" placeholder="例：しゃりまる">
+        <button class="btn-main" id="chatJoinBtn">この部屋に入る</button>
+        <div class="chat-note">※ログイン機能はありません。同じ合言葉を知っていれば誰でも読める簡易的な仕組みなので、本当に秘密にしたい内容の共有は避けてください。</div>
+      </div>
+      <div id="chatRoomBox" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <b id="chatRoomLabel"></b>
+          <button class="btn-ghost" id="chatLeaveBtn">部屋を出る</button>
+        </div>
+        <div id="chatMessages"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="chatInput" maxlength="300" placeholder="メッセージを入力">
+          <button class="btn-main" id="chatSendBtn" style="margin-top:0;">送信</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Supabase Storage &amp; Database で運用中／画像・音声等の著作権は各自の責任でご利用ください</footer>
+</div>
+
+<div class="overlay hidden" id="detailOverlay">
+  <div class="tray">
+    <div class="tray-head">
+      <h3 id="detailTitle">-</h3>
+      <button class="tray-close" id="closeDetailBtn">×</button>
+    </div>
+    <div class="tray-body">
+      <div class="tray-stats" id="detailStats"></div>
+      <div class="tray-msg" id="detailMsg" style="display:none;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-main" id="detailDownloadBtn" style="margin-top:0;">このゴーストをダウンロード</button>
+      </div>
+
+      <div class="ema-rail"></div>
+      <h3 style="font-size:14px;color:var(--noren-deep);">絵馬掛け（コメント）</h3>
+      <div class="ema-rack" id="emaRack"></div>
+
+      <div class="comment-form">
+        <div id="replyBanner"></div>
+        <label for="commentName">名前</label>
+        <input type="text" id="commentName" maxlength="16" placeholder="例：通りすがりの職人">
+        <label for="commentText">コメント</label>
+        <textarea id="commentText" maxlength="200" placeholder="対戦した感想など"></textarea>
+        <button class="btn-main" id="submitCommentBtn">絵馬を掛ける</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+
+  // ============ Supabase 設定 ============
+  const SUPABASE_URL = 'https://vbhnvgjqsndgwxctutap.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_zUIQPdwcEWgk3RHgwzGFAw_CTlQNkHp';
+  const BUCKET_NAME = 'ghost_file';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ============ ゴーストファイル 復号（ゲーム本体と同じロジック） ============
+  const GHOST_CIPHER_KEY = "sushida-ghost-v1-himitsu";
+  function decryptGhostPayload(text){
+    if(!text.startsWith("SUSHIGHOST1:")) throw new Error("invalid ghost file format");
+    const bin = atob(text.slice("SUSHIGHOST1:".length));
+    const bytes = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    const out = new Uint8Array(bytes.length);
+    for(let i=0;i<bytes.length;i++) out[i] = bytes[i] ^ GHOST_CIPHER_KEY.charCodeAt(i % GHOST_CIPHER_KEY.length);
+    return new TextDecoder().decode(out);
+  }
+
+  // ============ 状態 ============
+  let posts = [];
+  let selectedFile = null;
+  let parsedPayload = null;
+  let currentDetail = null;
+
+  // ============ DOM ============
+  const $ = (id)=>document.getElementById(id);
+  const fileDrop = $("fileDrop"), fileInput = $("fileInput"), previewBox = $("previewBox");
+  const manualFields = $("manualFields"), manualStageName = $("manualStageName");
+  const posterName = $("posterName"), posterMsg = $("posterMsg");
+  const submitPostBtn = $("submitPostBtn"), postStatus = $("postStatus");
+  const grid = $("grid"), beltTrack = $("beltTrack");
+  const stageFilter = $("stageFilter"), sortSelect = $("sortSelect"), refreshBtn = $("refreshBtn");
+  const detailOverlay = $("detailOverlay"), detailTitle = $("detailTitle"), detailStats = $("detailStats");
+  const detailMsg = $("detailMsg"), detailDownloadBtn = $("detailDownloadBtn"), emaRack = $("emaRack");
+  const closeDetailBtn = $("closeDetailBtn"), commentName = $("commentName"), commentText = $("commentText");
+  const submitCommentBtn = $("submitCommentBtn"), toast = $("toast");
+  const replyBanner = $("replyBanner");
+  const chatJoinBox = $("chatJoinBox"), chatRoomBox = $("chatRoomBox"), chatRoomInput = $("chatRoomInput");
+  const chatMyNameInput = $("chatMyName"), chatJoinBtn = $("chatJoinBtn"), chatLeaveBtn = $("chatLeaveBtn");
+  const chatRoomLabel = $("chatRoomLabel"), chatMessagesBox = $("chatMessages"), chatInput = $("chatInput"), chatSendBtn = $("chatSendBtn");
+
+  function showToast(msg){
+    toast.textContent = msg; toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove("show"), 2600);
+  }
+  function fmtDate(ts){
+    const d = new Date(ts);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  }
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function errMsg(err){
+    if(!err) return "不明なエラー";
+    const m = err.message || err.error_description || err.hint || err.details;
+    if(m) return m;
+    try{ return JSON.stringify(err); }catch(e){ return String(err); }
+  }
+
+  // ============ ファイル選択 ============
+  fileDrop.onclick = ()=> fileInput.click();
+  fileInput.onchange = async ()=>{
+    const file = fileInput.files[0];
+    if(!file) return;
+    selectedFile = null; parsedPayload = null;
+    previewBox.style.display = "block";
+    previewBox.className = "";
+    manualFields.style.display = "none";
+    let raw = "";
+    try{
+      raw = (await file.text()).trim();
+      const json = decryptGhostPayload(raw);
+      const payload = JSON.parse(json);
+      const ghost = payload.ghost;
+      if(!ghost || !Array.isArray(ghost.words) || !ghost.words.length) throw new Error("ghost.words が空、またはghost自体がありません");
+      const missCount = ghost.words.reduce((a,w)=>a+((w.misses||[]).length),0);
+      parsedPayload = payload;
+      selectedFile = file;
+      fileDrop.textContent = `選択中：${file.name}`;
+      fileDrop.classList.add("has-file");
+      previewBox.classList.add("preview-box");
+      previewBox.innerHTML =
+        `<b>形式：</b>v${payload.v!=null?payload.v:1}　`+
+        `<b>ステージ：</b>${esc(payload.stageName||payload.stageId||"不明")}<br>`+
+        `<b>稼いだ金額：</b>${(ghost.money||0).toLocaleString()}円　`+
+        `<b>ミス：</b>${missCount}回　<b>単語数：</b>${ghost.words.length}語`;
+      submitPostBtn.disabled = !posterName.value.trim();
+    }catch(err){
+      // 今の形式(SUSHIGHOST1)で解析できなくても、将来の .ghost-3 等の新形式かもしれないので
+      // ファイル自体はそのまま受け付けて、ステージ名だけ手入力してもらう。
+      console.error("ghostファイル解析エラー:", err, "先頭抜粋:", raw.slice(0,40));
+      parsedPayload = null;
+      selectedFile = file;
+      fileDrop.textContent = `選択中：${file.name}（自動解析なし）`;
+      fileDrop.classList.add("has-file");
+      previewBox.classList.add("preview-box");
+      previewBox.innerHTML =
+        `この形式は自動解析できませんでした（新しいバージョンの可能性があります）。ファイルはこのまま投稿できますが、下にステージ名を手入力してください。<br>`+
+        `<small style="color:var(--shu-deep);">エラー詳細：${esc(errMsg(err))}<br>ファイル先頭：${esc(raw.slice(0,40))||"(読み取れず)"}</small>`;
+      manualFields.style.display = "block";
+      submitPostBtn.disabled = !(posterName.value.trim() && manualStageName.value.trim());
+    }
+  };
+  posterName.oninput = updateSubmitEnabled;
+  manualStageName.oninput = updateSubmitEnabled;
+  function updateSubmitEnabled(){
+    if(!selectedFile){ submitPostBtn.disabled = true; return; }
+    if(parsedPayload){ submitPostBtn.disabled = !posterName.value.trim(); }
+    else{ submitPostBtn.disabled = !(posterName.value.trim() && manualStageName.value.trim()); }
+  }
+
+  // ============ 投稿 ============
+  submitPostBtn.onclick = async ()=>{
+    if(!selectedFile) return;
+    submitPostBtn.disabled = true;
+    postStatus.textContent = "投稿中…";
+    try{
+      let row;
+      const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+      if(parsedPayload){
+        const ghost = parsedPayload.ghost;
+        const missCount = ghost.words.reduce((a,w)=>a+((w.misses||[]).length),0);
+        const stageId = parsedPayload.stageId || "unknown";
+        const path = `${stageId}/${Date.now()}_${Math.random().toString(36).slice(2,7)}_${safeName}`;
+        const { error: upErr } = await sb.storage.from(BUCKET_NAME).upload(path, selectedFile, { contentType:"text/plain", upsert:false });
+        if(upErr) throw upErr;
+        row = {
+          stage_id: stageId,
+          stage_name: parsedPayload.stageName || stageId,
+          poster_name: posterName.value.trim().slice(0,16),
+          message: posterMsg.value.trim().slice(0,140) || null,
+          money: ghost.money || 0,
+          miss_count: missCount,
+          word_count: ghost.words.length,
+          file_path: path,
+          file_name: selectedFile.name,
+          file_version: `v${parsedPayload.v!=null?parsedPayload.v:1}`,
+        };
+      }else{
+        const stageName = manualStageName.value.trim().slice(0,40);
+        const path = `manual/${Date.now()}_${Math.random().toString(36).slice(2,7)}_${safeName}`;
+        const { error: upErr } = await sb.storage.from(BUCKET_NAME).upload(path, selectedFile, { contentType:"text/plain", upsert:false });
+        if(upErr) throw upErr;
+        row = {
+          stage_id: "unknown",
+          stage_name: stageName,
+          poster_name: posterName.value.trim().slice(0,16),
+          message: posterMsg.value.trim().slice(0,140) || null,
+          money: 0, miss_count: 0, word_count: 0,
+          file_path: path,
+          file_name: selectedFile.name,
+          file_version: "不明",
+        };
+      }
+      const { error: insErr } = await sb.from("ghost_posts").insert(row);
+      if(insErr) throw insErr;
+
+      postStatus.textContent = "";
+      showToast("ゴーストを流しました！");
+      fileInput.value = ""; selectedFile = null; parsedPayload = null;
+      fileDrop.textContent = ".ghost / .ghost-2 / .ghost-3 ファイルをクリックして選択";
+      fileDrop.classList.remove("has-file");
+      previewBox.style.display = "none";
+      manualFields.style.display = "none";
+      manualStageName.value = "";
+      posterMsg.value = "";
+      await loadPosts();
+    }catch(err){
+      console.error(err);
+      postStatus.textContent = "投稿に失敗しました：" + errMsg(err);
+      submitPostBtn.disabled = false;
+    }
+  };
+
+  // ============ 一覧読み込み ============
+  async function loadPosts(){
+    grid.innerHTML = `<div class="empty-note">読み込み中…</div>`;
+    try{
+      const { data, error } = await sb.from("ghost_posts").select("*").order("created_at",{ascending:false}).limit(200);
+      if(error) throw error;
+      posts = data || [];
+      renderStageFilter();
+      renderBelt();
+      renderGrid();
+    }catch(err){
+      console.error(err);
+      grid.innerHTML = `<div class="empty-note">読み込みに失敗しました：${esc(errMsg(err))}</div>`;
+      beltTrack.innerHTML = `<div class="belt-empty">読み込みエラー：${esc(errMsg(err))}</div>`;
+    }
+  }
+
+  function renderStageFilter(){
+    const cur = stageFilter.value;
+    const stages = Array.from(new Set(posts.map(p=>p.stage_name))).sort();
+    stageFilter.innerHTML = `<option value="">すべて</option>` + stages.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    if(stages.includes(cur)) stageFilter.value = cur;
+  }
+
+  function renderBelt(){
+    if(!posts.length){ beltTrack.innerHTML = `<div class="belt-empty">まだ誰もゴーストを流していません。最初の一皿をどうぞ。</div>`; return; }
+    const items = posts.slice(0,16);
+    const html = items.map(p=>`
+      <div class="plate" data-id="${p.id}">
+        <div class="p-stage">${esc(p.stage_name)}</div>
+        <div class="p-name">${esc(p.poster_name)}</div>
+        <div class="p-money">${(p.money||0).toLocaleString()}円</div>
+      </div>`).join("");
+    beltTrack.innerHTML = html + html; // シームレスループ用に複製
+    beltTrack.querySelectorAll(".plate").forEach(el=>{
+      el.onclick = ()=> openDetail(el.dataset.id);
+    });
+  }
+
+  function getFiltered(){
+    let list = posts.slice();
+    if(stageFilter.value) list = list.filter(p=>p.stage_name===stageFilter.value);
+    if(sortSelect.value==="money") list.sort((a,b)=>(b.money||0)-(a.money||0));
+    else list.sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
+    return list;
+  }
+
+  function renderGrid(){
+    const list = getFiltered();
+    if(!list.length){ grid.innerHTML = `<div class="empty-note">条件に合うゴーストがありません。</div>`; return; }
+    grid.innerHTML = list.map(p=>`
+      <div class="g-card">
+        <span class="g-version${p.file_version==='不明'?' unknown':''}">${esc(p.file_version||'v1')}</span>
+        <div class="g-stage">${esc(p.stage_name)}</div>
+        <div class="g-name">投稿者：${esc(p.poster_name)}</div>
+        <div class="g-msg">${p.message ? esc(p.message) : ""}</div>
+        <div class="g-stats"><span>💰${(p.money||0).toLocaleString()}円</span><span>❌${p.miss_count||0}</span><span>📝${p.word_count||0}語</span></div>
+        <div class="g-date">${fmtDate(p.created_at)}</div>
+        <div class="g-actions">
+          <button class="btn-sub" data-act="open" data-id="${p.id}">詳細・コメント</button>
+          <button class="btn-ghost" data-act="dl" data-id="${p.id}">DL</button>
+        </div>
+      </div>`).join("");
+    grid.querySelectorAll("[data-act=open]").forEach(b=> b.onclick = ()=> openDetail(b.dataset.id));
+    grid.querySelectorAll("[data-act=dl]").forEach(b=> b.onclick = ()=> downloadPost(b.dataset.id));
+  }
+
+  stageFilter.onchange = renderGrid;
+  sortSelect.onchange = renderGrid;
+  refreshBtn.onclick = loadPosts;
+
+  // ============ ダウンロード ============
+  async function downloadPost(id){
+    const post = posts.find(p=>String(p.id)===String(id));
+    if(!post) return;
+    try{
+      const { data, error } = await sb.storage.from(BUCKET_NAME).download(post.file_path);
+      if(error) throw error;
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url; a.download = post.file_name || "ghost.ghost-2";
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }catch(err){
+      console.error(err);
+      showToast("ダウンロードに失敗：" + errMsg(err));
+    }
+  }
+  detailDownloadBtn.onclick = ()=>{ if(currentDetail) downloadPost(currentDetail.id); };
+
+  // ============ 詳細パネル ＆ コメント ============
+  async function openDetail(id){
+    const post = posts.find(p=>String(p.id)===String(id));
+    if(!post) return;
+    currentDetail = post;
+    detailTitle.textContent = `${post.stage_name}`;
+    detailStats.innerHTML =
+      `<span>投稿者：<b>${esc(post.poster_name)}</b></span>`+
+      `<span>形式：<b>${esc(post.file_version||'v1')}</b></span>`+
+      `<span>金額：<b>${(post.money||0).toLocaleString()}円</b></span>`+
+      `<span>ミス：<b>${post.miss_count||0}</b></span>`+
+      `<span>単語：<b>${post.word_count||0}</b></span>`+
+      `<span>${fmtDate(post.created_at)}</span>`;
+    if(post.message){ detailMsg.style.display="block"; detailMsg.textContent = post.message; }
+    else { detailMsg.style.display="none"; }
+    commentName.value = ""; commentText.value = "";
+    replyTarget = null; replyBanner.style.display = "none";
+    emaRack.innerHTML = `<div class="no-comments">読み込み中…</div>`;
+    detailOverlay.classList.remove("hidden");
+    await loadComments(post.id);
+  }
+  closeDetailBtn.onclick = ()=>{ detailOverlay.classList.add("hidden"); currentDetail=null; };
+  detailOverlay.onclick = (e)=>{ if(e.target===detailOverlay){ detailOverlay.classList.add("hidden"); currentDetail=null; } };
+
+  let replyTarget = null; // {id, name} or null(トップレベル投稿)
+
+  function setReplyTarget(id, name){
+    replyTarget = {id, name};
+    replyBanner.style.display = "block";
+    replyBanner.innerHTML = `${esc(name)} さんへ返信中 <button id="cancelReplyBtn">キャンセル</button>`;
+    $("cancelReplyBtn").onclick = ()=>{ replyTarget = null; replyBanner.style.display="none"; };
+    commentText.focus();
+  }
+
+  function buildCommentTree(list){
+    const byId = {};
+    list.forEach(c=>{ byId[c.id] = Object.assign({}, c, {children:[]}); });
+    const roots = [];
+    list.forEach(c=>{
+      if(c.parent_id && byId[c.parent_id]) byId[c.parent_id].children.push(byId[c.id]);
+      else roots.push(byId[c.id]);
+    });
+    return roots;
+  }
+
+  function renderCommentNode(node, depth){
+    const indent = Math.min(depth,4) * 26;
+    let html = `<div class="ema" style="margin-left:${indent}px;">
+        <span class="e-name">${esc(node.author_name)}</span>
+        <span class="e-content">${esc(node.content)}</span><br>
+        <button class="ema-reply-btn" data-id="${node.id}" data-name="${esc(node.author_name)}">返信</button>
+      </div>`;
+    node.children
+      .sort((a,b)=> new Date(a.created_at)-new Date(b.created_at))
+      .forEach(child=>{ html += renderCommentNode(child, depth+1); });
+    return html;
+  }
+
+  async function loadComments(postId){
+    try{
+      const { data, error } = await sb.from("ghost_comments").select("*").eq("post_id", postId).order("created_at",{ascending:true});
+      if(error) throw error;
+      if(!data || !data.length){ emaRack.innerHTML = `<div class="no-comments">まだ絵馬はありません。最初の一枚をどうぞ。</div>`; return; }
+      const roots = buildCommentTree(data).sort((a,b)=> new Date(a.created_at)-new Date(b.created_at));
+      emaRack.innerHTML = roots.map(r=>renderCommentNode(r,0)).join("");
+      emaRack.querySelectorAll(".ema-reply-btn").forEach(btn=>{
+        btn.onclick = ()=> setReplyTarget(btn.dataset.id, btn.dataset.name);
+      });
+    }catch(err){
+      console.error(err);
+      emaRack.innerHTML = `<div class="no-comments">コメントの読み込みに失敗：${esc(errMsg(err))}</div>`;
+    }
+  }
+
+  submitCommentBtn.onclick = async ()=>{
+    if(!currentDetail) return;
+    const name = commentName.value.trim().slice(0,16) || "名無しさん";
+    const content = commentText.value.trim().slice(0,200);
+    if(!content){ showToast("コメントを入力してください"); return; }
+    submitCommentBtn.disabled = true;
+    try{
+      const { error } = await sb.from("ghost_comments").insert({
+        post_id: currentDetail.id, author_name: name, content,
+        parent_id: replyTarget ? replyTarget.id : null,
+      });
+      if(error) throw error;
+      commentText.value = "";
+      replyTarget = null; replyBanner.style.display = "none";
+      await loadComments(currentDetail.id);
+      showToast("絵馬を掛けました！");
+    }catch(err){
+      console.error(err);
+      showToast("コメント投稿に失敗：" + errMsg(err));
+    }finally{
+      submitCommentBtn.disabled = false;
+    }
+  };
+
+  // ============ 内緒話（合言葉プライベートチャット） ============
+  let chatRoom = null, chatMyName = "", chatPollTimer = null, chatLastCount = 0;
+
+  chatJoinBtn.onclick = ()=>{
+    const room = chatRoomInput.value.trim();
+    const name = chatMyNameInput.value.trim().slice(0,16);
+    if(!room || !name){ showToast("合言葉と名前の両方を入れてください"); return; }
+    chatRoom = room; chatMyName = name; chatLastCount = 0;
+    chatRoomLabel.textContent = `合言葉：${room}`;
+    chatJoinBox.style.display = "none";
+    chatRoomBox.style.display = "block";
+    chatMessagesBox.innerHTML = `<div class="no-comments">読み込み中…</div>`;
+    loadChatMessages(true);
+    clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(()=>loadChatMessages(false), 3000);
+  };
+
+  chatLeaveBtn.onclick = ()=>{
+    clearInterval(chatPollTimer);
+    chatPollTimer = null; chatRoom = null;
+    chatRoomBox.style.display = "none";
+    chatJoinBox.style.display = "block";
+    chatMessagesBox.innerHTML = "";
+  };
+
+  async function loadChatMessages(forceScroll){
+    if(!chatRoom) return;
+    try{
+      const { data, error } = await sb.from("private_chat_messages").select("*")
+        .eq("room_code", chatRoom).order("created_at",{ascending:true}).limit(500);
+      if(error) throw error;
+      const list = data || [];
+      if(list.length === chatLastCount) return; // 変化なし
+      chatLastCount = list.length;
+      if(!list.length){ chatMessagesBox.innerHTML = `<div class="no-comments">まだメッセージがありません。最初の一言をどうぞ。</div>`; return; }
+      chatMessagesBox.innerHTML = list.map(m=>`
+        <div class="chat-msg"><b>${esc(m.sender_name)}</b>：${esc(m.content)}<span class="chat-time">${fmtDate(m.created_at)}</span></div>
+      `).join("");
+      chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
+    }catch(err){
+      console.error(err);
+      chatMessagesBox.innerHTML = `<div class="no-comments">読み込みに失敗：${esc(errMsg(err))}</div>`;
+    }
+  }
+
+  chatSendBtn.onclick = async ()=>{
+    if(!chatRoom) return;
+    const content = chatInput.value.trim().slice(0,300);
+    if(!content) return;
+    chatSendBtn.disabled = true;
+    try{
+      const { error } = await sb.from("private_chat_messages").insert({
+        room_code: chatRoom, sender_name: chatMyName, content,
+      });
+      if(error) throw error;
+      chatInput.value = "";
+      await loadChatMessages(true);
+    }catch(err){
+      console.error(err);
+      showToast("送信に失敗：" + errMsg(err));
+    }finally{
+      chatSendBtn.disabled = false;
+    }
+  };
+  chatInput.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); chatSendBtn.click(); }
+  });
+
+  // ============ 初期化 ============
+  loadPosts();
+})();
+</script>
+</body>
+</html>

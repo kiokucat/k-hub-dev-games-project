@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteor Slasher - 凝ったミニゲーム</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f172a, #1e1b4b);
+            color: #fff;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            background: #020617;
+            border: 4px solid #3b82f6;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* UIレイヤー */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0,0,0,0.8);
+        }
+        #combo-container {
+            font-size: 32px;
+            color: #f59e0b;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: transform 0.1s ease, opacity 0.2s ease;
+            text-align: right;
+        }
+        #combo-container.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        /* スクリーンエフェクト */
+        #flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* メニュー画面 */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none !important;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #3b82f6;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+            animation: titlePulse 2s infinite ease-in-out;
+        }
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(59,130,246,0.5)); }
+            50% { transform: scale(1.03); filter: drop-shadow(0 0 20px rgba(59,130,246,0.9)); }
+        }
+        p {
+            font-size: 16px;
+            color: #94a3b8;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        button {
+            padding: 12px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+        button:active {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    
+    <div class="ui-layer">
+        <div class="hud">
+            <div>SCORE: <span id="score-val">0</span></div>
+            <div id="combo-container"><span id="combo-val">0</span> COMBO</div>
+        </div>
+    </div>
+
+    <div id="flash-overlay"></div>
+
+    <div id="start-screen" class="screen">
+        <h1>METEOR SLASHER</h1>
+        <p>画面をドラッグ（またはスワイプ）して刀の軌跡を描き、<br>迫りくる流星を鮮やかに斬り裂け！</p>
+        <button id="start-btn">任務開始</button>
+    </div>
+
+    <div id="gameover-screen" class="screen hidden">
+        <h1 style="color: #ef4444; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">任務失敗</h1>
+        <p>流星が防衛ラインを突破しました。<br>最終スコア: <span id="final-score" style="color:#fff; font-size:24px; font-weight:bold;">0</span></p>
+        <button id="restart-btn">再挑戦</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('start-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const startBtn = document.getElementById('start-btn');
+const restartBtn = document.getElementById('restart-btn');
+const scoreVal = document.getElementById('score-val');
+const comboVal = document.getElementById('combo-val');
+const comboContainer = document.getElementById('combo-container');
+const flashOverlay = document.getElementById('flash-overlay');
+const container = document.getElementById('game-container');
+
+// ゲーム状態
+let isPlaying = false;
+let score = 0;
+let combo = 0;
+let comboTimer = 0;
+let shakeTime = 0;
+let shakeIntensity = 0;
+let hitStopFrames = 0;
+
+// マウス・タッチ軌跡
+let slashPoints = [];
+
+// オブジェクト配列
+let targets = [];
+let particles = [];
+let sliceEffects = [];
+
+// 定数・調整用
+const TARGET_SPAWN_RATE = 0.02; // 毎フレームの生成確率
+
+class Target {
+    constructor() {
+        this.x = Math.random() * (canvas.width - 100) + 50;
+        this.y = -30;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = Math.random() * 2 + 1.5;
+        this.radius = Math.random() * 15 + 15;
+        this.color = `hsl(${Math.random() * 40 + 200}, 90%, 60%)`; // 青〜紫の流星
+        this.isSliced = false;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+    }
+
+    draw() {
+        ctx.save();
+        // 流星の尾（光跡）
+        let gradient = ctx.createLinearGradient(this.x, this.y, this.x - this.vx * 10, this.y - this.vy * 10);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(1, 'transparent');
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = this.radius;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - this.vx * 8, this.y - this.vy * 8);
+        ctx.stroke();
+
+        // 核
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.radius = Math.random() * 3 + 2;
+        this.color = color;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.01;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.05; // わずかな重力
+        this.alpha -= this.decay;
+    }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class SliceEffect {
+    constructor(x1, y1, x2, y2) {
+        this.x1 = x1; this.y1 = y1; this.x2 = x2; this.y2 = y2;
+        this.alpha = 1;
+    }
+    update() { this.alpha -= 0.05; }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 4;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#3b82f6';
+        ctx.beginPath();
+        ctx.moveTo(this.x1, this.y1);
+        ctx.lineTo(this.x2, this.y2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+// 線分と円の衝突判定
+function checkIntersection(p1, p2, circle) {
+    let A = p1.x - p2.x;
+    let B = p1.y - p2.y;
+    let C = p2.x * p1.y - p1.x * p2.y;
+    let dist = Math.abs(A * circle.x + B * circle.y + C) / Math.sqrt(A * A + B * B);
+    
+    if (dist <= circle.radius) {
+        let minX = Math.min(p1.x, p2.x) - circle.radius;
+        let maxX = Math.max(p1.x, p2.x) + circle.radius;
+        let minY = Math.min(p1.y, p2.y) - circle.radius;
+        let maxY = Math.max(p1.y, p2.y) + circle.radius;
+        return circle.x >= minX && circle.x <= maxX && circle.y >= minY && circle.y <= maxY;
+    }
+    return false;
+}
+
+// トリガー演出系
+function triggerScreenShake(duration, intensity) {
+    shakeTime = duration;
+    shakeIntensity = intensity;
+}
+
+function triggerFlash() {
+    flashOverlay.style.opacity = '0.4';
+    setTimeout(() => flashOverlay.style.opacity = '0', 80);
+}
+
+// メインループ
+function update(timestamp) {
+    if (!isPlaying) return;
+
+    // ヒットストップ処理（一瞬時を止めて斬撃の手応えを出す）
+    if (hitStopFrames > 0) {
+        hitStopFrames--;
+        requestAnimationFrame(update);
+        return;
+    }
+
+    // 画面揺れ
+    if (shakeTime > 0) {
+        let dx = (Math.random() - 0.5) * shakeIntensity;
+        let dy = (Math.random() - 0.5) * shakeIntensity;
+        container.style.transform = `translate(${dx}px, ${dy}px)`;
+        shakeTime--;
+    } else {
+        container.style.transform = 'translate(0, 0)';
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 背景に薄い宇宙の塵を描画
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    for(let i=0; i<5; i++) {
+        ctx.fillRect(Math.random()*canvas.width, Math.random()*canvas.height, 2, 2);
+    }
+
+    // ターゲット生成
+    if (Math.random() < TARGET_SPAWN_RATE + (score * 0.0002)) {
+        targets.push(new Target());
+    }
+
+    // コンボタイマーの減少
+    if (comboTimer > 0) {
+        comboTimer--;
+        if (comboTimer <= 0) {
+            combo = 0;
+            comboContainer.classList.remove('active');
+        }
+    }
+
+    // ターゲット更新・描画
+    for (let i = targets.length - 1; i >= 0; i--) {
+        let t = targets[i];
+        t.update();
+        t.draw();
+
+        // 斬撃との衝突判定
+        if (slashPoints.length > 1) {
+            let p1 = slashPoints[slashPoints.length - 2];
+            let p2 = slashPoints[slashPoints.length - 1];
+            if (p1.active && p2.active && checkIntersection(p1, p2, t)) {
+                // 撃破演出
+                t.isSliced = true;
+                triggerScreenShake(8, 6);
+                hitStopFrames = 3; // 3フレーム停止
+                if (combo >= 5) triggerFlash();
+
+                // 斬撃エフェクトの追加
+                sliceEffects.push(new SliceEffect(p1.x, p1.y, p2.x, p2.y));
+
+                // パーティクル散布
+                for (let p = 0; p < 15; p++) {
+                    particles.push(new Particle(t.x, t.y, t.color));
+                }
+
+                // スコア・コンボ計算
+                combo++;
+                comboTimer = 90; // 約1.5秒維持
+                score += 100 * combo;
+                scoreVal.textContent = score;
+                comboVal.textContent = combo;
+                comboContainer.classList.add('active');
+
+                targets.splice(i, 1);
+                continue;
+            }
+        }
+
+        // 画面外（防衛ライン突破でゲームオーバー）
+        if (t.y > canvas.height + t.radius) {
+            gameOver();
+        }
+    }
+
+    // エフェクト群の更新・描画
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+        else particles[i].draw();
+    }
+
+    for (let i = sliceEffects.length - 1; i >= 0; i--) {
+        sliceEffects[i].update();
+        if (sliceEffects[i].alpha <= 0) sliceEffects.splice(i, 1);
+        else sliceEffects[i].draw();
+    }
+
+    // 剣の軌跡（Slash Trail）の描画
+    if (slashPoints.length > 1) {
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (let i = 1; i < slashPoints.length; i++) {
+            let p1 = slashPoints[i - 1];
+            let p2 = slashPoints[i];
+            let age = timestamp - p2.time;
+            
+            if (age > 150) { // 150msで消える
+                p2.active = false;
+                continue;
+            }
+            
+            let alpha = 1 - (age / 150);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.lineWidth = 6 * alpha;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#06b6d4';
+            
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    // 古い軌跡データを削除
+    slashPoints = slashPoints.filter(p => performance.now() - p.time < 150);
+
+    requestAnimationFrame(update);
+}
+
+// イベントリスナー設定
+function getCanvasPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+}
+
+function handleMove(e) {
+    if (!isPlaying) return;
+    let pos = getCanvasPos(e);
+    slashPoints.push({ x: pos.x, y: pos.y, time: performance.now(), active: true });
+}
+
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('touchmove', handleMove, { passive: true });
+
+// ゲーム制御
+function startGame() {
+    score = 0;
+    combo = 0;
+    targets = [];
+    particles = [];
+    sliceEffects = [];
+    slashPoints = [];
+    scoreVal.textContent = score;
+    comboContainer.classList.remove('active');
+    
+    startScreen.classList.add('hidden');
+    gameoverScreen.classList.add('hidden');
+    isPlaying = true;
+    requestAnimationFrame(update);
+}
+
+function gameOver() {
+    isPlaying = false;
+    container.style.transform = 'translate(0, 0)';
+    document.getElementById('final-score').textContent = score;
+    gameoverScreen.classList.remove('hidden');
+}
+
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', startGame);
+</script>
+
+</body>
+</html>

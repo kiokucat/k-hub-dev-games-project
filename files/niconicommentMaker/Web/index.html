@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ニコニココメントメーカー</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&display=swap');
+
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-bg-hover: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --glass-border-light: rgba(255, 255, 255, 0.34);
+            --glass-shadow: 0 18px 48px 0 rgba(0, 0, 0, 0.48);
+            --glass-blur: blur(28px);
+            --accent-pink: #fb7185;
+            --accent-purple: #818cf8;
+            --accent-cyan: #2dd4bf;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans JP', sans-serif;
+            background: radial-gradient(circle at 20% -10%, #131a2c 0%, #05070d 55%), #05070d;
+            color: var(--text-main);
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative;
+        }
+
+        /* Fluid Background Blobs */
+        body::before, body::after {
+            content: ''; position: absolute; border-radius: 50%; filter: blur(110px);
+            z-index: 0; pointer-events: none; animation: floatBlob 20s infinite alternate ease-in-out;
+        }
+        body::before {
+            width: 580px; height: 580px;
+            background: radial-gradient(circle, rgba(251, 113, 133, 0.32) 0%, rgba(129, 140, 248, 0.18) 70%);
+            top: -110px; left: -110px;
+        }
+        body::after {
+            width: 680px; height: 680px;
+            background: radial-gradient(circle, rgba(45, 212, 191, 0.28) 0%, rgba(99, 102, 241, 0.22) 70%);
+            bottom: -160px; right: -110px; animation-delay: -10s;
+        }
+        @keyframes floatBlob {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, 50px) scale(1.1); }
+            100% { transform: translate(-40px, 90px) scale(0.95); }
+        }
+
+        /* ===== タイトル画面・設定モーダル ===== */
+        .title-modal-overlay {
+            position: fixed; inset: 0; z-index: 500;
+            background: rgba(5, 7, 13, 0.85);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 1; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .title-modal-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .title-card {
+            background: rgba(15, 23, 42, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border-light); box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+            border-radius: 28px; width: min(840px, 94vw); max-height: 90vh; overflow-y: auto;
+            padding: 30px; display: flex; flex-direction: column; gap: 20px;
+        }
+        .title-header { text-align: center; }
+        .title-logo-img {
+            max-height: 60px; object-fit: contain; margin-bottom: 8px;
+            filter: invert(1) drop-shadow(0 0 8px rgba(255,255,255,0.4));
+        }
+        .title-header h2 {
+            font-size: 1.6rem; font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent-pink) 50%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;
+        }
+        .title-header p { font-size: 0.85rem; color: var(--text-sub); }
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+        .setting-item {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border);
+            padding: 12px 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px;
+        }
+        .setting-item label {
+            font-size: 0.82rem; font-weight: 600; color: var(--text-main);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .setting-item select, .setting-item input[type="text"] { width: 100%; }
+        .start-btn {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%);
+            color: #fff; border: 1px solid var(--glass-border-light); padding: 12px;
+            font-size: 1rem; font-weight: 700; border-radius: 16px; cursor: pointer;
+            transition: all 0.25s ease; box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); text-align: center;
+        }
+        .start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(236, 72, 153, 0.6); }
+
+        .chat-preview-box {
+            background: #0f0f0f; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+            padding: 10px; height: 110px; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column; gap: 6px;
+        }
+
+        .modal-table-section {
+            background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .modal-table-container { max-height: 160px; overflow-y: auto; border: 1px solid var(--glass-border); border-radius: 10px; }
+
+        header {
+            background: rgba(15, 23, 42, 0.5); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            padding: 10px 24px; border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center; z-index: 10; position: relative;
+        }
+        header::after {
+            content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+            background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple), var(--accent-cyan)); opacity: 0.85;
+        }
+
+        .header-title-link { display: flex; align-items: center; cursor: pointer; user-select: none; transition: transform 0.2s ease; }
+        .header-title-link:hover { transform: scale(1.02); }
+        .header-title-img {
+            max-height: 40px; object-fit: contain;
+            filter: invert(1) drop-shadow(0 0 6px rgba(255,255,255,0.3));
+        }
+        
+        .main-layout { display: flex; flex: 1; overflow: hidden; padding: 18px; gap: 18px; z-index: 1; }
+        .left-panel { flex: 3 1 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+        
+        /* ===== YouTube風ライブチャット ===== */
+        .right-panel {
+            flex: 1 1 0; min-width: 280px; position: relative; display: flex; flex-direction: column;
+            background: #0f0f0f; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+            overflow: hidden; font-family: Roboto, 'Noto Sans JP', Arial, sans-serif; color: #fff;
+        }
+        .yt-chat-header {
+            display: flex; align-items: center; justify-content: space-between; flex: none;
+            height: 44px; padding: 0 16px; background: #0f0f0f; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .yt-chat-title { font-size: 14px; font-weight: 500; color: #f1f1f1; letter-spacing: 0.2px; }
+        .yt-chat-list {
+            flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 8px 0; background: #0f0f0f;
+            scrollbar-width: thin; scrollbar-color: #3f3f3f transparent;
+        }
+        .yt-chat-list::-webkit-scrollbar { width: 8px; }
+        .yt-chat-list::-webkit-scrollbar-thumb { background: #3f3f3f; border-radius: 4px; }
+        .yt-chat-item { display: flex; align-items: flex-start; gap: 12px; padding: 5px 14px 5px 16px; font-size: 13px; line-height: 1.45; }
+        .yt-chat-item:hover { background: rgba(255, 255, 255, 0.06); }
+        .yt-chat-avatar {
+            flex: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 500; color: #fff; margin-top: 1px; user-select: none;
+        }
+        .yt-chat-main { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+        .yt-chat-name { color: #aaaaaa; font-weight: 500; margin-right: 8px; }
+        
+        /* プレミアムバッジスタイル修正 (16x16px・ドット絵くっきり) */
+        .premium-badge {
+            width: 16px; height: 16px; object-fit: contain; vertical-align: middle;
+            margin-left: 4px; margin-right: 8px; display: inline-block; position: relative; top: -1px;
+            image-rendering: pixelated; image-rendering: crisp-edges;
+        }
+        .yt-chat-name:has(+ .premium-badge) { margin-right: 0; }
+        .yt-chat-text { color: #ffffff; white-space: pre-wrap; }
+        .yt-chat-time { flex: none; color: #aaaaaa; font-size: 11px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+        @keyframes ytChatIn {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .yt-chat-anim { animation: ytChatIn 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+        .yt-chat-jump {
+            position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%);
+            padding: 6px 12px; border: none; border-radius: 18px; background: #3ea6ff; color: #0f0f0f;
+            font-size: 11px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); z-index: 5;
+        }
+        .yt-chat-jump[hidden] { display: none; }
+
+        /* ===== チャット入力フッター ===== */
+        .yt-input-footer {
+            flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+            background: transparent; border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 10; position: relative;
+        }
+        .yt-input-wrapper {
+            flex: 1; display: flex; align-items: center; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 18px; padding: 0 12px; height: 36px;
+        }
+        .yt-input-field {
+            flex: 1; background: transparent !important; border: none !important;
+            color: #ffffff !important; font-size: 13px; font-family: inherit; outline: none !important; opacity: 1 !important;
+        }
+        .yt-input-field::placeholder { color: #888888; }
+        .yt-input-icon-btn {
+            background: transparent; border: none; color: #aaaaaa; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 50%; transition: background 0.2s, color 0.2s;
+        }
+        .yt-input-icon-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+        .yt-reaction-btn {
+            width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255,255,255,0.12);
+            color: #f1f1f1; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;
+        }
+        .yt-reaction-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* コマンドポップアップ */
+        .command-popup-menu {
+            position: absolute; bottom: 52px; right: 50px; background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--glass-border-light); backdrop-filter: blur(16px);
+            border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 100; min-width: 200px;
+        }
+        .command-popup-menu.hidden { display: none; }
+        .cmd-category-label { font-size: 10px; color: var(--text-sub); font-weight: bold; text-transform: uppercase; margin-top: 2px; }
+        .cmd-chip-group { display: flex; flex-wrap: wrap; gap: 5px; }
+        
+        .cmd-chip {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: var(--text-main); font-size: 11px; padding: 4px 9px; border-radius: 6px; cursor: pointer;
+            transition: all 0.2s ease; user-select: none;
+        }
+        .cmd-chip:hover { background: rgba(255,255,255,0.2); }
+        
+        .cmd-chip.active {
+            background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-purple) 100%);
+            color: #ffffff; border-color: #ffffff; font-weight: bold;
+            box-shadow: 0 0 12px rgba(251, 113, 133, 0.85); transform: scale(1.04);
+        }
+
+        body.theater-mode .right-panel { display: none; }
+        body.theater-mode .left-panel { flex: 1 1 auto; }
+
+        @media (max-width: 900px) {
+            .main-layout { flex-direction: column; overflow-y: auto; }
+            .left-panel { flex: none; overflow: visible; }
+            .right-panel { flex: none; height: 420px; min-width: 0; }
+        }
+        
+        .card {
+            background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: 20px; padding: 16px; box-shadow: var(--glass-shadow); border: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        /* ===== ステージ & No Video 表示 ===== */
+        .stage-container {
+            position: relative; width: 100%; height: auto; aspect-ratio: 16 / 9; max-height: 76vh;
+            background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            border-radius: 16px; flex-shrink: 0; border: 1px solid var(--glass-border); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7); cursor: pointer;
+        }
+
+        .no-video-placeholder {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #1a2236 0%, #080b14 80%); color: var(--text-sub);
+            font-size: 1.5rem; font-weight: 700; letter-spacing: 0.08em; z-index: 5; pointer-events: none;
+        }
+        .no-video-placeholder svg { width: 48px; height: 48px; fill: currentColor; opacity: 0.4; margin-bottom: 8px; }
+
+        .video-frame { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        .video-frame video, .video-frame canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .video-frame canvas { z-index: 10; }
+
+        .stage-container.is-fullscreen { width: 100vw; height: 100vh; max-height: none; aspect-ratio: auto; border: none; border-radius: 0; box-shadow: none; }
+        .stage-container:fullscreen { width: 100vw; height: 100vh; max-height: none; aspect-ratio: auto; border: none; border-radius: 0; }
+
+        .stage-container.hide-cursor, .stage-container.hide-cursor * { cursor: none !important; }
+
+        .center-popup-icon {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border-light); color: #fff; width: 84px; height: 84px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 2.2rem; z-index: 25; pointer-events: none; opacity: 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .center-popup-icon.animate { animation: popAndFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes popAndFade {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); }
+        }
+
+        .canvas-overlay-ui {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(9, 13, 22, 0.95), rgba(9, 13, 22, 0.3) 70%, transparent);
+            padding: 22px 22px 16px 22px; display: flex; flex-direction: column; gap: 12px; z-index: 20; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .stage-container:not(.is-fullscreen):hover .canvas-overlay-ui, .canvas-overlay-ui.active, .canvas-overlay-ui:hover { opacity: 1; }
+
+        .overlay-seekbar-area { display: flex; align-items: center; gap: 12px; font-family: 'Plus Jakarta Sans', monospace; font-size: 0.85rem; color: var(--text-main); }
+        .overlay-seekbar-area input[type="range"] { flex: 1; accent-color: var(--accent-pink); cursor: pointer; height: 6px; border-radius: 3px; }
+
+        .overlay-controls { display: flex; justify-content: space-between; align-items: center; }
+        .overlay-btn {
+            background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            color: #fff; border: 1px solid var(--glass-border); padding: 7px 16px; border-radius: 10px; cursor: pointer;
+            font-size: 0.82rem; font-weight: 600; transition: all 0.25s ease;
+        }
+        .overlay-btn.icon-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 34px; padding: 0; }
+        .overlay-btn.icon-btn svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+        .overlay-btn:hover { background: rgba(255, 255, 255, 0.25); border-color: var(--glass-border-light); box-shadow: 0 0 16px rgba(236, 72, 153, 0.4); }
+
+        .controls-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
+        
+        .btn {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.8) 0%, rgba(139, 92, 246, 0.8) 100%);
+            backdrop-filter: blur(8px); color: #fff; border: 1px solid var(--glass-border-light); padding: 8px 16px;
+            font-weight: 600; border-radius: 12px; cursor: pointer; transition: all 0.25s ease; font-size: 0.85rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(236, 72, 153, 0.5); background: linear-gradient(135deg, rgba(236, 72, 153, 1) 0%, rgba(139, 92, 246, 1) 100%); }
+        .btn-secondary { background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border); }
+        .btn-secondary:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-light); }
+        .btn-danger { background: linear-gradient(135deg, rgba(244, 63, 94, 0.8) 0%, rgba(225, 29, 72, 0.8) 100%); color: #fff; }
+        .btn-danger:hover { box-shadow: 0 0 20px rgba(244, 63, 94, 0.5); }
+
+        select, input[type="text"] {
+            background: rgba(0, 0, 0, 0.3); color: #fff; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem;
+        }
+
+        .toggle-label {
+            display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer;
+            background: rgba(0, 0, 0, 0.3); padding: 8px 14px; border-radius: 10px; border: 1px solid var(--glass-border);
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
+        th { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px); padding: 10px; position: sticky; top: 0; color: var(--accent-pink); border-bottom: 1px solid var(--glass-border); font-weight: 700; }
+        td { padding: 8px 10px; border-bottom: 1px solid var(--glass-border); }
+        tr:hover { background: rgba(255, 255, 255, 0.06); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- タイトル画面兼 設定モーダル -->
+<div class="title-modal-overlay" id="titleModalOverlay">
+    <div class="title-card">
+        <div class="title-header">
+            <img src="./title.png" alt="ニコニココメントメーカー" class="title-logo-img" onerror="this.style.display='none'; document.getElementById('titleFallbackText').style.display='block';">
+            <h2 id="titleFallbackText" style="display:none;">ニコニココメントメーカー</h2>
+            <p>フォント、速度、ユーザーID、チャットプレビューを設定します</p>
+        </div>
+
+        <div class="settings-grid">
+            <div class="setting-item">
+                <label>ユーザーID & プレミアム設定</label>
+                <input type="text" id="myUserIdInput" value="my_user" placeholder="ユーザーIDを入力" style="font-size:0.82rem;">
+                <label class="toggle-label" style="padding:4px 10px; margin-top:4px;">
+                    <input type="checkbox" id="myPremiumToggle" checked> プレミアム会員バッジを表示
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label>フォント方式</label>
+                <select id="fontModeSelect">
+                    <option value="preset">従来方式 (セレクト)</option>
+                    <option value="file">📁 フォントファイル指定</option>
+                </select>
+            </div>
+
+            <div class="setting-item" id="presetFontWrapper">
+                <label>使用フォント</label>
+                <select id="fontSelect">
+                    <option value="auto" selected>標準（実機ニコニコ同様・OS自動判定）</option>
+                    <option value="'Yu Kyokasho', '游教科書体', sans-serif">游教科書体</option>
+                    <option value="'MS PGothic', 'ＭＳ Ｐゴシック', sans-serif">ＭＳ Ｐゴシック</option>
+                    <option value="'Meiryo', 'メイリオ', sans-serif">メイリオ</option>
+                    <option value="'Yu Gothic', '遊ゴシック', sans-serif">遊ゴシック</option>
+                    <option value="'Yu Mincho', '游明朝', serif">游明朝</option>
+                    <option value="'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN', 'Hiragino Sans', sans-serif">ヒラギノ角ゴ (Mac)</option>
+                    <option value="Impact, sans-serif">Impact</option>
+                    <option value="'HG創英角ﾎﾟｯﾌ体', sans-serif">POP体</option>
+                </select>
+            </div>
+
+            <div class="setting-item" id="fileFontWrapper" style="display:none;">
+                <label>フォントファイル選択</label>
+                <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" style="font-size:0.8rem; color:var(--text-sub);">
+            </div>
+
+            <div class="setting-item">
+                <label>コメント速度: <span id="speedValText" style="color:var(--accent-cyan);">1.0x</span></label>
+                <input type="range" id="commentSpeedRange" min="0.5" max="2.0" step="0.1" value="1.0" style="accent-color:var(--accent-cyan); cursor:pointer;">
+            </div>
+
+            <div class="setting-item">
+                <label>文字の縁取り幅: <span id="strokeValText" style="color:var(--accent-pink);">5px</span></label>
+                <input type="range" id="strokeWidthRange" min="0" max="16" value="5" step="1" style="accent-color:var(--accent-pink); cursor:pointer;">
+            </div>
+
+            <div class="setting-item">
+                <label>特殊縁取り</label>
+                <select id="strokeEffectSelect">
+                    <option value="normal">通常 (黒縁)</option>
+                    <option value="glow">ネオン発光</option>
+                    <option value="double">ダブル縁取り</option>
+                    <option value="shadow">ドロップシャドウ</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <label>テキスト特殊エフェクト</label>
+                <select id="textEffectSelect">
+                    <option value="none">なし</option>
+                    <option value="rainbow">🌈 レインボー(グラデ)</option>
+                    <option value="typewriter">⌨ タイプライター風</option>
+                    <option value="bounce">⚽ バウンス</option>
+                    <option value="rotate">🔄 回転</option>
+                    <option value="shake">📳 震え</option>
+                    <option value="pulse">💗 拡大縮小</option>
+                    <option value="wave">🌊 波打ち(文字ごと)</option>
+                    <option value="blink">⚡ 点滅</option>
+                    <option value="glitch">👾 グリッチ</option>
+                    <option value="neon">💡 ネオン明滅</option>
+                    <option value="zoomin">🔍 ズームイン</option>
+                    <option value="fadein">🌫 フェードイン</option>
+                    <option value="allaround">☄ 4方向から飛んで来る</option>
+                    <option value="allaround360">🌀 360°全方位から直進飛来</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <label>投稿コマンド (自動連動)</label>
+                <input type="text" id="cmdInput" placeholder="184" style="font-size:0.82rem;">
+            </div>
+
+            <div class="setting-item">
+                <label>デフォルト文字色</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="color" id="defaultColorPicker" value="#ffffff" style="width:40px; height:30px; padding:2px; border-radius:8px; border:1px solid var(--glass-border); background:rgba(0,0,0,0.3); cursor:pointer;">
+                    <label class="toggle-label" style="padding:4px 10px;">
+                        <input type="checkbox" id="forceColorToggle"> 強制適用
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label>チャット表示名設定</label>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <label class="toggle-label" style="padding:4px 10px;">
+                        <input type="checkbox" id="chatIdNameToggle" checked> IDを名前にする
+                    </label>
+                    <button class="btn btn-secondary" id="chatGenNameBtn" style="padding:4px 10px; font-size:0.78rem;">ランダム名生成</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="font-size:0.82rem; font-weight:600; color:var(--accent-cyan);">💬 チャット表示プレビュー</label>
+            <div class="chat-preview-box" id="chatPreviewBox">
+                <div class="yt-chat-item">
+                    <div class="yt-chat-avatar" style="background:hsl(200, 60%, 40%);">M</div>
+                    <div class="yt-chat-main">
+                        <span class="yt-chat-name" id="previewName">@my_user</span>
+                        <img src="./premium.png" class="premium-badge" id="previewBadge" alt="badge" onerror="this.style.display='none';">
+                        <span class="yt-chat-text">チャット表示のサンプルです！</span>
+                    </div>
+                    <span class="yt-chat-time">00:15</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-table-section">
+            <input type="text" id="searchInput" placeholder="コメント内容やユーザーIDで検索...">
+            <div class="modal-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>時間</th>
+                            <th>コメント</th>
+                            <th>コマンド</th>
+                            <th>ユーザーID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="commentTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <button class="start-btn" id="startPlayerBtn">🎬 観賞を開始する</button>
+    </div>
+</div>
+
+<header>
+    <div class="header-title-link" id="headerTitleLink" title="タイトル画面を開く">
+        <img src="./title.png" alt="ニコニココメントメーカー" class="header-title-img" onerror="this.style.display='none'; document.getElementById('headerTextTitle').style.display='block';">
+        <h1 id="headerTextTitle" style="display:none;">ニコニココメントメーカー</h1>
+    </div>
+
+    <div style="display:flex; gap:14px; align-items:center;">
+        <button class="btn btn-secondary" id="openSettingsBtn" style="padding:5px 12px; font-size:0.8rem;">⚙ 設定・一覧</button>
+        <div style="font-size:0.85rem; color:var(--text-sub);">
+            総コメント数: <span id="totalCount" style="color:var(--accent-pink); font-weight:bold;">0</span> | 表示中: <span id="visibleCount" style="color:var(--accent-cyan); font-weight:bold;">0</span>
+        </div>
+    </div>
+</header>
+
+<div class="main-layout">
+    <div class="left-panel">
+        <div class="card">
+            <div class="stage-container" id="stage">
+                <!-- 初期表示: 暗い背景＋No Video -->
+                <div class="no-video-placeholder" id="noVideoPlaceholder">
+                    <svg viewBox="0 0 24 24"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h13c.55 0 1-.45 1-1v-3.5l4 4c.39.39 1 .11 1-.45V6.95c0-.56-.61-.84-1-.45zM15 16H4V8h11v8z"/></svg>
+                    <span>NO VIDEO</span>
+                </div>
+
+                <div class="video-frame" id="videoFrame">
+                    <video id="videoPlayer" playsinline></video>
+                    <canvas id="commentCanvas"></canvas>
+                </div>
+                
+                <div class="center-popup-icon" id="centerPopupIcon">▶</div>
+
+                <div class="canvas-overlay-ui" id="canvasOverlayUi">
+                    <div class="overlay-seekbar-area">
+                        <span id="currentTimeText">00:00</span>
+                        <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1">
+                        <span id="durationTimeText">00:00</span>
+                    </div>
+                    <div class="overlay-controls">
+                        <div style="display:flex; gap:8px;">
+                            <button class="overlay-btn icon-btn" id="playBtn" title="再生 / 一時停止 (Space)" aria-label="再生 / 一時停止">
+                                <svg id="playIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                            </button>
+                        </div>
+                        <button class="overlay-btn" id="fullscreenBtn">⛶ フルスクリーン</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-bar">
+                <input type="file" id="videoInput" accept="video/*" style="font-size:0.85rem; color:var(--text-sub);">
+
+                <label class="toggle-label">
+                    <input type="checkbox" id="ttsToggle"> 🗣 読み上げ
+                </label>
+                <select id="ttsVoicePreset">
+                    <option value="0">音声1 (標準)</option>
+                    <option value="1">音声2 (高音)</option>
+                    <option value="2">音声3 (低音)</option>
+                    <option value="3">音声4 (高速)</option>
+                    <option value="4">音声5 (ランダム)</option>
+                </select>
+
+                <button class="btn btn-secondary" id="importJsonBtn">JSONインポート</button>
+                <button class="btn" id="exportJsonBtn">新API JSON保存</button>
+                <button class="btn btn-secondary" id="exportCsvBtn">CSV保存</button>
+                <button class="btn btn-danger" id="recBtn">🎥 映像+音声+録画</button>
+                <input type="file" id="jsonFileInput" accept=".json" style="display:none;">
+            </div>
+        </div>
+    </div>
+
+    <aside class="right-panel" id="chatPanel">
+        <div class="yt-chat-header"><span class="yt-chat-title">チャット</span></div>
+        <div class="yt-chat-list" id="logList"></div>
+        <button class="yt-chat-jump" id="chatJumpBtn" hidden>↓ 新しいメッセージ</button>
+
+        <!-- カテゴリ分け制御＋光るハイライト対応 コマンドポップアップ -->
+        <div class="command-popup-menu hidden" id="cmdPopupMenu">
+            <div class="cmd-category-label">位置 (どれか1つ)</div>
+            <div class="cmd-chip-group">
+                <span class="cmd-chip" data-cat="pos" data-cmd="ue">ue</span>
+                <span class="cmd-chip" data-cat="pos" data-cmd="shita">shita</span>
+            </div>
+
+            <div class="cmd-category-label">サイズ (どれか1つ)</div>
+            <div class="cmd-chip-group">
+                <span class="cmd-chip" data-cat="size" data-cmd="big">big</span>
+                <span class="cmd-chip" data-cat="size" data-cmd="small">small</span>
+            </div>
+
+            <div class="cmd-category-label">カラー (どれか1つ)</div>
+            <div class="cmd-chip-group">
+                <span class="cmd-chip" data-cat="color" data-cmd="red">red</span>
+                <span class="cmd-chip" data-cat="color" data-cmd="blue">blue</span>
+                <span class="cmd-chip" data-cat="color" data-cmd="green">green</span>
+                <span class="cmd-chip" data-cat="color" data-cmd="yellow">yellow</span>
+                <span class="cmd-chip" data-cat="color" data-cmd="purple">purple</span>
+                <span class="cmd-chip" data-cat="color" data-cmd="black">black</span>
+            </div>
+        </div>
+
+        <div class="yt-input-footer">
+            <div class="yt-input-wrapper">
+                <input type="text" id="ytChatInput" class="yt-input-field" placeholder="チャット..." autocomplete="off">
+                <button class="yt-input-icon-btn" id="openCmdMenuBtn" title="コマンドメニュー">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+                </button>
+            </div>
+            <button class="yt-reaction-btn" id="sendHeartBtn" title="ハート送信">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </button>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const video = document.getElementById('videoPlayer');
+    const canvas = document.getElementById('commentCanvas');
+    const ctx = canvas.getContext('2d');
+    const stage = document.getElementById('stage');
+    const videoFrame = document.getElementById('videoFrame');
+    const noVideoPlaceholder = document.getElementById('noVideoPlaceholder');
+    const canvasOverlayUi = document.getElementById('canvasOverlayUi');
+    const centerPopupIcon = document.getElementById('centerPopupIcon');
+    
+    const titleModalOverlay = document.getElementById('titleModalOverlay');
+    const startPlayerBtn = document.getElementById('startPlayerBtn');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const headerTitleLink = document.getElementById('headerTitleLink');
+    const commentSpeedRange = document.getElementById('commentSpeedRange');
+    const speedValText = document.getElementById('speedValText');
+    const strokeValText = document.getElementById('strokeValText');
+
+    const fontModeSelect = document.getElementById('fontModeSelect');
+    const fontSelect = document.getElementById('fontSelect');
+    const fontFileInput = document.getElementById('fontFileInput');
+    const presetFontWrapper = document.getElementById('presetFontWrapper');
+    const fileFontWrapper = document.getElementById('fileFontWrapper');
+    
+    const strokeWidthRange = document.getElementById('strokeWidthRange');
+    const strokeEffectSelect = document.getElementById('strokeEffectSelect');
+    const textEffectSelect = document.getElementById('textEffectSelect');
+    const seekBar = document.getElementById('seekBar');
+    const currentTimeText = document.getElementById('currentTimeText');
+    const durationTimeText = document.getElementById('durationTimeText');
+    const ttsToggle = document.getElementById('ttsToggle');
+    const ttsVoicePreset = document.getElementById('ttsVoicePreset');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const defaultColorPicker = document.getElementById('defaultColorPicker');
+    const forceColorToggle = document.getElementById('forceColorToggle');
+
+    const ytChatInput = document.getElementById('ytChatInput');
+    const sendHeartBtn = document.getElementById('sendHeartBtn');
+    const openCmdMenuBtn = document.getElementById('openCmdMenuBtn');
+    const cmdPopupMenu = document.getElementById('cmdPopupMenu');
+    const cmdInput = document.getElementById('cmdInput');
+
+    const myUserIdInput = document.getElementById('myUserIdInput');
+    const myPremiumToggle = document.getElementById('myPremiumToggle');
+    const previewName = document.getElementById('previewName');
+    const previewBadge = document.getElementById('previewBadge');
+
+    function openTitleModal() { titleModalOverlay.classList.remove('hidden'); }
+    function closeTitleModal() { titleModalOverlay.classList.add('hidden'); }
+    startPlayerBtn.addEventListener('click', closeTitleModal);
+    openSettingsBtn.addEventListener('click', openTitleModal);
+    headerTitleLink.addEventListener('click', openTitleModal);
+
+    openCmdMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        cmdPopupMenu.classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => { cmdPopupMenu.classList.add('hidden'); });
+    cmdPopupMenu.addEventListener('click', (e) => { e.stopPropagation(); });
+
+    // コマンド相互排他制御
+    const selectedCmds = { pos: null, size: null, color: null };
+
+    function syncCmdInputAndChips() {
+        const parts = [];
+        if (selectedCmds.pos) parts.push(selectedCmds.pos);
+        if (selectedCmds.size) parts.push(selectedCmds.size);
+        if (selectedCmds.color) parts.push(selectedCmds.color);
+        cmdInput.value = parts.length > 0 ? parts.join(' ') : '184';
+
+        document.querySelectorAll('.cmd-chip').forEach(chip => {
+            const cat = chip.dataset.cat;
+            const cmd = chip.dataset.cmd;
+            if (selectedCmds[cat] === cmd) {
+                chip.classList.add('active');
+            } else {
+                chip.classList.remove('active');
+            }
+        });
+    }
+
+    document.querySelectorAll('.cmd-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const cat = chip.dataset.cat;
+            const cmd = chip.dataset.cmd;
+
+            if (selectedCmds[cat] === cmd) {
+                selectedCmds[cat] = null;
+            } else {
+                selectedCmds[cat] = cmd;
+            }
+            syncCmdInputAndChips();
+        });
+    });
+
+    function updatePreview() {
+        previewName.textContent = '@' + (myUserIdInput.value || 'user');
+        previewBadge.style.display = myPremiumToggle.checked ? 'inline-block' : 'none';
+    }
+    myUserIdInput.addEventListener('input', updatePreview);
+    myPremiumToggle.addEventListener('change', updatePreview);
+    updatePreview();
+
+    commentSpeedRange.addEventListener('input', () => { speedValText.innerText = parseFloat(commentSpeedRange.value).toFixed(1) + 'x'; });
+    strokeWidthRange.addEventListener('input', () => { strokeValText.innerText = strokeWidthRange.value + 'px'; });
+
+    function detectStandardCommentFont() {
+        const ua = navigator.userAgent || '';
+        const platform = navigator.platform || '';
+        const isMac = /Mac/i.test(platform) || /Macintosh/i.test(ua);
+        const isWindows = /Win/i.test(platform) || /Windows/i.test(ua);
+        if (isMac) return "'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN', 'Hiragino Sans', sans-serif";
+        if (isWindows) return "'MS PGothic', 'ＭＳ Ｐゴシック', sans-serif";
+        return "'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN', 'MS PGothic', 'ＭＳ Ｐゴシック', 'Noto Sans JP', sans-serif";
+    }
+    
+    let comments = [];
+    let filteredComments = [];
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+    let customFontFamily = null;
+
+    let commentsVersion = 0;
+    const MAX_COMMENT_DURATION_MS = 10000;
+
+    function lowerBoundVpos(arr, value) {
+        let lo = 0, hi = arr.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (arr[mid].vposMs < value) lo = mid + 1; else hi = mid;
+        }
+        return lo;
+    }
+
+    let loggedCommentIds = new Set();
+    let lastLogCheckTimeMs = -1;
+    let logPointer = 0;
+    let logPointerVersion = -1;
+    const LOG_DOM_CAP = 500;
+
+    let inExtension = false;
+    let extensionStartReal = 0;
+    let extensionStartVpos = 0;
+
+    function getMaxFinishTimeMs() {
+        let max = 0;
+        const speedFactor = parseFloat(commentSpeedRange.value) || 1.0;
+        comments.forEach(c => {
+            const finish = c.vposMs + (getDuration(c.body) / speedFactor) * 1000;
+            if (finish > max) max = finish;
+        });
+        return max;
+    }
+
+    function updateRealtimeLog(currentTimeMs) {
+        if (commentsVersion !== logPointerVersion) {
+            logPointer = 0; logPointerVersion = commentsVersion;
+        }
+        if (currentTimeMs < lastLogCheckTimeMs - 300) {
+            loggedCommentIds.clear(); resetChat(); logPointer = 0;
+        }
+        const toAdd = [];
+        while (logPointer < comments.length && comments[logPointer].vposMs <= currentTimeMs) {
+            const c = comments[logPointer];
+            if (!loggedCommentIds.has(c.id)) {
+                loggedCommentIds.add(c.id); toAdd.push(c);
+            }
+            logPointer++;
+        }
+        if (toAdd.length) addLogBatch(toAdd);
+        lastLogCheckTimeMs = currentTimeMs;
+    }
+
+    const UI_HIDE_DELAY_NORMAL = 2500;
+    const CURSOR_HIDE_DELAY = 3000;
+    let uiTimeout = null;
+    let cursorTimeout = null;
+    let lastMouseScreenX = null, lastMouseScreenY = null;
+
+    function isStageFullscreen() { return document.fullscreenElement === stage; }
+    function showCursor() { stage.classList.remove('hide-cursor'); }
+    function scheduleCursorHide() {
+        clearTimeout(cursorTimeout);
+        cursorTimeout = setTimeout(() => {
+            if (!canvasOverlayUi.matches(':hover')) stage.classList.add('hide-cursor');
+        }, CURSOR_HIDE_DELAY);
+    }
+
+    stage.addEventListener('mousemove', (e) => {
+        if (e.screenX === lastMouseScreenX && e.screenY === lastMouseScreenY) return;
+        lastMouseScreenX = e.screenX; lastMouseScreenY = e.screenY;
+        showCursor(); scheduleCursorHide();
+        if (isStageFullscreen()) return;
+        canvasOverlayUi.classList.add('active');
+        clearTimeout(uiTimeout);
+        uiTimeout = setTimeout(() => {
+            if (!video.paused) canvasOverlayUi.classList.remove('active');
+        }, UI_HIDE_DELAY_NORMAL);
+    });
+
+    stage.addEventListener('mouseleave', () => {
+        clearTimeout(cursorTimeout); showCursor();
+        if (isStageFullscreen() || !video.paused) canvasOverlayUi.classList.remove('active');
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        stage.classList.toggle('is-fullscreen', isStageFullscreen());
+        document.body.classList.toggle('theater-mode', isStageFullscreen());
+        clearTimeout(uiTimeout); clearTimeout(cursorTimeout);
+        canvasOverlayUi.classList.remove('active'); showCursor();
+        lastMouseScreenX = lastMouseScreenY = null;
+    });
+
+    fullscreenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!document.fullscreenElement) stage.requestFullscreen().catch(err => {});
+        else document.exitFullscreen();
+    });
+
+    stage.addEventListener('click', (e) => {
+        if (e.target.closest('.canvas-overlay-ui')) return;
+        if (!video.src) return;
+        if (video.paused) { video.play(); triggerCenterAnimation('▶'); }
+        else { video.pause(); triggerCenterAnimation('❚❚'); }
+    });
+
+    function triggerCenterAnimation(symbol) {
+        centerPopupIcon.innerText = symbol;
+        centerPopupIcon.classList.remove('animate');
+        void centerPopupIcon.offsetWidth;
+        centerPopupIcon.classList.add('animate');
+    }
+
+    fontModeSelect.addEventListener('change', () => {
+        if (fontModeSelect.value === 'file') {
+            presetFontWrapper.style.display = 'none'; fileFontWrapper.style.display = 'flex';
+        } else {
+            presetFontWrapper.style.display = 'flex'; fileFontWrapper.style.display = 'none';
+        }
+    });
+
+    fontFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const fontName = 'CustomFont_' + Date.now();
+            const fontFace = new FontFace(fontName, arrayBuffer);
+            await fontFace.load();
+            document.fonts.add(fontFace);
+            customFontFamily = `'${fontName}', sans-serif`;
+            alert(`フォント「${file.name}」の読み込みに成功しました！`);
+        } catch (err) {
+            alert('フォントファイルの読み込みに失敗しました。');
+        }
+    });
+
+    const ttsPresets = [
+        { pitch: 1.0, rate: 1.0 }, { pitch: 1.6, rate: 1.2 }, { pitch: 0.5, rate: 0.8 },
+        { pitch: 1.0, rate: 1.6 }, { pitch: 1.3, rate: 1.1 }
+    ];
+
+    function speakText(text) {
+        if (!ttsToggle.checked || !('speechSynthesis' in window)) return;
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ja-JP';
+
+        let presetIdx = parseInt(ttsVoicePreset.value, 10);
+        if (presetIdx === 4) presetIdx = Math.floor(Math.random() * 4);
+
+        const preset = ttsPresets[presetIdx] || ttsPresets[0];
+        utterance.pitch = preset.pitch; utterance.rate = preset.rate;
+        setTimeout(() => { synth.speak(utterance); }, 10);
+    }
+
+    function resizeCanvas() {
+        const stageW = stage.clientWidth, stageH = stage.clientHeight;
+        if (!stageW || !stageH) return;
+
+        const vw = video.videoWidth, vh = video.videoHeight;
+        if (!vw || !vh) return;
+
+        const videoAspect = vw / vh;
+        const stageAspect = stageW / stageH;
+
+        let w, h;
+        if (videoAspect > stageAspect) { w = stageW; h = stageW / videoAspect; }
+        else { h = stageH; w = stageH * videoAspect; }
+        w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
+        const left = Math.round((stageW - w) / 2); const top = Math.round((stageH - h) / 2);
+
+        videoFrame.style.left = left + 'px'; videoFrame.style.top = top + 'px';
+        videoFrame.style.width = w + 'px'; videoFrame.style.height = h + 'px';
+
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('fullscreenchange', resizeCanvas);
+    video.addEventListener('loadedmetadata', resizeCanvas);
+    video.addEventListener('resize', resizeCanvas);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resizeCanvas).observe(stage);
+
+    document.getElementById('videoInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            video.src = URL.createObjectURL(file);
+            noVideoPlaceholder.style.display = 'none';
+        }
+    });
+
+    video.addEventListener('loadedmetadata', () => {
+        seekBar.max = video.duration;
+        durationTimeText.innerText = formatTime(video.duration * 1000);
+        resizeCanvas();
+    });
+
+    video.addEventListener('timeupdate', () => {
+        if (!isSeeking) {
+            seekBar.value = video.currentTime;
+            currentTimeText.innerText = formatTime(video.currentTime * 1000);
+        }
+    });
+
+    video.addEventListener('ended', () => {
+        const maxFinish = getMaxFinishTimeMs();
+        const videoDurMs = (video.duration || 0) * 1000;
+        if (maxFinish > videoDurMs + 50) {
+            inExtension = true;
+            extensionStartReal = performance.now();
+            extensionStartVpos = videoDurMs;
+        } else {
+            if (isRecording) stopRecording();
+        }
+    });
+
+    video.addEventListener('play', () => { inExtension = false; });
+
+    let isSeeking = false;
+    seekBar.addEventListener('mousedown', () => isSeeking = true);
+    seekBar.addEventListener('mouseup', () => isSeeking = false);
+    seekBar.addEventListener('input', () => {
+        video.currentTime = seekBar.value;
+        currentTimeText.innerText = formatTime(video.currentTime * 1000);
+    });
+
+    const playIcon = document.getElementById('playIcon');
+    const ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
+    const ICON_PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+    function updatePlayIcon() { playIcon.innerHTML = video.paused ? ICON_PLAY : ICON_PAUSE; }
+    video.addEventListener('play', updatePlayIcon);
+    video.addEventListener('pause', updatePlayIcon);
+    video.addEventListener('ended', updatePlayIcon);
+    updatePlayIcon();
+
+    function togglePlay() {
+        if (!video.src) return;
+        if (video.paused) { video.play(); triggerCenterAnimation('▶'); }
+        else { video.pause(); triggerCenterAnimation('❚❚'); }
+    }
+
+    document.getElementById('playBtn').addEventListener('click', (e) => {
+        e.stopPropagation(); togglePlay(); e.currentTarget.blur();
+    });
+
+    function skipBy(sec) {
+        if (!isFinite(video.duration)) return;
+        let cur = video.currentTime;
+        if (inExtension) {
+            cur = (extensionStartVpos + (performance.now() - extensionStartReal)) / 1000;
+            inExtension = false;
+        }
+        video.currentTime = Math.min(Math.max(0, cur + sec), video.duration);
+        laneLastCommentMap = {}; ueLastCommentMap = {}; shitaLastCommentMap = {};
+        triggerCenterAnimation(sec > 0 ? '▶▶' : '◀◀');
+    }
+
+    function isTextEntryTarget(t) {
+        if (!t) return false;
+        if (t.isContentEditable || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') return true;
+        if (t.tagName === 'INPUT') {
+            const type = (t.type || '').toLowerCase();
+            return !['range', 'button', 'checkbox', 'radio'].includes(type);
+        }
+        return false;
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (isTextEntryTarget(e.target)) return;
+        if (e.target && e.target.type === 'checkbox' && e.code === 'Space') return;
+        if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) togglePlay(); }
+        else if (e.code === 'ArrowRight') { e.preventDefault(); skipBy(5); }
+        else if (e.code === 'ArrowLeft') { e.preventDefault(); skipBy(-5); }
+    });
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'Space' && !isTextEntryTarget(e.target) && !(e.target && e.target.type === 'checkbox')) { e.preventDefault(); }
+    });
+    document.addEventListener('change', (e) => {
+        if (e.target && e.target.type === 'checkbox') e.target.blur();
+    });
+
+    function getDuration(text) {
+        const len = text.length;
+        if (len <= 5) return 6.0;
+        if (len <= 10) return 6.0 - ((len - 5) / 5) * 2.0;
+        if (len <= 20) return 4.0 - ((len - 10) / 10) * 1.0;
+        if (len <= 30) return 3.0 - ((len - 20) / 10) * 1.0;
+        return 2.0;
+    }
+
+    function parseCommands(cmds, defaultColor) {
+        let color = defaultColor || '#ffffff';
+        let pos = 'naka';
+        let isBig = false; let isSmall = false;
+        if (Array.isArray(cmds)) {
+            cmds.forEach(c => {
+                if (c === 'red') color = '#ff7575';
+                else if (c === 'blue') color = '#759fff';
+                else if (c === 'green') color = '#75ff95';
+                else if (c === 'yellow') color = '#ffff75';
+                else if (c === 'purple') color = '#ba75ff';
+                else if (c === 'black') color = '#333333';
+                else if (c === 'ue') pos = 'ue';
+                else if (c === 'shita') pos = 'shita';
+                else if (c === 'big') isBig = true;
+                else if (c === 'small') isSmall = true;
+            });
+        }
+        return { color, pos, isBig, isSmall };
+    }
+
+    function getVideoDrawBox() { return { x: 0, y: 0, width: canvas.width, height: canvas.height }; }
+
+    const spokenCommentIds = new Set();
+    const BASE_FONT_SIZE = 34;
+    const BASE_LANE_HEIGHT = 42;
+    let laneLastCommentMap = {};
+    let ueLastCommentMap = {};
+    let shitaLastCommentMap = {};
+
+    const MAX_FPS = 120;
+    const FRAME_INTERVAL = 1000 / MAX_FPS;
+    let nextFrameTime = 0;
+    function renderLoop(now) {
+        requestAnimationFrame(renderLoop);
+        if (nextFrameTime === 0) nextFrameTime = now;
+        if (now + 1 < nextFrameTime) return;
+        nextFrameTime += FRAME_INTERVAL;
+        if (nextFrameTime < now) nextFrameTime = now;
+        renderFrame();
+    }
+
+    let smoothMs = 0;
+    let smoothLastPerf = null;
+    function getSmoothVideoTimeMs() {
+        const nowPerf = performance.now();
+        const vt = video.currentTime * 1000;
+        if (video.paused || video.seeking || video.ended || video.readyState < 3) {
+            smoothMs = vt; smoothLastPerf = null; return vt;
+        }
+        if (smoothLastPerf === null) {
+            smoothMs = vt; smoothLastPerf = nowPerf; return vt;
+        }
+        const dt = nowPerf - smoothLastPerf;
+        smoothLastPerf = nowPerf;
+        smoothMs += dt * (video.playbackRate || 1);
+        const err = vt - smoothMs;
+        if (Math.abs(err) > 250) smoothMs = vt;
+        else smoothMs += err * (1 - Math.exp(-dt / 400));
+        return smoothMs;
+    }
+
+    function renderFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const vBox = getVideoDrawBox();
+
+        let currentTimeMs;
+        if (inExtension) {
+            currentTimeMs = extensionStartVpos + (performance.now() - extensionStartReal);
+            const maxFinish = getMaxFinishTimeMs();
+            if (currentTimeMs >= maxFinish) {
+                currentTimeMs = maxFinish; inExtension = false;
+                if (isRecording) stopRecording();
+            } else { currentTimeText.innerText = formatTime(currentTimeMs); }
+        } else { currentTimeMs = getSmoothVideoTimeMs(); }
+
+        updateRealtimeLog(currentTimeMs);
+        
+        let currentFont = fontSelect.value === 'auto' ? detectStandardCommentFont() : fontSelect.value;
+        if (fontModeSelect.value === 'file' && customFontFamily) { currentFont = customFontFamily; }
+
+        const strokeWInput = parseInt(strokeWidthRange.value, 10);
+        const strokeEff = strokeEffectSelect.value;
+        const textEff = textEffectSelect.value;
+        const speedFactor = parseFloat(commentSpeedRange.value) || 1.0;
+
+        if (video.readyState >= 2) { ctx.drawImage(video, vBox.x, vBox.y, vBox.width, vBox.height); }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(vBox.x, vBox.y, vBox.width, vBox.height);
+        ctx.clip();
+
+        const scaleRatio = vBox.width / 850;
+        const effectiveFontSize = Math.max(12, Math.round(BASE_FONT_SIZE * scaleRatio));
+        const laneHeight = Math.max(16, Math.round(BASE_LANE_HEIGHT * scaleRatio));
+        const strokeW = Math.max(1, Math.round(strokeWInput * scaleRatio));
+
+        const totalLanes = Math.max(1, Math.floor((vBox.height - Math.round(60 * scaleRatio)) / laneHeight));
+
+        const windowLo = lowerBoundVpos(comments, currentTimeMs - MAX_COMMENT_DURATION_MS);
+        const windowHi = lowerBoundVpos(comments, currentTimeMs + 1);
+
+        for (let __i = windowLo; __i < windowHi; __i++) {
+            const c = comments[__i];
+            const duration = getDuration(c.body) / speedFactor;
+            const durationMs = duration * 1000;
+            const elapsed = currentTimeMs - c.vposMs;
+
+            if (elapsed >= 0 && elapsed < 150) {
+                if (!spokenCommentIds.has(c.id)) { spokenCommentIds.add(c.id); speakText(c.body); }
+            }
+
+            if (elapsed >= 0 && elapsed <= durationMs) {
+                let { color, pos, isBig, isSmall } = parseCommands(c.commands, defaultColorPicker.value);
+                if (forceColorToggle.checked) color = defaultColorPicker.value;
+                let displayText = c.body;
+
+                let commentFontSize = effectiveFontSize;
+                if (isBig) commentFontSize = Math.round(effectiveFontSize * 1.35);
+                if (isSmall) commentFontSize = Math.round(effectiveFontSize * 0.75);
+
+                if (textEff === 'typewriter') {
+                    const charCount = Math.floor((elapsed / durationMs) * c.body.length * 1.5);
+                    displayText = c.body.substring(0, Math.max(1, charCount));
+                }
+
+                ctx.save();
+                ctx.font = `bold ${commentFontSize}px ${currentFont}`;
+                let textWidth;
+                if (textEff === 'typewriter') { textWidth = ctx.measureText(displayText).width; }
+                else {
+                    const wKey = commentFontSize + '|' + currentFont;
+                    if (c._wCacheKey === wKey) { textWidth = c._wCacheVal; }
+                    else { textWidth = ctx.measureText(displayText).width; c._wCacheKey = wKey; c._wCacheVal = textWidth; }
+                }
+
+                if (c.assignedLane === undefined) {
+                    if (pos === 'naka') {
+                        let chosenLane = -1; let oldestLane = 0; let oldestTime = Infinity;
+                        for (let l = 0; l < totalLanes; l++) {
+                            const lastC = laneLastCommentMap[l];
+                            if (!lastC || lastC.finishTimeMs <= c.vposMs) { chosenLane = l; break; }
+                            else {
+                                const prevElapsed = c.vposMs - lastC.vposMs;
+                                const prevX = (vBox.x + vBox.width) - ((vBox.width + lastC.width) * (prevElapsed / lastC.durationMs));
+                                const safeMargin = 30 * scaleRatio;
+                                if (prevX + lastC.width + safeMargin < vBox.x + vBox.width) { chosenLane = l; break; }
+                                if (lastC.vposMs < oldestTime) { oldestTime = lastC.vposMs; oldestLane = l; }
+                            }
+                        }
+                        if (chosenLane === -1) chosenLane = oldestLane;
+                        c.assignedLane = chosenLane;
+                        laneLastCommentMap[chosenLane] = { vposMs: c.vposMs, durationMs: durationMs, width: textWidth, finishTimeMs: c.vposMs + durationMs };
+                    } else if (pos === 'ue') {
+                        const maxUeLanes = 3; let chosenUeLane = 0;
+                        for (let l = 0; l < maxUeLanes; l++) {
+                            const lastUe = ueLastCommentMap[l];
+                            if (!lastUe || lastUe.finishTimeMs <= c.vposMs) { chosenUeLane = l; break; }
+                        }
+                        c.assignedLane = chosenUeLane;
+                        ueLastCommentMap[chosenUeLane] = { vposMs: c.vposMs, finishTimeMs: c.vposMs + durationMs };
+                    } else if (pos === 'shita') {
+                        const maxShitaLanes = 3; let chosenShitaLane = 0;
+                        for (let l = 0; l < maxShitaLanes; l++) {
+                            const lastShita = shitaLastCommentMap[l];
+                            if (!lastShita || lastShita.finishTimeMs <= c.vposMs) { chosenShitaLane = l; break; }
+                        }
+                        c.assignedLane = chosenShitaLane;
+                        shitaLastCommentMap[chosenShitaLane] = { vposMs: c.vposMs, finishTimeMs: c.vposMs + durationMs };
+                    } else {
+                        let chosenFallbackLane = 0;
+                        for (let l = 0; l < totalLanes; l++) {
+                            const lastC = laneLastCommentMap[l];
+                            if (!lastC || lastC.finishTimeMs <= c.vposMs) { chosenFallbackLane = l; break; }
+                        }
+                        c.assignedLane = chosenFallbackLane;
+                        laneLastCommentMap[chosenFallbackLane] = { vposMs: c.vposMs, durationMs: durationMs, width: textWidth, finishTimeMs: c.vposMs + durationMs };
+                    }
+                }
+
+                let x = 0, y = 0;
+                const topPadding = Math.round(38 * scaleRatio);
+                const bottomPadding = Math.round(30 * scaleRatio);
+
+                if (pos === 'ue') {
+                    x = vBox.x + (vBox.width - textWidth) / 2;
+                    y = vBox.y + topPadding + (c.assignedLane * (commentFontSize + Math.round(6 * scaleRatio)));
+                } else if (pos === 'shita') {
+                    x = vBox.x + (vBox.width - textWidth) / 2;
+                    y = vBox.y + vBox.height - bottomPadding - (c.assignedLane * (commentFontSize + Math.round(6 * scaleRatio)));
+                } else {
+                    const totalDist = vBox.width + textWidth;
+                    const progress = elapsed / durationMs;
+                    x = (vBox.x + vBox.width) - (totalDist * progress);
+                    y = vBox.y + topPadding + (c.assignedLane * laneHeight);
+                }
+
+                if (textEff === 'allaround') {
+                    const targetX = vBox.x + (vBox.width - textWidth) / 2;
+                    const targetY = vBox.y + topPadding + (c.assignedLane * laneHeight);
+                    const hash = Math.abs(hashString(c.id)) % 4;
+                    let startX = targetX; let startY = targetY;
+                    if (hash === 0) startX = vBox.x - textWidth - 100;
+                    else if (hash === 1) startX = vBox.x + vBox.width + 100;
+                    else if (hash === 2) startY = vBox.y - 100;
+                    else startY = vBox.y + vBox.height + 100;
+
+                    const approachDuration = Math.min(800, durationMs * 0.4);
+                    if (elapsed < approachDuration) {
+                        const p = elapsed / approachDuration; const easeP = 1 - Math.pow(1 - p, 3);
+                        x = startX + (targetX - startX) * easeP; y = startY + (targetY - startY) * easeP;
+                    } else { x = targetX; y = targetY; }
+                }
+
+                if (textEff === 'allaround360') {
+                    const targetX = vBox.x + (vBox.width - textWidth) / 2;
+                    const targetY = vBox.y + topPadding + (c.assignedLane * laneHeight);
+                    const angleDeg = Math.abs(hashString(c.id)) % 360; const angleRad = angleDeg * Math.PI / 180;
+                    const radius = Math.max(vBox.width, vBox.height) * 0.75 + 150;
+                    const startX = targetX + Math.cos(angleRad) * radius; const startY = targetY + Math.sin(angleRad) * radius;
+
+                    const approachDuration = Math.min(900, durationMs * 0.45);
+                    if (elapsed < approachDuration) {
+                        const p = elapsed / approachDuration; const easeP = 1 - Math.pow(1 - p, 3);
+                        x = startX + (targetX - startX) * easeP; y = startY + (targetY - startY) * easeP;
+                    } else { x = targetX; y = targetY; }
+                }
+
+                if (textEff === 'bounce') {
+                } else if (textEff === 'rotate') {
+                    const ROT_SPIN_MS = 1000; const ROT_CYCLE_MS = 1800;
+                    const phase = elapsed % ROT_CYCLE_MS; let angle = 0;
+                    if (phase < ROT_SPIN_MS) {
+                        const t = phase / ROT_SPIN_MS;
+                        const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                        angle = eased * Math.PI * 2;
+                    }
+                    const centerOffsetY = commentFontSize * 0.35;
+                    ctx.translate(x + textWidth / 2, y - centerOffsetY); ctx.rotate(angle);
+                    x = -textWidth / 2; y = centerOffsetY;
+                } else if (textEff === 'shake') {
+                    x += Math.sin(elapsed * 0.05 + hashString(c.id)) * (4 * scaleRatio);
+                    y += Math.cos(elapsed * 0.07 + hashString(c.id)) * (3 * scaleRatio);
+                } else if (textEff === 'pulse') {
+                    const pulseScale = 1 + Math.sin(elapsed / 120) * 0.15;
+                    ctx.translate(x + textWidth / 2, y); ctx.scale(pulseScale, pulseScale);
+                    x = -textWidth / 2; y = 0;
+                } else if (textEff === 'zoomin') {
+                    const zp = Math.min(1, elapsed / 400); const zs = 0.4 + 0.6 * zp;
+                    ctx.translate(x + textWidth / 2, y); ctx.scale(zs, zs);
+                    x = -textWidth / 2; y = 0;
+                } else if (textEff === 'glitch') {
+                    const step = Math.floor(elapsed / 70);
+                    const jitter = Math.abs(hashString(c.id + '_' + step));
+                    x += ((jitter % 11) - 5) * scaleRatio; y += ((Math.floor(jitter / 11) % 7) - 3) * scaleRatio;
+                }
+
+                if (textEff === 'blink') { ctx.globalAlpha = (Math.floor(elapsed / 150) % 2 === 0) ? 1 : 0.15; }
+                else if (textEff === 'fadein') { ctx.globalAlpha = Math.min(1, elapsed / 400); }
+
+                ctx.lineWidth = strokeW;
+                if (strokeEff === 'glow') { ctx.shadowColor = color; ctx.shadowBlur = Math.round(12 * scaleRatio); ctx.strokeStyle = '#000000'; }
+                else if (strokeEff === 'double') { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = strokeW + Math.round(2 * scaleRatio); }
+                else if (strokeEff === 'shadow') { ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowOffsetX = Math.round(4 * scaleRatio); ctx.shadowOffsetY = Math.round(4 * scaleRatio); ctx.shadowBlur = Math.round(4 * scaleRatio); ctx.strokeStyle = '#000000'; }
+                else { ctx.strokeStyle = '#000000'; }
+
+                if (textEff === 'neon') { ctx.shadowColor = color; ctx.shadowBlur = (10 + Math.sin(elapsed / 90) * 10) * scaleRatio; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; }
+
+                if (textEff === 'rainbow') {
+                    let gradient = ctx.createLinearGradient(x, y, x + textWidth, y);
+                    const shift = (elapsed / 3) % 360;
+                    gradient.addColorStop(0, `hsl(${shift}, 100%, 60%)`);
+                    gradient.addColorStop(0.5, `hsl(${(shift + 120) % 360}, 100%, 60%)`);
+                    gradient.addColorStop(1, `hsl(${(shift + 240) % 360}, 100%, 60%)`);
+                    ctx.fillStyle = gradient;
+                } else { ctx.fillStyle = color; }
+
+                if (textEff === 'wave' || textEff === 'bounce') {
+                    let cx = x;
+                    for (let i = 0; i < displayText.length; i++) {
+                        const ch = displayText[i]; const chW = ctx.measureText(ch).width;
+                        const wy = textEff === 'wave'
+                            ? y + Math.sin(elapsed / 120 + i * 0.5) * (8 * scaleRatio)
+                            : y - Math.abs(Math.sin(elapsed / 150 - i * 0.45)) * (18 * scaleRatio);
+                        if (strokeW > 0) ctx.strokeText(ch, cx, wy);
+                        ctx.fillText(ch, cx, wy); cx += chW;
+                    }
+                } else {
+                    if (strokeW > 0 && strokeEff === 'double') {
+                        ctx.strokeText(displayText, x, y); ctx.lineWidth = strokeW; ctx.strokeStyle = '#000000'; ctx.strokeText(displayText, x, y);
+                    } else if (strokeW > 0) { ctx.strokeText(displayText, x, y); }
+                    ctx.fillText(displayText, x, y);
+                }
+                ctx.restore();
+            }
+        }
+        ctx.restore();
+    }
+    requestAnimationFrame(renderLoop);
+
+    function hashString(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+        return hash;
+    }
+
+    function postNewComment(textStr) {
+        if (!textStr || !textStr.trim()) return;
+        const cmd = cmdInput.value;
+        const baseTime = video.currentTime * 1000;
+        const commentObj = {
+            id: String(Date.now()),
+            no: comments.length + 1,
+            vposMs: Math.floor(baseTime),
+            body: textStr.trim(),
+            commands: cmd ? cmd.split(' ') : ["184"],
+            userId: myUserIdInput.value || "my_user",
+            isPremium: myPremiumToggle.checked,
+            postedAt: new Date().toISOString(),
+            assignedLane: undefined
+        };
+        comments.push(commentObj);
+        loggedCommentIds.add(commentObj.id);
+        addLogBatch([commentObj]);
+        speakText(textStr.trim());
+
+        comments.sort((a, b) => a.vposMs - b.vposMs);
+        commentsVersion++;
+        laneLastCommentMap = {}; ueLastCommentMap = {}; shitaLastCommentMap = {};
+        renderTable();
+    }
+
+    ytChatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            postNewComment(ytChatInput.value);
+            ytChatInput.value = '';
+        }
+    });
+
+    sendHeartBtn.addEventListener('click', () => {
+        postNewComment('❤️');
+    });
+
+    const chatList = document.getElementById('logList');
+    const chatJumpBtn = document.getElementById('chatJumpBtn');
+    const CHAT_ANIM_LAST_N = 6;
+    let chatStick = true;
+
+    function hashStr(str) {
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+        return h;
+    }
+    function avatarColor(id) {
+        const h = hashStr(id);
+        const hue = h % 360; const sat = 45 + ((h >>> 9) % 25); const light = 36 + ((h >>> 17) % 12);
+        return `hsl(${hue}, ${sat}%, ${light}%)`;
+    }
+    function avatarLetter(id) {
+        const m = id.match(/[A-Za-z0-9\u3040-\u30ff\u4e00-\u9fff]/);
+        return (m ? m[0] : '?').toUpperCase();
+    }
+
+    const chatIdNameToggle = document.getElementById('chatIdNameToggle');
+    const chatGenNameBtn = document.getElementById('chatGenNameBtn');
+    const NAME_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+    function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function () {
+            a = (a + 0x6D2B79F5) >>> 0; let t = a;
+            t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+    function generateChatName(uid) {
+        const rand = mulberry32(hashStr(uid)); const len = 1 + Math.floor(rand() * 8);
+        let out = ''; for (let i = 0; i < len; i++) out += NAME_CHARS[Math.floor(rand() * NAME_CHARS.length)];
+        return out;
+    }
+    function chatDisplayName(uid) { return chatIdNameToggle.checked ? uid : generateChatName(uid); }
+    function formatChatName(uid) { const n = chatDisplayName(uid); return '@' + (n.length > 16 ? n.slice(0, 16) + '…' : n); }
+    function refreshChatNames() {
+        for (const item of chatList.children) {
+            const uid = item.dataset.uid; if (uid === undefined) continue;
+            item.querySelector('.yt-chat-name').textContent = formatChatName(uid);
+            item.querySelector('.yt-chat-avatar').textContent = avatarLetter(chatDisplayName(uid));
+        }
+    }
+    chatIdNameToggle.addEventListener('change', refreshChatNames);
+    chatGenNameBtn.addEventListener('click', () => { chatIdNameToggle.checked = false; refreshChatNames(); chatGenNameBtn.blur(); });
+
+    function normalizeChatUserId(raw) {
+        const id = String(raw || 'user'); const stripped = id.replace(/^nvc:/i, ''); return stripped || id;
+    }
+
+    /* プレミアムバッジの画像パスを修正 */
+    const PREMIUM_BADGE_SRC = './premium.png';
+
+    function createChatItem(c) {
+        const uid = normalizeChatUserId(c.userId);
+        const item = document.createElement('div'); item.className = 'yt-chat-item';
+
+        const avatar = document.createElement('div'); avatar.className = 'yt-chat-avatar';
+        avatar.style.background = avatarColor(uid); avatar.textContent = avatarLetter(chatDisplayName(uid));
+
+        const main = document.createElement('div'); main.className = 'yt-chat-main';
+        const name = document.createElement('span'); name.className = 'yt-chat-name';
+        item.dataset.uid = uid; name.textContent = formatChatName(uid);
+        const text = document.createElement('span'); text.className = 'yt-chat-text'; text.textContent = c.body;
+        main.appendChild(name);
+        if (c.isPremium === true) {
+            const badge = document.createElement('img');
+            badge.setAttribute('src', PREMIUM_BADGE_SRC);
+            badge.className = 'premium-badge';
+            badge.setAttribute('alt', 'badge');
+            badge.onerror = function() { this.style.display = 'none'; }; // 読み込みエラー時のフォールバック
+            main.appendChild(badge);
+        }
+        main.appendChild(text);
+
+        const time = document.createElement('span'); time.className = 'yt-chat-time'; time.textContent = formatTime(c.vposMs);
+
+        item.appendChild(avatar); item.appendChild(main); item.appendChild(time);
+        return item;
+    }
+
+    function scrollChatToBottom() { chatList.scrollTop = chatList.scrollHeight; chatStick = true; chatJumpBtn.hidden = true; }
+    chatList.addEventListener('scroll', () => {
+        chatStick = (chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight) < 32;
+        if (chatStick) chatJumpBtn.hidden = true;
+    });
+    chatJumpBtn.addEventListener('click', scrollChatToBottom);
+
+    function resetChat() { chatList.innerHTML = ''; chatStick = true; chatJumpBtn.hidden = true; }
+
+    function addLogBatch(list) {
+        const start = Math.max(0, list.length - LOG_DOM_CAP);
+        const frag = document.createDocumentFragment();
+        for (let i = start; i < list.length; i++) {
+            const el = createChatItem(list[i]);
+            if (list.length - i <= CHAT_ANIM_LAST_N) el.classList.add('yt-chat-anim');
+            frag.appendChild(el);
+        }
+        chatList.appendChild(frag);
+        while (chatList.children.length > LOG_DOM_CAP) { chatList.removeChild(chatList.firstChild); }
+        if (chatStick) scrollChatToBottom();
+        else chatJumpBtn.hidden = false;
+    }
+
+    function formatTime(vposMs) {
+        if (!vposMs || isNaN(vposMs)) return "00:00";
+        const totalSec = Math.floor(vposMs / 1000); const min = Math.floor(totalSec / 60); const sec = totalSec % 60;
+        return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('commentTableBody');
+        tbody.innerHTML = '';
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        
+        filteredComments = comments.filter(c => 
+            c.body.toLowerCase().includes(keyword) || c.userId.toLowerCase().includes(keyword)
+        );
+
+        document.getElementById('totalCount').innerText = comments.length;
+        document.getElementById('visibleCount').innerText = filteredComments.length;
+
+        filteredComments.slice(0, 300).forEach(c => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:var(--accent-pink); font-family:'Plus Jakarta Sans', monospace;">${formatTime(c.vposMs)}</td>
+                <td>${escapeHtml(c.body)}</td>
+                <td style="color:var(--text-main);">${escapeHtml(Array.isArray(c.commands) ? c.commands.join(' ') : c.commands)}</td>
+                <td style="font-family:'Plus Jakarta Sans', monospace; color:var(--text-sub);">${escapeHtml(c.userId)}</td>
+            `;
+            tr.addEventListener('click', () => {
+                video.currentTime = c.vposMs / 1000;
+                laneLastCommentMap = {}; ueLastCommentMap = {}; shitaLastCommentMap = {};
+                closeTitleModal();
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('searchInput').addEventListener('input', renderTable);
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    const recBtn = document.getElementById('recBtn');
+    recBtn.addEventListener('click', () => {
+        if (!isRecording) startRecording();
+        else stopRecording();
+    });
+
+    async function startRecording() {
+        try {
+            const canvasStream = canvas.captureStream(30);
+            const audioTracks = [];
+
+            if (typeof video.captureStream === 'function') {
+                try {
+                    const videoStream = video.captureStream();
+                    if (videoStream.getAudioTracks().length > 0) { audioTracks.push(...videoStream.getAudioTracks()); }
+                } catch(e) {}
+            }
+
+            try {
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                if (audioStream.getAudioTracks().length > 0) { audioTracks.push(...audioStream.getAudioTracks()); }
+            } catch(e) {}
+
+            const combinedStream = new MediaStream([ ...canvasStream.getVideoTracks(), ...audioTracks ]);
+
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : 'video/webm';
+
+            mediaRecorder = new MediaRecorder(combinedStream, { mimeType });
+            recordedChunks = [];
+
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `recorded_comment_video.webm`; a.click();
+            };
+
+            mediaRecorder.start(); isRecording = true;
+            recBtn.innerText = '⏹ 録画停止・保存'; recBtn.style.background = 'linear-gradient(135deg, rgba(244, 63, 94, 1) 0%, rgba(225, 29, 72, 1) 100%)';
+            
+            laneLastCommentMap = {}; ueLastCommentMap = {}; shitaLastCommentMap = {};
+            loggedCommentIds.clear(); lastLogCheckTimeMs = -1; resetChat(); inExtension = false;
+            if (video.paused) { video.currentTime = 0; video.play(); }
+        } catch (err) { alert('録画の開始に失敗しました。'); }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); }
+        isRecording = false; recBtn.innerText = '🎥 映像+音声+録画'; recBtn.style.background = '';
+        if (!video.paused) { video.pause(); }
+    }
+
+    document.getElementById('importJsonBtn').addEventListener('click', () => { document.getElementById('jsonFileInput').click(); });
+
+    document.getElementById('jsonFileInput').addEventListener('change', (e) => {
+        const file = e.target.files[0]; if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const json = JSON.parse(evt.target.result);
+                comments = []; spokenCommentIds.clear(); laneLastCommentMap = {}; ueLastCommentMap = {}; shitaLastCommentMap = {};
+                loggedCommentIds.clear(); lastLogCheckTimeMs = -1; resetChat();
+
+                let list = [];
+                if (json.data && Array.isArray(json.data.threads)) {
+                    json.data.threads.forEach(t => { if (Array.isArray(t.comments)) list.push(...t.comments); });
+                } else if (Array.isArray(json)) { list = json; }
+
+                list.forEach(c => {
+                    const cObj = {
+                        id: c.id || String(Math.random()),
+                        no: c.no || 0,
+                        vposMs: c.vposMs || (c.vpos ? c.vpos * 10 : 0),
+                        body: c.body || c.content || '',
+                        commands: Array.isArray(c.commands) ? c.commands : (c.commands ? c.commands.split(' ') : (c.mail ? c.mail.split(' ') : [])),
+                        userId: c.userId || c.user_id || 'user',
+                        isPremium: !!c.isPremium || c.premium === 1,
+                        postedAt: c.postedAt || new Date().toISOString(),
+                        assignedLane: undefined
+                    };
+                    comments.push(cObj);
+                });
+
+                comments.sort((a, b) => a.vposMs - b.vposMs);
+                commentsVersion++; renderTable();
+            } catch (err) { alert('JSONファイルの解析に失敗しました'); }
+        };
+        reader.readAsText(file);
+    });
+
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+        const outData = {
+            meta: { status: 200 },
+            data: {
+                threads: [
+                    {
+                        id: "1000", fork: "main", commentCount: comments.length,
+                        comments: comments.map(c => ({
+                            id: c.id, no: c.no, vposMs: c.vposMs, body: c.body, commands: c.commands,
+                            userId: c.userId, isPremium: c.isPremium, score: 0, postedAt: c.postedAt,
+                            nicoruCount: 0, nicoruId: null, source: "leaf", isMyPost: false
+                        }))
+                    }
+                ]
+            }
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(outData, null, 4));
+        downloadFile(dataStr, 'niconicomment.json');
+    });
+
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+        let csvContent = "\uFEFF再生時間(ms),再生時間(表記),コメント,コマンド,ユーザーID,プレミアム,投稿日時\n";
+        comments.forEach(c => {
+            const row = [
+                c.vposMs, `"${formatTime(c.vposMs)}"`, `"${c.body.replace(/"/g, '""')}"`,
+                `"${(Array.isArray(c.commands) ? c.commands.join(' ') : c.commands).replace(/"/g, '""')}"`,
+                `"${c.userId}"`, c.isPremium ? '1' : '0', `"${c.postedAt}"`
+            ];
+            csvContent += row.join(",") + "\n";
+        });
+        const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+        downloadFile(dataStr, 'niconico_comments.csv');
+    });
+
+    function downloadFile(dataUri, fileName) {
+        const a = document.createElement('a'); a.setAttribute("href", dataUri); a.setAttribute("download", fileName);
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+</script>
+</body>
+</html>

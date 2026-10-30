@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>金</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#060403;--gold:#f0c660;--dim:#b99a5e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--gold);font-family:'Shippori Mincho','Hiragino Mincho ProN','Yu Mincho',serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+.ui{position:fixed;z-index:2;left:0;right:0;padding:0 clamp(20px,4vw,52px);pointer-events:none}
+.top{top:calc(env(safe-area-inset-top,0px) + 22px)}
+.bot{bottom:calc(env(safe-area-inset-bottom,0px) + 22px);color:var(--dim);font-size:13px;letter-spacing:.12em}
+h1{margin:0;font-weight:500;font-size:clamp(64px,11vw,132px);line-height:1;background:linear-gradient(180deg,#fff4cc 0%,#f0c050 48%,#8e5d14 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.top p{margin:10px 0 0;max-width:20em;color:var(--dim);font-size:clamp(13px,1.6vw,16px);line-height:1.9;letter-spacing:.08em}
+
+.mk{position:fixed;z-index:3;top:0;right:0;bottom:0;width:min(320px,86vw);box-sizing:border-box;overflow:auto;background:rgba(10,7,4,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-left:1px solid #3a2c14;padding:calc(env(safe-area-inset-top,0px) + 18px) 18px calc(env(safe-area-inset-bottom,0px) + 18px);font-size:13px;line-height:1.6}
+.mk .hd b{font-size:17px;font-weight:500}.mk #est{color:var(--dim);font-size:12px;margin-top:2px}
+.mk h2{margin:18px 0 8px;font-size:13px;font-weight:500;color:var(--dim);letter-spacing:.1em}
+.mk label{display:block;margin:8px 0}.mk output{float:right;color:var(--dim)}
+.mk input[type=range]{width:100%;accent-color:#e0b24a;margin:2px 0 0}
+.b{background:#17110a;border:1px solid #3a2c14;color:var(--gold);border-radius:8px;padding:8px;cursor:pointer;font:inherit;text-align:center}
+.b:hover{border-color:#7a5a22}.b[aria-pressed=true]{border-color:#f0c660;background:#2a1d0a}
+.b small{display:block;opacity:.7;font-size:11px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+.sw{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sw .b{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;padding:6px 2px}
+.sw i{width:28px;height:28px;border-radius:50%;display:block}
+.t{width:100%;box-sizing:border-box;background:#120d07;border:1px solid #3a2c14;color:#f6e3b0;border-radius:6px;padding:6px 8px;font:inherit;margin-top:3px}
+@media(max-width:760px){.mk{top:auto;left:0;width:auto;max-height:44vh;border-left:0;border-top:1px solid #3a2c14}.top p{display:none}}
+</style>
+</head>
+<body>
+<div class="ui top"><h1>金</h1><p>手のひらほどの塊に、鉛の約1.7倍の重み。</p></div>
+<div class="ui bot">ドラッグで回転、スクロールでズーム</div>
+<aside class="mk" id="mk" aria-label="インゴット・メーカー"></aside>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
+<script>
+(function(){
+if(!window.THREE){document.body.insertAdjacentHTML('beforeend','<p style="position:fixed;top:50%;width:100%;text-align:center">3Dライブラリを読み込めませんでした。</p>');return}
+const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const R=new THREE.WebGLRenderer({antialias:true});
+R.setPixelRatio(Math.min(devicePixelRatio,2));
+R.outputEncoding=THREE.sRGBEncoding;
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.appendChild(R.domElement);
+const scene=new THREE.Scene();const bgc=new THREE.Color(.0008,.0006,.0004);scene.background=bgc;scene.fog=new THREE.Fog(bgc,16,36);
+const cam=new THREE.PerspectiveCamera(32,1,.03,100);
+
+/* studio environment: dark room with HDR softboxes, so gold has something to mirror */
+function makeEnv(){
+  const s=new THREE.Scene();
+  s.add(new THREE.Mesh(new THREE.SphereGeometry(50,32,16),new THREE.MeshBasicMaterial({color:new THREE.Color(.012,.008,.006),side:THREE.BackSide})));
+  const L=(w,h,p,c,k)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(k),side:THREE.DoubleSide}));m.position.set(p[0],p[1],p[2]);m.lookAt(0,0,0);s.add(m)};
+  L(14,10,[-18,16,14],0xfff1dc,4);L(1.2,22,[-26,6,6],0xffffff,16);L(1.6,18,[-14,4,-28],0xffe8c0,8);L(2,20,[26,6,10],0xfff1d6,11);L(2,2,[-10,22,12],0xffffff,45);
+  L(28,1.6,[0,30,6],0xffffff,10);
+  L(26,1.4,[0,20,-28],0xffd9a0,5);L(44,14,[0,12,-30],0xffd9a0,1.5);L(70,7,[0,5,-36],0xffd9a8,1.5);
+  
+  
+  L(40,4,[0,2,35],0xffd9a8,1.2);
+  L(40,14,[0,-14,20],0xff9a3c,.5);
+  const g=new THREE.PMREMGenerator(R);const t=g.fromScene(s,.02).texture;g.dispose();return t;
+}
+const env=makeEnv();scene.environment=env;
+
+/* engraved stamp / micro-scratch bump */
+function scr(K){const S=2048,HH=512/K,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d'),Q=Math.random;
+  x.scale(S/512,S/512*K);x.fillStyle='#212121';x.fillRect(0,0,512,HH+1);x.lineCap='round';
+  const hair=(a,b,t,l,al,w)=>{const bd=(Q()-.5)*l*.1;x.strokeStyle='rgba(255,255,255,'+al+')';x.lineWidth=w;x.beginPath();x.moveTo(a,b);x.quadraticCurveTo(a+Math.cos(t)*l*.5-Math.sin(t)*bd,b+Math.sin(t)*l*.5+Math.cos(t)*bd,a+Math.cos(t)*l,b+Math.sin(t)*l);x.stroke()};
+  for(let i=0;i<420;i++){
+    const m=6+Math.pow(Q(),2)*38,hz=Q()<.5,tp=Q()<.5;let a,b,t;
+    if(hz){a=20+Q()*470;b=tp?m:HH-m;t=(Q()<.75?0:Q()*3.14)+(Q()-.5)*.7}
+    else{a=Q()<.5?m:512-m;b=15+Q()*(HH-30);t=(Q()<.75?1.5708:Q()*3.14)+(Q()-.5)*.7}
+    hair(a,b,t,5+Math.pow(Q(),2.2)*80,.08+Math.pow(Q(),2)*.5,.12+Q()*.12)}
+  for(let i=0;i<40;i++)hair(Q()*512,Q()*HH,(Q()<.6?.35:2)+(Q()-.5)*.4,6+Math.pow(Q(),2.5)*50,.04+Q()*.12,.1+Q()*.08);
+  const T=new THREE.CanvasTexture(c);T.anisotropy=R.capabilities.getMaxAnisotropy();return T;
+}
+function tex(K){
+  const S=Math.min(4096,R.capabilities.maxTextureSize),HH=512/K,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');
+  x.scale(S/512,S/512*K);x.fillStyle='#808080';x.fillRect(0,0,512,HH+1);
+  const f=Math.min(1,HH/320),Wd=512/f,cy=Math.max(HH,320)/2,cx=140,tx=P.emblem?Wd-140:Wd/2;
+  x.scale(f,f);
+  x.shadowColor='#fff';x.shadowBlur=14;x.fillStyle=x.strokeStyle='#ececec';x.textAlign='center';x.textBaseline='middle';
+  if(P.emblem){
+    const ring=(t,top,rad)=>{const st=Math.min(14/rad,2.6/t.length),tot=st*(t.length-1);for(let i=0;i<t.length;i++){const a=top?-Math.PI/2-tot/2+i*st:Math.PI/2+tot/2-i*st;x.save();x.translate(cx+rad*Math.cos(a),cy+rad*Math.sin(a));x.rotate(top?a+Math.PI/2:a-Math.PI/2);x.fillText(t[i],0,0);x.restore()}};
+    const circ=(rad,lw)=>{x.lineWidth=lw;x.beginPath();x.arc(cx,cy,rad,0,6.2832);x.stroke()};
+    circ(108,3.2);circ(84,2.2);
+    x.font='700 21px Georgia,serif';ring(P.brand.toUpperCase(),true,96);ring(LAB[P.metal]+'  '+P.purity,false,96);
+    circ(58,2.2);
+    [22,42].forEach(rx=>{x.beginPath();x.ellipse(cx,cy,rx,58,0,0,6.2832);x.stroke()});
+    [-38,-19,19,38].forEach(dy=>{const h=Math.sqrt(58*58-dy*dy);x.beginPath();x.moveTo(cx-h,cy+dy);x.lineTo(cx+h,cy+dy);x.stroke()});
+    x.shadowBlur=0;x.fillStyle='#808080';x.fillRect(cx-62,cy-12,124,24);
+    x.shadowBlur=14;x.fillStyle='#ececec';x.lineWidth=2.2;x.strokeRect(cx-62,cy-12,124,24);
+    x.font='700 20px Georgia,serif';x.fillText(SYM[P.metal],cx,cy+1);
+  }
+  x.font='700 76px Georgia,serif';x.fillText(P.purity,tx,cy-30,240);
+  x.font='600 40px Georgia,serif';x.fillText(P.weight,tx,cy+36,240);
+  x.font='500 22px Georgia,serif';x.fillText(P.serial,tx,cy+98,240);
+  const T=new THREE.CanvasTexture(c);T.anisotropy=R.capabilities.getMaxAnisotropy();return T;
+}
+const mat=(color,rough,map)=>new THREE.MeshPhysicalMaterial({color:color,metalness:1,roughness:rough,envMap:env,envMapIntensity:1.3,bumpMap:map||null,bumpScale:6,clearcoat:.1,clearcoatRoughness:.04});
+const GOLD=new THREE.Color(1,.74,.3);
+const side=mat(GOLD,.09),top=mat(GOLD,.6);top.clearcoat=0;
+const coinM=mat(new THREE.Color(1,.78,.34),.13),nugM=mat(new THREE.Color(1,.68,.22),.3);
+
+/* floor */
+const floor=new THREE.Mesh(new THREE.CircleGeometry(60,64),new THREE.MeshStandardMaterial({color:0x000000,metalness:0,roughness:1,envMapIntensity:0,transparent:true,opacity:.78}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const mir=new THREE.Reflector(new THREE.PlaneGeometry(90,90),{color:0x707070,textureWidth:2048,textureHeight:2048,clipBias:.003});mir.rotation.x=-Math.PI/2;mir.position.y=-.004;scene.add(mir);
+mir.material.fragmentShader=mir.material.fragmentShader.replace(/blendOverlay\s*\(\s*base\.rgb\s*,\s*color\s*\)/,'base.rgb*color*1.8');mir.material.needsUpdate=true;
+const sun=new THREE.DirectionalLight(0xffe3b8,2);sun.position.set(-6,12,8);sun.castShadow=true;
+sun.shadow.mapSize.set(4096,4096);sun.shadow.camera.left=sun.shadow.camera.bottom=-7;sun.shadow.camera.right=sun.shadow.camera.top=7;
+sun.shadow.camera.far=40;sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;sun.shadow.radius=5;scene.add(sun);
+const rim=new THREE.DirectionalLight(0xffb060,1.5);rim.position.set(7,5,-8);scene.add(rim);
+
+/* ingot: rounded, tapered box with analytic normals */
+function buildGeo(W,H,D,r,Rc){
+  const taper=.05,dish=H*.0625,g=new THREE.BoxGeometry(W,H,D,Math.round(W*48),Math.max(14,Math.round(H/.0145)),Math.round(D*48));
+  const p=g.attributes.position,n=g.attributes.normal,v=new THREE.Vector3(),c=new THREE.Vector3(),q=new THREE.Vector3();
+  const ix=W/2-r-Rc,iz=D/2-r-Rc,hy=H/2-r,cl=THREE.MathUtils.clamp;
+  for(let i=0;i<p.count;i++){
+    v.fromBufferAttribute(p,i);
+    const qx=cl(v.x,-ix,ix),qz=cl(v.z,-iz,iz),dx=v.x-qx,dz=v.z-qz,dl=Math.hypot(dx,dz);
+    if(dl>Rc)c.set(qx+dx/dl*Rc,cl(v.y,-hy,hy),qz+dz/dl*Rc);else c.set(v.x,cl(v.y,-hy,hy),v.z);
+    q.subVectors(v,c).normalize();
+    v.copy(c).addScaledVector(q,r);
+    const s=1-taper*(v.y/H+.5);let X=v.x*s,Z=v.z*s,Y=v.y;
+    if(v.y>0){const f=cl((q.y-.6)/.35,0,1),u2=Math.min(1,X*X/(W*W/4)+Z*Z/(D*D/4));Y-=dish*f*(1-u2);
+      q.x-=dish*f*2*X/(W*W/4)*q.y;q.z-=dish*f*2*Z/(D*D/4)*q.y}
+    q.y+=(Math.abs(q.x)*W/2+Math.abs(q.z)*D/2)*taper/H;q.normalize();
+    p.setXYZ(i,X,Y,Z);n.setXYZ(i,q.x,q.y,q.z);
+  }
+  g.computeBoundingSphere();return g;
+}
+const BG=buildGeo(2,.317,1.25,.083,.153);
+const G=new THREE.Group();scene.add(G);
+const place=(m,x,y,z,rx,ry,rz)=>{m.position.set(x,y,z);m.rotation.set(rx||0,ry||0,rz||0);m.castShadow=m.receiveShadow=true;G.add(m);return m};
+const bars=[];const bar=(x,y,z,ry)=>{const m=place(new THREE.Mesh(BG,[side,side,top,side,side,side]),x,y,z,0,ry);bars.push(m);return m};
+const gls=[];
+const hero=bar(0,.1585,0,.55);
+
+/* maker */
+const P={L:48,Wd:30,T:7.6,round:.62,polish:1,depth:.7,emboss:true,emblem:true,metal:'gold',brand:'Aurum Refinery',purity:'999.9',weight:'200 g',serial:'No. 041927'};
+const MET={gold:[1,.74,.3],rose:[1,.56,.44],plat:[.8,.78,.75],silver:[.97,.96,.92]};
+const NM={gold:'純金',rose:'ローズゴールド',plat:'プラチナ',silver:'シルバー'};
+const SWC={gold:'linear-gradient(135deg,#fff1b8,#e8b13a 55%,#8a5a12)',rose:'linear-gradient(135deg,#ffe0d6,#e39a86 55%,#8d4a3c)',plat:'linear-gradient(135deg,#f4f4f2,#b9b8b4 55%,#6d6c68)',silver:'linear-gradient(135deg,#fff,#d6d6d2 55%,#8b8b88)'};
+const LAB={gold:'FINE GOLD',rose:'18K ROSE GOLD',plat:'PLATINUM',silver:'FINE SILVER'},SYM={gold:'Au',rose:'Au',plat:'Pt',silver:'Ag'};
+const DEN={gold:19.32,rose:15.2,plat:21.45,silver:10.49};
+const PR=[{n:'クラシック',s:'金 200g',v:{L:48,Wd:30,T:7.6,metal:'gold',round:.62}},{n:'キロバー',s:'金 1kg',v:{L:80,Wd:40,T:17,metal:'gold',round:.5}},{n:'メゾン・ローズ',s:'18K 100g',v:{L:40,Wd:25,T:6.9,metal:'rose',round:.75}},{n:'プラチナ',s:'Pt 500g',v:{L:60,Wd:35,T:11.7,metal:'plat',round:.55}},{n:'シルバー',s:'Ag 1kg',v:{L:90,Wd:50,T:22.3,metal:'silver',round:.4}}];
+const SL=[['L','長さ',30,120,.5,'mm'],['Wd','幅',15,70,.5,'mm'],['T','厚み',3,30,.1,'mm'],['round','角の丸み',0,100,1,'%'],['polish','鏡面研磨',0,100,1,'%'],['depth','刻印の深さ',0,100,1,'%']];
+const PCT={round:1,polish:1,depth:1},LOOK={polish:1,depth:1};
+let wAuto=true,tm;
+const est=()=>P.L*P.Wd*P.T*.95/1000*DEN[P.metal];
+const nice=g=>{const st=g<100?1:5,r=Math.round(g/st)*st;return r>=1000?+(r/1000).toFixed(2)+' kg':r+' g'};
+const mkEl=document.getElementById('mk');
+mkEl.innerHTML='<div class="hd"><b>インゴット・メーカー</b><div id="est"></div></div>'+
+'<h2>プリセット</h2><div class="g2">'+PR.map((q,i)=>'<button class="b" data-p="'+i+'">'+q.n+'<small>'+q.s+'</small></button>').join('')+'</div>'+
+'<h2>地金</h2><div class="sw">'+Object.keys(MET).map(k=>'<button class="b" data-m="'+k+'"><i style="background:'+SWC[k]+'"></i>'+NM[k]+'</button>').join('')+'</div>'+
+'<h2>形状と仕上げ</h2>'+SL.map(q=>'<label>'+q[1]+'<output id="o_'+q[0]+'"></output><input type="range" data-k="'+q[0]+'" min="'+q[2]+'" max="'+q[3]+'" step="'+q[4]+'"></label>').join('')+
+'<div class="g2"><button class="b" data-e="1">浮彫（凸）</button><button class="b" data-e="0">打刻（凹）</button></div>'+
+'<h2>刻印</h2>'+[['brand','ブランド名',22],['purity','純度',8],['weight','重量表記',8],['serial','シリアル',14]].map(q=>'<label>'+q[1]+'<input class="t" data-k="'+q[0]+'" maxlength="'+q[2]+'"></label>').join('')+
+'<label><input type="checkbox" data-k="emblem"> エンブレムを入れる</label>';
+function sync(){
+  if(wAuto)P.weight=nice(est());
+  mkEl.querySelectorAll('[data-k]').forEach(i=>{if(document.activeElement===i)return;const v=P[i.dataset.k];if(i.type==='checkbox')i.checked=v;else i.value=PCT[i.dataset.k]?Math.round(v*100):v});
+  SL.forEach(q=>{const v=P[q[0]];document.getElementById('o_'+q[0]).textContent=(PCT[q[0]]?Math.round(v*100):(+v).toFixed(1))+q[5]});
+  mkEl.querySelectorAll('[data-m]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===P.metal));
+  mkEl.querySelectorAll('[data-e]').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.e==='1')===P.emboss));
+  document.getElementById('est').textContent='推定重量 '+Math.round(est())+' g　'+(+P.L).toFixed(1)+' × '+(+P.Wd).toFixed(1)+' × '+(+P.T).toFixed(1)+' mm';
+}
+function look(){const m=MET[P.metal],f=1+(1-P.polish)*4;[side,top].forEach(q=>q.color.setRGB(m[0],m[1],m[2]));side.roughness=.09*f;top.roughness=.6*f;top.bumpScale=P.depth*8.6*(P.emboss?1:-1)}
+function rebuild(fit){
+  const L=P.L/24,Wd=P.Wd/24,T=P.T/24,K=L/Wd;
+  const cr=Math.min(Wd*(.05+.3*P.round),Math.min(L,Wd)*.49),r=Math.min(T*.3,cr*.28),Rc=Math.max(.002,cr-r);
+  hero.geometry.dispose();hero.geometry=buildGeo(L,T,Wd,r,Rc);hero.position.y=T/2;
+  [top.bumpMap,top.roughnessMap].forEach(m=>m&&m.dispose());
+  top.bumpMap=tex(K);top.roughnessMap=scr(K);look();
+  if(fit)tz=Math.max(2.4,2.6*L);
+}
+const later=()=>{clearTimeout(tm);tm=setTimeout(()=>rebuild(false),200)};
+mkEl.addEventListener('input',e=>{const t=e.target,k=t.dataset.k;if(!k)return;
+  P[k]=t.type==='checkbox'?t.checked:t.type==='range'?(PCT[k]?t.value/100:+t.value):t.value;
+  if(k==='weight')wAuto=false;else if(k==='L'||k==='Wd'||k==='T')wAuto=true;
+  sync();if(LOOK[k])look();else later()});
+mkEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+  if(d.p!=null){Object.assign(P,PR[d.p].v);wAuto=true;sync();rebuild(true)}
+  else if(d.m){P.metal=d.m;wAuto=true;sync();look();later()}
+  else if(d.e!=null){P.emboss=d.e==='1';sync();look()}});
+
+
+/* drifting gold dust */
+const N=240,DP=new Float32Array(N*3),Q=[];
+for(let i=0;i<N;i++){const a=Math.random()*6.28,d=1+Math.random()*7;DP[i*3]=Math.cos(a)*d;DP[i*3+1]=Math.random()*6;DP[i*3+2]=Math.sin(a)*d;Q.push(Math.random()*6.28)}
+const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(DP,3));
+const sc=document.createElement('canvas');sc.width=sc.height=64;const sx=sc.getContext('2d');
+const gr=sx.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,240,200,1)');gr.addColorStop(.25,'rgba(255,200,100,.55)');gr.addColorStop(1,'rgba(255,170,60,0)');
+sx.fillStyle=gr;sx.fillRect(0,0,64,64);
+scene.add(new THREE.Points(pg,new THREE.PointsMaterial({size:.09,map:new THREE.CanvasTexture(sc),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.8})));
+
+/* HDR post: bloom, ACES, vignette, grain */
+const pr=R.getPixelRatio();
+const comp=new THREE.EffectComposer(R,new THREE.WebGLMultisampleRenderTarget(innerWidth*pr,innerHeight*pr,{type:THREE.HalfFloatType}));
+comp.setPixelRatio(pr);
+comp.addPass(new THREE.RenderPass(scene,cam));
+const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.22,.5,1.5);try{[bloom.renderTargetBright].concat(bloom.renderTargetsHorizontal,bloom.renderTargetsVertical).forEach(t=>{t.texture.type=THREE.HalfFloatType})}catch(e){}comp.addPass(bloom);
+const fin=new THREE.ShaderPass({uniforms:{tDiffuse:{value:null},time:{value:0}},
+vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+fragmentShader:'uniform sampler2D tDiffuse;uniform float time;varying vec2 vUv;void main(){vec3 c=texture2D(tDiffuse,vUv).rgb*1.25;c=clamp((c*(2.51*c+.03))/(c*(2.43*c+.59)+.14),0.,1.);float d=length((vUv-.5)*vec2(1.1,1.));c*=mix(.12,1.,smoothstep(.9,.25,d));c=max(c-.02,0.);c=pow(c,vec3(.4545));c+=(fract(sin(dot(vUv*vec2(1731.,1313.)+time,vec2(12.9898,78.233)))*43758.5453)-.5)*.045;gl_FragColor=vec4(c,1.);}'});
+comp.addPass(fin);
+
+/* orbit controls with inertia */
+let az=.6,po=.95,di=5.2,tz=5.2,vA=0,vP=0,drag=false,lx=0,ly=0;
+const el=R.domElement;
+el.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;vA=vP=0;el.setPointerCapture(e.pointerId)});
+el.addEventListener('pointermove',e=>{if(!drag)return;vA=-(e.clientX-lx)*.006;vP=-(e.clientY-ly)*.005;az+=vA;po+=vP;lx=e.clientX;ly=e.clientY});
+['pointerup','pointercancel'].forEach(k=>el.addEventListener(k,()=>{drag=false}));
+el.addEventListener('wheel',e=>{e.preventDefault();tz=Math.min(20,Math.max(.9,tz*Math.exp(e.deltaY*.0011)))},{passive:false});
+function size(){const w=innerWidth,h=innerHeight;R.setSize(w,h);comp.setSize(w,h);cam.aspect=w/h;cam.fov=w/h<1?50:32;if(w>760)cam.setViewOffset(w,h,160,0,w,h);else cam.setViewOffset(w,h,0,h*.22,w,h);cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();
+
+function frame(t){
+  requestAnimationFrame(frame);
+  if(!drag){az+=vA+(calm?0:.0013);po+=vP;vA*=.93;vP*=.93}
+  po=Math.min(1.5,Math.max(.25,po));di+=(tz-di)*.08;
+  cam.position.set(Math.sin(po)*Math.sin(az)*di,.12+Math.cos(po)*di,Math.sin(po)*Math.cos(az)*di);
+  cam.lookAt(0,.12,0);
+  if(!calm){for(let i=0;i<N;i++){DP[i*3+1]+=.0025;if(DP[i*3+1]>6)DP[i*3+1]=0;DP[i*3]+=Math.sin(t*.0006+Q[i])*.0015}pg.attributes.position.needsUpdate=true}
+  sun.position.set(-6*Math.cos(t*.00015),12,2+8*Math.sin(t*.00015+1));
+  gls.forEach(s=>{const u=s.userData;s.scale.setScalar(.22*Math.pow(Math.max(0,Math.sin(t*.0012*u.k+u.p)),12))});
+  fin.uniforms.time.value=t*.001;comp.render();
+}
+requestAnimationFrame(frame);
+sync();rebuild(true);
+})();
+</script>
+</body>
+</html>

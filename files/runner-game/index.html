@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ランナーバトル - 紹介</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    min-height:100%;
+    background: radial-gradient(circle at 30% 20%, #23234a, #0f0f1a 70%);
+    font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
+    color:#fff;
+  }
+  .hero {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:60px 20px 30px;
+  }
+  .hero h1 {
+    font-size:2.6em; letter-spacing:3px;
+    background: linear-gradient(90deg,#ff5da2,#ffd75d,#5dc8ff,#7dff5d);
+    background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: hueShift 6s linear infinite;
+  }
+  @keyframes hueShift { 0%{background-position:0% 50%;} 100%{background-position:300% 50%;} }
+  .hero p.tagline { margin-top:10px; opacity:0.8; font-size:1.05em; }
+
+  .container { max-width:900px; margin:0 auto; padding:0 20px 60px; }
+
+  .videoBox {
+    width:100%; border-radius:16px; overflow:hidden; background:#000;
+    box-shadow:0 10px 40px rgba(0,0,0,0.6); margin:30px 0;
+  }
+  .videoBox video { width:100%; display:block; }
+
+  .cta { text-align:center; margin:30px 0 50px; }
+  .cta a {
+    display:inline-block; padding:16px 40px; font-size:1.2em; font-weight:bold;
+    border-radius:50px; text-decoration:none; color:#fff;
+    background:linear-gradient(90deg,#ff5da2,#ff8a5d);
+    box-shadow:0 6px 20px rgba(255,93,162,0.4);
+    transition:transform 0.2s, box-shadow 0.2s;
+  }
+  .cta a:hover { transform:translateY(-3px) scale(1.03); box-shadow:0 10px 28px rgba(255,93,162,0.55); }
+
+  .features {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:16px; margin:30px 0;
+  }
+  .card {
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    border-radius:14px; padding:20px; text-align:left;
+  }
+  .card .icon { font-size:1.6em; margin-bottom:8px; }
+  .card h3 { font-size:1.05em; margin-bottom:6px; }
+  .card p { font-size:0.9em; opacity:0.8; line-height:1.6; }
+
+  .howto {
+    background:rgba(255,255,255,0.04); border-radius:16px; padding:24px 28px; margin:30px 0;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .howto h2 { margin-bottom:14px; }
+  .howto p { line-height:1.8; font-size:0.95em; margin-bottom:8px; }
+
+  .backLink { display:inline-block; margin-top:10px; opacity:0.7; font-size:0.85em; color:#fff; text-decoration:none; }
+  .backLink:hover { opacity:1; text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🏃 ランナーバトル</h1>
+  <p class="tagline">1〜4人ローカルマルチ対応、加速し続ける横スクロールランナー</p>
+</div>
+
+<div class="container">
+
+
+
+  <div class="cta">
+    <a href="runner_game.html">▶ PLAY NOW</a>
+  </div>
+
+  <div class="features">
+    <div class="card">
+      <div class="icon">👥</div>
+      <h3>1〜4人ローカルマルチ</h3>
+      <p>全員が同じステージを共有走行。キーバインドも自由に設定できます。</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h3>加速する無限スクロール</h3>
+      <p>時間経過とともにスピードが上昇し続け、後半ほど緊張感あるプレイに。</p>
+    </div>
+    <div class="card">
+      <div class="icon">♦</div>
+      <h3>妨害アイテム</h3>
+      <p>フィールドのアイテムを取ると、次のジャンプで足元に鈍化ゾーンを設置できます。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🕳️</div>
+      <h3>落とし穴</h3>
+      <p>ランダムに現れる地面の切れ目。タイミングよくジャンプで飛び越えよう。</p>
+    </div>
+  </div>
+
+  <div class="howto">
+    <h2>📖 遊び方</h2>
+    <p><b>目的:</b> 障害物や落とし穴を避けながら、できるだけ長く生き残ろう。生存時間と障害物回避数でスコアが加算されます。</p>
+    <p><b>操作:</b> 各プレイヤーごとにキー設定が可能。移動キーで左右移動(画面左半分まで自由に動けます)、ジャンプキーで障害物や穴を飛び越えます。</p>
+    <p><b>アイテム(♦):</b> 触れると1個だけ所持。所持中に次にジャンプすると鈍化ゾーンが発生し、他プレイヤーの移動速度を下げます(自分には効果なし)。</p>
+    <p><b>決着:</b> 全員が脱落した時点でスコア順のランキングが表示されます。</p>
+  </div>
+
+  <div class="cta">
+    <a href="runner_game.html">▶ PLAY NOW</a>
+  </div>
+
+  <div style="text-align:center;">
+    <a class="backLink" href="https://khub.vercel.app/">← ゲームポータルに戻る</a>
+  </div>
+
+</div>
+
+</body>
+</html>

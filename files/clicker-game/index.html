@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マネークリッカー INFINITY</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','Arial',sans-serif;background:#0a0a1a;color:#eee;min-height:100vh;padding:10px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;max-width:1600px;margin:0 auto 10px;flex-wrap:wrap;gap:8px;padding:0 10px}
+.header h1{color:#ffd700;font-size:24px;text-shadow:0 0 15px rgba(255,215,0,.4)}
+.save-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn{padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;transition:all .15s;color:#fff;font-size:12px}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.btn-green{background:#2e7d32}
+.btn-blue{background:#1565c0}
+.btn-red{background:#c62828}
+.btn-purple{background:#6a1b9a}
+.tab-btn{background:#1a1a2e;border:1px solid #333}
+.tab-btn.active{background:#283593;border-color:#ffd700;color:#ffd700}
+.stats-bar{display:flex;justify-content:center;gap:20px;margin-bottom:10px;flex-wrap:wrap;font-size:12px;color:#888;max-width:1600px;margin:0 auto 10px}
+.stats-bar span{color:#ffd700;font-weight:bold}
+.pp-display{color:#e040fb;font-weight:bold}
+.container{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:12px;max-width:1600px;margin:0 auto}
+.panel{background:#12121e;border-radius:12px;padding:15px;border:1px solid #1e1e2e;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.main-section{display:flex;flex-direction:column;align-items:center;justify-content:center;grid-row:span 2}
+.money-display{font-size:36px;font-weight:bold;color:#ffd700;margin-bottom:6px;text-align:center;text-shadow:0 0 15px rgba(255,215,0,.3)}
+.sub-display{font-size:13px;color:#aaa;margin-bottom:4px;text-align:center}
+.pp-info{color:#e040fb;font-size:13px;margin-bottom:15px;text-align:center;font-weight:bold}
+.click-btn{width:140px;height:140px;border-radius:50%;border:3px solid #ffd700;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#1a1a2e;font-size:20px;font-weight:bold;cursor:pointer;transition:all .08s;box-shadow:0 0 25px rgba(255,215,0,.2);display:flex;align-items:center;justify-content:center;flex-direction:column;user-select:none}
+.click-btn:hover{transform:scale(1.06);box-shadow:0 0 40px rgba(255,215,0,.4)}
+.click-btn:active{transform:scale(.9)}
+.floating-number{position:fixed;font-weight:bold;color:#ffd700;font-size:20px;pointer-events:none;animation:float-up 1s ease-out forwards;text-shadow:2px 2px 4px rgba(0,0,0,.6);z-index:1000}
+@keyframes float-up{0%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:1;transform:translateY(-40px) scale(1.15)}100%{opacity:0;transform:translateY(-90px) scale(.85)}}
+.panel h2{font-size:13px;margin-bottom:10px;color:#ffd700;border-bottom:1px solid #2a2a3e;padding-bottom:6px;display:flex;align-items:center;gap:5px;position:sticky;top:0;background:#12121e;z-index:5}
+.sidebar{overflow-y:auto;max-height:520px;position:relative}
+.upgrade-item{background:#1a1a2e;border-left:2px solid #3949ab;padding:8px 10px;margin-bottom:6px;border-radius:6px;cursor:pointer;transition:all .15s;font-size:11px}
+.upgrade-item:hover{background:#252538;transform:translateX(3px)}
+.upgrade-item.disabled{opacity:1;cursor:not-allowed}
+.upgrade-item.disabled:hover{transform:none}
+.upgrade-item.locked{position:relative;overflow:hidden}
+.upgrade-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;pointer-events:none;border-radius:6px;opacity:.88;z-index:2}
+.upgrade-name{font-weight:bold;color:#fff;margin-bottom:2px;font-size:12px}
+.upgrade-cost{font-size:11px;color:#ff9800}
+.upgrade-count{font-size:10px;color:#888;margin-top:2px}
+.item-card{background:#1a1a2e;border-left:2px solid #e91e63;padding:8px 10px;margin-bottom:6px;border-radius:6px;cursor:pointer;transition:all .15s;font-size:11px;position:relative}
+.item-card:hover{background:#252538;transform:translateX(3px)}
+.item-card.owned{border-left-color:#4CAF50;background:#0d1f0d}
+.item-card.owned:hover{background:#142b14}
+.item-card.disabled{opacity:.35;cursor:not-allowed}
+.item-name{font-weight:bold;color:#fff;margin-bottom:2px;display:flex;align-items:center;gap:3px;font-size:12px}
+.item-rarity{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:bold}
+.rarity-N{background:#757575}
+.rarity-R{background:#2196F3}
+.rarity-SR{background:#9c27b0}
+.rarity-SSR{background:#ff9800}
+.rarity-UR{background:#f44336}
+.rarity-LR{background:#00e5ff;color:#000}
+.rarity-SECRET{background:#ffd700;color:#000}
+.item-cost{font-size:11px;color:#ffd700}
+.item-effect{font-size:10px;color:#ff9800;margin-top:2px}
+.item-owned{position:absolute;top:6px;right:6px;background:#2e7d32;color:#fff;font-size:9px;padding:1px 6px;border-radius:6px}
+.achievement-item{background:#151520;border-left:2px solid #3949ab;padding:8px 10px;margin-bottom:5px;border-radius:6px;font-size:11px}
+.achievement-item.unlocked{background:#0d1f0d;border-left-color:#4CAF50}
+.achievement-item.locked{position:relative;overflow:hidden}
+.achievement-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;pointer-events:none;border-radius:6px;transition:opacity .3s}
+.achievement-name{font-weight:bold;color:#fff;margin-bottom:1px;font-size:12px}
+.achievement-desc{font-size:10px;color:#777;margin-bottom:2px}
+.achievement-progress{font-size:10px;color:#666}
+.progress-bar{width:100%;height:3px;background:#1e1e2e;border-radius:2px;margin-top:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#3949ab,#5e35b1);border-radius:2px;transition:width .3s}
+.progress-bar-fill.complete{background:#4CAF50}
+.notification{position:fixed;top:15px;right:15px;background:#1a1a2e;padding:12px 16px;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.5);animation:slide-in .25s ease-out;max-width:300px;border:1px solid #2a2a3e;color:#fff;z-index:2000;font-size:13px}
+.notification.achievement{border-left:3px solid #fbc02d}
+.notification.item{border-left:3px solid #ff9800}
+.notification.save{border-left:3px solid #4CAF50}
+.notification.rare{border-left:3px solid #e91e63}
+.notification.pp{border-left:3px solid #e040fb}
+@keyframes slide-in{from{transform:translateX(350px);opacity:0}to{transform:translateX(0);opacity:1}}
+.tab-content{display:none}.tab-content.active{display:block}
+.combo-display{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:16px;color:#ff1744;font-weight:bold;opacity:0;transition:opacity .2s;pointer-events:none}
+.combo-display.show{opacity:1}
+.critical-hit{animation:crit-pulse .25s ease-out}
+@keyframes crit-pulse{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+.prestige-panel{background:#1a0a2e;border:1px solid #4a148c;padding:12px;border-radius:8px;margin-bottom:10px;text-align:center}
+.prestige-panel h3{color:#e040fb;font-size:14px;margin-bottom:6px}
+.prestige-info{font-size:12px;color:#aaa;margin-bottom:8px}
+.prestige-btn{background:#6a1b9a;color:#fff;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;transition:all .2s}
+.prestige-btn:hover{background:#8e24aa;transform:scale(1.05)}
+.prestige-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.pp-shop-item{background:#1a0a2e;border-left:2px solid #e040fb;padding:8px 10px;margin-bottom:6px;border-radius:6px;cursor:pointer;transition:all .15s;font-size:11px}
+.pp-shop-item:hover{background:#2a1040;transform:translateX(3px)}
+.pp-shop-item.disabled{opacity:.35;cursor:not-allowed}
+.pp-shop-name{font-weight:bold;color:#e040fb;margin-bottom:2px}
+.pp-shop-cost{font-size:11px;color:#ce93d8}
+.pp-shop-desc{font-size:10px;color:#aaa}
+.pp-shop-lv{font-size:10px;color:#888;margin-top:2px}
+.event-log{font-size:11px;color:#777;max-height:500px;overflow-y:auto;line-height:1.6}
+.event-log div{padding:2px 0;border-bottom:1px solid #1a1a2e}
+.filter-bar{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.filter-bar button{background:#1e1e2e;border:1px solid #333;color:#888;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:10px;transition:all .15s}
+.filter-bar button:hover,.filter-bar button.active{background:#3949ab;color:#fff;border-color:#3949ab}
+@media(max-width:1200px){.container{grid-template-columns:1fr 1fr}.main-section{grid-row:span 1;grid-column:span 2}}
+@media(max-width:768px){.container{grid-template-columns:1fr}.main-section{grid-column:span 1}.header{flex-direction:column}.money-display{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>💰 マネークリッカー INFINITY</h1>
+<div class="save-controls">
+<button class="btn tab-btn active" data-tab="upgrades">⚡ アップグレード</button>
+<button class="btn tab-btn" data-tab="items">🎒 所持品</button>
+<button class="btn tab-btn" data-tab="achievements">🏆 実績</button>
+<button class="btn tab-btn" data-tab="prestige">✨ プレステージ</button>
+<button class="btn btn-green" id="manualSaveBtn">💾 保存</button>
+<button class="btn btn-blue" id="manualLoadBtn">📂 読込</button>
+<button class="btn btn-red" id="resetBtn">🔄 リセット</button>
+</div>
+</div>
+<div class="stats-bar">
+<div>総クリック: <span id="totalClicksDisplay">0</span></div>
+<div>総獲得金: <span id="totalMoneyDisplay">¥0</span></div>
+<div>実績: <span id="achievementCount">0</span>/<span id="achievementTotal">0</span></div>
+<div>所持品: <span id="itemCount">0</span>/<span id="itemTotal">0</span></div>
+<div class="pp-display">PP: <span id="ppDisplay">0</span></div>
+<div>周回: <span id="prestigeCount">0</span></div>
+</div>
+<div class="container">
+<div class="panel main-section">
+<div class="combo-display" id="comboDisplay"></div>
+<div class="money-display" id="moneyDisplay">¥0</div>
+<div class="sub-display" id="incomeDisplay">毎秒: ¥0</div>
+<div class="sub-display" id="clickDisplay">1クリック: ¥1</div>
+<div class="sub-display" id="multDisplay">倍率: x1.00</div>
+<div class="pp-info" id="ppInfo">次のプレステージ: +0 PP</div>
+<button class="click-btn" id="clickBtn">💰<br>クリック</button>
+</div>
+<div class="panel sidebar">
+<div class="tab-content active" id="tab-upgrades">
+<h2>⚡ アップグレード <span id="upgradeCount" style="color:#888;font-size:11px"></span></h2>
+<div class="filter-bar" id="upgradeFilters">
+<button class="active" data-filter="all">全て</button>
+<button data-filter="passive">📈 パッシブ</button>
+<button data-filter="click">👆 クリック</button>
+<button data-filter="special">✨ 特殊</button>
+</div>
+<div id="upgradesList"></div>
+</div>
+<div class="tab-content" id="tab-items">
+<h2>🎒 所持品 <span id="itemShopCount" style="color:#888;font-size:11px"></span></h2>
+<div class="filter-bar" id="itemFilters">
+<button class="active" data-filter="all">全て</button>
+<button data-filter="N">N</button>
+<button data-filter="R">R</button>
+<button data-filter="SR">SR</button>
+<button data-filter="SSR">SSR</button>
+<button data-filter="UR">UR</button>
+<button data-filter="LR">LR</button>
+<button data-filter="SECRET">SECRET</button>
+</div>
+<div id="itemsList"></div>
+</div>
+<div class="tab-content" id="tab-achievements">
+<h2>🏆 実績 <span id="achProgress" style="color:#888;font-size:11px"></span></h2>
+<div id="achievementsList"></div>
+</div>
+<div class="tab-content" id="tab-prestige">
+<h2>✨ プレステージ</h2>
+<div class="prestige-panel">
+<h3>🔄 プレステージ実行</h3>
+<div class="prestige-info">所持金をリセットし、PPを獲得します。PPは永続的な強化に使用できます。</div>
+<div style="font-size:14px;color:#e040fb;margin-bottom:8px">獲得予定PP: <span id="prestigeGain">0</span></div>
+<button class="prestige-btn" id="prestigeBtn">プレステージ実行</button>
+</div>
+<h2 style="margin-top:15px">🛒 PPショップ</h2>
+<div id="ppShopList"></div>
+</div>
+</div>
+<div class="panel sidebar">
+<h2>📜 イベントログ</h2>
+<div class="event-log" id="eventLog"></div>
+</div>
+<div class="panel sidebar">
+<h2>📊 統計</h2>
+<div id="statsPanel" style="font-size:11px;color:#aaa;line-height:1.8"></div>
+</div>
+</div>
+<div id="itemContainer"></div>
+<div id="notificationContainer"></div>
+<script>
+class MoneyClickerInfinity {
+constructor() {
+this.money = 0; this.moneyPerSec = 0; this.baseMoneyPerClick = 1;
+this.totalClicks = 0; this.totalMoney = 0; this.clickCombo = 0; this.lastClickTime = 0;
+this.criticalChance = 0.03; this.criticalMultiplier = 1.5;
+this.rareDrops = 0; this.totalCrits = 0; this.maxCombo = 0;
+this.pp = 0; this.prestigeCount = 0; this.totalPP = 0;
+this.eventLog = []; this.unlockedAchievements = new Set();
+this.upgradeFilter = 'all'; this.itemFilter = 'all';
+this.generateUpgrades(); this.generateItems(); this.generateAchievements(); this.generatePPShop();
+this.loadGame(); this.init();
+}
+
+generateUpgrades() {
+this.upgrades = {};
+const pNames = ["古代のカーソル","古代のおばあちゃん","古代のファーム","古代の工場","古代のロボット","古代のサーバー","古代のネットワーク","古代の衛星","古代の基地","古代の研究所","古代の開発所","古代の実験室","古代の製造所","古代の精製所","古代の工房","古代の牧場","古代の農場","古代の果樹園","古代の養殖場","古代の採掘場","古代の鉱山","古代の油田","古代のガス田","古代の発電所","古代の変電所","古代の送電網","古代の配電網","古代の通信網","古代の放送局","古代の新聞社","古代の出版社","古代の映画館","古代の劇場","古代の音楽堂","古代の美術館","古代の博物館","古代の図書館","古代の会議室","古代の事務所","古代のオフィス","魔法のカーソル","魔法のおばあちゃん","魔法のファーム","魔法の工場","魔法のロボット","魔法のサーバー","魔法のネットワーク","魔法の衛星","魔法の基地","魔法の研究所","魔法の開発所","魔法の実験室","魔法の製造所","魔法の精製所","魔法の工房","魔法の牧場","魔法の農場","魔法の果樹園","魔法の養殖場","魔法の採掘場","魔法の鉱山","魔法の油田","魔法のガス田","魔法の発電所","魔法の変電所","魔法の送電網","魔法の配電網","魔法の通信網","魔法の放送局","魔法の新聞社","魔法の出版社","魔法の映画館","魔法の劇場","魔法の音楽堂","魔法の美術館","魔法の博物館","魔法の図書館","魔法の会議室","魔法の事務所","魔法のオフィス","電子カーソル","電子おばあちゃん","電子ファーム","電子工場","電子ロボット","電子サーバー","電子ネットワーク","電子衛星","電子基地","電子研究所","電子開発所","電子実験室","電子製造所","電子精製所","電子工房","電子牧場","電子農場","電子果樹園","電子養殖場","電子採掘場","電子鉱山","電子油田","電子ガス田","電子発電所","電子変電所","電子送電網","電子配電網","電子通信網","電子放送局","電子新聞社","電子出版社","電子映画館","電子劇場","電子音楽堂","電子美術館","電子博物館","電子図書館","電子会議室","電子事務所","電子オフィス","量子カーソル","量子おばあちゃん","量子ファーム","量子工場","量子ロボット","量子サーバー","量子ネットワーク","量子衛星","量子基地","量子研究所","量子開発所","量子実験室","量子製造所","量子精製所","量子工房","量子牧場","量子農場","量子果樹園","量子養殖場","量子採掘場","量子鉱山","量子油田","量子ガス田","量子発電所","量子変電所","量子送電網","量子配電網","量子通信網","量子放送局","量子新聞社","量子出版社","量子映画館","量子劇場","量子音楽堂","量子美術館","量子博物館","量子図書館","量子会議室","量子事務所","量子オフィス","AIカーソル","AIおばあちゃん","AIファーム","AI工場","AIロボット","AIサーバー","AIネットワーク","AI衛星","AI基地","AI研究所","AI開発所","AI実験室","AI製造所","AI精製所","AI工房","AI牧場","AI農場","AI果樹園","AI養殖場","AI採掘場","AI鉱山","AI油田","AIガス田","AI発電所","AI変電所","AI送電網","AI配電網","AI通信網","AI放送局","AI新聞社","AI出版社","AI映画館","AI劇場","AI音楽堂","AI美術館","AI博物館","AI図書館","AI会議室","AI事務所","AIオフィス","ネオカーソル","ネオおばあちゃん","ネオファーム","ネオ工場","ネオロボット","ネオサーバー","ネオネットワーク","ネオ衛星","ネオ基地","ネオ研究所","ネオ開発所","ネオ実験室","ネオ製造所","ネオ精製所","ネオ工房","ネオ牧場","ネオ農場","ネオ果樹園","ネオ養殖場","ネオ採掘場","ネオ鉱山","ネオ油田","ネオガス田","ネオ発電所","ネオ変電所","ネオ送電網","ネオ配電網","ネオ通信網","ネオ放送局","ネオ新聞社","ネオ出版社","ネオ映画館","ネオ劇場","ネオ音楽堂","ネオ美術館","ネオ博物館","ネオ図書館","ネオ会議室","ネオ事務所","ネオオフィス","ハイパーカーソル","ハイパーおばあちゃん","ハイパーファーム","ハイパー工場","ハイパーロボット","ハイパーサーバー","ハイパーネットワーク","ハイパー衛星","ハイパー基地","ハイパー研究所","ハイパー開発所","ハイパー実験室","ハイパー製造所","ハイパー精製所","ハイパー工房","ハイパー牧場","ハイパー農場","ハイパー果樹園","ハイパー養殖場","ハイパー採掘場","ハイパー鉱山","ハイパー油田","ハイパーガス田","ハイパー発電所","ハイパー変電所","ハイパー送電網","ハイパー配電網","ハイパー通信網","ハイパー放送局","ハイパー新聞社","ハイパー出版社","ハイパー映画館","ハイパー劇場","ハイパー音楽堂","ハイパー美術館","ハイパー博物館","ハイパー図書館","ハイパー会議室","ハイパー事務所","ハイパーオフィス","コスモカーソル","コスモおばあちゃん","コスモファーム","コスモ工場","コスモロボット","コスモサーバー","コスモネットワーク","コスモ衛星","コスモ基地","コスモ研究所","コスモ開発所","コスモ実験室","コスモ製造所","コスモ精製所","コスモ工房","コスモ牧場","コスモ農場","コスモ果樹園","コスモ養殖場","コスモ採掘場","コスモ鉱山","コスモ油田","コスモガス田","コスモ発電所","コスモ変電所","コスモ送電網","コスモ配電網","コスモ通信網","コスモ放送局","コスモ新聞社","コスモ出版社","コスモ映画館","コスモ劇場","コスモ音楽堂","コスモ美術館","コスモ博物館","コスモ図書館","コスモ会議室","コスモ事務所","コスモオフィス","ディープカーソル","ディープおばあちゃん","ディープファーム","ディープ工場","ディープロボット","ディープサーバー","ディープネットワーク","ディープ衛星","ディープ基地","ディープ研究所","ディープ開発所","ディープ実験室","ディープ製造所","ディープ精製所","ディープ工房","ディープ牧場","ディープ農場","ディープ果樹園","ディープ養殖場","ディープ採掘場","ディープ鉱山","ディープ油田","ディープガス田","ディープ発電所","ディープ変電所","ディープ送電網","ディープ配電網","ディープ通信網","ディープ放送局","ディープ新聞社","ディープ出版社","ディープ映画館","ディープ劇場","ディープ音楽堂","ディープ美術館","ディープ博物館","ディープ図書館","ディープ会議室","ディープ事務所","ディープオフィス","シャドウカーソル","シャドウおばあちゃん","シャドウファーム","シャドウ工場","シャドウロボット","シャドウサーバー","シャドウネットワーク","シャドウ衛星","シャドウ基地","シャドウ研究所","シャドウ開発所","シャドウ実験室","シャドウ製造所","シャドウ精製所","シャドウ工房","シャドウ牧場","シャドウ農場","シャドウ果樹園","シャドウ養殖場","シャドウ採掘場","シャドウ鉱山","シャドウ油田","シャドウガス田","シャドウ発電所","シャドウ変電所","シャドウ送電網","シャドウ配電網","シャドウ通信網","シャドウ放送局","シャドウ新聞社","シャドウ出版社","シャドウ映画館","シャドウ劇場","シャドウ音楽堂","シャドウ美術館","シャドウ博物館","シャドウ図書館","シャドウ会議室","シャドウ事務所","シャドウオフィス"];
+const cNames = ["神速のクリック","神速のタップ","神速のタッチ","神速の打撃","神速の一撃","神速の連打","神速の瞬撃","神速の閃光","神速の雷撃","神速の爆撃","神速の必殺","神速の奥義","神速の秘技","神速の絶技","神速の神業","神速の魔術","神速の魔法","神速の呪文","神速の祈り","神速の願い","神速の意思","神速の念力","神速の超能力","神速のサイコパワー","神速のテレパシー","神速の念動力","神速の精神力","神速の意志力","神速の集中力","神速の注意力","神速の反応力","神速の瞬発力","神速の持久力","神速の忍耐力","神速の根性","神速の気合い","神速の闘志","神速の闘魂","神速の闘気","神速の気功","閃光のクリック","閃光のタップ","閃光のタッチ","閃光の打撃","閃光の一撃","閃光の連打","閃光の瞬撃","閃光の閃光","閃光の雷撃","閃光の爆撃","閃光の必殺","閃光の奥義","閃光の秘技","閃光の絶技","閃光の神業","閃光の魔術","閃光の魔法","閃光の呪文","閃光の祈り","閃光の願い","閃光の意思","閃光の念力","閃光の超能力","閃光のサイコパワー","閃光のテレパシー","閃光の念動力","閃光の精神力","閃光の意志力","閃光の集中力","閃光の注意力","閃光の反応力","閃光の瞬発力","閃光の持久力","閃光の忍耐力","閃光の根性","閃光の気合い","閃光の闘志","閃光の闘魂","閃光の闘気","閃光の気功","雷撃のクリック","雷撃のタップ","雷撃のタッチ","雷撃の打撃","雷撃の一撃","雷撃の連打","雷撃の瞬撃","雷撃の閃光","雷撃の雷撃","雷撃の爆撃","雷撃の必殺","雷撃の奥義","雷撃の秘技","雷撃の絶技","雷撃の神業","雷撃の魔術","雷撃の魔法","雷撃の呪文","雷撃の祈り","雷撃の願い","雷撃の意思","雷撃の念力","雷撃の超能力","雷撃のサイコパワー","雷撃のテレパシー","雷撃の念動力","雷撃の精神力","雷撃の意志力","雷撃の集中力","雷撃の注意力","雷撃の反応力","雷撃の瞬発力","雷撃の持久力","雷撃の忍耐力","雷撃の根性","雷撃の気合い","雷撃の闘志","雷撃の闘魂","雷撃の闘気","雷撃の気功","爆撃のクリック","爆撃のタップ","爆撃のタッチ","爆撃の打撃","爆撃の一撃","爆撃の連打","爆撃の瞬撃","爆撃の閃光","爆撃の雷撃","爆撃の爆撃","爆撃の必殺","爆撃の奥義","爆撃の秘技","爆撃の絶技","爆撃の神業","爆撃の魔術","爆撃の魔法","爆撃の呪文","爆撃の祈り","爆撃の願い","爆撃の意思","爆撃の念力","爆撃の超能力","爆撃のサイコパワー","爆撃のテレパシー","爆撃の念動力","爆撃の精神力","爆撃の意志力","爆撃の集中力","爆撃の注意力","爆撃の反応力","爆撃の瞬発力","爆撃の持久力","爆撃の忍耐力","爆撃の根性","爆撃の気合い","爆撃の闘志","爆撃の闘魂","爆撃の闘気","爆撃の気功","必殺のクリック","必殺のタップ","必殺のタッチ","必殺の打撃","必殺の一撃","必殺の連打","必殺の瞬撃","必殺の閃光","必殺の雷撃","必殺の爆撃","必殺の必殺","必殺の奥義","必殺の秘技","必殺の絶技","必殺の神業","必殺の魔術","必殺の魔法","必殺の呪文","必殺の祈り","必殺の願い","必殺の意思","必殺の念力","必殺の超能力","必殺のサイコパワー","必殺のテレパシー","必殺の念動力","必殺の精神力","必殺の意志力","必殺の集中力","必殺の注意力","必殺の反応力","必殺の瞬発力","必殺の持久力","必殺の忍耐力","必殺の根性","必殺の気合い","必殺の闘志","必殺の闘魂","必殺の闘気","必殺の気功","奥義のクリック","奥義のタップ","奥義のタッチ","奥義の打撃","奥義の一撃","奥義の連打","奥義の瞬撃","奥義の閃光","奥義の雷撃","奥義の爆撃","奥義の必殺","奥義の奥義","奥義の秘技","奥義の絶技","奥義の神業","奥義の魔術","奥義の魔法","奥義の呪文","奥義の祈り","奥義の願い","奥義の意思","奥義の念力","奥義の超能力","奥義のサイコパワー","奥義のテレパシー","奥義の念動力","奥義の精神力","奥義の意志力","奥義の集中力","奥義の注意力","奥義の反応力","奥義の瞬発力","奥義の持久力","奥義の忍耐力","奥義の根性","奥義の気合い","奥義の闘志","奥義の闘魂","奥義の闘気","奥義の気功","秘技のクリック","秘技のタップ","秘技のタッチ","秘技の打撃","秘技の一撃","秘技の連打","秘技の瞬撃","秘技の閃光","秘技の雷撃","秘技の爆撃","秘技の必殺","秘技の奥義","秘技の秘技","秘技の絶技","秘技の神業","秘技の魔術","秘技の魔法","秘技の呪文","秘技の祈り","秘技の願い","秘技の意思","秘技の念力","秘技の超能力","秘技のサイコパワー","秘技のテレパシー","秘技の念動力","秘技の精神力","秘技の意志力","秘技の集中力","秘技の注意力","秘技の反応力","秘技の瞬発力","秘技の持久力","秘技の忍耐力","秘技の根性","秘技の気合い","秘技の闘志","秘技の闘魂","秘技の闘気","秘技の気功","絶技のクリック","絶技のタップ","絶技のタッチ","絶技の打撃","絶技の一撃","絶技の連打","絶技の瞬撃","絶技の閃光","絶技の雷撃","絶技の爆撃","絶技の必殺","絶技の奥義","絶技の秘技","絶技の絶技","絶技の神業","絶技の魔術","絶技の魔法","絶技の呪文","絶技の祈り","絶技の願い","絶技の意思","絶技の念力","絶技の超能力","絶技のサイコパワー","絶技のテレパシー","絶技の念動力","絶技の精神力","絶技の意志力","絶技の集中力","絶技の注意力","絶技の反応力","絶技の瞬発力","絶技の持久力","絶技の忍耐力","絶技の根性","絶技の気合い","絶技の闘志","絶技の闘魂","絶技の闘気","絶技の気功","神業のクリック","神業のタップ","神業のタッチ","神業の打撃","神業の一撃","神業の連打","神業の瞬撃","神業の閃光","神業の雷撃","神業の爆撃","神業の必殺","神業の奥義","神業の秘技","神業の絶技","神業の神業","神業の魔術","神業の魔法","神業の呪文","神業の祈り","神業の願い","神業の意思","神業の念力","神業の超能力","神業のサイコパワー","神業のテレパシー","神業の念動力","神業の精神力","神業の意志力","神業の集中力","神業の注意力","神業の反応力","神業の瞬発力","神業の持久力","神業の忍耐力","神業の根性","神業の気合い","神業の闘志","神業の闘魂","神業の闘気","神業の気功","魔術のクリック","魔術のタップ","魔術のタッチ","魔術の打撃","魔術の一撃","魔術の連打","魔術の瞬撃","魔術の閃光","魔術の雷撃","魔術の爆撃","魔術の必殺","魔術の奥義","魔術の秘技","魔術の絶技","魔術の神業","魔術の魔術","魔術の魔法","魔術の呪文","魔術の祈り","魔術の願い","魔術の意思","魔術の念力","魔術の超能力","魔術のサイコパワー","魔術のテレパシー","魔術の念動力","魔術の精神力","魔術の意志力","魔術の集中力","魔術の注意力","魔術の反応力","魔術の瞬発力","魔術の持久力","魔術の忍耐力","魔術の根性","魔術の気合い","魔術の闘志","魔術の闘魂","魔術の闘気","魔術の気功"];
+const sNames = ["オートクリッカー","オートお守り","オートブレード","オートマスター","オートの手","オートの歪み","オートの輪","オートの収集者","オートの導き","オートの目","オートの力","オートの加護","オートの祝福","オートの呪い","オートの封印","オートの解放","オートの覚醒","オートの進化","オートの融合","オートの超越","幸運クリッカー","幸運お守り","幸運ブレード","幸運マスター","幸運の手","幸運の歪み","幸運の輪","幸運の収集者","幸運の導き","幸運の目","幸運の力","幸運の加護","幸運の祝福","幸運の呪い","幸運の封印","幸運の解放","幸運の覚醒","幸運の進化","幸運の融合","幸運の超越","クリティカルクリッカー","クリティカルお守り","クリティカルブレード","クリティカルマスター","クリティカルの手","クリティカルの歪み","クリティカルの輪","クリティカルの収集者","クリティカルの導き","クリティカルの目","クリティカルの力","クリティカルの加護","クリティカルの祝福","クリティカルの呪い","クリティカルの封印","クリティカルの解放","クリティカルの覚醒","クリティカルの進化","クリティカルの融合","クリティカルの超越","コンボクリッカー","コンボお守り","コンボブレード","コンボマスター","コンボの手","コンボの歪み","コンボの輪","コンボの収集者","コンボの導き","コンボの目","コンボの力","コンボの加護","コンボの祝福","コンボの呪い","コンボの封印","コンボの解放","コンボの覚醒","コンボの進化","コンボの融合","コンボの超越","黄金クリッカー","黄金お守り","黄金ブレード","黄金マスター","黄金の手","黄金の歪み","黄金の輪","黄金の収集者","黄金の導き","黄金の目","黄金の力","黄金の加護","黄金の祝福","黄金の呪い","黄金の封印","黄金の解放","黄金の覚醒","黄金の進化","黄金の融合","黄金の超越","時空クリッカー","時空お守り","時空ブレード","時空マスター","時空の手","時空の歪み","時空の輪","時空の収集者","時空の導き","時空の目","時空の力","時空の加護","時空の祝福","時空の呪い","時空の封印","時空の解放","時空の覚醒","時空の進化","時空の融合","時空の超越","運命クリッカー","運命お守り","運命ブレード","運命マスター","運命の手","運命の歪み","運命の輪","運命の収集者","運命の導き","運命の目","運命の力","運命の加護","運命の祝福","運命の呪い","運命の封印","運命の解放","運命の覚醒","運命の進化","運命の融合","運命の超越","魂クリッカー","魂お守り","魂ブレード","魂マスター","魂の手","魂の歪み","魂の輪","魂の収集者","魂の導き","魂の目","魂の力","魂の加護","魂の祝福","魂の呪い","魂の封印","魂の解放","魂の覚醒","魂の進化","魂の融合","魂の超越","星クリッカー","星お守り","星ブレード","星マスター","星の手","星の歪み","星の輪","星の収集者","星の導き","星の目","星の力","星の加護","星の祝福","星の呪い","星の封印","星の解放","星の覚醒","星の進化","星の融合","星の超越","深淵クリッカー","深淵お守り","深淵ブレード","深淵マスター","深淵の手","深淵の歪み","深淵の輪","深淵の収集者","深淵の導き","深淵の目","深淵の力","深淵の加護","深淵の祝福","深淵の呪い","深淵の封印","深淵の解放","深淵の覚醒","深淵の進化","深淵の融合","深淵の超越"];
+let idx = 0;
+for (let i = 0; i < 400; i++) {
+const name = pNames[i];
+const tier = Math.floor(i / 40);
+const eff = 0.15 * Math.pow(2.5, tier) * Math.pow(1.5, i % 40);
+const cost = Math.floor(30 * Math.pow(10, tier * 0.6) * Math.pow(2.0, i % 40));
+this.upgrades['p_' + i] = { name: name, cost: cost, baseCost: cost, effect: eff, type: 'passive', owned: 0, desc: '毎秒 +' + this.fmt(eff), index: idx++ };
+}
+for (let i = 0; i < 400; i++) {
+const name = cNames[i];
+const tier = Math.floor(i / 40);
+const eff = Math.max(1, Math.floor(Math.pow(2.2, tier) * (1 + (i % 40) * 0.3) * 1.5));
+const cost = Math.floor(100 * Math.pow(10, tier * 0.55) * Math.pow(2.0, i % 40));
+this.upgrades['c_' + i] = { name: name, cost: cost, baseCost: cost, effect: eff, type: 'click', owned: 0, desc: 'クリック +' + this.fmt(eff), index: idx++ };
+}
+for (let i = 0; i < 200; i++) {
+const name = sNames[i];
+const tier = Math.floor(i / 20);
+let type = 'autoClick', eff = 0.3, desc = '自動クリック +' + (0.3 * (tier + 1)).toFixed(1) + '/秒';
+if (i % 5 === 1) { type = 'critChance'; eff = 0.0075; desc = 'クリティカル率 +0.75%'; }
+else if (i % 5 === 2) { type = 'critDamage'; eff = 0.15; desc = 'クリティカル倍率 +0.15x'; }
+else if (i % 5 === 3) { type = 'combo'; eff = 0.075; desc = 'コンボ倍率 +0.075x'; }
+else if (i % 5 === 4) { type = 'golden'; eff = 0.015; desc = 'ドロップ率 +1.5%'; }
+const cost = Math.floor(2000 * Math.pow(8, tier) * Math.pow(2.0, i % 20));
+this.upgrades['s_' + i] = { name: name, cost: cost, baseCost: cost, effect: eff, type: type, owned: 0, desc: desc, index: idx++ };
+}
+}
+
+generateItems() {
+this.items = [];
+const rData = { N: { count: 60, costBase: 100, costMult: 1.4 }, R: { count: 50, costBase: 2000, costMult: 1.5 }, SR: { count: 40, costBase: 50000, costMult: 1.6 }, SSR: { count: 25, costBase: 2000000, costMult: 1.8 }, UR: { count: 15, costBase: 100000000, costMult: 2.0 }, LR: { count: 8, costBase: 5000000000, costMult: 2.5 }, SECRET: { count: 2, costBase: 100000000000, costMult: 3.0 } };
+const prefixes = ['古びた','輝く','呪われた','祝福された','失われた','禁断の','永遠の','混沌の','聖なる','闇の','光の','時の','夢の','星の','深淵の','天の','地の','海の','炎の','氷の','雷の','風の','土の','森の','砂の','鋼の','水晶の','翡翠の','紅玉の','琥珀の','真珠の','珊瑚の','銀の','金の','白金の','隕石の','隕鉄の','精霊の','悪魔の','天使の','神々の','龍の','鳳凰の','麒麟の','玄武の','朱雀の','青龍の','白虎の','九尾の','吸血鬼の','狼男の','魔女の','魔法使いの','騎士の','王の','皇帝の','賢者の','預言者の','勇者の','魔王の'];
+const types = ['コイン','指輪','ペンダント','腕輪','お守り','印章','宝玉','結晶','宝珠','巻物','剣','盾','鎧','兜','靴','手袋','マント','冠','杖','弓','槍','斧','鈴','笛','鏡','灯','鍵','杯','皿','壺','像','絵画','楽譜','地図','羅針盤','砂時計','指南書','日記','手紙','契約書','勲章','紋章','旗','印章','印鑑','鍵束','宝石箱','財宝','金貨','銀貨','銅貨','紙幣','小切手','債券','株券','宝石','真珠','珊瑚','琥珀'];
+const efs = [
+{ type: 'clickMult', base: 1.02, desc: 'クリック倍率', fmt: v => 'x' + v.toFixed(2) },
+{ type: 'passiveMult', base: 1.02, desc: 'パッシブ倍率', fmt: v => 'x' + v.toFixed(2) },
+{ type: 'allMult', base: 1.01, desc: '全収入倍率', fmt: v => 'x' + v.toFixed(2) },
+{ type: 'clickAdd', base: 1, desc: 'クリック収入', fmt: v => '+' + this.fmt(v) },
+{ type: 'passiveAdd', base: 0.5, desc: '毎秒収入', fmt: v => '+' + this.fmt(v) },
+{ type: 'critChance', base: 0.005, desc: 'クリティカル率', fmt: v => '+' + (v * 100).toFixed(1) + '%' },
+{ type: 'critDamage', base: 0.05, desc: 'クリティカル倍率', fmt: v => '+' + v.toFixed(2) + 'x' },
+{ type: 'dropRate', base: 0.01, desc: 'ドロップ率', fmt: v => '+' + (v * 100).toFixed(0) + '%' },
+{ type: 'combo', base: 0.03, desc: 'コンボ倍率', fmt: v => '+' + v.toFixed(2) + 'x' }
+];
+let idc = 0;
+Object.entries(rData).forEach(([rarity, data]) => {
+for (let i = 0; i < data.count; i++) {
+const p = prefixes[Math.floor(Math.random() * prefixes.length)];
+const t = types[Math.floor(Math.random() * types.length)];
+const ef = efs[Math.floor(Math.random() * efs.length)];
+const cost = Math.floor(data.costBase * Math.pow(data.costMult, i) * (0.8 + Math.random() * 0.4));
+const mult = rarity === 'N' ? 1 : rarity === 'R' ? 1.5 : rarity === 'SR' ? 2.5 : rarity === 'SSR' ? 4 : rarity === 'UR' ? 7 : rarity === 'LR' ? 12 : 25;
+const val = ef.base * (1 + i * 0.1) * mult;
+this.items.push({ id: 'it_' + (idc++), name: p + 'の' + t, cost: cost, rarity: rarity, effect: { type: ef.type, value: ef.type.includes('Mult') ? val : val }, desc: ef.desc + ' ' + ef.fmt(val), owned: false });
+}
+});
+const rOrder = { SECRET: 6, LR: 5, UR: 4, SSR: 3, SR: 2, R: 1, N: 0 };
+this.items.sort((a, b) => rOrder[b.rarity] - rOrder[a.rarity] || a.cost - b.cost);
+}
+
+generateAchievements() {
+this.achievements = {};
+let id = 0;
+const add = (key, name, desc, progFn, target, reward) => { this.achievements[key] = { name: name, desc: desc, progress: progFn, target: target, reward: reward, id: id++ }; };
+const cT = [];
+for (let p = 1; p <= 500; p++) { let t = p <= 5 ? [10, 50, 100, 250, 500][p - 1] : Math.floor(Math.pow(p, 2.2) * 10); cT.push(t); }
+cT.forEach((t, i) => { const n = (i < 10 ? ['始まり','初心者','練習生','見習い','弟子','達人','名人','プロ','マスター','神'][i] : 'クリックランク' + (i + 1)) + ' [' + this.fmt(t * 2) + '回]'; add('c_' + i, n, '累計' + this.fmt(t * 2) + '回クリック', () => this.totalClicks, t * 2, Math.min(100, Math.floor(Math.pow(i + 1, 1.3)))); });
+const mB = [];
+for (let i = 0; i < 800; i++) { let t = i < 10 ? [1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000][i] : Math.floor(Math.pow(10, i * 0.015 + 2.5)); mB.push(t); }
+mB.forEach((t, i) => { const n = (i < 10 ? ['貧乏人','労働者','店員','主任','課長','部長','取締役','社長','会長','大富豪'][i] : '資産ランク' + (i + 1)) + ' [¥' + this.fmt(t * 2) + ']'; add('m_' + i, n, '累計¥' + this.fmt(t * 2) + '獲得', () => this.totalMoney, t * 2, Math.min(200, Math.floor(Math.pow(i + 1, 1.2)))); });
+for (let i = 0; i < 300; i++) { const t = (i < 10 ? i + 1 : Math.floor(Math.pow(i, 1.8))) * 2; add('u_' + i, '投資家ランク' + (i + 1) + ' [' + this.fmt(t) + '個]', 'アップグレード累計' + this.fmt(t) + '個購入', () => this.getTotalUpgrades(), t, Math.min(150, i + 1)); }
+for (let i = 0; i < 200; i++) { const t = (i + 1) * 2; add('it_' + i, '収集家ランク' + (i + 1) + ' [' + t + '個]', '所持品' + t + '個獲得', () => this.getOwnedItemsCount(), t, Math.min(100, Math.floor((i + 1) * 0.5) + 1)); }
+for (let i = 0; i < 200; i++) { const t = (i < 10 ? (i + 1) * 5 : Math.floor(Math.pow(i, 1.6) * 5)) * 2; add('cb_' + i, 'コンボランク' + (i + 1) + ' [' + t + '連]', '最大コンボ' + t + '達成', () => this.maxCombo, t, Math.min(100, i + 1)); }
+for (let i = 0; i < 200; i++) { const t = (i < 10 ? (i + 1) * 10 : Math.floor(Math.pow(i, 1.7) * 10)) * 2; add('cr_' + i, 'クリティカルランク' + (i + 1) + ' [' + this.fmt(t) + '回]', 'クリティカル累計' + this.fmt(t) + '回', () => this.totalCrits, t, Math.min(100, i + 1)); }
+for (let i = 0; i < 200; i++) { const t = (i < 10 ? i + 1 : Math.floor(Math.pow(i, 1.5))) * 2; add('dr_' + i, 'ドロップランク' + (i + 1) + ' [' + this.fmt(t) + '回]', 'レアドロップ累計' + this.fmt(t) + '回', () => this.rareDrops, t, Math.min(100, i + 1)); }
+for (let i = 0; i < 500; i++) { let t = (i < 10 ? [10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000, 100000000, 500000000][i] : Math.floor(Math.pow(10, i * 0.02 + 3))) * 2; add('h_' + i, '貯蓄ランク' + (i + 1) + ' [¥' + this.fmt(t) + ']', '所持金が¥' + this.fmt(t) + '以上', () => this.money, t, Math.min(200, Math.floor(Math.pow(i + 1, 1.1)))); }
+for (let i = 0; i < 300; i++) { let t = (i < 10 ? [1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000][i] : Math.floor(Math.pow(10, i * 0.025 + 0.5))) * 2; add('ps_' + i, '収入ランク' + (i + 1) + ' [¥' + this.fmt(t) + '/秒]', '毎秒収入が¥' + this.fmt(t) + '以上', () => this.getTotalPassive(), t, Math.min(150, i + 1)); }
+for (let i = 0; i < 300; i++) { let t = (i < 10 ? [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000][i] : Math.floor(Math.pow(10, i * 0.025 + 1))) * 2; add('cp_' + i, 'パワーランク' + (i + 1) + ' [¥' + this.fmt(t) + ']', '1クリックが¥' + this.fmt(t) + '以上', () => this.getTotalClickValue(), t, Math.min(150, i + 1)); }
+for (let i = 0; i < 100; i++) { const t = (i + 1) * 2; add('pr_' + i, '輪廻ランク' + (i + 1) + ' [' + t + '回]', 'プレステージ' + t + '回実行', () => this.prestigeCount, t, Math.min(500, t * 5)); }
+for (let i = 0; i < 200; i++) { const t = (i < 10 ? (i + 1) * 10 : Math.floor(Math.pow(i, 1.8) * 10)) * 2; add('pp_' + i, '超越ランク' + (i + 1) + ' [' + this.fmt(t) + 'PP]', '累計PP' + this.fmt(t) + '獲得', () => this.totalPP || this.pp, t, Math.min(300, (i + 1) * 2)); }
+}
+
+generatePPShop() {
+this.ppShop = {
+critRate: { name: 'クリティカル率強化', cost: 5, baseCost: 5, effect: 0.01, owned: 0, desc: 'クリティカル率 +1%', type: 'critRate' },
+critDmg: { name: 'クリティカルダメージ強化', cost: 5, baseCost: 5, effect: 0.1, owned: 0, desc: 'クリティカル倍率 +0.1x', type: 'critDmg' },
+startMoney: { name: '開始資金強化', cost: 10, baseCost: 10, effect: 100, owned: 0, desc: '開始資金 +¥100', type: 'startMoney' },
+incomeMult: { name: '全収入倍率強化', cost: 50, baseCost: 50, effect: 0.05, owned: 0, desc: '全収入倍率 +5%', type: 'incomeMult' },
+dropRate: { name: 'ドロップ率強化', cost: 20, baseCost: 20, effect: 0.02, owned: 0, desc: 'ドロップ率 +2%', type: 'dropRate' },
+comboBonus: { name: 'コンボ倍率強化', cost: 15, baseCost: 15, effect: 0.05, owned: 0, desc: 'コンボ倍率 +0.05x', type: 'comboBonus' },
+clickBase: { name: '基礎クリック強化', cost: 8, baseCost: 8, effect: 1, owned: 0, desc: '基礎クリック収入 +1', type: 'clickBase' },
+passiveBase: { name: '基礎パッシブ強化', cost: 8, baseCost: 8, effect: 0.5, owned: 0, desc: '基礎毎秒収入 +0.5', type: 'passiveBase' },
+goldenTouch: { name: '黄金の手', cost: 100, baseCost: 100, effect: 0.05, owned: 0, desc: '全ての倍率 +5%', type: 'golden' },
+ppBoost: { name: 'PP獲得倍率', cost: 200, baseCost: 200, effect: 0.1, owned: 0, desc: 'PP獲得量 +10%', type: 'ppBoost' }
+};
+}
+
+fmt(n) {
+if (n >= 1e33) return (n / 1e33).toFixed(2) + 'D';
+if (n >= 1e30) return (n / 1e30).toFixed(2) + 'N';
+if (n >= 1e27) return (n / 1e27).toFixed(2) + 'O';
+if (n >= 1e24) return (n / 1e24).toFixed(2) + 'Y';
+if (n >= 1e21) return (n / 1e21).toFixed(2) + 'Z';
+if (n >= 1e18) return (n / 1e18).toFixed(2) + 'E';
+if (n >= 1e15) return (n / 1e15).toFixed(2) + 'P';
+if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+if (n >= 1) return Math.floor(n).toLocaleString();
+if (n >= 0.01) return n.toFixed(2);
+return n.toFixed(4);
+}
+
+init() {
+document.getElementById('clickBtn').addEventListener('click', e => this.click(e));
+document.getElementById('manualSaveBtn').addEventListener('click', () => { this.saveGame(); this.showNotification('保存完了', 'save'); this.addEvent('手動保存'); });
+document.getElementById('manualLoadBtn').addEventListener('click', () => { if (confirm('読込しますか？')) { this.loadGame(); this.updateDisplay(); this.renderAll(); this.showNotification('読込完了', 'save'); this.addEvent('読込完了'); } });
+document.getElementById('resetBtn').addEventListener('click', () => { if (confirm('全データ削除しますか？')) { localStorage.removeItem('moneyClickerInfinitySave'); location.reload(); } });
+document.getElementById('prestigeBtn').addEventListener('click', () => this.doPrestige());
+document.querySelectorAll('.tab-btn').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+btn.classList.add('active');
+document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+});
+});
+document.querySelectorAll('#upgradeFilters button').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('#upgradeFilters button').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+this.upgradeFilter = btn.dataset.filter;
+this.renderUpgrades();
+});
+});
+document.querySelectorAll('#itemFilters button').forEach(btn => {
+btn.addEventListener('click', () => {
+document.querySelectorAll('#itemFilters button').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+this.itemFilter = btn.dataset.filter;
+this.renderItems();
+});
+});
+this.renderAll();
+this.gameLoop();
+setInterval(() => this.autoSave(), 30000);
+setInterval(() => this.gameLoop(), 100);
+setInterval(() => this.tryDropItem(), 5000);
+setInterval(() => this.autoClick(), 500);
+setInterval(() => this.checkAchievements(), 1000);
+}
+
+getTotalUpgrades() { return Object.values(this.upgrades).reduce((a, b) => a + b.owned, 0); }
+getOwnedItemsCount() { return this.items.filter(i => i.owned).length; }
+getTotalPassive() { return (this.moneyPerSec * this.getPassiveMultiplier()) + this.getPassiveAdd(); }
+getTotalClickValue() { return Math.floor((this.baseMoneyPerClick + this.getClickAdd()) * this.getClickMultiplier()); }
+
+getClickMultiplier() {
+let m = 1 + (this.ppShop.incomeMult ? this.ppShop.incomeMult.owned * 0.05 : 0);
+if (this.ppShop.goldenTouch) m += this.ppShop.goldenTouch.owned * 0.05;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'clickMult' || it.effect.type === 'allMult') m *= it.effect.value; });
+const cb = (this.upgrades.comboMaster ? this.upgrades.comboMaster.owned * 0.05 : 0) + (this.ppShop.comboBonus ? this.ppShop.comboBonus.owned * 0.05 : 0);
+m *= (1 + this.clickCombo * (0.02 + cb));
+return m;
+}
+getPassiveMultiplier() {
+let m = 1 + (this.ppShop.incomeMult ? this.ppShop.incomeMult.owned * 0.05 : 0);
+if (this.ppShop.goldenTouch) m += this.ppShop.goldenTouch.owned * 0.05;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'passiveMult' || it.effect.type === 'allMult') m *= it.effect.value; });
+return m;
+}
+getCritChance() {
+let c = this.criticalChance + (this.ppShop.critRate ? this.ppShop.critRate.owned * 0.01 : 0);
+c += this.upgrades.critChance ? this.upgrades.critChance.owned * 0.005 : 0;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'critChance') c += it.effect.value; });
+return Math.min(c, 1);
+}
+getCritMultiplier() {
+let m = this.criticalMultiplier + (this.ppShop.critDmg ? this.ppShop.critDmg.owned * 0.1 : 0);
+m += this.upgrades.critDamage ? this.upgrades.critDamage.owned * 0.1 : 0;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'critDamage') m += it.effect.value; });
+return m;
+}
+getClickAdd() {
+let a = 0;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'clickAdd') a += it.effect.value; });
+a += this.ppShop.clickBase ? this.ppShop.clickBase.owned * 1 : 0;
+return a;
+}
+getPassiveAdd() {
+let a = 0;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'passiveAdd') a += it.effect.value; });
+a += this.ppShop.passiveBase ? this.ppShop.passiveBase.owned * 0.5 : 0;
+return a;
+}
+getDropRateBonus() {
+let b = 0.15 + (this.ppShop.dropRate ? this.ppShop.dropRate.owned * 0.02 : 0);
+b += this.upgrades.goldenTouch ? this.upgrades.goldenTouch.owned * 0.01 : 0;
+this.items.filter(i => i.owned).forEach(it => { if (it.effect.type === 'dropRate') b += it.effect.value; });
+return b;
+}
+getPPGain() {
+if (this.money < 1000000) return 0;
+const base = Math.floor(Math.log10(this.money) - 5);
+const boost = this.ppShop.ppBoost ? 1 + this.ppShop.ppBoost.owned * 0.1 : 1;
+return Math.max(0, Math.floor(base * boost));
+}
+
+doPrestige() {
+const gain = this.getPPGain();
+if (gain <= 0) { this.showNotification('所持金が足りません (100万円以上必要)', 'save'); return; }
+if (!confirm('プレステージしますか?\n獲得PP: ' + gain + '\n(所持金とアップグレードはリセットされます)')) return;
+this.pp += gain; this.totalPP = (this.totalPP || 0) + gain; this.prestigeCount++;
+this.money = (this.ppShop.startMoney ? this.ppShop.startMoney.owned * 100 : 0);
+this.moneyPerSec = 0; this.baseMoneyPerClick = 1;
+this.totalClicks = 0; this.totalMoney = 0; this.clickCombo = 0; this.lastClickTime = 0;
+this.rareDrops = 0; this.totalCrits = 0; this.maxCombo = 0;
+Object.keys(this.upgrades).forEach(k => { this.upgrades[k].owned = 0; this.upgrades[k].cost = this.upgrades[k].baseCost; });
+this.items.forEach(i => { i.owned = false; });
+this.showNotification('プレステージ完了! +' + gain + ' PP', 'pp');
+this.addEvent('プレステージ実行! +' + gain + ' PP (累計PP: ' + this.pp + ')');
+this.saveGame(); this.renderAll(); this.updateDisplay();
+}
+
+click(e) {
+const now = Date.now();
+if (now - this.lastClickTime < 1000) this.clickCombo++; else this.clickCombo = 1;
+this.lastClickTime = now;
+if (this.clickCombo > this.maxCombo) this.maxCombo = this.clickCombo;
+let cv = (this.baseMoneyPerClick + this.getClickAdd()) * this.getClickMultiplier();
+const isCrit = Math.random() < this.getCritChance();
+if (isCrit) { cv *= this.getCritMultiplier(); this.totalCrits++; document.getElementById('clickBtn').classList.add('critical-hit'); setTimeout(() => document.getElementById('clickBtn').classList.remove('critical-hit'), 250); }
+cv = Math.floor(cv);
+this.money += cv; this.totalMoney += cv; this.totalClicks++;
+this.showFloatingNumber(e.clientX, e.clientY, isCrit ? '💥 +' + this.fmt(cv) + '!' : '+¥' + this.fmt(cv), isCrit);
+const cd = document.getElementById('comboDisplay');
+if (this.clickCombo >= 5) { cd.textContent = '🔥 ' + this.clickCombo + ' Combo! x' + (1 + this.clickCombo * 0.02).toFixed(2); cd.classList.add('show'); }
+else { cd.classList.remove('show'); }
+this.updateDisplay(); this.renderUpgrades(); this.renderItems();
+}
+
+autoClick() {
+const ac = this.upgrades.autoClicker ? this.upgrades.autoClicker.owned : 0;
+if (ac > 0) { const av = Math.floor(this.moneyPerClick * ac * 0.5 * this.getClickMultiplier()); this.money += av; this.totalMoney += av; this.totalClicks += ac; }
+}
+
+buyUpgrade(key) {
+const u = this.upgrades[key];
+if (this.money >= u.cost) {
+this.money -= u.cost; u.owned++;
+if (u.type === 'passive') this.moneyPerSec += u.effect;
+else if (u.type === 'click') this.baseMoneyPerClick += u.effect;
+u.cost = Math.floor(u.baseCost * Math.pow(1.15, u.owned));
+this.addEvent(u.name + ' Lv.' + u.owned + ' 購入');
+this.saveGame(); this.renderUpgrades(); this.updateDisplay();
+}
+}
+
+buyItem(item) {
+if (item.owned) { this.showNotification('既に所持中', 'save'); return; }
+if (this.money >= item.cost) {
+this.money -= item.cost; item.owned = true;
+const rn = { N: 'N', R: 'R', SR: 'SR', SSR: 'SSR', UR: 'UR', LR: 'LR', SECRET: 'SECRET' };
+this.showNotification(item.name + ' [' + rn[item.rarity] + '] 獲得!', 'rare');
+this.addEvent('所持品: ' + item.name + ' [' + rn[item.rarity] + ']');
+this.saveGame(); this.renderItems(); this.updateDisplay();
+}
+}
+
+buyPPUpgrade(key) {
+const u = this.ppShop[key];
+if (this.pp >= u.cost) {
+this.pp -= u.cost; u.owned++;
+u.cost = Math.floor(u.baseCost * Math.pow(1.5, u.owned));
+this.addEvent('PP購入: ' + u.name + ' Lv.' + u.owned);
+this.saveGame(); this.renderPPShop(); this.updateDisplay();
+}
+}
+
+tryDropItem() {
+const dr = this.getDropRateBonus();
+if (Math.random() < dr) {
+const w = [0.35, 0.28, 0.18, 0.10, 0.05, 0.03, 0.01];
+const r = ['N', 'N', 'R', 'SR', 'SSR', 'UR', 'LR'];
+let rand = Math.random(), sr = 'N';
+for (let i = 0; i < w.length; i++) { rand -= w[i]; if (rand <= 0) { sr = r[i]; break; } }
+const ai = this.items.filter(i => !i.owned && i.rarity === sr);
+if (ai.length > 0) {
+const it = ai[Math.floor(Math.random() * ai.length)];
+it.owned = true; this.rareDrops++;
+const re = { N: '⚪', R: '🔵', SR: '🟣', SSR: '🟡', UR: '🔴', LR: '🔷', SECRET: '👑' };
+this.showNotification('ドロップ! ' + re[it.rarity] + ' ' + it.name, 'item');
+this.addEvent('ドロップ: ' + it.name + ' [' + it.rarity + ']');
+this.renderItems(); this.updateDisplay(); this.saveGame();
+}
+}
+}
+
+checkAchievements() {
+Object.entries(this.achievements).forEach(([key, ach]) => {
+if (!this.unlockedAchievements.has(key) && ach.progress() >= ach.target) {
+this.unlockedAchievements.add(key);
+this.money += ach.reward;
+if (ach.reward > 0) this.showNotification('🏆 ' + ach.name + ' (+' + ach.reward + ')', 'achievement');
+else this.showNotification('🏆 ' + ach.name, 'achievement');
+this.addEvent('実績: ' + ach.name);
+}
+});
+}
+
+gameLoop() {
+const tp = this.getTotalPassive();
+this.money += tp * 0.1;
+this.totalMoney += tp * 0.1;
+this.updateDisplay();
+}
+
+updateDisplay() {
+const mr = Math.floor(this.money);
+document.getElementById('moneyDisplay').textContent = '¥' + this.fmt(mr);
+const tp = this.getTotalPassive();
+document.getElementById('incomeDisplay').textContent = '毎秒: ¥' + this.fmt(tp);
+const tc = this.getTotalClickValue();
+document.getElementById('clickDisplay').textContent = '1クリック: ¥' + this.fmt(tc);
+document.getElementById('multDisplay').textContent = '倍率: x' + this.getClickMultiplier().toFixed(2);
+document.getElementById('ppInfo').textContent = '次のプレステージ: +' + this.getPPGain() + ' PP';
+document.getElementById('ppDisplay').textContent = this.pp;
+document.getElementById('prestigeCount').textContent = this.prestigeCount;
+document.getElementById('prestigeGain').textContent = this.getPPGain();
+document.getElementById('totalClicksDisplay').textContent = this.totalClicks.toLocaleString();
+document.getElementById('totalMoneyDisplay').textContent = '¥' + this.fmt(this.totalMoney);
+document.getElementById('achievementCount').textContent = this.unlockedAchievements.size;
+document.getElementById('achievementTotal').textContent = Object.keys(this.achievements).length;
+document.getElementById('itemCount').textContent = this.getOwnedItemsCount();
+document.getElementById('itemTotal').textContent = this.items.length;
+document.getElementById('upgradeCount').textContent = '(' + this.getTotalUpgrades() + '/' + Object.keys(this.upgrades).length + ')';
+document.getElementById('itemShopCount').textContent = '(' + this.getOwnedItemsCount() + '/' + this.items.length + ')';
+document.getElementById('achProgress').textContent = '(' + this.unlockedAchievements.size + '/' + Object.keys(this.achievements).length + ')';
+}
+
+renderAll() { this.renderUpgrades(); this.renderItems(); this.renderAchievements(); this.renderPPShop(); this.updateStats(); }
+
+renderUpgrades() {
+const c = document.getElementById('upgradesList');
+let list = Object.entries(this.upgrades);
+if (this.upgradeFilter !== 'all') list = list.filter(([k, u]) => u.type === this.upgradeFilter || (this.upgradeFilter === 'special' && !['passive', 'click'].includes(u.type)));
+const affordable = list.filter(([k, u]) => this.money >= u.cost);
+const expensive = list.filter(([k, u]) => this.money < u.cost);
+const display = this.upgradeFilter !== 'all' ? list : [...affordable, ...expensive.slice(0, 50)];
+let html = '';
+display.forEach(([key, u]) => {
+const ca = this.money >= u.cost;
+const cls = ca ? '' : 'disabled locked';
+const typeLabel = u.type === 'passive' ? '毎秒+' + this.fmt(u.effect) : u.type === 'click' ? 'クリック+' + this.fmt(u.effect) : '特殊';
+html += '<div class="upgrade-item ' + cls + '" data-key="' + key + '">';
+if (!ca) html += '<div class="upgrade-overlay"></div>';
+html += '<div class="upgrade-name">' + u.name + '</div>';
+html += '<div class="upgrade-cost">¥' + this.fmt(u.cost) + '</div>';
+html += '<div class="upgrade-count">Lv.' + u.owned + ' | ' + typeLabel + '</div></div>';
+});
+if (this.upgradeFilter === 'all' && expensive.length > 50) {
+html += '<div style="text-align:center;color:#555;font-size:11px;padding:10px">🔽 フィルターを使って更多を表示...</div>';
+}
+c.innerHTML = html;
+c.querySelectorAll('.upgrade-item:not(.disabled)').forEach(el => {
+el.addEventListener('click', () => this.buyUpgrade(el.dataset.key));
+});
+}
+
+renderItems() {
+const c = document.getElementById('itemsList');
+let list = this.items;
+if (this.itemFilter !== 'all') list = list.filter(i => i.rarity === this.itemFilter);
+let html = '';
+list.forEach(item => {
+const ca = this.money >= item.cost;
+const cls = item.owned ? 'owned' : (!ca ? 'disabled' : '');
+const costText = item.owned ? '売却不可' : '¥' + this.fmt(item.cost);
+html += '<div class="item-card ' + cls + '" data-id="' + item.id + '">';
+if (item.owned) html += '<span class="item-owned">所持中</span>';
+html += '<div class="item-name"><span class="item-rarity rarity-' + item.rarity + '">' + item.rarity + '</span> ' + item.name + '</div>';
+html += '<div class="item-cost">' + costText + '</div>';
+html += '<div class="item-effect">' + item.desc + '</div></div>';
+});
+c.innerHTML = html;
+c.querySelectorAll('.item-card:not(.owned):not(.disabled)').forEach(el => {
+const item = this.items.find(i => i.id === el.dataset.id);
+if (item) el.addEventListener('click', () => this.buyItem(item));
+});
+}
+
+renderAchievements() {
+const c = document.getElementById('achievementsList');
+const achList = Object.entries(this.achievements);
+const unlocked = achList.filter(([k, a]) => this.unlockedAchievements.has(k));
+const locked = achList.filter(([k, a]) => !this.unlockedAchievements.has(k));
+const closest = locked.sort((a, b) => (a[1].target - a[1].progress()) - (b[1].target - b[1].progress())).slice(0, 40);
+const display = [...unlocked.slice(-20), ...closest];
+let html = '';
+display.forEach(([key, ach]) => {
+const isu = this.unlockedAchievements.has(key);
+const prog = Math.min(ach.progress(), ach.target);
+const pct = Math.min(100, (prog / ach.target * 100));
+const icon = isu ? '⭐' : (pct >= 80 ? '✨' : pct >= 50 ? '🔓' : pct >= 20 ? '🔎' : '🔒');
+const cls = isu ? 'unlocked' : 'locked';
+const fillCls = isu ? 'complete' : '';
+const rewardText = (isu && ach.reward > 0) ? ' (+' + ach.reward + ')' : '';
+const overlayOpacity = isu ? 0 : Math.max(0.15, 0.92 - (pct / 100) * 0.85);
+html += '<div class="achievement-item ' + cls + '">';
+if (!isu) html += '<div class="achievement-overlay" style="opacity:' + overlayOpacity.toFixed(2) + '"></div>';
+html += '<div class="achievement-name">' + icon + ' ' + ach.name + '</div>';
+html += '<div class="achievement-desc">' + ach.desc + '</div>';
+html += '<div class="achievement-progress">' + this.fmt(prog) + ' / ' + this.fmt(ach.target) + rewardText + '</div>';
+html += '<div class="progress-bar"><div class="progress-bar-fill ' + fillCls + '" style="width:' + pct + '%"></div></div></div>';
+});
+c.innerHTML = html;
+}
+
+renderPPShop() {
+const c = document.getElementById('ppShopList');
+let html = '';
+Object.entries(this.ppShop).forEach(([key, u]) => {
+const ca = this.pp >= u.cost;
+const cls = ca ? '' : 'disabled';
+html += '<div class="pp-shop-item ' + cls + '" data-key="' + key + '">';
+html += '<div class="pp-shop-name">' + u.name + '</div>';
+html += '<div class="pp-shop-cost">' + u.cost + ' PP</div>';
+html += '<div class="pp-shop-desc">' + u.desc + '</div>';
+html += '<div class="pp-shop-lv">Lv.' + u.owned + '</div></div>';
+});
+c.innerHTML = html;
+c.querySelectorAll('.pp-shop-item:not(.disabled)').forEach(el => {
+el.addEventListener('click', () => this.buyPPUpgrade(el.dataset.key));
+});
+}
+
+updateStats() {
+const s = document.getElementById('statsPanel');
+s.innerHTML = '<div>💰 クリック倍率: x' + this.getClickMultiplier().toFixed(2) + '</div>' +
+'<div>📈 パッシブ倍率: x' + this.getPassiveMultiplier().toFixed(2) + '</div>' +
+'<div>⚡ クリティカル率: ' + (this.getCritChance() * 100).toFixed(1) + '%</div>' +
+'<div>💥 クリティカル倍率: x' + this.getCritMultiplier().toFixed(2) + '</div>' +
+'<div>🔥 最大コンボ: ' + this.maxCombo + '</div>' +
+'<div>🎁 ドロップ: ' + this.rareDrops + '回</div>' +
+'<div>💀 クリティカル: ' + this.totalCrits + '回</div>' +
+'<div>📦 所持品: ' + this.getOwnedItemsCount() + '/' + this.items.length + '</div>' +
+'<div>⬆️ アップグレード: ' + this.getTotalUpgrades() + '/' + Object.keys(this.upgrades).length + '</div>' +
+'<div>✨ プレステージ: ' + this.prestigeCount + '回</div>' +
+'<div>🌟 累計PP: ' + (this.totalPP || this.pp) + '</div>';
+}
+
+addEvent(text) {
+const t = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+this.eventLog.unshift('[' + t + '] ' + text);
+if (this.eventLog.length > 100) this.eventLog.pop();
+const l = document.getElementById('eventLog');
+l.innerHTML = this.eventLog.map(e => '<div>' + e + '</div>').join('');
+}
+
+showNotification(text, type) {
+const c = document.getElementById('notificationContainer');
+const d = document.createElement('div');
+d.className = 'notification ' + type;
+d.textContent = text;
+c.appendChild(d);
+setTimeout(() => { d.style.opacity = '0'; d.style.transform = 'translateX(350px)'; setTimeout(() => d.remove(), 250); }, 3000);
+}
+
+showFloatingNumber(x, y, text, isCrit) {
+const d = document.createElement('div');
+d.className = 'floating-number';
+d.textContent = text;
+d.style.left = (x - 20 + Math.random() * 40) + 'px';
+d.style.top = (y - 25) + 'px';
+if (isCrit) { d.style.color = '#ff1744'; d.style.fontSize = '26px'; }
+document.getElementById('itemContainer').appendChild(d);
+setTimeout(() => d.remove(), 1000);
+}
+
+autoSave() { this.saveGame(); }
+
+saveGame() {
+const sd = {
+money: this.money, moneyPerSec: this.moneyPerSec, baseMoneyPerClick: this.baseMoneyPerClick,
+totalClicks: this.totalClicks, totalMoney: this.totalMoney, rareDrops: this.rareDrops,
+totalCrits: this.totalCrits, maxCombo: this.maxCombo, pp: this.pp, prestigeCount: this.prestigeCount,
+totalPP: this.totalPP || this.pp,
+unlockedAchievements: Array.from(this.unlockedAchievements),
+upgrades: {}, items: this.items.map(i => ({ id: i.id, owned: i.owned })),
+ppShop: {}
+};
+Object.entries(this.upgrades).forEach(([k, u]) => { sd.upgrades[k] = { owned: u.owned, cost: u.cost }; });
+Object.entries(this.ppShop).forEach(([k, u]) => { sd.ppShop[k] = { owned: u.owned, cost: u.cost }; });
+localStorage.setItem('moneyClickerInfinitySave', JSON.stringify(sd));
+}
+
+loadGame() {
+const s = localStorage.getItem('moneyClickerInfinitySave');
+if (!s) return;
+const d = JSON.parse(s);
+this.money = d.money || 0; this.moneyPerSec = d.moneyPerSec || 0; this.baseMoneyPerClick = d.baseMoneyPerClick || 1;
+this.totalClicks = d.totalClicks || 0; this.totalMoney = d.totalMoney || 0; this.rareDrops = d.rareDrops || 0;
+this.totalCrits = d.totalCrits || 0; this.maxCombo = d.maxCombo || 0; this.pp = d.pp || 0;
+this.prestigeCount = d.prestigeCount || 0; this.totalPP = d.totalPP || d.pp || 0;
+this.unlockedAchievements = new Set(d.unlockedAchievements || []);
+Object.entries(d.upgrades || {}).forEach(([k, ud]) => { if (this.upgrades[k]) { this.upgrades[k].owned = ud.owned || 0; this.upgrades[k].cost = ud.cost || this.upgrades[k].baseCost; } });
+(d.items || []).forEach(si => { const it = this.items.find(i => i.id === si.id); if (it) it.owned = si.owned; });
+Object.entries(d.ppShop || {}).forEach(([k, ud]) => { if (this.ppShop[k]) { this.ppShop[k].owned = ud.owned || 0; this.ppShop[k].cost = ud.cost || this.ppShop[k].baseCost; } });
+}
+}
+
+const game = new MoneyClickerInfinity();
+</script>
+</body>
+</html>

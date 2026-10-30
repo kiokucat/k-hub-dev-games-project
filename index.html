@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,close,notifications,search,table_chart_view,timer_10_alt_1,trending_up&display=block">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #ffffff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Google Fonts: Material Symbols の search アイコン */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            direction: ltr;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-feature-settings: 'liga';
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 15px 30px;
+            font-size: 13px;
+        }
+
+        header a {
+            color: #000000;
+            text-decoration: none;
+            margin-left: 15px;
+            opacity: 0.85;
+        }
+
+        /* 縦中央寄せは .logo / .search-form の margin:auto で行う（内容が画面より高いときに上へはみ出さない）。
+           下の padding は元の margin-top:-50px と同じ「少し上寄せ」の役割 */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px 50px;
+        }
+
+        .logo {
+            margin-top: auto;
+            font-size: 90px;
+            font-weight: 600;
+            letter-spacing: -2.5px;
+            margin-bottom: 30px;
+            user-select: none;
+        }
+
+        .g1, .g2 { color: #4285F4; }
+        .o1, .e { color: #EA4335; }
+        .o2 { color: #FBBC05; }
+        .l { color: #34A853; }
+
+        .search-form {
+            width: 100%;
+            max-width: 584px;
+            margin-bottom: auto;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 0 15px;
+            height: 44px;
+            transition: box-shadow 0.2s;
+            background: #fff;
+        }
+
+        .search-box:hover, .search-box:focus-within {
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+            border-color: rgba(0,0,0,0);
+        }
+
+        .search-icon.is-trend { color: #188038; }
+
+        .search-icon {
+            color: #9aa0a6;
+            margin-right: 12px;
+            font-size: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #000;
+            background: transparent;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn {
+            background-color: #f8f9fa;
+            border: 1px solid #f8f9fa;
+            border-radius: 4px;
+            color: #3c4043;
+            font-size: 14px;
+            padding: 0 16px;
+            height: 36px;
+            cursor: pointer;
+            user-select: none;
+            min-width: 140px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .btn:hover {
+            border: 1px solid #dadce0;
+            color: #202124;
+            background-color: #f8f9fa;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+
+
+        /* 🔎 検索サジェスト（ゲーム一覧） */
+        .search-wrap { position: relative; }
+
+        .search-box.open {
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+            border-color: rgba(0,0,0,0);
+        }
+
+        .suggest {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            max-height: min(380px, 52vh);
+            overflow: hidden; /* 角丸の外にはみ出さない。スクロールは .suggest-list 側 */
+            background: #fff;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 4px 6px rgba(32,33,36,0.28);
+            padding: 0;
+        }
+
+        .suggest.show { display: flex; flex-direction: column; }
+
+        .suggest-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+
+        .suggest-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 18px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .suggest-item:hover, .suggest-item.active { background: #f1f3f4; }
+
+        .suggest-icon { flex: none; font-size: 20px; color: #9aa0a6; }
+
+        .suggest-main { display: flex; flex-direction: column; min-width: 0; }
+
+        .suggest-name {
+            font-size: 15px;
+            color: #202124;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggest-tags {
+            font-size: 12px;
+            color: #70757a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggest-head {
+            display: flex;
+            align-items: center;
+            padding: 8px 18px 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #5f6368;
+        }
+
+        .suggest-head .material-symbols-outlined { font-size: 18px; margin-right: 6px; }
+
+        .suggest-item .trend-delta { margin-left: auto; }
+
+        .suggest-empty {
+            padding: 12px 18px;
+            font-size: 14px;
+            color: #70757a;
+        }
+
+        /* 🎰 縦スクロールルーレット用のスタイル */
+        .lucky-trigger-btn {
+            min-width: 180px !important;
+            padding: 0 !important;
+            overflow: hidden; /* はみ出たテキストを隠す */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .roulette-viewport {
+            height: 36px;
+            line-height: 36px;
+            position: relative;
+            width: 100%;
+        }
+
+        .roulette-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transition: top 0.05s linear;
+        }
+
+        .roulette-item {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 10px;
+            box-sizing: border-box;
+            height: 36px;
+            text-align: center;
+            width: 100%;
+            display: block;
+        }
+
+        .disabled {
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        footer {
+            background-color: #f2f2f2;
+            font-size: 14px;
+            color: #70757a;
+            border-top: 1px solid #dadce0;
+        }
+
+        /* 📈 検索バーの中に出す急上昇ティッカー */
+        .search-box { position: relative; }
+
+        .search-ticker {
+            display: none;
+            position: absolute;
+            left: 47px;
+            right: 15px;
+            top: 0;
+            bottom: 0;
+            align-items: center;
+            pointer-events: none; /* クリックは入力欄へ通す */
+            font-size: 16px;
+            color: #5f6368;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .search-ticker .tk-name { overflow: hidden; text-overflow: ellipsis; }
+        .search-ticker .trend-delta { flex: none; }
+
+        .trend-delta {
+            flex: none;
+            margin-left: 12px;
+            padding: 0 8px;
+            height: 22px;
+            line-height: 22px;
+            border-radius: 11px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #188038;
+            background: #e6f4ea;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 🔢 各検索カードの右側：過去10分間 / 総アクセス数 */
+        .suggest-counts {
+            flex: none;
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+            padding-left: 12px;
+            font-size: 12px;
+            color: #5f6368;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .trend-delta + .suggest-counts { margin-left: 0; }
+
+        .suggest-counts .cnt {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 62px;
+            margin-left: 8px;
+        }
+
+        .suggest-counts .cnt.zero { color: #9aa0a6; }
+
+        .suggest-counts .material-symbols-outlined { font-size: 16px; margin-right: 3px; }
+
+        /* 過去10分間にアクセスがあるものは緑で目立たせる */
+        .suggest-counts .cnt.live { color: #188038; font-weight: 500; }
+
+        /* 名前が潰れないよう、狭い画面では数字を詰める */
+        @media (max-width: 480px) {
+            .suggest-item { gap: 8px; padding: 8px 12px; }
+            .suggest-counts { padding-left: 6px; font-size: 11px; }
+            .suggest-counts .cnt { min-width: 0; margin-left: 6px; }
+            .suggest-counts .material-symbols-outlined { font-size: 14px; margin-right: 2px; }
+            .suggest-main { flex: 1; }
+        }
+
+
+        /* 🔔 お知らせ：サジェストの一番下に固定 */
+        .suggest-bell {
+            flex: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px 18px 12px;
+            border: 0;
+            border-top: 1px solid #e8eaed;
+            background: #fff;
+            font: inherit;
+            font-size: 14px;
+            color: #3c4043;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .suggest-bell[hidden] { display: none; }
+        .suggest-bell:hover { background: #f1f3f4; }
+        .suggest-bell:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .suggest-bell .material-symbols-outlined { font-size: 20px; color: #5f6368; }
+
+        .bell-badge {
+            margin-left: auto;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            background: #d93025;
+            color: #fff;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bell-badge[hidden] { display: none; }
+
+        /* お知らせモーダル：左に一覧、右に本文 */
+        .bell-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(32,33,36,0.5);
+        }
+
+        .bell-modal.show { display: flex; }
+
+        .bell-dialog {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 880px;
+            height: min(560px, 86vh);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(32,33,36,0.35);
+            overflow: hidden;
+        }
+
+        .bell-head {
+            flex: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 10px 10px 22px;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        .bell-head h2 {
+            flex: 1;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+        }
+
+        .bell-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #5f6368;
+            cursor: pointer;
+        }
+
+        .bell-icon-btn:hover { background: #f1f3f4; }
+        .bell-icon-btn:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .bell-back { display: none; margin-left: -12px; }
+
+        .bell-body { flex: 1; min-height: 0; display: flex; }
+
+        .bell-list {
+            flex: none;
+            width: 292px;
+            overflow-y: auto;
+            border-right: 1px solid #e8eaed;
+            padding: 6px 0;
+        }
+
+        .bell-row {
+            position: relative;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 18px 10px 26px;
+            border: 0;
+            border-left: 3px solid transparent;
+            background: transparent;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .bell-row:hover { background: #f8f9fa; }
+        .bell-row:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .bell-row[aria-current="true"] { background: #e8f0fe; border-left-color: #1a73e8; }
+
+        .bell-row .r-dot {
+            position: absolute;
+            left: 10px;
+            top: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d93025;
+            visibility: hidden;
+        }
+
+        .bell-row.unread .r-dot { visibility: visible; }
+
+        .bell-row .r-date {
+            display: block;
+            font-size: 12px;
+            color: #70757a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bell-row .r-title {
+            display: block;
+            margin-top: 2px;
+            font-size: 14px;
+            color: #202124;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bell-row.unread .r-title { font-weight: 600; }
+
+        .bell-view {
+            flex: 1;
+            min-width: 0;
+            overflow-y: auto;
+            padding: 24px 30px 30px;
+        }
+
+        .bell-view .v-date {
+            font-size: 12px;
+            color: #70757a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bell-view h3 {
+            margin: 6px 0 18px;
+            font-size: 20px;
+            font-weight: 500;
+            line-height: 1.45;
+            color: #202124;
+            word-break: break-word;
+        }
+
+        .bell-view .v-text {
+            max-width: 62ch;
+            font-size: 15px;
+            line-height: 1.85;
+            color: #3c4043;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .bell-view .v-text a { color: #1a73e8; }
+
+        /* スマホ：一覧 → 本文 の2画面切り替え */
+        @media (max-width: 640px) {
+            .bell-modal { padding: 0; }
+            .bell-dialog { max-width: none; height: 100%; border-radius: 0; }
+            .bell-list { width: 100%; border-right: 0; }
+            .bell-view { display: none; padding: 20px 20px 28px; }
+            .bell-dialog.show-detail .bell-list { display: none; }
+            .bell-dialog.show-detail .bell-view { display: block; }
+            .bell-dialog.show-detail .bell-back { display: inline-flex; }
+        }
+
+        @media (max-width: 480px) {
+            .suggest-bell { padding: 11px 12px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="#">Gmail</a>
+        <a href="#">画像</a>
+    </header>
+
+    <main>
+        <div class="logo">
+            <span class="g1">G</span><span class="o1">o</span><span class="o2">o</span><span class="g2">g</span><span class="l">l</span><span class="e">e</span>
+        </div>
+
+        <form class="search-form" onsubmit="handleSearch(event)">
+            <div class="search-wrap">
+                <div class="search-box" id="searchBox">
+                    <span class="search-icon material-symbols-outlined" id="searchIcon">search</span>
+                    <input type="text" id="searchInput" class="search-input" autocomplete="off"
+                           oninput="renderSuggest()" onfocus="renderSuggest()" onkeydown="onSearchKey(event)">
+                    <div class="search-ticker" id="searchTicker" aria-hidden="true"></div>
+                </div>
+                <div class="suggest" id="suggest">
+                    <div class="suggest-list" id="suggestList"></div>
+                    <button type="button" class="suggest-bell" id="suggestBell" hidden>
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span>お知らせ</span>
+                        <span class="bell-badge" id="bellBadge" hidden></span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" class="btn">Google 検索</button>
+                
+                <!-- 🎰 縦に回転してピタッと止まるスロット風ボタン -->
+                <button type="button" id="luckyBtn" class="btn lucky-trigger-btn" onmouseenter="onLuckyEnter()" onmouseleave="onLuckyLeave()" onclick="onLuckyClick()">
+                    <div class="roulette-viewport">
+                        <div id="rouletteTrack" class="roulette-track" style="top: 0px;">
+                            <span class="roulette-item">I'm Feeling Lucky</span>
+                            <!-- JavaScriptでここにアイテムが自動追加されます -->
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        <div style="padding: 15px 30px; border-bottom: 1px solid #dadce0;">日本</div>
+    </footer>
+
+    <!-- 🔔 お知らせモーダル（中身は bell.js の BELL_ITEMS から作る） -->
+    <div class="bell-modal" id="bellModal" aria-hidden="true">
+        <div class="bell-dialog" id="bellDialog" role="dialog" aria-modal="true" aria-labelledby="bellHeading">
+            <div class="bell-head">
+                <button type="button" class="bell-icon-btn bell-back" id="bellBack" aria-label="一覧に戻る">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2 id="bellHeading">お知らせ</h2>
+                <button type="button" class="bell-icon-btn" id="bellClose" aria-label="閉じる">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="bell-body">
+                <div class="bell-list" id="bellList"></div>
+                <div class="bell-view" id="bellView"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🎮 一覧（index.html の全30件。タグは付け直し済み）
+        const games = [
+            { name: "Backrooms",               path: "./files/backrooms/index.html",                         tags: ["ホラー", "3D", "オンライン", "ボイスチャット"] },
+            { name: "寿司タイピング",           path: "./files/sushida-typing/index.html",                    tags: ["タイピング", "ソロ"] },
+            { name: "寿司タイピング PvP",       path: "./files/sushida-pvp/index.html",                       tags: ["タイピング", "対戦", "PvP", "オンライン"] },
+            { name: "オンラインアクション",     path: "./files/online-action/index.html",                     tags: ["アクション", "オンライン", "2D"] },
+            { name: "太鼓風リズムゲーム",       path: "./files/ai-taikos/index.html",                         tags: ["音ゲー", "リズム", "和風"] },
+            { name: "マイクラ風オンライン",     path: "./files/blockcraft-blue/index.html",                   tags: ["3D", "クラフト", "オンライン"] },
+            { name: "テトリス",                 path: "./files/tetris/index.html",                            tags: ["パズル", "ローカル"] },
+            { name: "オセロオンライン+CPU",     path: "./files/osero-ivory/index.html",                       tags: ["ボードゲーム", "オンライン", "CPU対戦"] },
+            { name: "ローカルランナー",         path: "./files/runner-game/index.html",                       tags: ["アクション", "ランナー", "ローカル"] },
+            { name: "コントローラーテトリス",   path: "./files/dual-lock-multi/tetris.html",                  tags: ["パズル", "コントローラー", "ローカル", "2D"] },
+            { name: "コントローラーサバイブ",   path: "./files/survivalbattle/survival_battle.html",          tags: ["アクション", "サバイバル", "コントローラー", "ローカル", "2D"] },
+            { name: "モンスターサバイブ",       path: "./files/monstersurvival/monster_survival/index.html",  tags: ["アクション", "サバイバル", "コントローラー", "ローカル", "2D"] },
+            { name: "株シミュレーター",         path: "./files/stock-simulator/index.html",                   tags: ["株", "シミュレーション", "カジュアル", "2D"] },
+            { name: "マネークリッカー",         path: "./files/clicker-game/index.html",                      tags: ["クリッカー", "放置", "カジュアル", "2D"] },
+            { name: "太鼓風ゲームv2",           path: "./files/taiko/index.html",                             tags: ["音ゲー", "太鼓", "リズム", "2D"] },
+            { name: "曲の拠り所",               path: "https://main.song-repository.pages.dev/",              tags: ["ツール", "太鼓", "曲DL", "外部サイト"], lucky: false },
+            { name: "モバイルゲームズ",         path: "./files/mobilegames/index.html",                       tags: ["モバイル", "mamorino5", "2D"] },
+            { name: "すごろくゲーム",           path: "./files/sugoroku/index.html",                          tags: ["ボードゲーム", "カジュアル"] },
+            { name: "ニコニコメントメーカー",   path: "./files/niconicommentMaker/index.html",                tags: ["ツール", "メーカー", "コメント弾幕"], lucky: false },
+            { name: "クイズメーカー",           path: "https://k-hub-quiz.pages.dev",                         tags: ["ツール", "メーカー", "クイズ", "オンライン", "外部サイト"], lucky: false },
+            { name: "画像メーカー",             path: "https://k-editor.pages.dev/",                          tags: ["ツール", "メーカー", "画像編集", "外部サイト"], lucky: false },
+            { name: "弾幕（MAIKURA342）",       path: "./files/danmaku-o/index.html",                         tags: ["弾幕", "シューティング", "2D"] },
+            { name: "弾幕（KIOKU）",            path: "./files/danmaku-s/index.html",                         tags: ["弾幕", "シューティング", "2D"] },
+            { name: "スティックマンダンジョン", path: "./files/stickman%20dungeon/index.html",                tags: ["アクション", "ダンジョン", "2D"] },
+            { name: "インデックスクリエイター", path: "./files/index.creator/index.html",                     tags: ["ツール", "メーカー", "UI"], lucky: false },
+            { name: "釣りスピ",                 path: "https://tsurisupi.pages.dev/",                         tags: ["釣り", "カジュアル", "外部サイト"] },
+            { name: "Dread Hunger",             path: "https://drive.google.com/drive/folders/12PRJ0R0mGzL8sEHXwjAfEZfIy66cRjLF?usp=sharing", tags: ["ダウンロード", "サバイバル", "外部サイト"], lucky: false },
+            { name: "ラストウォ😅😅",           path: "https://drive.proton.me/urls/XS04QQ0ZDM#FpbTUJyyVNlf", tags: ["ダウンロード", "3D", "外部サイト"], lucky: false },
+            { name: "銃を撃つゲーム",           path: "./files/gun/index.html",                               tags: ["シューティング", "3D"] },
+            { name: "金",                       path: "./files/gold/index.html",                              tags: ["3D"] },
+            { name: "ピンボール",                path: "./files/pin/index.html",                              tags: ["3D","アーケード"] },
+            { name: "k-hub Online 稼働状況",     path: "./files/stats/index.html",                              tags: ["稼働状況","ステータス","オンライン"] }
+        ];
+
+        // 🎰 ルーレットの対象（ツールやダウンロード先は除外）
+        const luckyGames = games.filter(g => g.lucky !== false);
+
+        // 📈 急上昇（/api/stats の結果。サジェストと「急上昇」欄の両方で使う）
+        let gameStats = null;      // { ゲーム名: { last10, total } }（読み込み前は null）
+        let latestTrending = [];   // [{ game, recent, prev }]
+        let trendWinMin = 60;
+
+        function findGame(name) {
+            for (let i = 0; i < games.length; i++) {
+                if (games[i].name === name) return games[i];
+            }
+            return null;
+        }
+
+        function winLabel(min) {
+            return min % 60 === 0 ? (min / 60) + '時間' : min + '分';
+        }
+
+        // 急上昇のうち、一覧に存在するゲームだけ（名前を変えた・消したものは出さない）
+        function trendItems() {
+            const out = [];
+            latestTrending.forEach(t => {
+                const g = findGame(t.game);
+                if (g) out.push({ g: g, recent: t.recent, prev: t.prev });
+            });
+            return out;
+        }
+
+        function trendSub(t) {
+            return '直近' + winLabel(trendWinMin) + 'で' + t.recent + '回（その前は' + t.prev + '回）';
+        }
+
+        function fmt(n) {
+            return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        // 検索カードの右側に出す「過去10分間 / 総アクセス数」
+        function makeCounts(name) {
+            if (!gameStats) return null;
+            const st = gameStats[name] || { last10: 0, total: 0 };
+            const wrap = document.createElement('span');
+            wrap.className = 'suggest-counts';
+            [
+                ['timer_10_alt_1', st.last10, '過去10分間のアクセス'],
+                ['table_chart_view', st.total, '総アクセス数']
+            ].forEach(it => {
+                const c = document.createElement('span');
+                c.className = 'cnt' + (it[1] ? (it[0] === 'timer_10_alt_1' ? ' live' : '') : ' zero');
+                c.title = it[2] + '：' + it[1] + '回';
+                c.setAttribute('aria-label', c.title);
+                const ic = document.createElement('span');
+                ic.className = 'material-symbols-outlined';
+                ic.textContent = it[0];
+                c.appendChild(ic);
+                c.appendChild(document.createTextNode(fmt(it[1])));
+                wrap.appendChild(c);
+            });
+            return wrap;
+        }
+
+        function makeDelta(t) {
+            const d = document.createElement('span');
+            d.className = 'trend-delta';
+            d.textContent = '+' + (t.recent - t.prev) + '回';
+            return d;
+        }
+
+        let finalSelectedIndex = null; // ルーレットで決定したゲーム（null=未決定）
+
+        const ITEM_H = 36;
+        const STEP_MS = 50;            // 1コマの速さ（2倍速）
+        // ループ用の表示リスト（0番目は元の「I'm Feeling Lucky」）
+        const labels = ["I'm Feeling Lucky", ...luckyGames.map(g => g.name)];
+        const N = labels.length;
+
+        let pos = 0;                   // 現在表示中の位置（0〜N。Nは0番目の複製）
+        let isRolling = false;
+        let isHovering = false;
+
+        const track = () => document.getElementById('rouletteTrack');
+
+        window.onload = function() {
+            const t = track();
+            t.innerHTML = '';
+            // labels + 先頭の複製（シームレスにループさせるため）
+            [...labels, labels[0]].forEach(text => {
+                const span = document.createElement('span');
+                span.className = 'roulette-item';
+                span.innerText = text;
+                t.appendChild(span);
+            });
+            setPos(0, false);
+        };
+
+        function setPos(p, animate) {
+            const t = track();
+            pos = p;
+            t.style.transition = animate ? '' : 'none';
+            t.style.top = `-${pos * ITEM_H}px`;
+            if (!animate) { void t.offsetHeight; t.style.transition = ''; }
+        }
+
+        // ⬇ 1コマ下方向へ動かす（文字は上から下へ流れる）
+        function stepDown() {
+            if (pos === 0) setPos(N, false); // 末尾の複製へ瞬間移動してループ
+            setPos(pos - 1, true);
+        }
+
+        // 🎰 ホバーでルーレット開始
+        function onLuckyEnter() {
+            isHovering = true;
+            if (isRolling || finalSelectedIndex !== null) return;
+            startSlotRoutine();
+        }
+
+        // ホバー終了で結果をリセット
+        function onLuckyLeave() {
+            isHovering = false;
+            if (!isRolling) resetRoulette();
+        }
+
+        function resetRoulette() {
+            finalSelectedIndex = null;
+            setPos(0, false);
+        }
+
+        function startSlotRoutine() {
+            isRolling = true;
+
+            // 止まる位置を先に決める（labelsのindex 1〜N-1 = ゲーム）
+            const targetGame = Math.floor(Math.random() * luckyGames.length);
+            const targetPos = targetGame + 1;
+
+            // 1周回してから目標位置でピタッと止まる（回転時間を半分に）
+            const toTarget = ((pos - targetPos) % N + N) % N;
+            const totalSteps = N + toTarget;
+
+            let count = 0;
+            const interval = setInterval(() => {
+                stepDown();
+                count++;
+                if (count >= totalSteps) {
+                    clearInterval(interval);
+                    finalSelectedIndex = targetGame;
+                    isRolling = false;
+                    // 終了時にすでにホバーしていなければ即リセット
+                    if (!isHovering) resetRoulette();
+                }
+            }, STEP_MS);
+        }
+
+        // クリック（スマホ等でホバーが無い場合も考慮）
+        function onLuckyClick() {
+            if (isRolling) return;
+            if (finalSelectedIndex === null) {
+                startSlotRoutine();
+                return;
+            }
+            goToGame();
+        }
+
+        // 🔎 検索：ゲーム一覧のサジェスト表示
+        let matches = [];
+        let activeIdx = -1;
+
+        function searchGames(q) {
+            const terms = q.toLowerCase().replace(/#/g, ' ').split(/\s+/).filter(Boolean);
+            if (!terms.length) return trendItems().map(t => t.g).concat(games); // 空なら 急上昇 + 全件（ゲーム一覧）
+            return games.filter(g => {
+                const hay = (g.name + ' ' + g.tags.join(' ') + ' ' + g.path).toLowerCase();
+                return terms.every(t => hay.includes(t));
+            });
+        }
+
+        function renderSuggest() {
+            const input = document.getElementById('searchInput');
+            const box = document.getElementById('suggestList');
+            matches = searchGames(input.value);
+            activeIdx = -1;
+            box.innerHTML = '';
+
+            // 空欄のときだけ、先頭の nTrend 件が「急上昇」
+            const trends = input.value.replace(/#/g, ' ').trim() ? [] : trendItems();
+            const nTrend = trends.length;
+
+            if (!matches.length) {
+                const d = document.createElement('div');
+                d.className = 'suggest-empty';
+                d.textContent = '一致するものがありません';
+                box.appendChild(d);
+            } else {
+                matches.forEach((g, i) => {
+                    if (nTrend && i === 0) suggestHead(box, '急上昇', 'trending_up');
+                    if (nTrend && i === nTrend) suggestHead(box, 'すべてのゲーム');
+                    const row = document.createElement('div');
+                    row.className = 'suggest-item';
+                    const icon = document.createElement('span');
+                    icon.className = 'suggest-icon material-symbols-outlined';
+                    icon.textContent = i < nTrend ? 'trending_up' : 'search';
+                    const main = document.createElement('div');
+                    main.className = 'suggest-main';
+                    const name = document.createElement('span');
+                    name.className = 'suggest-name';
+                    name.textContent = g.name;
+                    const tags = document.createElement('span');
+                    tags.className = 'suggest-tags';
+                    tags.textContent = i < nTrend ? trendSub(trends[i]) : g.tags.map(t => '#' + t).join('  ');
+                    main.append(name, tags);
+                    row.append(icon, main);
+                    if (i < nTrend) row.append(makeDelta(trends[i]));
+                    const cnt = makeCounts(g.name);
+                    if (cnt) row.append(cnt);
+                    row.addEventListener('mousedown', e => e.preventDefault());
+                    row.addEventListener('click', () => openGame(g));
+                    box.appendChild(row);
+                });
+            }
+            document.getElementById('suggest').classList.add('show');
+            document.getElementById('searchBox').classList.add('open');
+        }
+
+        function suggestHead(box, text, iconName) {
+            const h = document.createElement('div');
+            h.className = 'suggest-head';
+            if (iconName) {
+                const ic = document.createElement('span');
+                ic.className = 'material-symbols-outlined';
+                ic.textContent = iconName;
+                h.appendChild(ic);
+            }
+            h.appendChild(document.createTextNode(text));
+            box.appendChild(h);
+        }
+
+        function closeSuggest() {
+            document.getElementById('suggest').classList.remove('show');
+            document.getElementById('searchBox').classList.remove('open');
+            activeIdx = -1;
+        }
+
+        function setActive(i) {
+            const rows = document.querySelectorAll('#suggest .suggest-item');
+            if (!rows.length) return;
+            activeIdx = (i + rows.length) % rows.length;
+            rows.forEach((r, k) => r.classList.toggle('active', k === activeIdx));
+            rows[activeIdx].scrollIntoView({ block: 'nearest' });
+        }
+
+        function onSearchKey(e) {
+            if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIdx + 1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIdx - 1); }
+            else if (e.key === 'Escape') { closeSuggest(); }
+        }
+
+        // 外側クリックで閉じる
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.search-wrap')) closeSuggest();
+        });
+
+        function openGame(g) {
+            if (!g) return;
+            sendHit({ type: 'game', game: g.name }); // 急上昇の集計用
+            window.location.href = g.path;
+        }
+
+        // 🔍 EnterやGoogle検索を押した時
+        function handleSearch(event) {
+            event.preventDefault();
+            const q = document.getElementById('searchInput').value.trim();
+            if (activeIdx >= 0 && matches[activeIdx]) return openGame(matches[activeIdx]);
+            if (q && matches.length) return openGame(matches[0]);
+            renderSuggest(); // 空ならゲーム一覧を表示
+        }
+
+        // 🚀 ルーレットで決定されたゲームに移動する処理
+        function goToGame() {
+            if (finalSelectedIndex !== null) openGame(luckyGames[finalSelectedIndex]);
+        }
+
+        // 関数が出そろってからフォーカス（autofocus だとスクリプト読み込み前に onfocus が走ることがある）
+        document.getElementById('searchInput').focus();
+    </script>
+
+    <script>
+        // 📊 アクセス集計（functions/api の hit / stats を呼ぶ）
+        var STATS_INTERVAL = 30000; // 30秒ごとに更新
+        var statsTimer = null;
+        var tickIdx = 0;
+        var lastKey = '';
+
+        // ゲームを開いたことを記録する（ページ遷移の直前でも届くよう sendBeacon を優先）
+        function sendHit(payload) {
+            var body = JSON.stringify(payload);
+            try {
+                if (navigator.sendBeacon &&
+                    navigator.sendBeacon('/api/hit', new Blob([body], { type: 'application/json' }))) return;
+            } catch (e) {}
+            try {
+                fetch('/api/hit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body,
+                    keepalive: true
+                });
+            } catch (e) {}
+        }
+
+        // 🔎 検索バーの中の急上昇ティッカー（空欄のときだけ、数秒ごとに順番に表示）
+        function renderTicker() {
+            var el = document.getElementById('searchTicker');
+            var items = trendItems();
+            var icon = document.getElementById('searchIcon');
+            if (!items.length || document.getElementById('searchInput').value) {
+                el.style.display = 'none';
+                icon.textContent = 'search';
+                icon.className = icon.className.replace(' is-trend', '');
+                return;
+            }
+            icon.textContent = 'trending_up'; // 急上昇を出している間は検索マークを置き換える
+            if (icon.className.indexOf('is-trend') < 0) icon.className += ' is-trend';
+
+            var t = items[tickIdx % items.length];
+            el.innerHTML = '';
+            var name = document.createElement('span');
+            name.className = 'tk-name';
+            name.textContent = t.g.name;
+            el.appendChild(name);
+            el.appendChild(makeDelta(t));
+            el.style.display = 'flex';
+        }
+
+        function renderStats(d) {
+            var key = JSON.stringify([d.trending, d.games]);
+            var changed = key !== lastKey;
+            lastKey = key;
+
+            gameStats = d.games || {};
+            latestTrending = d.trending || [];
+            trendWinMin = d.trendMin || 60;
+            renderTicker();
+
+            // サジェストが開いていて操作中でなければ、数字の変化をそちらにも反映（スクロール位置は保つ）
+            var box = document.getElementById('suggest');
+            var list = document.getElementById('suggestList');
+            if (changed && activeIdx < 0 && box.classList.contains('show')) {
+                var top = list.scrollTop;
+                renderSuggest();
+                list.scrollTop = top;
+            }
+        }
+
+        function loadStats() {
+            fetch('/api/stats', { cache: 'no-store' })
+                .then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(renderStats)
+                .catch(function () {
+                    // 取得できないときは数字も急上昇も出さず、元の検索バーのままにする
+                    gameStats = null;
+                    latestTrending = [];
+                    lastKey = '';
+                    renderTicker();
+                });
+        }
+
+        function startPolling() {
+            clearInterval(statsTimer);
+            statsTimer = setInterval(loadStats, STATS_INTERVAL);
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) { clearInterval(statsTimer); }
+            else { loadStats(); startPolling(); }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('searchInput').addEventListener('input', renderTicker);
+            setInterval(function () { tickIdx++; renderTicker(); }, 4000);
+            loadStats();
+            startPolling();
+        });
+    </script>
+    <script>
+        // 🔔 お知らせ：同じフォルダの bell.js（window.BELL_ITEMS）を読み込む。無ければお知らせ欄は出さない
+        (function () {
+            var SEEN_KEY = 'bellSeen';
+            var items = [];
+            var rows = [];
+            var sel = -1;
+            var seen = [];
+            var overlayDown = false;
+
+            var $ = function (id) { return document.getElementById(id); };
+            var isMobile = function () { return window.matchMedia('(max-width: 640px)').matches; };
+            var isOpen = function () { return $('bellModal').classList.contains('show'); };
+
+            function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+            function parseDate(s) {
+                var t = Date.parse(String(s || '').replace(/\//g, '-').replace(' ', 'T'));
+                return isNaN(t) ? 0 : t;
+            }
+
+            function fmtDate(s) {
+                var t = parseDate(s);
+                if (!t) return String(s || '');
+                var d = new Date(t);
+                var out = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+                return String(s).indexOf(':') < 0 ? out : out + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            }
+
+            function readSeen() {
+                try {
+                    var a = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+                    return Array.isArray(a) ? a : [];
+                } catch (e) { return []; }
+            }
+
+            function writeSeen() {
+                try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen.slice(-300))); } catch (e) {}
+            }
+
+            function isUnread(it) { return seen.indexOf(it.key) < 0; }
+
+            function loadItems() {
+                var raw = window.BELL_ITEMS;
+                if (!Array.isArray(raw)) return [];
+                return raw
+                    .filter(function (x) { return x && (x.title || x.body); })
+                    .map(function (x) {
+                        var o = { date: String(x.date || ''), title: String(x.title || ''), body: String(x.body || '') };
+                        o.key = o.date + '|' + o.title;
+                        o.time = parseDate(o.date);
+                        return o;
+                    })
+                    .sort(function (a, b) { return b.time - a.time; }); // 新しい順
+            }
+
+            // 本文：URL（http/https）だけリンクにして、あとは文字のまま出す
+            function appendText(el, text) {
+                text.split(/(https?:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&'()*+,;=%]+)/g).forEach(function (part, i) {
+                    if (i % 2 === 1) {
+                        var a = document.createElement('a');
+                        a.href = part;
+                        a.textContent = part;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        el.appendChild(a);
+                    } else if (part) {
+                        el.appendChild(document.createTextNode(part));
+                    }
+                });
+            }
+
+            function updateBar() {
+                var bar = $('suggestBell');
+                var badge = $('bellBadge');
+                bar.hidden = !items.length;
+                var n = items.filter(isUnread).length;
+                badge.hidden = n === 0;
+                badge.textContent = n > 9 ? '9+' : String(n);
+                bar.setAttribute('aria-label', 'お知らせ' + (n ? '（未読' + n + '件）' : ''));
+            }
+
+            function buildList() {
+                var list = $('bellList');
+                list.innerHTML = '';
+                rows = items.map(function (it, i) {
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'bell-row';
+                    var dot = document.createElement('span');
+                    dot.className = 'r-dot';
+                    var d = document.createElement('span');
+                    d.className = 'r-date';
+                    d.textContent = fmtDate(it.date);
+                    var t = document.createElement('span');
+                    t.className = 'r-title';
+                    t.textContent = it.title || '（無題）';
+                    b.append(dot, d, t);
+                    b.addEventListener('click', function () { select(i, true); });
+                    list.appendChild(b);
+                    return b;
+                });
+            }
+
+            function refreshRows() {
+                rows.forEach(function (b, i) {
+                    b.classList.toggle('unread', isUnread(items[i]));
+                    if (i === sel) b.setAttribute('aria-current', 'true');
+                    else b.removeAttribute('aria-current');
+                });
+            }
+
+            function renderView(it) {
+                var v = $('bellView');
+                v.innerHTML = '';
+                var d = document.createElement('div');
+                d.className = 'v-date';
+                d.textContent = fmtDate(it.date);
+                var h = document.createElement('h3');
+                h.textContent = it.title || '（無題）';
+                var p = document.createElement('div');
+                p.className = 'v-text';
+                appendText(p, it.body);
+                v.append(d, h, p);
+                v.scrollTop = 0;
+            }
+
+            // スマホで一覧だけが見えている間は「読んだ」扱いにしない
+            function select(i, fromTap) {
+                sel = i;
+                var it = items[i];
+                renderView(it);
+                var showDetail = !isMobile() || fromTap;
+                $('bellDialog').classList.toggle('show-detail', isMobile() && fromTap);
+                if (showDetail && isUnread(it)) {
+                    seen.push(it.key);
+                    writeSeen();
+                    updateBar();
+                }
+                refreshRows();
+                if (isMobile() && fromTap) $('bellBack').focus();
+            }
+
+            function openModal() {
+                if (!items.length) return;
+                if (typeof closeSuggest === 'function') closeSuggest();
+                seen = readSeen();
+                buildList();
+                var m = $('bellModal');
+                m.classList.add('show');
+                m.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                $('bellDialog').classList.remove('show-detail');
+                select(0, false);
+                $('bellClose').focus();
+            }
+
+            function closeModal() {
+                var m = $('bellModal');
+                m.classList.remove('show');
+                m.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            function focusables() {
+                return Array.prototype.filter.call(
+                    $('bellDialog').querySelectorAll('button, a[href]'),
+                    function (el) { return el.offsetParent !== null; }
+                );
+            }
+
+            function onKey(e) {
+                if (!isOpen()) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeModal();
+                } else if (e.key === 'Tab') {
+                    var f = focusables();
+                    if (!f.length) return;
+                    var first = f[0], last = f[f.length - 1];
+                    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+                } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.indexOf(document.activeElement) >= 0) {
+                    e.preventDefault();
+                    var next = rows.indexOf(document.activeElement) + (e.key === 'ArrowDown' ? 1 : -1);
+                    if (next >= 0 && next < rows.length) { select(next, false); rows[next].focus(); }
+                }
+            }
+
+            function init() {
+                items = loadItems();
+                seen = readSeen();
+                updateBar();
+                if (!items.length) return;
+                $('suggestBell').addEventListener('click', openModal);
+                $('bellClose').addEventListener('click', closeModal);
+                $('bellBack').addEventListener('click', function () {
+                    $('bellDialog').classList.remove('show-detail');
+                    if (rows[sel]) rows[sel].focus();
+                });
+                var m = $('bellModal');
+                m.addEventListener('mousedown', function (e) { overlayDown = e.target === m; });
+                m.addEventListener('click', function (e) { if (overlayDown && e.target === m) closeModal(); });
+                document.addEventListener('keydown', onKey);
+            }
+
+            // 毎回最新の bell.js を取りに行く（無ければ何もしない）
+            var sc = document.createElement('script');
+            sc.src = './bell.js?t=' + Date.now();
+            sc.onload = init;
+            sc.onerror = function () {};
+            document.head.appendChild(sc);
+        })();
+    </script>
+</body>
+</html>

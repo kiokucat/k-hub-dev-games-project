@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>太鼓の達人風 Web App (P2P・段位・コンボボイス対応版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Hiragino Kaku Gothic ProN', sans-serif; user-select: none; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #folder-input { display: none; }
+    .folder-btn {
+      position: absolute; top: 20px; right: 20px; padding: 10px 18px;
+      background: #ff8c00; color: #fff; border: 2px solid #fff;
+      border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;
+      z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .folder-btn:hover { background: #ffa500; }
+    #p2p-panel {
+      position: absolute; top: 20px; left: 20px; z-index: 20;
+      background: rgba(0,0,0,0.85); border: 2px solid #ff8c00;
+      border-radius: 10px; padding: 14px; color: #fff; font-size: 13px;
+      max-width: 300px; display: none;
+    }
+    #p2p-panel.active { display: block; }
+    #p2p-panel.hidden-play { display: none !important; }
+    #p2p-panel input {
+      width: 100%; padding: 8px; margin: 6px 0; border-radius: 6px;
+      border: 1px solid #666; background: #222; color: #fff;
+      font-size: 16px; text-align: center; letter-spacing: 6px; text-transform: uppercase;
+    }
+    #p2p-panel button {
+      width: 100%; padding: 10px; margin-top: 8px; background: #ff8c00;
+      border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer;
+      font-size: 14px;
+    }
+    #p2p-panel button:hover { background: #ffa500; }
+    #p2p-status { margin-top: 8px; font-size: 12px; color: #aaa; }
+    .p2p-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-top: 4px; }
+    .p2p-tag.host { background: #ff8c00; }
+    .p2p-tag.guest { background: #2196f3; }
+  </style>
+</head>
+<body>
+
+  <div id="p2p-panel">
+    <div style="font-weight:bold; color:#ffeb3b; font-size:14px;">🌐 P2P</div>
+    <div id="p2p-detail" style="display:none;">
+      <div id="p2p-controls">
+        <button id="btn-create-room">ルームを作成</button>
+        <div style="margin:6px 0; text-align:center; color:#888; font-size:11px;">— または —</div>
+        <input type="text" id="room-code-input" maxlength="5" placeholder="コード (例:A3B9C)">
+        <button id="btn-join-room">ルームに参加</button>
+      </div>
+      <div id="p2p-room-info" style="display:none;">
+        <div style="font-size:12px;">コード: <span id="room-code-display" style="color:#ffeb3b; font-size:16px; font-weight:bold;"></span></div>
+        <div id="p2p-players" style="margin-top:4px; font-size:11px;"></div>
+        <button id="btn-leave-room" style="background:#f44336; margin-top:6px; font-size:12px; padding:6px;">退出</button>
+      </div>
+      <div id="p2p-status" style="font-size:11px; color:#aaa; margin-top:4px;">未接続</div>
+    </div>
+  </div>
+
+  <button class="folder-btn" id="select-folder-btn">📁 フォルダを選択 (songs / dan)</button>
+  <input type="file" id="folder-input" webkitdirectory directory multiple />
+  <canvas id="stage"></canvas>
+
+  <script>
+    // ========================
+    // グローバル設定
+    // ========================
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    const SIGNALING_SERVER = 'wss://taiko-server.onrender.com';
+    const COMBO_VOICE_TARGETS = [10,30,50,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600];
+
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+    // --- Web Audio API ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = new AudioContext();
+    let bgmAudio = new Audio();
+    let donBuffer = null, kaBuffer = null, balloonBuffer = null;
+    let comboVoiceBuffers = {};
+
+    async function loadSoundEffect(url) {
+      try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        return await audioCtx.decodeAudioData(arrayBuffer);
+      } catch (e) { return null; }
+    }
+    function playSE(buffer) {
+      if (!buffer) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+      source.start(0);
+    }
+    loadSoundEffect('don.ogg').then(b => donBuffer = b);
+    loadSoundEffect('ka.ogg').then(b => kaBuffer = b);
+    loadSoundEffect('balloon.ogg').then(b => balloonBuffer = b).catch(() => balloonBuffer = null);
+
+    // ========================
+    // P2P通信 (WebRTC + WebSocketシグナリング)
+    // ========================
+    let ws = null, pc = null, dataChannel = null;
+    let p2pState = 'idle'; // idle, connected, hosting, guest
+    let roomCode = '', isHost = false;
+    let remotePlayerData = null;
+    let p2pGameSync = { active: false, startTime: 0, songIdx: 0, courseIdx: 0 };
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+      return code;
+    }
+
+    function initP2P() {
+      const panel = document.getElementById('p2p-panel');
+      panel.classList.add('active');
+      document.getElementById('p2p-detail').style.display = 'block';
+      document.getElementById('btn-create-room').onclick = () => {
+        roomCode = generateRoomCode(); isHost = true;
+        connectSignaling();
+        sendWS({ type: 'create_room', roomCode });
+        updateP2PStatus('ルーム作成完了。参加者を待っています...');
+        showRoomInfo();
+      };
+      document.getElementById('btn-join-room').onclick = () => {
+        const input = document.getElementById('room-code-input').value.toUpperCase().trim();
+        if (input.length !== 5) { alert('5文字の英数字コードを入力してください'); return; }
+        roomCode = input; isHost = false;
+        connectSignaling();
+        sendWS({ type: 'join_room', roomCode });
+        updateP2PStatus('参加リクエスト送信中...');
+        showRoomInfo();
+      };
+      document.getElementById('btn-leave-room').onclick = () => {
+        if (dataChannel) dataChannel.close();
+        if (pc) pc.close();
+        if (ws) ws.close();
+        p2pState = 'idle'; roomCode = '';
+        document.getElementById('p2p-controls').style.display = 'block';
+        document.getElementById('p2p-room-info').style.display = 'none';
+        updateP2PStatus('未接続');
+      };
+    }
+
+    function connectSignaling() {
+      if (ws) ws.close();
+      try {
+        ws = new WebSocket(SIGNALING_SERVER);
+        ws.onopen = () => updateP2PStatus('シグナリングサーバー接続済');
+        ws.onmessage = async (evt) => { handleSignalingMessage(JSON.parse(evt.data)); };
+        ws.onerror = () => updateP2PStatus('接続エラー');
+        ws.onclose = () => updateP2PStatus('切断されました');
+      } catch (e) { updateP2PStatus('接続失敗'); }
+    }
+
+    function sendWS(msg) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg)); }
+    function updateP2PStatus(text) { document.getElementById('p2p-status').textContent = text; }
+    function showRoomInfo() {
+      document.getElementById('p2p-controls').style.display = 'none';
+      document.getElementById('p2p-room-info').style.display = 'block';
+      document.getElementById('room-code-display').textContent = roomCode;
+      document.getElementById('p2p-detail').style.display = 'block';
+    }
+
+    async function handleSignalingMessage(msg) {
+      switch (msg.type) {
+        case 'room_created': updateP2PStatus('ルーム作成完了。参加者を待っています...'); break;
+        case 'peer_joined':
+          updateP2PStatus('参加者が入室しました。P2P接続を開始...');
+          createPeerConnection();
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendWS({ type: 'offer', roomCode, data: offer });
+          break;
+        case 'offer':
+          if (!isHost) {
+            createPeerConnection();
+            await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            sendWS({ type: 'answer', roomCode, data: answer });
+            updateP2PStatus('Offer受信、Answer送信中...');
+          }
+          break;
+        case 'answer':
+          if (isHost) {
+            await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+            updateP2PStatus('Answer受信、接続確立中...');
+          }
+          break;
+        case 'ice_candidate':
+          if (pc && msg.data) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(msg.data)); }
+            catch (e) { console.warn('ICE追加失敗', e); }
+          }
+          break;
+        case 'room_full': alert('ルームが満員です'); break;
+        case 'peer_left':
+          updateP2PStatus('相手が退出しました'); remotePlayerData = null;
+          document.getElementById('p2p-players').innerHTML = '<span style="color:#f44336;">● 相手が退出</span>';
+          break;
+        case 'error': alert('エラー: ' + msg.message); break;
+      }
+    }
+
+    function createPeerConnection() {
+      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+      pc.onicecandidate = (e) => { if (e.candidate) sendWS({ type: 'ice_candidate', roomCode, data: e.candidate }); };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'connected') {
+          p2pState = 'connected';
+          updateP2PStatus('P2P接続確立！');
+          const tag = isHost ? '<span class="p2p-tag host">ホスト</span>' : '<span class="p2p-tag guest">ゲスト</span>';
+          document.getElementById('p2p-players').innerHTML = '<span style="color:#4caf50;">● 対戦相手接続済</span> ' + tag;
+        }
+      };
+      if (isHost) {
+        dataChannel = pc.createDataChannel('taiko');
+        setupDataChannel();
+      } else {
+        pc.ondatachannel = (e) => { dataChannel = e.channel; setupDataChannel(); };
+      }
+    }
+
+    function setupDataChannel() {
+      dataChannel.onopen = () => console.log('DataChannel open');
+      dataChannel.onmessage = (e) => { handleP2PMessage(JSON.parse(e.data)); };
+      dataChannel.onclose = () => console.log('DataChannel closed');
+    }
+
+    function sendP2P(msg) { if (dataChannel && dataChannel.readyState === 'open') dataChannel.send(JSON.stringify(msg)); }
+
+    function handleP2PMessage(msg) {
+      switch (msg.type) {
+        case 'select_song':
+          if (!isHost) { selectedSongIdx = msg.data.songIdx; selectedCourseIdx = msg.data.courseIdx; }
+          break;
+        case 'start_game':
+          if (!isHost) {
+            p2pGameSync = { active: true, startTime: msg.data.startTime, songIdx: msg.data.songIdx, courseIdx: msg.data.courseIdx };
+            selectedSongIdx = msg.data.songIdx; selectedCourseIdx = msg.data.courseIdx;
+            prepareGameStart(true);
+          }
+          break;
+        case 'score': remotePlayerData = { ...remotePlayerData, ...msg.data }; break;
+      }
+    }
+
+    let lastP2PSend = 0;
+    function sendP2PInput(player) {
+      const now = performance.now();
+      if (now - lastP2PSend < 50) return;
+      lastP2PSend = now;
+      sendP2P({ type: 'score', data: {
+        score: player.score, combo: player.combo, maxCombo: player.maxCombo,
+        soulGauge: player.soulGauge, stats: player.stats, judgeText: player.judgeText
+      }});
+    }
+
+    // ========================
+    // 曲・段位・ゲームデータ
+    // ========================
+    let songList = [];
+    let danList = []; // { name, songs: [{ title, subtitle, tjaFile, audioFile, levels, exam, bpm, offset }] }
+    let danState = { active: false, danIdx: 0, songIdx: 0, results: [] };
+
+    const courses = [
+      { name: 'かんたん', color: '#ff4500' },
+      { name: 'ふつう', color: '#87ceeb' },
+      { name: 'むずかしい', color: '#008000' },
+      { name: 'おに', color: '#ff1493' }
+    ];
+    const playModes = ['ノーマル', 'オート', 'ドンカツ区別なし'];
+
+    let gameState = 'SELECT_PLAYER';
+    let playerCount = 1;
+    let selectedSongIdx = 0, selectedCourseIdx = 3, selectedModeIdx = 0;
+    let selectedDanIdx = 0;
+    let players = [];
+    let flyingParticles = [];
+    let shinUchiBaseScore = 100;
+    let examConfig = null, examResults = null;
+    let currentBranchState = 'normal'; // normal, expert, master
+    let scrollX = 0, cardOffsetY = 0, coursePanelAnim = 0;
+    let cardHoverTimer = 0; // 選択カードのホバー時間(ms)
+    let cardExpandProgress = 0; // 0～1 の拡大アニメーション
+    let startTime = 0, countdownStartTime = 0, pauseStartTime = 0, totalPauseDuration = 0;
+    const NOTE_SPEED_BASE = 0.6;
+    const COUNTDOWN_DELAY = 2000;
+
+    function initPlayers(num) {
+      players = [];
+      for (let i = 0; i < num; i++) {
+        players.push({
+          id: i, score: 0, combo: 0, maxCombo: 0, soulGauge: 0,
+          stats: { perfect: 0, good: 0, bad: 0 },
+          judgeText: '', judgeTimer: 0,
+          taikoState: { donL: false, donR: false, kaL: false, kaR: false },
+          notes: [], rolls: [], currentBalloon: null
+        });
+      }
+    }
+
+    function drawFittedText(text, x, y, maxWidth, defaultFontSize, fontColor, isBold = true) {
+      ctx.save();
+      let fontSize = defaultFontSize;
+      ctx.font = `${isBold ? 'bold ' : ''}${fontSize}px sans-serif`;
+      while (ctx.measureText(text).width > maxWidth && fontSize > 10) {
+        fontSize -= 1; ctx.font = `${isBold ? 'bold ' : ''}${fontSize}px sans-serif`;
+      }
+      ctx.fillStyle = fontColor; ctx.textAlign = 'center'; ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    // ========================
+    // TJAメタデータ解析 (拡張版)
+    // ========================
+    function parseTjaMetadata(text) {
+      let title = '', titleJa = '', subtitle = '', subtitleJa = '', wave = '';
+      let levels = [0,0,0,0], balloon = [], exam = null;
+      let bpm = 120, offset = 0;
+      const lines = text.split(/\r?\n/);
+      let currentCourse = 3;
+      for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith('TITLEJA:')) titleJa = line.substring(8).trim();
+        else if (line.startsWith('TITLE:')) title = line.substring(6).trim();
+        else if (line.startsWith('SUBTITLEJA:')) subtitleJa = line.substring(11).trim().replace(/^--/, '');
+        else if (line.startsWith('SUBTITLE:')) subtitle = line.substring(9).trim().replace(/^--/, '');
+        else if (line.startsWith('WAVE:')) wave = line.substring(5).trim();
+        else if (line.startsWith('BPM:')) bpm = parseFloat(line.substring(4).trim());
+        else if (line.startsWith('OFFSET:')) offset = parseFloat(line.substring(7).trim());
+        else if (line.startsWith('BALLOON:')) balloon = line.substring(8).trim().split(',').map(v => parseInt(v) || 0);
+        else if (line.startsWith('EXAM1:') || line.startsWith('EXAM2:') || line.startsWith('EXAM:')) {
+          const parts = line.split(':')[1].split(',');
+          if (parts.length >= 3) exam = { type: parts[0].trim(), red: parseInt(parts[1]), gold: parseInt(parts[2]), range: parts[3] || 'm' };
+        }
+        else if (line.startsWith('COURSE:')) {
+          let cStr = line.substring(7).trim().toLowerCase();
+          if (cStr === 'easy' || cStr === '0') currentCourse = 0;
+          else if (cStr === 'normal' || cStr === '1') currentCourse = 1;
+          else if (cStr === 'hard' || cStr === '2') currentCourse = 2;
+          else if (cStr === 'oni' || cStr === '3' || cStr === 'edit' || cStr === '4') currentCourse = 3;
+        }
+        else if (line.startsWith('LEVEL:')) levels[currentCourse] = parseInt(line.substring(6).trim()) || 0;
+      }
+      return { title: titleJa || title || '無題', subtitle: subtitleJa || subtitle || '', wave, levels, balloon, exam, bpm, offset };
+    }
+
+    // ========================
+    // TJA譜面解析 (連打・風船・大音符対応)
+    // ========================
+    async function loadTJA(songData, isP2PRemote = false) {
+      // 音源設定 (P2Pゲストもローカルファイルがあれば設定)
+      if (songData.oggFile) bgmAudio.src = URL.createObjectURL(songData.oggFile);
+      else if (songData.oggUrl) bgmAudio.src = songData.oggUrl;
+
+      try {
+        let text = songData.tjaFile ? await songData.tjaFile.text() : await (await fetch(songData.tjaUrl)).text();
+        const meta = parseTjaMetadata(text);
+        let bpm = meta.bpm, offset = meta.offset;
+        let isHeader = true, currentCourse = 3;
+        let targetCourse = Math.max(0, Math.min(3, selectedCourseIdx));
+        let lines = text.split(/\r?\n/);
+
+        for (let line of lines) {
+          line = line.trim();
+          if (line.startsWith('BPM:')) bpm = parseFloat(line.split(':')[1]);
+          else if (line.startsWith('OFFSET:')) offset = parseFloat(line.split(':')[1]);
+          else if (line.startsWith('COURSE:')) {
+            let cStr = line.substring(7).trim().toLowerCase();
+            if (cStr === 'easy' || cStr === '0') currentCourse = 0;
+            else if (cStr === 'normal' || cStr === '1') currentCourse = 1;
+            else if (cStr === 'hard' || cStr === '2') currentCourse = 2;
+            else if (cStr === 'oni' || cStr === '3' || cStr === 'edit' || cStr === '4') currentCourse = 3;
+          }
+        }
+
+        let noteLines = [];
+        let inTargetCourse = false, defaultCourseParsed = false;
+        for (let line of lines) {
+          line = line.trim();
+          if (line.startsWith('COURSE:')) {
+            let cStr = line.substring(7).trim().toLowerCase();
+            let cIdx = 3;
+            if (cStr === 'easy' || cStr === '0') cIdx = 0;
+            if (cStr === 'normal' || cStr === '1') cIdx = 1;
+            if (cStr === 'hard' || cStr === '2') cIdx = 2;
+            inTargetCourse = (cIdx === targetCourse);
+            if (inTargetCourse) defaultCourseParsed = true;
+          }
+          if (inTargetCourse || (!defaultCourseParsed && !line.startsWith('COURSE:') && !isHeader)) {
+            if (line === '#START') isHeader = false;
+            else if (line === '#END') break;
+            else if (!isHeader && line && !line.startsWith('//')) noteLines.push(line);
+          }
+        }
+
+        // 要素ベース解析
+        let elements = [];
+        let skipBranch = false;
+        for (let line of noteLines) {
+          let clean = line.split('//')[0].trim();
+          if (!clean) continue;
+          if (clean.startsWith('#')) {
+            let parts = clean.split(' ');
+            let cmd = parts[0];
+            if (cmd === '#BRANCHSTART') { skipBranch = false; currentBranchState = 'normal'; }
+            else if (cmd === '#N') { skipBranch = false; currentBranchState = 'normal'; }
+            else if (cmd === '#E') { skipBranch = true; currentBranchState = 'expert'; }
+            else if (cmd === '#M') { skipBranch = true; currentBranchState = 'master'; }
+            else if (cmd === '#BRANCHEND') skipBranch = false;
+            else if (!skipBranch) elements.push({ type: 'cmd', name: cmd, arg: parts[1] });
+            continue;
+          }
+          if (skipBranch) continue;
+          for (let char of clean) {
+            if (/[0-9A-G]/.test(char)) elements.push({ type: 'note', val: char });
+            else if (char === ',') elements.push({ type: 'comma' });
+          }
+        }
+
+        // 小節に分割
+        let measures = [];
+        let currentMeasure = [];
+        for (let el of elements) {
+          if (el.type === 'comma') { measures.push(currentMeasure); currentMeasure = []; }
+          else currentMeasure.push(el);
+        }
+        if (currentMeasure.length > 0) measures.push(currentMeasure);
+
+        let parsedNotes = [];
+        let parsedRolls = [];
+        let currentTime = -offset * 1000;
+        let currentBPM = bpm, currentScroll = 1.0;
+        let measureBeat = 4, measureNote = 4;
+        let balloonIdx = 0;
+
+        measures.forEach(measureElements => {
+          let processed = [];
+          let i = 0;
+          while (i < measureElements.length) {
+            let el = measureElements[i];
+            if (el.type === 'note' && (el.val === '5' || el.val === '6' || el.val === '7' || el.val === '9')) {
+              let rollType = el.val;
+              let rollStartIdx = i;
+              let j = i + 1, foundEnd = false;
+              for (; j < measureElements.length; j++) {
+                if (measureElements[j].type === 'note' && measureElements[j].val === '8') { foundEnd = true; break; }
+              }
+              if (foundEnd) {
+                processed.push({ type: 'roll_start', val: rollType, endIdx: j, startIdx: rollStartIdx });
+                i = j + 1; continue;
+              }
+            }
+            processed.push(el);
+            i++;
+          }
+
+          let noteCount = processed.filter(e => e.type === 'note').length;
+          if (noteCount === 0) noteCount = processed.filter(e => e.type === 'roll_start').length;
+          if (noteCount === 0) noteCount = 1;
+
+          processed.forEach(el => {
+            if (el.type === 'cmd') {
+              if (el.name === '#BPMCHANGE') currentBPM = parseFloat(el.arg) || currentBPM;
+              else if (el.name === '#SCROLL') currentScroll = parseFloat(el.arg) || currentScroll;
+              else if (el.name === '#MEASURE') {
+                let mParts = el.arg.split('/');
+                measureBeat = parseFloat(mParts[0]); measureNote = parseFloat(mParts[1]);
+              } else if (el.name === '#DELAY') currentTime += parseFloat(el.arg) * 1000;
+            } else if (el.type === 'roll_start') {
+              let msPerMeasure = (60000 / currentBPM) * (4 / measureNote) * measureBeat;
+              let rollNoteCount = el.endIdx - el.startIdx + 1;
+              let timePerNote = msPerMeasure / noteCount;
+              let rollDuration = timePerNote * rollNoteCount;
+              let rollType = 'roll', isBig = false, requiredHits = 0;
+              if (el.val === '5') { rollType = 'roll'; isBig = false; requiredHits = Math.max(1, Math.floor(rollDuration / 80)); }
+              else if (el.val === '6') { rollType = 'roll'; isBig = true; requiredHits = Math.max(1, Math.floor(rollDuration / 80)); }
+              else if (el.val === '7') { rollType = 'balloon'; isBig = false; requiredHits = meta.balloon[balloonIdx++] || 5; }
+              else if (el.val === '9') { rollType = 'balloon'; isBig = true; requiredHits = meta.balloon[balloonIdx++] || 5; }
+              parsedRolls.push({
+                type: rollType, isBig, startTime: currentTime, endTime: currentTime + rollDuration,
+                requiredHits, hits: 0, hit: false, missed: false, scroll: currentScroll
+              });
+              currentTime += rollDuration;
+            } else if (el.type === 'note') {
+              let msPerMeasure = (60000 / currentBPM) * (4 / measureNote) * measureBeat;
+              let timePerNote = msPerMeasure / noteCount;
+              if (el.val === '1') parsedNotes.push({ time: currentTime, type: '1', hit: false, missed: false, scroll: currentScroll, isBig: false });
+              else if (el.val === '2') parsedNotes.push({ time: currentTime, type: '2', hit: false, missed: false, scroll: currentScroll, isBig: false });
+              else if (el.val === '3') parsedNotes.push({ time: currentTime, type: '1', hit: false, missed: false, scroll: currentScroll, isBig: true });
+              else if (el.val === '4') parsedNotes.push({ time: currentTime, type: '2', hit: false, missed: false, scroll: currentScroll, isBig: true });
+              else if (el.val === 'A') parsedNotes.push({ time: currentTime, type: '1', hit: false, missed: false, scroll: currentScroll, isBig: true, isPartner: true });
+              else if (el.val === 'B') parsedNotes.push({ time: currentTime, type: '2', hit: false, missed: false, scroll: currentScroll, isBig: true, isPartner: true });
+              currentTime += timePerNote;
+            }
+          });
+          if (processed.filter(e => e.type === 'note' || e.type === 'roll_start').length === 0) {
+            let msPerMeasure = (60000 / currentBPM) * (4 / measureNote) * measureBeat;
+            currentTime += msPerMeasure;
+          }
+        });
+
+        let hitNotes = parsedNotes.length + parsedRolls.filter(r => r.type === 'roll').length;
+        shinUchiBaseScore = hitNotes > 0 ? Math.floor(1000000 / hitNotes / 10) * 10 : 100;
+        examConfig = meta.exam; examResults = null;
+
+        players.forEach(p => {
+          p.branchState = currentBranchState;
+          p.notes = JSON.parse(JSON.stringify(parsedNotes));
+          p.rolls = JSON.parse(JSON.stringify(parsedRolls));
+          p.currentBalloon = null;
+          p.score = 0; p.combo = 0; p.maxCombo = 0; p.soulGauge = 0;
+          p.stats = { perfect: 0, good: 0, bad: 0 };
+        });
+      } catch (e) { console.error('TJA解析エラー:', e); }
+    }
+
+    // ========================
+    // フォルダ選択 (songs/曲名/ + dan/段位名/ + コンボボイス)
+    // ========================
+    const folderInput = document.getElementById('folder-input');
+    const folderBtn = document.getElementById('select-folder-btn');
+    folderBtn.addEventListener('click', () => folderInput.click());
+
+    folderInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      const songMap = {};
+      const danMap = {};
+      const comboVoiceFiles = {};
+
+      for (const file of files) {
+        const pathParts = file.webkitRelativePath.split('/');
+
+        // コンボボイス検索 (任意の階層)
+        const cvMatch = file.name.match(/^(\d+)\.(ogg|mp3|wav)$/i);
+        if (cvMatch) {
+          const num = parseInt(cvMatch[1]);
+          if (COMBO_VOICE_TARGETS.includes(num)) comboVoiceFiles[num] = file;
+        }
+
+        if (pathParts.length >= 3) {
+          const parentFolder = pathParts[pathParts.length - 2];
+          const grandParent = pathParts[pathParts.length - 3];
+
+          if (grandParent === 'songs') {
+            if (!songMap[parentFolder]) {
+              songMap[parentFolder] = { id: parentFolder, title: parentFolder, subtitle: '', audioFiles: {}, tjaFile: null, oggFile: null, levels: [0,0,0,0], wave: '' };
+            }
+            if (file.name.endsWith('.tja')) {
+              songMap[parentFolder].tjaFile = file;
+              const text = await file.text();
+              const meta = parseTjaMetadata(text);
+              songMap[parentFolder].title = meta.title || parentFolder;
+              songMap[parentFolder].subtitle = meta.subtitle;
+              songMap[parentFolder].levels = meta.levels;
+              songMap[parentFolder].wave = meta.wave;
+            } else if (/\.(ogg|mp3|wav)$/i.test(file.name)) {
+              songMap[parentFolder].audioFiles[file.name] = file;
+            }
+          } else if (grandParent === 'dan') {
+            if (!danMap[parentFolder]) {
+              danMap[parentFolder] = { name: parentFolder, tjaFiles: [], files: {} };
+            }
+            if (file.name.endsWith('.tja')) {
+              danMap[parentFolder].tjaFiles.push(file);
+            } else if (/\.(ogg|mp3|wav)$/i.test(file.name)) {
+              danMap[parentFolder].files[file.name] = file;
+            }
+          }
+        }
+      }
+
+      // 通常曲を確定
+      const loadedSongs = [];
+      for (const songId in songMap) {
+        const item = songMap[songId];
+        if (item.tjaFile) {
+          let selectedAudio = (item.wave && item.audioFiles[item.wave]) ? item.audioFiles[item.wave] : Object.values(item.audioFiles)[0];
+          if (selectedAudio) { item.oggFile = selectedAudio; loadedSongs.push(item); }
+        }
+      }
+      if (loadedSongs.length > 0) {
+        songList = loadedSongs.sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
+        selectedSongIdx = 0;
+      }
+
+      // 段位を解析
+      const loadedDans = [];
+      for (const danName in danMap) {
+        const dan = danMap[danName];
+        dan.tjaFiles.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+        dan.songs = [];
+        for (const tjaFile of dan.tjaFiles) {
+          const text = await tjaFile.text();
+          const meta = parseTjaMetadata(text);
+          // 音源解決: まず段位フォルダ内、次にsongs/内をタイトル・WAVEで検索
+          let audioFile = (meta.wave && dan.files[meta.wave]) ? dan.files[meta.wave] : Object.values(dan.files)[0];
+          if (!audioFile && meta.wave) {
+            for (const songId in songMap) {
+              if (songMap[songId].audioFiles[meta.wave]) { audioFile = songMap[songId].audioFiles[meta.wave]; break; }
+            }
+          }
+          if (!audioFile) {
+            for (const songId in songMap) {
+              if (songMap[songId].title === meta.title || songMap[songId].id === meta.title) {
+                audioFile = songMap[songId].oggFile; break;
+              }
+            }
+          }
+          dan.songs.push({
+            title: meta.title, subtitle: meta.subtitle, tjaFile, audioFile,
+            levels: meta.levels, exam: meta.exam, bpm: meta.bpm, offset: meta.offset
+          });
+        }
+        if (dan.songs.length > 0) loadedDans.push(dan);
+      }
+      if (loadedDans.length > 0) {
+        danList = loadedDans.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+        selectedDanIdx = 0;
+      }
+
+      // コンボボイス読み込み
+      for (const num in comboVoiceFiles) {
+        const url = URL.createObjectURL(comboVoiceFiles[num]);
+        loadSoundEffect(url).then(buf => { if (buf) comboVoiceBuffers[num] = buf; });
+      }
+
+      let msg = [];
+      if (loadedSongs.length > 0) msg.push(`${loadedSongs.length}曲`);
+      if (loadedDans.length > 0) msg.push(`${loadedDans.length}段位`);
+      if (Object.keys(comboVoiceFiles).length > 0) msg.push(`${Object.keys(comboVoiceFiles).length}種類のコンボボイス`);
+      if (msg.length > 0) alert(msg.join('、') + ' を読み込みました！');
+      else alert('有効なデータが見つかりませんでした。');
+    });
+
+    // ========================
+    // 魂演出
+    // ========================
+    function spawnSoulParticle(startX, startY, type) {
+      const targetX = canvas.width - 100, targetY = 120;
+      const controlX = (startX + targetX) / 2 + (Math.random() - 0.5) * 200;
+      const controlY = Math.min(startX, targetX) - 150 - Math.random() * 100;
+      flyingParticles.push({ startX, startY, controlX, controlY, targetX, targetY, type, progress: 0, speed: 0.035 });
+    }
+
+    // ========================
+    // 判定処理 (拡張版・コンボボイス付き)
+    // ========================
+    function triggerHit(playerIdx, type, isDon) {
+      if (gameState !== 'PLAYING') return;
+      const p = players[playerIdx];
+      const mode = playModes[selectedModeIdx];
+      if (isDon) playSE(donBuffer); else playSE(kaBuffer);
+
+      if (type === 'DON_L') p.taikoState.donL = true;
+      if (type === 'DON_R') p.taikoState.donR = true;
+      if (type === 'KA_L') p.taikoState.kaL = true;
+      if (type === 'KA_R') p.taikoState.kaR = true;
+      setTimeout(() => {
+        if (type === 'DON_L') p.taikoState.donL = false;
+        if (type === 'DON_R') p.taikoState.donR = false;
+        if (type === 'KA_L') p.taikoState.kaL = false;
+        if (type === 'KA_R') p.taikoState.kaR = false;
+      }, 80);
+
+      const elapsed = performance.now() - startTime - totalPauseDuration;
+      const laneHeight = Math.min(130, (canvas.height - 200) / playerCount);
+      const taikoX = 75, judgeX = taikoX + 140;
+      const laneY = 180 + playerIdx * (laneHeight + 30);
+
+      // 1. 風船連打処理
+      if (p.currentBalloon && !p.currentBalloon.hit && !p.currentBalloon.missed) {
+        if (isDon) {
+          p.currentBalloon.hits++;
+          playSE(balloonBuffer || donBuffer);
+          if (p.currentBalloon.hits >= p.currentBalloon.requiredHits) {
+            p.currentBalloon.hit = true;
+            p.score += shinUchiBaseScore * 3;
+            p.combo++; p.stats.perfect++;
+            p.soulGauge = Math.min(100, p.soulGauge + 3);
+            p.judgeText = '良'; p.judgeTimer = performance.now();
+            spawnSoulParticle(judgeX, laneY, '1');
+            p.currentBalloon = null;
+          }
+          return;
+        }
+      }
+
+      // 2. 連打帯処理
+      let activeRoll = p.rolls.find(r =>
+        r.type === 'roll' && !r.hit && !r.missed &&
+        elapsed >= r.startTime - 50 && elapsed <= r.endTime + 50
+      );
+      if (activeRoll) {
+        activeRoll.hits++;
+        p.score += Math.floor(shinUchiBaseScore / 10);
+        p.soulGauge = Math.min(100, p.soulGauge + 0.1);
+        return;
+      }
+
+      // 3. 通常ノート判定
+      const target = p.notes.find(n => !n.hit && !n.missed && Math.abs(n.time - elapsed) < 140);
+      if (target) {
+        const diff = Math.abs(target.time - elapsed);
+        const reqType = isDon ? '1' : '2';
+        const colorMatch = (mode === 'ドンカツ区別なし' || target.type === reqType);
+        if (colorMatch) {
+          target.hit = true;
+          let isBothHands = false;
+          if (target.isBig) {
+            if (target.type === '1' && p.taikoState.donL && p.taikoState.donR) isBothHands = true;
+            if (target.type === '2' && p.taikoState.kaL && p.taikoState.kaR) isBothHands = true;
+          }
+          let scoreMult = target.isBig ? (isBothHands ? 2 : 1.5) : 1;
+          if (diff <= 40) {
+            p.judgeText = '良';
+            p.score += Math.floor(shinUchiBaseScore * scoreMult);
+            p.combo++; p.stats.perfect++;
+            p.soulGauge = Math.min(100, p.soulGauge + 1.5);
+            spawnSoulParticle(judgeX, laneY, target.type);
+          } else if (diff <= 90) {
+            p.judgeText = '可';
+            p.score += Math.floor((shinUchiBaseScore / 2) * scoreMult);
+            p.combo++; p.stats.good++;
+            p.soulGauge = Math.min(100, p.soulGauge + 0.5);
+            spawnSoulParticle(judgeX, laneY, target.type);
+          } else {
+            p.judgeText = '不可';
+            p.combo = 0; p.stats.bad++;
+            p.soulGauge = Math.max(0, p.soulGauge - 2);
+          }
+          if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+          p.judgeTimer = performance.now();
+
+          // コンボボイス再生
+          if (COMBO_VOICE_TARGETS.includes(p.combo) && comboVoiceBuffers[p.combo]) {
+            playSE(comboVoiceBuffers[p.combo]);
+          }
+        }
+      }
+      if (p2pState === 'connected') sendP2PInput(p);
+    }
+
+    // ========================
+    // 入力制御
+    // ========================
+    function handleInput(playerIdx, type) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (type === 'MENU' && (gameState === 'PLAYING' || gameState === 'PAUSED')) {
+        if (gameState === 'PLAYING') {
+          gameState = 'PAUSED'; pauseStartTime = performance.now(); bgmAudio.pause();
+        } else if (gameState === 'PAUSED') {
+          gameState = 'PLAYING';
+          totalPauseDuration += (performance.now() - pauseStartTime);
+          bgmAudio.play();
+        }
+        return;
+      }
+      if (gameState === 'PAUSED' || gameState === 'COUNTDOWN' || gameState === 'RESULT' || gameState === 'DAN_RESULT') return;
+
+      if (gameState === 'SELECT_PLAYER') {
+        if (type === 'KA_L' || type === 'LEFT') playerCount = Math.max(1, playerCount - 1);
+        if (type === 'KA_R' || type === 'RIGHT') playerCount = Math.min(4, playerCount + 1);
+        if (type === 'DON_L' || type === 'DON_R' || type === 'START') {
+          initPlayers(playerCount); gameState = 'SELECT_SONG'; initP2P();
+        }
+        return;
+      }
+      if (gameState === 'SELECT_SONG') {
+        if (songList.length === 0 && danList.length === 0) return;
+        if (type === 'KA_R' || type === 'RIGHT') {
+          selectedSongIdx = (selectedSongIdx + 1) % songList.length;
+          cardHoverTimer = 0; cardExpandProgress = 0;
+          if (p2pState === 'connected' && isHost) sendP2P({ type: 'select_song', data: { songIdx: selectedSongIdx, courseIdx: selectedCourseIdx } });
+        }
+        if (type === 'KA_L' || type === 'LEFT') {
+          selectedSongIdx = (selectedSongIdx - 1 + songList.length) % songList.length;
+          cardHoverTimer = 0; cardExpandProgress = 0;
+          if (p2pState === 'connected' && isHost) sendP2P({ type: 'select_song', data: { songIdx: selectedSongIdx, courseIdx: selectedCourseIdx } });
+        }
+        if (type === 'DON_L' || type === 'DON_R' || type === 'START') gameState = 'SELECT_COURSE';
+        // 段位モード切替 (上キー)
+        if (type === 'UP' && danList.length > 0) gameState = 'SELECT_DAN';
+        return;
+      }
+      if (gameState === 'SELECT_DAN') {
+        if (danList.length === 0) return;
+        if (type === 'KA_R' || type === 'RIGHT') selectedDanIdx = (selectedDanIdx + 1) % danList.length;
+        if (type === 'KA_L' || type === 'LEFT') selectedDanIdx = (selectedDanIdx - 1 + danList.length) % danList.length;
+        if (type === 'DON_L' || type === 'DON_R' || type === 'START') {
+          // 段位プレイ開始
+          danState = { active: true, danIdx: selectedDanIdx, songIdx: 0, results: [] };
+          prepareDanSong();
+        }
+        if (type === 'DOWN') gameState = 'SELECT_SONG';
+        return;
+      }
+      if (gameState === 'SELECT_COURSE') {
+        // 新しい順序: -1, 4, 0, 1, 2, 3
+        const courseOrder = [-1, 4, 0, 1, 2, 3];
+        let currentPos = courseOrder.indexOf(selectedCourseIdx);
+        if (currentPos < 0) currentPos = 0;
+        if (type === 'KA_R' || type === 'RIGHT') currentPos = Math.min(courseOrder.length - 1, currentPos + 1);
+        if (type === 'KA_L' || type === 'LEFT') currentPos = Math.max(0, currentPos - 1);
+        selectedCourseIdx = courseOrder[currentPos];
+        if (type === 'DON_L' || type === 'DON_R' || type === 'START') {
+          if (selectedCourseIdx === -1) { gameState = 'SELECT_SONG'; selectedCourseIdx = 3; }
+          else if (selectedCourseIdx === 4) { selectedModeIdx = (selectedModeIdx + 1) % playModes.length; }
+          else {
+            if (p2pState === 'connected' && !isHost) return;
+            danState.active = false;
+            prepareGameStart();
+          }
+        }
+        return;
+      }
+      if (gameState === 'PLAYING') {
+        const isDon = (type === 'DON_L' || type === 'DON_R');
+        triggerHit(playerIdx, type, isDon);
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === '+' || e.key === ';') handleInput(0, 'MENU');
+      if (e.key === 'd' || e.key === 'D') handleInput(0, 'KA_L');
+      if (e.key === 'f' || e.key === 'F') handleInput(0, 'DON_L');
+      if (e.key === 'j' || e.key === 'J') handleInput(0, 'DON_R');
+      if (e.key === 'k' || e.key === 'K') handleInput(0, 'KA_R');
+      if (e.key === 'ArrowLeft') handleInput(0, 'LEFT');
+      if (e.key === 'ArrowRight') handleInput(0, 'RIGHT');
+      if (e.key === 'ArrowUp') handleInput(0, 'UP');
+      if (e.key === 'ArrowDown') handleInput(0, 'DOWN');
+      if (e.key === 'Enter') handleInput(0, 'START');
+    });
+
+    canvas.addEventListener('mousedown', handleTouchClick);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      for(let i=0; i<e.changedTouches.length; i++) handleTouchClick(e.changedTouches[i]);
+    }, {passive: false});
+
+    function handleTouchClick(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX || e.pageX) - rect.left;
+      const y = (e.clientY || e.pageY) - rect.top;
+      if (gameState === 'PAUSED') {
+        const btnW = 200, btnH = 60, cx = canvas.width / 2, cy = canvas.height / 2;
+        if (x > cx - btnW - 10 && x < cx - 10 && y > cy + 20 && y < cy + 20 + btnH) handleInput(0, 'MENU');
+        if (x > cx + 10 && x < cx + btnW + 10 && y > cy + 20 && y < cy + 20 + btnH) { bgmAudio.pause(); gameState = 'SELECT_SONG'; }
+        return;
+      }
+      if (gameState === 'RESULT') { gameState = 'SELECT_SONG'; return; }
+      if (gameState === 'DAN_RESULT') { gameState = 'SELECT_SONG'; danState.active = false; return; }
+      if (gameState === 'PLAYING') {
+        const ctrlY = canvas.height - 120, btnR = 50, spacing = 120, cx = canvas.width / 2;
+        const centers = [
+          { x: cx - spacing * 1.5, type: 'KA_L' }, { x: cx - spacing * 0.5, type: 'DON_L' },
+          { x: cx + spacing * 0.5, type: 'DON_R' }, { x: cx + spacing * 1.5, type: 'KA_R' }
+        ];
+        for (let btn of centers) {
+          const dx = x - btn.x, dy = y - ctrlY;
+          if (Math.sqrt(dx*dx + dy*dy) < btnR + 10) { handleInput(0, btn.type); break; }
+        }
+      }
+    }
+
+    async function prepareGameStart(isP2PRemote = false) {
+      if (songList.length === 0) return;
+      gameState = 'LOADING';
+      const song = songList[selectedSongIdx];
+      await loadTJA(song, isP2PRemote);
+      folderBtn.style.display = 'none';
+      flyingParticles = [];
+      if (p2pState === 'connected' && isHost && !isP2PRemote) {
+        const syncStartTime = performance.now() + 3000;
+        p2pGameSync = { active: true, startTime: syncStartTime, songIdx: selectedSongIdx, courseIdx: selectedCourseIdx };
+        sendP2P({ type: 'start_game', data: { startTime: syncStartTime, songIdx: selectedSongIdx, courseIdx: selectedCourseIdx } });
+        setTimeout(() => { gameState = 'COUNTDOWN'; countdownStartTime = performance.now(); }, 500);
+      } else if (isP2PRemote) {
+        const waitTime = p2pGameSync.startTime - performance.now();
+        if (waitTime > 0) {
+          setTimeout(() => { gameState = 'COUNTDOWN'; countdownStartTime = performance.now(); }, waitTime - 2000);
+        } else { gameState = 'COUNTDOWN'; countdownStartTime = performance.now(); }
+      } else {
+        gameState = 'COUNTDOWN'; countdownStartTime = performance.now();
+      }
+    }
+
+    async function prepareDanSong() {
+      if (!danState.active || danList.length === 0) return;
+      gameState = 'LOADING';
+      const dan = danList[danState.danIdx];
+      const song = dan.songs[danState.songIdx];
+      if (!song || !song.tjaFile) { gameState = 'SELECT_DAN'; return; }
+      await loadTJA(song);
+      folderBtn.style.display = 'none';
+      flyingParticles = [];
+      gameState = 'COUNTDOWN';
+      countdownStartTime = performance.now();
+    }
+
+    function startPlaying() {
+      gameState = 'PLAYING';
+      bgmAudio.currentTime = 0; bgmAudio.play();
+      startTime = performance.now(); totalPauseDuration = 0;
+    }
+
+    // ========================
+    // メイン描画ループ
+    // ========================
+    function render() {
+      // 曲移動時にホバータイマーをリセット
+      if (Math.abs(scrollX - (selectedSongIdx * 260)) > 5) {
+        cardHoverTimer = 0;
+        cardExpandProgress = 0;
+      }
+      // P2Pパネル表示制御（演奏中はタイトルのみ）
+      const p2pPanel = document.getElementById('p2p-panel');
+      const p2pDetail = document.getElementById('p2p-detail');
+      if (p2pPanel.classList.contains('active')) {
+        if (gameState === 'PLAYING' || gameState === 'COUNTDOWN' || gameState === 'PAUSED') {
+          if (p2pDetail) p2pDetail.style.display = 'none';
+        } else {
+          if (p2pDetail) p2pDetail.style.display = 'block';
+        }
+      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (gameState === 'SELECT_PLAYER') drawPlayerSelect();
+      else if (gameState === 'SELECT_SONG' || gameState === 'SELECT_COURSE') drawSelectScreen();
+      else if (gameState === 'SELECT_DAN') drawDanSelect();
+      else if (gameState === 'LOADING') drawLoading();
+      else if (gameState === 'COUNTDOWN') { drawPlaying(); drawCountdownOverlay(); }
+      else if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+        drawPlaying(); drawController();
+        if (gameState === 'PAUSED') drawPauseMenu();
+      }
+      else if (gameState === 'RESULT') drawResult();
+      else if (gameState === 'DAN_RESULT') drawDanResult();
+      requestAnimationFrame(render);
+    }
+
+    function drawPlayerSelect() {
+      ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 36px sans-serif';
+      ctx.fillText('プレイ人数を選んでね！', canvas.width / 2, 120);
+      const boxWidth = 120;
+      const startX = canvas.width / 2 - (4 * boxWidth + 3 * 20) / 2;
+      for (let i = 1; i <= 4; i++) {
+        const x = startX + (i - 1) * (boxWidth + 20), y = canvas.height / 2 - 60;
+        const isSelected = (i === playerCount);
+        ctx.fillStyle = isSelected ? '#ff8c00' : '#374151'; ctx.fillRect(x, y, boxWidth, 120);
+        if (isSelected) { ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 5; ctx.strokeRect(x, y, boxWidth, 120); }
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 32px sans-serif';
+        ctx.fillText(`${i}P`, x + boxWidth / 2, y + 70);
+      }
+      ctx.fillStyle = '#888'; ctx.font = '16px sans-serif';
+      ctx.fillText('決定後、左上のP2Pパネルで対戦相手と接続できます', canvas.width / 2, canvas.height - 60);
+    }
+
+    function drawSelectScreen() {
+      folderBtn.style.display = 'block';
+      ctx.fillStyle = '#1e1035'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+      if (songList.length === 0 && danList.length === 0) {
+        ctx.fillText('songs/danフォルダが見つかりません。右上ボタンから選択してください。', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+      ctx.fillText(gameState === 'SELECT_SONG' ? '曲を選んでね！ (↑で段位道場) (D/K: 移動, F/J: 決定)' : '難易度を選んでね！ (D/K: 移動, F/J: 決定)', canvas.width / 2, 50);
+
+      const CARD_W = 220, CARD_H = 420, CARD_GAP = 40;
+      const centerX = canvas.width / 2, centerY = canvas.height / 2;
+      scrollX += ((selectedSongIdx * 260) - scrollX) * 0.12;
+
+      // ホバー/拡大アニメーション制御
+      const isSongSelected = (gameState === 'SELECT_SONG');
+      if (isSongSelected) {
+        cardHoverTimer += 16;
+        if (cardHoverTimer > 500) {
+          cardExpandProgress = Math.min(1, cardExpandProgress + 0.016);
+        }
+      } else {
+        cardHoverTimer = 0;
+        cardExpandProgress = Math.max(0, cardExpandProgress - 0.05);
+      }
+
+      // 周辺±10曲のみ描画（パフォーマンス対策）
+      const drawStart = Math.max(0, selectedSongIdx - 10);
+      const drawEnd = Math.min(songList.length, selectedSongIdx + 11);
+
+      for (let i = drawStart; i < drawEnd; i++) {
+        const song = songList[i];
+        const isSelected = (i === selectedSongIdx);
+        const baseX = centerX + (i * 260) - scrollX - CARD_W / 2;
+        const baseY = centerY - CARD_H / 2;
+
+        let expandScale = 1;
+        let expandOffsetX = 0, expandOffsetY = 0;
+        if (isSelected) {
+          expandScale = 1 + (cardExpandProgress * 0.25);
+          expandOffsetX = -(CARD_W * (expandScale - 1)) / 2;
+          expandOffsetY = -(CARD_H * (expandScale - 1)) / 2;
+        }
+
+        const x = baseX + expandOffsetX;
+        const y = baseY + expandOffsetY;
+        const w = CARD_W * expandScale;
+        const h = CARD_H * expandScale;
+
+        ctx.save();
+        ctx.fillStyle = isSelected ? '#ff8c00' : '#2d2d2d';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = isSelected ? '#ffff00' : '#555';
+        ctx.lineWidth = isSelected ? 4 : 2;
+        ctx.strokeRect(x, y, w, h);
+
+        if (isSelected && cardExpandProgress > 0.5) {
+          // 拡大時: 難易度4つを縦に表示（カード右半分）
+          const diffW = w * 0.45;
+          const diffX = x + w * 0.52;
+          const diffH = h * 0.85 / 4;
+          const diffStartY = y + h * 0.1;
+          const diffNames = ['おに', 'むずかしい', 'ふつう', 'かんたん'];
+          const diffColors = ['#ff1493', '#008000', '#87ceeb', '#ff4500'];
+          const diffOrder = [3, 2, 1, 0];
+
+          diffOrder.forEach((cIdx, idx) => {
+            const dy = diffStartY + idx * (diffH + 4);
+            const stars = song.levels[cIdx] || 0;
+            ctx.fillStyle = diffColors[idx];
+            ctx.fillRect(diffX, dy, diffW, diffH);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(diffX, dy, diffW, diffH);
+            ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.min(14, diffH * 0.25)}px sans-serif`; ctx.textAlign = 'center';
+            ctx.fillText(diffNames[idx], diffX + diffW / 2, dy + diffH * 0.35);
+            ctx.fillStyle = '#ffeb3b'; ctx.font = `${Math.min(12, diffH * 0.2)}px sans-serif`;
+            ctx.fillText('★'.repeat(Math.min(10, stars)), diffX + diffW / 2, dy + diffH * 0.75);
+          });
+
+          // タイトルは左半分に縦書き風
+          const titleX = x + w * 0.04;
+          const titleW = w * 0.42;
+          ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+          const titleText = song.title;
+          const maxChars = Math.floor(h * 0.75 / 28);
+          const displayText = titleText.slice(0, maxChars);
+          let charY = y + h * 0.12;
+          ctx.font = 'bold 22px sans-serif';
+          for (let ci = 0; ci < displayText.length; ci++) {
+            ctx.fillText(displayText[ci], titleX + titleW / 2, charY);
+            charY += 28;
+          }
+          if (titleText.length > maxChars) {
+            ctx.fillText('…', titleX + titleW / 2, charY);
+          }
+          if (song.subtitle) {
+            ctx.fillStyle = '#ddd'; ctx.font = '12px sans-serif';
+            ctx.fillText(song.subtitle.slice(0, 10), titleX + titleW / 2, y + h * 0.92);
+          }
+        } else {
+          // 通常時: タイトルを縦に表示（中央）
+          ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+          const titleText = song.title;
+          const maxChars = Math.floor(h * 0.7 / 26);
+          const displayText = titleText.slice(0, maxChars);
+          let charY = y + h * 0.15;
+          ctx.font = 'bold 20px sans-serif';
+          for (let ci = 0; ci < displayText.length; ci++) {
+            ctx.fillText(displayText[ci], x + w / 2, charY);
+            charY += 26;
+          }
+          if (titleText.length > maxChars) {
+            ctx.fillText('…', x + w / 2, charY);
+          }
+          if (song.subtitle) {
+            ctx.fillStyle = '#aaa'; ctx.font = '11px sans-serif';
+            ctx.fillText(song.subtitle.slice(0, 8), x + w / 2, y + h * 0.88);
+          }
+        }
+        ctx.restore();
+      }
+
+      // 段位道場へボタン（曲選択時のみ）
+      if (danList.length > 0 && gameState === 'SELECT_SONG') {
+        ctx.fillStyle = '#673ab7';
+        const btnW = 200, btnH = 50;
+        ctx.fillRect(centerX - btnW/2, canvas.height - 100, btnW, btnH);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(centerX - btnW/2, canvas.height - 100, btnW, btnH);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('↑ 段位道場へ', centerX, canvas.height - 67);
+      }
+
+      // 難易度選択パネル
+      coursePanelAnim += ((gameState === 'SELECT_COURSE' ? 1 : 0) - coursePanelAnim) * 0.15;
+      if (coursePanelAnim > 0.01) {
+        const panelH = 200 * coursePanelAnim;
+        const panelY = canvas.height - panelH;
+        ctx.fillStyle = 'rgba(0,0,0,0.9)'; ctx.fillRect(0, panelY, canvas.width, panelH);
+
+        const itemW = 120, itemH = 140;
+        const items = [
+          { type: 'back', label: '← 戻る', color: '#555', idx: -1 },
+          { type: 'mode', label: 'オプション', color: '#673ab7', idx: 4 }
+        ];
+        courses.forEach((c, i) => items.push({ type: 'course', label: c.name, color: c.color, idx: i, stars: songList[selectedSongIdx].levels[i] || 0 }));
+        items.push({ type: 'title', label: songList[selectedSongIdx].title.slice(0, 6), color: '#333', idx: 99 });
+
+        const totalW = items.length * (itemW + 15) - 15;
+        let startX = centerX - totalW / 2;
+
+        items.forEach((item) => {
+          const ix = startX, iy = panelY + 25;
+          const isSel = (selectedCourseIdx === item.idx && item.idx !== 99);
+          ctx.fillStyle = item.color; ctx.fillRect(ix, iy, itemW, itemH);
+          if (isSel) { ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 5; ctx.strokeRect(ix, iy, itemW, itemH); }
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(item.label, ix + itemW/2, iy + 35);
+          if (item.stars !== undefined) {
+            ctx.fillStyle = '#ffeb3b'; ctx.font = '14px sans-serif';
+            ctx.fillText('★'.repeat(Math.min(10, item.stars)), ix + itemW/2, iy + 75);
+          }
+          if (item.type === 'mode') {
+            ctx.fillStyle = '#00e5ff'; ctx.font = '12px sans-serif';
+            ctx.fillText(playModes[selectedModeIdx], ix + itemW/2, iy + 110);
+          }
+          startX += itemW + 15;
+        });
+      }
+    }
+
+    function drawDanSelect() {
+      folderBtn.style.display = 'block';
+      ctx.fillStyle = '#1e1035'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('段位道場を選んでね！ (↓で通常曲へ) (D/K: 移動, F/J: 決定)', canvas.width / 2, 50);
+
+      const cardWidth = 320, cardHeight = 200;
+      const centerX = canvas.width / 2, centerY = canvas.height / 2;
+      scrollX += ((selectedDanIdx * 360) - scrollX) * 0.15;
+
+      danList.forEach((dan, i) => {
+        const isSelected = (i === selectedDanIdx);
+        const x = centerX + (i * 360) - scrollX - cardWidth / 2, y = centerY - cardHeight / 2;
+        ctx.save();
+        ctx.fillStyle = isSelected ? '#ff8c00' : '#333'; ctx.fillRect(x, y, cardWidth, cardHeight);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = isSelected ? 4 : 2; ctx.strokeRect(x, y, cardWidth, cardHeight);
+        drawFittedText(dan.name, x + cardWidth / 2, y + 60, cardWidth - 20, 28, '#fff', true);
+        ctx.fillStyle = '#ddd'; ctx.font = '16px sans-serif';
+        ctx.fillText(`${dan.songs.length}曲連続`, x + cardWidth / 2, y + 100);
+        // 各曲のタイトル一覧
+        let subY = y + 130;
+        dan.songs.forEach((s, idx) => {
+          if (idx < 3) {
+            ctx.fillStyle = '#aaa'; ctx.font = '13px sans-serif';
+            ctx.fillText(`${idx+1}. ${s.title}`, x + cardWidth / 2, subY);
+            subY += 18;
+          }
+        });
+        if (dan.songs.length > 3) {
+          ctx.fillStyle = '#888'; ctx.font = '12px sans-serif';
+          ctx.fillText(`...他${dan.songs.length - 3}曲`, x + cardWidth / 2, subY);
+        }
+        ctx.restore();
+      });
+
+      // 通常曲へボタン
+      ctx.fillStyle = '#311b92';
+      const btnW = 200, btnH = 50;
+      ctx.fillRect(centerX - btnW/2, canvas.height - 120, btnW, btnH);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(centerX - btnW/2, canvas.height - 120, btnW, btnH);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('↓ 通常曲へ', centerX, canvas.height - 87);
+    }
+
+    function drawLoading() {
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 32px sans-serif';
+      if (danState.active) {
+        const dan = danList[danState.danIdx];
+        ctx.fillText(`段位道場 ${dan.name} - ${danState.songIdx + 1}/${dan.songs.length}曲目 Loading...`, canvas.width / 2, canvas.height / 2);
+      } else {
+        ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2);
+      }
+    }
+    function drawCountdownOverlay() {
+      const remaining = COUNTDOWN_DELAY - (performance.now() - countdownStartTime);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffeb3b'; ctx.textAlign = 'center'; ctx.font = 'bold 72px sans-serif';
+      if (danState.active) {
+        const dan = danList[danState.danIdx];
+        ctx.fillText(`${dan.name} ${danState.songIdx + 1}/${dan.songs.length}`, canvas.width / 2, canvas.height / 2 - 40);
+      }
+      ctx.fillText('READY', canvas.width / 2, canvas.height / 2 + 40);
+      if (remaining <= 0) startPlaying();
+    }
+
+    // ========================
+    // ゲーム描画 (拡張版)
+    // ========================
+    function drawPlaying() {
+      let elapsed = 0;
+      if (gameState === 'PLAYING') elapsed = performance.now() - startTime - totalPauseDuration;
+      else if (gameState === 'PAUSED') elapsed = pauseStartTime - startTime - totalPauseDuration;
+
+      const laneHeight = Math.min(130, (canvas.height - 200) / playerCount);
+      const startLaneY = 180;
+      ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawSoulGauge(elapsed);
+      const taikoX = 75, judgeX = taikoX + 140;
+
+      // 段位進行状況
+      if (danState.active) {
+        const dan = danList[danState.danIdx];
+        ctx.fillStyle = '#ffeb3b'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(`段位: ${dan.name}  (${danState.songIdx + 1}/${dan.songs.length}曲目)`, 20, 40);
+      }
+
+      players.forEach((p, idx) => {
+        const laneY = startLaneY + idx * (laneHeight + 30);
+        ctx.fillStyle = '#000'; ctx.fillRect(0, laneY - laneHeight / 2, canvas.width, laneHeight);
+        ctx.strokeStyle = '#374151'; ctx.lineWidth = 2; ctx.strokeRect(0, laneY - laneHeight / 2, canvas.width, laneHeight);
+
+        if (remotePlayerData && idx === 0) {
+          ctx.fillStyle = 'rgba(76,175,80,0.1)';
+          ctx.fillRect(canvas.width - 220, laneY - laneHeight/2, 200, laneHeight);
+          ctx.fillStyle = '#4caf50'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'right';
+          ctx.fillText(`相手: ${remotePlayerData.score || 0}点`, canvas.width - 20, laneY - 20);
+          ctx.fillText(`コンボ: ${remotePlayerData.combo || 0}`, canvas.width - 20, laneY + 5);
+          if (remotePlayerData.judgeText) {
+            ctx.fillStyle = remotePlayerData.judgeText === '良' ? '#ffeb3b' : (remotePlayerData.judgeText === '可' ? '#4caf50' : '#f44336');
+            ctx.fillText(`判定: ${remotePlayerData.judgeText}`, canvas.width - 20, laneY + 30);
+          }
+        }
+
+        const taikoR = laneHeight * 0.38;
+        ctx.beginPath(); ctx.arc(taikoX, laneY, taikoR, Math.PI * 0.5, Math.PI * 1.5); ctx.fillStyle = p.taikoState.kaL ? '#2196f3' : '#d1d5db'; ctx.fill();
+        ctx.beginPath(); ctx.arc(taikoX, laneY, taikoR, Math.PI * 1.5, Math.PI * 0.5); ctx.fillStyle = p.taikoState.kaR ? '#2196f3' : '#d1d5db'; ctx.fill();
+        ctx.beginPath(); ctx.arc(taikoX, laneY, taikoR * 0.72, Math.PI * 0.5, Math.PI * 1.5); ctx.fillStyle = p.taikoState.donL ? '#f44336' : '#ffffff'; ctx.fill();
+        ctx.beginPath(); ctx.arc(taikoX, laneY, taikoR * 0.72, Math.PI * 1.5, Math.PI * 0.5); ctx.fillStyle = p.taikoState.donR ? '#f44336' : '#ffffff'; ctx.fill();
+        ctx.beginPath(); ctx.arc(taikoX, laneY, taikoR, 0, Math.PI*2); ctx.strokeStyle = '#4b5563'; ctx.lineWidth = 3; ctx.stroke();
+
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = 'bold 16px sans-serif';
+        ctx.fillText(`${idx + 1}P`, 15, laneY - taikoR - 5);
+        ctx.font = 'bold 22px sans-serif'; ctx.fillText(`${p.score}点`, 10, laneY + taikoR + 25);
+        if (p.combo >= 5) {
+          let comboColor = '#ffffff';
+          if (p.combo >= 100) comboColor = '#ffd700';
+          else if (p.combo >= 50) comboColor = '#c0c0c0';
+          ctx.fillStyle = comboColor;
+          ctx.font = 'bold 22px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${p.combo}`, judgeX, laneY - 55);
+        }
+        ctx.beginPath(); ctx.arc(judgeX, laneY, 35, 0, Math.PI * 2); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
+        // 分岐譜面表示（レーン右側）
+        const branchNames = { 'normal': '通常譜面', 'expert': '名人譜面', 'master': '達人譜面' };
+        const branchColors = { 'normal': '#4caf50', 'expert': '#ff9800', 'master': '#f44336' };
+        const bn = branchNames[p.branchState] || '';
+        if (bn) {
+          ctx.fillStyle = branchColors[p.branchState] || '#fff';
+          ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'right';
+          ctx.fillText(bn, canvas.width - 20, laneY);
+        }
+
+        let allFinished = true;
+
+        // 連打・風船描画
+        p.rolls.forEach(roll => {
+          if (roll.hit || roll.missed) return;
+          allFinished = false;
+          const scrollSpeed = NOTE_SPEED_BASE * (roll.scroll || 1.0);
+          const startX = judgeX + ((roll.startTime - elapsed) * scrollSpeed);
+          const endX = judgeX + ((roll.endTime - elapsed) * scrollSpeed);
+          if (endX < taikoX - 50 || startX > canvas.width + 50) return;
+          const visibleStart = Math.max(startX, taikoX + taikoR);
+          const visibleEnd = Math.min(endX, canvas.width + 50);
+
+          if (visibleEnd > visibleStart) {
+            if (roll.type === 'roll') {
+              ctx.fillStyle = '#ffeb3b'; ctx.globalAlpha = 0.6;
+              ctx.fillRect(visibleStart, laneY - 22, visibleEnd - visibleStart, 44);
+              ctx.globalAlpha = 1.0;
+              const r = roll.isBig ? 32 : 24;
+              ctx.beginPath(); ctx.arc(Math.max(startX, taikoX), laneY, r, 0, Math.PI*2);
+              ctx.fillStyle = '#ffeb3b'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+              if (endX < canvas.width + 50) {
+                ctx.beginPath(); ctx.arc(endX, laneY, r, 0, Math.PI*2);
+                ctx.fillStyle = '#ffeb3b'; ctx.fill(); ctx.stroke();
+              }
+              // 連打数を太鼓位置に合わせて表示
+              const rollDisplayX = Math.max(taikoX + taikoR + 5, visibleStart);
+              if (rollDisplayX < visibleEnd && roll.hits > 0) {
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'left';
+                ctx.fillText(`${roll.hits}`, rollDisplayX + 5, laneY - 30);
+              }
+            } else if (roll.type === 'balloon') {
+              const balloonX = Math.max(startX, taikoX);
+              if (balloonX < canvas.width + 50) {
+                const radius = roll.isBig ? 45 : 35;
+                ctx.beginPath(); ctx.arc(balloonX, laneY, radius, 0, Math.PI*2);
+                ctx.fillStyle = '#ff9800'; ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+                const remain = Math.max(0, roll.requiredHits - roll.hits);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText(remain, balloonX, laneY + 8);
+                ctx.beginPath(); ctx.moveTo(balloonX, laneY + radius);
+                ctx.quadraticCurveTo(balloonX + 10, laneY + radius + 20, balloonX + 5, laneY + radius + 30);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+              }
+            }
+          }
+
+          if (gameState === 'PLAYING' && roll.type === 'balloon' && elapsed > roll.endTime + 50 && !roll.hit && !roll.missed) {
+            roll.missed = true; p.judgeText = '不可'; p.combo = 0; p.stats.bad++;
+            p.soulGauge = Math.max(0, p.soulGauge - 2); p.judgeTimer = performance.now();
+            p.currentBalloon = null;
+          }
+          if (gameState === 'PLAYING' && roll.type === 'roll' && elapsed > roll.endTime + 50 && !roll.hit && !roll.missed) {
+            if (roll.hits > 0) {
+              roll.hit = true; p.score += shinUchiBaseScore; p.combo++; p.stats.perfect++;
+              p.soulGauge = Math.min(100, p.soulGauge + 1.5);
+              p.judgeText = '良'; p.judgeTimer = performance.now();
+              spawnSoulParticle(judgeX, laneY, '1');
+            } else {
+              roll.missed = true; p.judgeText = '不可'; p.combo = 0; p.stats.bad++;
+              p.soulGauge = Math.max(0, p.soulGauge - 2); p.judgeTimer = performance.now();
+            }
+          }
+          if (gameState === 'PLAYING' && roll.type === 'balloon' && elapsed >= roll.startTime - 100 && elapsed <= roll.endTime && !roll.hit && !roll.missed) {
+            p.currentBalloon = roll;
+          }
+        });
+
+        // 通常ノート描画
+        p.notes.forEach(note => {
+          if (!note.hit && !note.missed) allFinished = false;
+          if (gameState === 'PLAYING' && playModes[selectedModeIdx] === 'オート' && (note.time - elapsed) <= 0 && !note.hit && !note.missed) {
+            triggerHit(idx, note.type === '1' ? 'DON_L' : 'KA_L', note.type === '1');
+          }
+          if (gameState === 'PLAYING' && !note.hit && !note.missed && (note.time - elapsed) < -140) {
+            note.missed = true; p.judgeText = '不可'; p.combo = 0; p.stats.bad++;
+            p.soulGauge = Math.max(0, p.soulGauge - 2); p.judgeTimer = performance.now();
+          }
+          if (note.hit || note.missed) return;
+          const scrollSpeed = NOTE_SPEED_BASE * (note.scroll || 1.0);
+          const x = judgeX + ((note.time - elapsed) * scrollSpeed);
+          if (x > taikoX + taikoR && x < canvas.width + 50) {
+            const radius = note.isBig ? 42 : 28;
+            ctx.beginPath(); ctx.arc(x, laneY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = (note.type === '1') ? '#f44336' : '#2196f3'; ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = note.isBig ? 4 : 2; ctx.stroke();
+            if (note.isBig) {
+              ctx.beginPath(); ctx.arc(x, laneY, radius * 0.6, 0, Math.PI * 2);
+              ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+            }
+          }
+        });
+
+        if (p.judgeText && performance.now() - p.judgeTimer < 500) {
+          ctx.save(); ctx.textAlign = 'center'; ctx.font = 'bold 26px sans-serif';
+          ctx.fillStyle = (p.judgeText === '良') ? '#ffeb3b' : (p.judgeText === '可') ? '#4caf50' : '#f44336';
+          ctx.fillText(p.judgeText, judgeX, laneY - 45); ctx.restore();
+        }
+
+        // 終了判定
+        if (gameState === 'PLAYING' && p.notes.length > 0 && allFinished && p.rolls.every(r => r.hit || r.missed) && bgmAudio.ended) {
+          if (danState.active) {
+            const examRes = evaluateExam();
+            danState.results.push({ score: p.score, gauge: p.soulGauge, exam: examRes, stats: {...p.stats}, maxCombo: p.maxCombo });
+            const dan = danList[danState.danIdx];
+            if (danState.songIdx < dan.songs.length - 1) {
+              danState.songIdx++;
+              setTimeout(() => prepareDanSong(), 1500);
+            } else {
+              setTimeout(() => { gameState = 'DAN_RESULT'; }, 1000);
+            }
+          } else {
+            setTimeout(() => { gameState = 'RESULT'; }, 1000);
+          }
+        }
+      });
+      updateAndDrawParticles();
+    }
+
+    function drawSoulGauge(elapsed) {
+      const p1 = players[0]; if(!p1) return;
+      const gaugeWidth = 400, gaugeHeight = 24;
+      const gaugeX = canvas.width - gaugeWidth - 120, gaugeY = 100;
+      ctx.fillStyle = '#374151'; ctx.fillRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight);
+      const clearX = gaugeX + gaugeWidth * 0.8;
+      ctx.beginPath(); ctx.moveTo(clearX, gaugeY - 5); ctx.lineTo(clearX, gaugeY + gaugeHeight + 5);
+      ctx.strokeStyle = '#ffeb3b'; ctx.lineWidth = 3; ctx.stroke();
+      const fillWidth = (p1.soulGauge / 100) * gaugeWidth;
+      if (fillWidth > 0) {
+        const grad = ctx.createLinearGradient(gaugeX, 0, gaugeX + gaugeWidth, 0);
+        grad.addColorStop(0, '#ff9800'); grad.addColorStop(0.7, '#ffeb3b'); grad.addColorStop(1, '#ff1744');
+        ctx.fillStyle = grad; ctx.fillRect(gaugeX, gaugeY, fillWidth, gaugeHeight);
+      }
+      const soulMarkX = canvas.width - 100, soulMarkY = gaugeY + 12;
+      ctx.beginPath(); ctx.arc(soulMarkX, soulMarkY, 26, 0, Math.PI * 2);
+      ctx.fillStyle = (p1.soulGauge >= 80) ? '#ff1744' : '#9ca3af'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('魂', soulMarkX, soulMarkY + 6);
+      if (p1.soulGauge >= 80) {
+        ctx.fillStyle = '#ff1744'; ctx.font = 'bold 20px sans-serif'; ctx.fillText('クリア！', soulMarkX + 50, soulMarkY + 6);
+      }
+    }
+
+    function updateAndDrawParticles() {
+      for (let i = flyingParticles.length - 1; i >= 0; i--) {
+        const p = flyingParticles[i];
+        p.progress += p.speed;
+        if (p.progress >= 1) { flyingParticles.splice(i, 1); continue; }
+        const t = p.progress, invT = 1 - t;
+        const cx = invT * invT * p.startX + 2 * invT * t * p.controlX + t * t * p.targetX;
+        const cy = invT * invT * p.startY + 2 * invT * t * p.controlY + t * t * p.targetY;
+        ctx.beginPath(); ctx.arc(cx, cy, 18 * (1 - t * 0.4), 0, Math.PI * 2);
+        ctx.fillStyle = (p.type === '1') ? '#f44336' : '#2196f3'; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      }
+    }
+
+    function drawController() {
+      const ctrlY = canvas.height - 120, btnR = 50, spacing = 120, cx = canvas.width / 2;
+      const btns = [
+        { x: cx - spacing * 1.5, color: '#2196f3', text: 'カ(L)' },
+        { x: cx - spacing * 0.5, color: '#f44336', text: 'ドン(L)' },
+        { x: cx + spacing * 0.5, color: '#f44336', text: 'ドン(R)' },
+        { x: cx + spacing * 1.5, color: '#2196f3', text: 'カ(R)' }
+      ];
+      ctx.globalAlpha = 0.5;
+      btns.forEach(b => {
+        ctx.beginPath(); ctx.arc(b.x, ctrlY, btnR, 0, Math.PI * 2);
+        ctx.fillStyle = b.color; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(b.text, b.x, ctrlY + 6);
+      });
+      ctx.globalAlpha = 1.0;
+    }
+
+    function drawPauseMenu() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 36px sans-serif';
+      ctx.fillText('PAUSE', canvas.width / 2, canvas.height / 2 - 40);
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const btnW = 200, btnH = 60;
+      ctx.fillStyle = '#4caf50'; ctx.fillRect(cx - btnW - 10, cy + 20, btnW, btnH);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 24px sans-serif'; ctx.fillText('ゲームを再開', cx - btnW / 2 - 10, cy + 58);
+      ctx.fillStyle = '#f44336'; ctx.fillRect(cx + 10, cy + 20, btnW, btnH);
+      ctx.fillStyle = '#fff'; ctx.fillText('ゲームを終了', cx + btnW / 2 + 10, cy + 58);
+    }
+
+    // ========================
+    // 試験評価
+    // ========================
+    function evaluateExam() {
+      if (!examConfig) return null;
+      const p1 = players[0];
+      let value = 0;
+      switch (examConfig.type) {
+        case 's': value = p1.score; break;
+        case 'c': value = p1.maxCombo; break;
+        case 'p': value = p1.stats.perfect; break;
+        case 'g': value = p1.stats.good; break;
+        case 'b': value = p1.stats.bad; break;
+        case 'r': value = p1.stats.perfect + p1.stats.good; break;
+        default: value = p1.score;
+      }
+      let result = 'fail';
+      if (examConfig.range === 'm') {
+        if (value >= examConfig.gold) result = 'gold';
+        else if (value >= examConfig.red) result = 'red';
+      } else {
+        if (value <= examConfig.gold) result = 'gold';
+        else if (value <= examConfig.red) result = 'red';
+      }
+      return { config: examConfig, value, result };
+    }
+
+    // ========================
+    // 通常結果画面
+    // ========================
+    function drawResult() {
+      ctx.fillStyle = '#1e1035'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 48px sans-serif';
+      ctx.fillText('成績発表', canvas.width / 2, 80);
+      const p1 = players[0]; if (!p1) return;
+      const isClear = p1.soulGauge >= 80;
+      const isFullCombo = (p1.stats.bad === 0 && p1.stats.perfect + p1.stats.good > 0);
+      const isDondaFullCombo = (isFullCombo && p1.stats.good === 0);
+
+      if (isClear) { ctx.fillStyle = '#ffeb3b'; ctx.font = 'bold 64px sans-serif'; ctx.fillText('クリア成功！', canvas.width / 2, 160); }
+      else { ctx.fillStyle = '#9ca3af'; ctx.font = 'bold 64px sans-serif'; ctx.fillText('クリア失敗...', canvas.width / 2, 160); }
+      if (isDondaFullCombo) { ctx.fillStyle = '#ff1744'; ctx.font = 'bold 42px sans-serif'; ctx.fillText('ドンダフルコンボ！！', canvas.width / 2, 230); }
+      else if (isFullCombo) { ctx.fillStyle = '#ff9800'; ctx.font = 'bold 42px sans-serif'; ctx.fillText('フルコンボ！', canvas.width / 2, 230); }
+
+      examResults = evaluateExam();
+      if (examResults) {
+        const examY = isFullCombo ? 280 : 230;
+        const examText = examResults.result === 'gold' ? '金合格！' : (examResults.result === 'red' ? '赤合格' : '不合格...');
+        const examColor = examResults.result === 'gold' ? '#ffd700' : (examResults.result === 'red' ? '#ff4500' : '#9ca3af');
+        ctx.fillStyle = examColor; ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(`試験結果: ${examText} (${examResults.config.type.toUpperCase()}:${examResults.value})`, canvas.width / 2, examY + 40);
+      }
+
+      if (remotePlayerData) {
+        ctx.fillStyle = '#4caf50'; ctx.font = 'bold 24px sans-serif';
+        ctx.fillText(`相手のスコア: ${remotePlayerData.score || 0}点`, canvas.width / 2, 340);
+        if (p1.score > (remotePlayerData.score || 0)) {
+          ctx.fillStyle = '#ffeb3b'; ctx.font = 'bold 36px sans-serif'; ctx.fillText('あなたの勝利！', canvas.width / 2, 380);
+        } else if (p1.score < (remotePlayerData.score || 0)) {
+          ctx.fillStyle = '#f44336'; ctx.font = 'bold 36px sans-serif'; ctx.fillText('相手の勝利...', canvas.width / 2, 380);
+        } else {
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 36px sans-serif'; ctx.fillText('引き分け！', canvas.width / 2, 380);
+        }
+      }
+
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 36px sans-serif'; ctx.textAlign = 'left';
+      const sx = canvas.width / 2 - 150;
+      let sy = remotePlayerData ? 430 : 320;
+      ctx.fillText(`スコア: ${p1.score}点 (真打)`, sx, sy); sy += 50;
+      ctx.fillStyle = '#ffeb3b'; ctx.fillText(`良: ${p1.stats.perfect}`, sx, sy); sy += 50;
+      ctx.fillStyle = '#4caf50'; ctx.fillText(`可: ${p1.stats.good}`, sx, sy); sy += 50;
+      ctx.fillStyle = '#f44336'; ctx.fillText(`不可: ${p1.stats.bad}`, sx, sy); sy += 50;
+      ctx.fillStyle = '#fff'; ctx.fillText(`最大コンボ: ${p1.maxCombo}`, sx, sy);
+
+      ctx.textAlign = 'center'; ctx.font = '20px sans-serif'; ctx.fillStyle = '#aaa';
+      ctx.fillText('画面をクリックして曲選択に戻る', canvas.width / 2, canvas.height - 50);
+    }
+
+    // ========================
+    // 段位結果画面
+    // ========================
+    function drawDanResult() {
+      ctx.fillStyle = '#1e1035'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 48px sans-serif';
+      const dan = danList[danState.danIdx];
+      ctx.fillText(`${dan.name} - 段位結果`, canvas.width / 2, 70);
+
+      let totalGold = 0, totalRed = 0, totalFail = 0;
+      let allClear = true;
+      const tableY = 120;
+      const colW = [40, 180, 100, 100, 100, 120];
+      const startX = canvas.width / 2 - (colW.reduce((a,b)=>a+b,0)) / 2;
+
+      // ヘッダー
+      ctx.fillStyle = '#ff8c00'; ctx.font = 'bold 16px sans-serif';
+      let hx = startX;
+      ['#', '曲名', 'スコア', '魂ゲージ', '試験', '判定'].forEach((h, i) => {
+        ctx.fillText(h, hx + colW[i]/2, tableY);
+        hx += colW[i];
+      });
+
+      danState.results.forEach((res, i) => {
+        const y = tableY + 35 + i * 40;
+        const song = dan.songs[i];
+        ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif';
+        let x = startX;
+        ctx.fillText(`${i+1}`, x + colW[0]/2, y); x += colW[0];
+        ctx.fillText(song.title, x + colW[1]/2, y); x += colW[1];
+        ctx.fillText(res.score, x + colW[2]/2, y); x += colW[2];
+        ctx.fillStyle = res.gauge >= 80 ? '#4caf50' : '#f44336';
+        ctx.fillText(`${Math.floor(res.gauge)}%`, x + colW[3]/2, y); x += colW[3];
+        ctx.fillStyle = '#fff';
+        if (res.exam) {
+          const examText = res.exam.result === 'gold' ? '金' : (res.exam.result === 'red' ? '赤' : '不');
+          ctx.fillText(examText, x + colW[4]/2, y);
+          if (res.exam.result === 'gold') totalGold++;
+          else if (res.exam.result === 'red') totalRed++;
+          else totalFail++;
+        } else {
+          ctx.fillText('-', x + colW[4]/2, y);
+        }
+        x += colW[4];
+        const pass = res.gauge >= 80 && (!res.exam || res.exam.result !== 'fail');
+        if (!pass) allClear = false;
+        ctx.fillStyle = pass ? '#4caf50' : '#f44336';
+        ctx.fillText(pass ? '合格' : '不合格', x + colW[5]/2, y);
+      });
+
+      const resultY = tableY + 35 + danState.results.length * 40 + 30;
+      if (allClear && totalFail === 0) {
+        if (totalGold === danState.results.length) {
+          ctx.fillStyle = '#ffd700'; ctx.font = 'bold 56px sans-serif';
+          ctx.fillText('金合格！おめでとう！', canvas.width / 2, resultY);
+        } else {
+          ctx.fillStyle = '#ff4500'; ctx.font = 'bold 56px sans-serif';
+          ctx.fillText('赤合格！', canvas.width / 2, resultY);
+        }
+      } else {
+        ctx.fillStyle = '#9ca3af'; ctx.font = 'bold 56px sans-serif';
+        ctx.fillText('不合格...', canvas.width / 2, resultY);
+      }
+
+      ctx.fillStyle = '#aaa'; ctx.font = '20px sans-serif';
+      ctx.fillText('画面をクリックして戻る', canvas.width / 2, canvas.height - 50);
+    }
+
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

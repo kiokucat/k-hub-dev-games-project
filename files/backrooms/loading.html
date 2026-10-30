@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE BACKROOMS — LOADING</title>
+<style>
+  html,body{
+    margin:0;padding:0;height:100%;background:#000;overflow:hidden;
+    font-family:'Courier New',monospace;color:#e8d98a;
+  }
+  #bg{
+    position:fixed;inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at 50% 45%, #4a3f14 0%, #0a0800 85%);
+    animation:flicker 3.2s infinite;
+  }
+  @keyframes flicker{
+    0%,100%{filter:brightness(1);}
+    4%{filter:brightness(.55);}
+    6%{filter:brightness(1);}
+    7%{filter:brightness(.7);}
+    9%{filter:brightness(1);}
+    52%{filter:brightness(1);}
+    53%{filter:brightness(.6);}
+    55%{filter:brightness(1);}
+  }
+  #wrap{
+    position:relative;z-index:1;height:100%;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:0 20px;
+  }
+  h1{
+    font-size:2.4rem;letter-spacing:.5rem;margin:0 0 .2rem 0;color:#e8d370;
+    text-shadow:0 0 2px #000, 0 0 24px rgba(232,211,112,.5);font-weight:700;
+  }
+  @media (max-width:520px){ h1{font-size:1.6rem;letter-spacing:.3rem;} }
+  .sub{color:#8a7a3a;font-size:.75rem;letter-spacing:.3rem;margin-bottom:2.6rem;}
+
+  #barOuter{
+    width:280px;max-width:80vw;height:8px;background:#141006;border:1px solid #4a3f14;
+    border-radius:3px;overflow:hidden;
+  }
+  #barFill{
+    height:100%;width:0%;background:linear-gradient(90deg,#b89020,#e8d370);
+    box-shadow:0 0 10px rgba(232,211,112,.6);
+    transition:width .12s linear;
+  }
+  #pct{margin-top:.7rem;font-size:.7rem;color:#b8a860;letter-spacing:.1rem;}
+  #msg{
+    margin-top:1.4rem;font-size:.68rem;color:#6b5f30;letter-spacing:.05rem;
+    min-height:1.2em;
+  }
+
+  #tapeTop, #tapeBottom{
+    position:fixed;left:0;width:100%;height:22px;
+    background:repeating-linear-gradient(45deg,#111 0 18px,#e2c020 18px 36px);
+    opacity:.8;z-index:2;
+  }
+  #tapeTop{top:0;} #tapeBottom{bottom:0;}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="tapeTop"></div>
+<div id="tapeBottom"></div>
+
+<div id="wrap">
+  <h1>THE BACKROOMS</h1>
+  <div class="sub">ENTERING LEVEL 0...</div>
+  <div id="barOuter"><div id="barFill"></div></div>
+  <div id="pct">0%</div>
+  <div id="msg">壁の外側へ進入中...</div>
+</div>
+
+<script>
+const messages = [
+  '壁の外側へ進入中...',
+  '黄ばんだ蛍光灯を調整中...',
+  '迷路のジオメトリを生成中...',
+  'カーペットの匂いを再現中...',
+  'もう間もなく...'
+];
+const barFill = document.getElementById('barFill');
+const pctEl = document.getElementById('pct');
+const msgEl = document.getElementById('msg');
+
+let progress = 0;
+let msgIndex = 0;
+const DURATION_MS = 2200; // アニメーションの目安時間
+const startTime = performance.now();
+
+function tick(now){
+  const elapsed = now - startTime;
+  // 少し不規則に進む(単調な直線より雰囲気が出る)ようイージングをかける
+  const t = Math.min(1, elapsed / DURATION_MS);
+  progress = Math.floor((1 - Math.pow(1 - t, 2)) * 100);
+  barFill.style.width = progress + '%';
+  pctEl.textContent = progress + '%';
+
+  const nextMsgIndex = Math.min(messages.length - 1, Math.floor(t * messages.length));
+  if (nextMsgIndex !== msgIndex){
+    msgIndex = nextMsgIndex;
+    msgEl.textContent = messages[msgIndex];
+  }
+
+  if (t < 1){
+    requestAnimationFrame(tick);
+  } else {
+    barFill.style.width = '100%';
+    pctEl.textContent = '100%';
+    msgEl.textContent = '出発...';
+    setTimeout(() => {
+      window.location.replace('./game.html'); // 自動でゲーム本体を読み込む
+    }, 260);
+  }
+}
+requestAnimationFrame(tick);
+
+// 万一アニメーションが止まっても取り残されないための保険(最大4秒で強制遷移)
+setTimeout(() => { window.location.replace('./game.html'); }, 4000);
+</script>
+</body>
+</html>

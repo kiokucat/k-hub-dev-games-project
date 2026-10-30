@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回転寿司タイピング対戦</title>
+<style>
+  :root{
+    --washi:#efe3c8; --washi-deep:#e4d3a9;
+    --noren:#1b3350; --noren-deep:#0c1e33; --noren-fab:#234368;
+    --wood:#b8895f; --wood-light:#e3c49a; --wood-deep:#8a5f3c;
+    --urushi:#1b1714; --urushi-soft:#2c2620;
+    --gold:#b8903f; --gold-bright:#d9b56b; --gold-pale:#efd9a4;
+    --shu:#a8402c; --shu-deep:#7e2e20;
+    --matsu:#3c6e52; --matsu-deep:#2a4f3a;
+    --sumi:#2b2622; --sumi-soft:#5b5348;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background-color:var(--washi-deep); color:var(--sumi);
+    font-family:"Yu Gothic","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  }
+  #app{
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-start; padding:40px 14px;
+  }
+  h1{
+    font-family:"Yu Mincho","Hiragino Mincho ProN",serif; color:var(--noren);
+    font-size:1.3em; text-align:center; margin:0 0 16px;
+  }
+  .card{
+    background:var(--washi); border:1.5px solid var(--wood); border-radius:10px;
+    padding:24px; width:min(92vw,380px); box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  input{
+    width:100%; padding:9px; margin:6px 0; border-radius:6px;
+    border:1.5px solid var(--wood); font-size:1em; background:#fff;
+  }
+  button{
+    width:100%; padding:11px; margin-top:8px; border:none; border-radius:6px;
+    background:var(--noren); color:#fff; font-size:1em; font-weight:bold;
+    cursor:pointer; transition:.15s; font-family:inherit;
+  }
+  button:hover{ background:var(--noren-fab); }
+  button.ghost{ background:var(--wood-deep); }
+  .row{ display:flex; gap:8px; }
+  .row>*{ flex:1; }
+  .tabs{ display:flex; gap:6px; margin-bottom:12px; }
+  .tabs button{ background:#d8cba8; color:var(--sumi-soft); margin-top:0; }
+  .tabs button.active{ background:var(--noren); color:#fff; }
+  #msg{ text-align:center; min-height:18px; color:var(--shu); font-size:.85em; margin-top:4px;}
+  #lobbyMsg{ text-align:center; margin-top:8px; color:var(--sumi-soft); font-size:.9em; }
+
+  /* ============ のれん（本家と同じ演出） ============ */
+  .curtain{position:fixed;inset:0;z-index:9999;pointer-events:none;display:flex;}
+  .curtain-panel{
+    position:absolute;top:0;bottom:0;width:50%;background:var(--noren-deep);
+    background-image:repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 2px, transparent 2px 34px);
+    box-shadow:inset 0 0 60px rgba(0,0,0,.35);
+    transition:transform .42s cubic-bezier(.6,0,.3,1);
+  }
+  .curtain-left{left:0;transform:translateX(-100%);}
+  .curtain-right{right:0;transform:translateX(100%);}
+  .curtain.closing .curtain-left, .curtain.closing .curtain-right{transform:translateX(0);}
+  .curtain-panel::after{
+    content:"";position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;
+    border-radius:50%;background:radial-gradient(circle,var(--gold-pale),var(--gold) 70%);opacity:.9;
+    box-shadow:0 0 14px rgba(0,0,0,.3);
+  }
+  .curtain-left::after{margin-left:-2px;}
+  .curtain-right::after{margin-left:-36px;}
+
+  /* ============ 対戦画面（本家の battle-split をそのまま流用） ============ */
+  #battleScreen{display:none;flex-direction:column;align-items:center;width:100%;animation:fadeSlideUp .3s ease;}
+  .battle-split{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:8px;width:min(96vw,480px);}
+  .battle-side{flex:none;min-width:0;background:var(--washi);border:1.5px solid var(--wood);border-radius:8px;padding:12px 9px;display:flex;flex-direction:column;align-items:center;gap:7px;min-height:190px;}
+  .battle-side-ghost{background:#efe9f5;border-color:#8a6bb0;order:1;}
+  .battle-side-head{font-weight:bold;font-size:13px;color:var(--noren);}
+  .battle-side-ghost .battle-side-head{color:#5a3f80;}
+  .battle-vs{align-self:center;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-weight:bold;color:var(--shu);font-size:14px;order:2;margin:-2px 0;}
+  .battle-side-me{order:3;}
+  .battle-count{font-size:11px;color:#6a604e;font-weight:bold;}
+  .battle-stats-row{display:flex;align-items:center;gap:10px;}
+
+  .battle-mini-hud{display:flex;gap:4px;width:100%;}
+  .bmh-box{
+    flex:1;min-width:0;background:var(--urushi);color:#eaf3ea;border-radius:6px;
+    padding:4px 2px;text-align:center;font-family:"Consolas",monospace;
+    display:flex;flex-direction:column;align-items:center;gap:1px;border:1px solid rgba(217,181,107,.28);
+  }
+  .bmh-box .bmh-label{font-size:7.5px;color:var(--gold-pale);letter-spacing:.03em;white-space:nowrap;}
+  .bmh-box .bmh-val{font-size:12px;font-weight:bold;white-space:nowrap;}
+  .bmh-box.money .bmh-val{color:#ffd873;}
+  .bmh-box.combo .bmh-val{color:#ece2fb;}
+  .bmh-box.combo .bmh-max{color:#a89ac9;font-weight:normal;}
+  .bmh-box.time.warn .bmh-val{color:#ff8a8a;animation:timerWarn 1s ease-in-out infinite;}
+
+  .battle-belt-track{
+    position:relative;width:100%;height:46px;border-radius:6px;overflow:hidden;
+    background:linear-gradient(180deg,#cfc6ad,#b6a986);border:1px solid var(--wood-deep);
+  }
+  .battle-belt-track::after{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg, rgba(0,0,0,.1) 0 2px, transparent 2px 13px);
+  }
+  .battle-belt-plate{
+    position:absolute;top:4px;left:0%;width:38px;height:38px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff, #ece4d2 60%, #cfc2a4);
+    display:flex;align-items:center;justify-content:center;font-size:19px;
+    box-shadow:0 3px 6px rgba(0,0,0,.28);transition:left .15s linear;
+  }
+
+  .battle-word{width:100%;background:#fff;border:1px solid var(--wood);border-radius:6px;padding:7px 6px;min-height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+  .battle-side-ghost .battle-word{border-color:#8a6bb0;}
+  .battle-word.miss{animation:shake .28s;}
+  .battle-word-kanji{font-size:13px;font-weight:bold;color:var(--sumi);}
+  .battle-word-romaji{font-family:"Consolas",monospace;font-size:14px;letter-spacing:.03em;}
+  .battle-word-romaji .done{color:#b9b0a0;}
+  .battle-word-romaji .rest{color:var(--sumi);}
+
+  .battle-ready-overlay{position:absolute;inset:0;background:rgba(30,24,18,.55);display:flex;align-items:center;justify-content:center;border-radius:10px;z-index:5;}
+  .battle-ready-text{color:#fff;font-size:20px;font-weight:bold;padding:14px 26px;border:2px solid var(--gold);border-radius:10px;background:rgba(0,0,0,.35);animation:pulseReady 1.1s ease-in-out infinite;}
+  .battle-msg{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--shu);color:#fff;font-weight:bold;font-size:13px;padding:6px 16px;border-radius:16px;box-shadow:0 4px 10px rgba(0,0,0,.25);animation:ghostMsg 2.2s ease-out forwards;z-index:6;white-space:nowrap;}
+  .money-bar{width:min(96vw,480px);margin-top:10px;background:var(--washi);border:1.5px solid var(--wood);border-radius:8px;padding:9px 12px;}
+  .money-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:bold;color:var(--sumi);}
+  .money-row .money-name{display:flex;align-items:center;gap:4px;}
+  .money-amount{font-family:"Consolas",monospace;font-size:13px;}
+  .money-row.me .money-amount{color:var(--gold);}
+  .money-row.opp .money-amount{color:#5a3f80;}
+  .money-track{position:relative;width:100%;height:13px;border-radius:7px;background:#e3d3ae;overflow:hidden;border:1px solid var(--wood-deep);margin:4px 0;}
+  .money-fill-me{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));transition:width .25s ease;}
+  .money-fill-opp{position:absolute;right:0;top:0;bottom:0;width:50%;background:linear-gradient(270deg,#8a6bb0,#a98bd1);transition:width .25s ease;}
+
+  .battle-result-box{display:none;flex-direction:column;align-items:center;gap:10px;margin-top:18px;}
+  .battle-result-box.show{display:flex;}
+  .battle-result-line{font-size:18px;font-weight:bold;color:var(--noren);font-family:"Yu Mincho","Hiragino Mincho ProN",serif;}
+  .battle-result-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .battle-result-btns button{border:none;padding:9px 18px;border-radius:8px;font-size:13px;cursor:pointer;}
+
+  @keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes timerWarn{0%,100%{text-shadow:0 0 0 rgba(255,90,90,0);}50%{text-shadow:0 0 10px rgba(255,90,90,.85);}}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-7px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(3px);}}
+  @keyframes ghostMsg{0%{opacity:0;transform:translateX(-50%) translateY(6px) scale(.9);}15%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}80%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-14px) scale(1);}}
+  @keyframes pulseReady{0%,100%{transform:scale(1);opacity:.9;}50%{transform:scale(1.06);opacity:1;}}
+
+  @media (max-width:600px){
+    .battle-split{gap:5px;}
+    .battle-side{padding:9px 5px;min-height:190px;gap:5px;}
+    .battle-side-head{font-size:11px;}
+    .battle-word-kanji{font-size:11.5px;}
+    .battle-word-romaji{font-size:12.5px;}
+    .battle-vs{font-size:13px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="curtain closing" id="curtainEl">
+  <div class="curtain-panel curtain-left"></div>
+  <div class="curtain-panel curtain-right"></div>
+</div>
+
+<div id="app">
+
+  <!-- ログイン -->
+  <div class="card" id="auth">
+    <h1>🍣 回転寿司タイピング対戦</h1>
+    <div class="tabs">
+      <button id="tabLogin" class="active">ログイン</button>
+      <button id="tabSignup">新規登録</button>
+    </div>
+    <input id="username" placeholder="ユーザー名" autocomplete="off">
+    <input id="pin" placeholder="PIN(6桁以上)" type="password" autocomplete="off">
+    <button id="submitAuth">ログイン</button>
+    <div id="msg"></div>
+  </div>
+
+  <!-- ロビー -->
+  <div class="card" id="lobby" style="display:none;">
+    <h1>ルーム</h1>
+    <p style="text-align:center;">ようこそ、<b id="lobbyName"></b> さん</p>
+    <button id="createRoom">ルームを作成する</button>
+    <div class="row">
+      <input id="joinCode" placeholder="ルームコード" maxlength="4">
+      <button id="joinRoom" class="ghost">参加する</button>
+    </div>
+    <div id="lobbyMsg"></div>
+
+    <div id="roomSettingsPanel" style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--wood);">
+      <p style="text-align:center;font-size:.8em;color:var(--sumi-soft);margin:0 0 10px;">
+        ルーム設定(「ルームを作成する」を押した人の設定が対戦に使われます)
+      </p>
+      <div class="row">
+        <div>
+          <label style="font-size:.78em;color:var(--sumi-soft);">時間(秒)</label>
+          <input type="number" id="setTime" value="60" min="10" max="300">
+        </div>
+        <div>
+          <label style="font-size:.78em;color:var(--sumi-soft);display:flex;align-items:center;gap:5px;height:100%;padding-top:6px;">
+            <input type="checkbox" id="setComboEnable" checked style="width:auto;margin:0;">
+            コンボ攻撃あり
+          </label>
+        </div>
+      </div>
+      <div id="comboAttackRow">
+        <label style="font-size:.78em;color:var(--sumi-soft);">コンボ攻撃が発生するコンボ数</label>
+        <input type="number" id="setComboAttack" value="8" min="2" max="30">
+      </div>
+
+      <div class="tabs" style="margin-top:12px;">
+        <button type="button" id="modeBtn1" class="active">モード1: 皿数勝負</button>
+        <button type="button" id="modeBtn2">モード2: タイムアタック</button>
+      </div>
+      <div id="mode1Row">
+        <label style="font-size:.78em;color:var(--sumi-soft);">勝利に必要な皿数(5〜30)</label>
+        <input type="number" id="setWinSushi" value="8" min="5" max="30">
+      </div>
+      <div id="mode2Row" style="display:none;">
+        <label style="font-size:.78em;color:var(--sumi-soft);">攻撃を受けた時のお金の減少(100〜500)</label>
+        <input type="number" id="setAttackMoney" value="200" min="100" max="500">
+      </div>
+    </div>
+  </div>
+
+  <!-- 対戦 -->
+  <div id="battleScreen">
+    <div class="battle-split">
+      <div class="battle-ready-overlay" id="battleReadyOverlay" style="display:none;">
+        <div class="battle-ready-text" id="countdownText">3</div>
+      </div>
+      <div class="battle-side battle-side-me">
+        <div class="battle-side-head" id="myHead">🍣 あなた</div>
+        <div class="battle-mini-hud">
+          <div class="bmh-box time"><span class="bmh-label">残り時間</span><span class="bmh-val" id="myTimeVal">--</span></div>
+          <div class="bmh-box money"><span class="bmh-label">正打数</span><span class="bmh-val" id="myCorrectVal">0</span></div>
+          <div class="bmh-box combo"><span class="bmh-label">コンボ</span><span class="bmh-val"><span id="myComboVal">0</span><span class="bmh-max" id="myComboMax">/8</span></span></div>
+        </div>
+        <div class="battle-word" id="myWordBox">
+          <div class="battle-word-kanji" id="myKanji">-</div>
+          <div class="battle-word-romaji" id="myRomaji"></div>
+        </div>
+        <div class="battle-belt-track"><div class="battle-belt-plate" id="myPlate">🍣</div></div>
+        <div class="battle-stats-row"><span class="battle-count"><span id="myCountVal">0</span>/<span id="myCountMax">8</span> 皿</span></div>
+      </div>
+      <div class="battle-vs">VS</div>
+      <div class="battle-side battle-side-ghost">
+        <div class="battle-side-head" id="oppHead">👤 相手</div>
+        <div class="battle-mini-hud">
+          <div class="bmh-box time"><span class="bmh-label">残り時間</span><span class="bmh-val" id="oppTimeVal">--</span></div>
+          <div class="bmh-box money"><span class="bmh-label">正打数</span><span class="bmh-val" id="oppCorrectVal">0</span></div>
+          <div class="bmh-box combo"><span class="bmh-label">コンボ</span><span class="bmh-val"><span id="oppComboVal">0</span><span class="bmh-max" id="oppComboMax">/8</span></span></div>
+        </div>
+        <div class="battle-word" id="oppWordBox">
+          <div class="battle-word-kanji" id="oppKanji">対戦中...</div>
+          <div class="battle-word-romaji" id="oppRomaji"></div>
+        </div>
+        <div class="battle-belt-track"><div class="battle-belt-plate" id="oppPlate">🍣</div></div>
+        <div class="battle-stats-row"><span class="battle-count"><span id="oppCountVal">0</span>/<span id="oppCountMax">8</span> 皿</span></div>
+      </div>
+    </div>
+
+    <div class="money-bar" id="moneyBar">
+      <div class="money-row me">
+        <span class="money-name">🍙 あなたのお金</span>
+        <span class="money-amount" id="myMoneyVal">¥0</span>
+      </div>
+      <div class="money-track">
+        <div class="money-fill-me" id="moneyFillMe"></div>
+        <div class="money-fill-opp" id="moneyFillOpp"></div>
+      </div>
+      <div class="money-row opp">
+        <span class="money-name">👤 <span id="moneyOppName">相手</span>のお金</span>
+        <span class="money-amount" id="oppMoneyVal">¥0</span>
+      </div>
+    </div>
+
+    <div class="battle-result-box" id="battleResultBox">
+      <div class="battle-result-line" id="resultText"></div>
+      <div class="battle-result-btns">
+        <button id="backToLobby">ロビーに戻る</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const sb = window.supabase.createClient(
+  "https://fxomdolnijwpmzspkvgo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b21kb2xuaWp3cG16c3BrdmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzEwMDMsImV4cCI6MjA5ODgwNzAwM30.vC6TYNO7mnTXhOaAYrrDZouMe9rO2eUKuUPERrusXG4"
+);
+
+/* お題(雰囲気だけの簡易版・8個。後で本家の50ステージ分に差し替え可能) */
+const PROMPTS = [
+  { kana:"まぐろ" },
+  { kana:"さびぬき" },
+  { kana:"かっぱまき" },
+  { kana:"あがりください" },
+  { kana:"おあいそ" },
+  { kana:"たまごやき" },
+  { kana:"うにぐんかん" },
+  { kana:"あなごつゆ" },
+];
+
+/* ============ かな→ローマ字 多重変換エンジン ============
+   1つのかな単語に対して「しゃべり方の揺れ」を全て許容できるよう、
+   ありうるローマ字表記の候補を複数生成し、入力のたびに候補を絞り込んでいく方式。
+   (し→shi/si、ち→chi/ti、つ→tsu/tu、づ→zu/du、っ→促音の子音重ね、ん→n/nn 等) */
+const ROMAJI_TABLE = {
+  'あ':['a'],'い':['i'],'う':['u','wu'],'え':['e'],'お':['o'],
+  'か':['ka'],'き':['ki'],'く':['ku'],'け':['ke'],'こ':['ko'],
+  'さ':['sa'],'し':['shi','si'],'す':['su'],'せ':['se'],'そ':['so'],
+  'た':['ta'],'ち':['chi','ti'],'つ':['tsu','tu'],'て':['te'],'と':['to'],
+  'な':['na'],'に':['ni'],'ぬ':['nu'],'ね':['ne'],'の':['no'],
+  'は':['ha'],'ひ':['hi'],'ふ':['fu','hu'],'へ':['he'],'ほ':['ho'],
+  'ま':['ma'],'み':['mi'],'む':['mu'],'め':['me'],'も':['mo'],
+  'や':['ya'],'ゆ':['yu'],'よ':['yo'],
+  'ら':['ra'],'り':['ri'],'る':['ru'],'れ':['re'],'ろ':['ro'],
+  'わ':['wa'],'を':['wo','o'],'ん':['n','nn'],
+  'が':['ga'],'ぎ':['gi'],'ぐ':['gu'],'げ':['ge'],'ご':['go'],
+  'ざ':['za'],'じ':['ji','zi'],'ず':['zu'],'ぜ':['ze'],'ぞ':['zo'],
+  'だ':['da'],'ぢ':['ji','di'],'づ':['zu','du'],'で':['de'],'ど':['do'],
+  'ば':['ba'],'び':['bi'],'ぶ':['bu'],'べ':['be'],'ぼ':['bo'],
+  'ぱ':['pa'],'ぴ':['pi'],'ぷ':['pu'],'ぺ':['pe'],'ぽ':['po'],
+  'ゔ':['vu'],
+  'ぁ':['a'],'ぃ':['i'],'ぅ':['u'],'ぇ':['e'],'ぉ':['o'],
+};
+const YOON_TABLE = {
+  'きゃ':['kya'],'きゅ':['kyu'],'きょ':['kyo'],
+  'しゃ':['sha','sya'],'しゅ':['shu','syu'],'しょ':['sho','syo'],
+  'ちゃ':['cha','tya'],'ちゅ':['chu','tyu'],'ちょ':['cho','tyo'],
+  'にゃ':['nya'],'にゅ':['nyu'],'にょ':['nyo'],
+  'ひゃ':['hya'],'ひゅ':['hyu'],'ひょ':['hyo'],
+  'みゃ':['mya'],'みゅ':['myu'],'みょ':['myo'],
+  'りゃ':['rya'],'りゅ':['ryu'],'りょ':['ryo'],
+  'ぎゃ':['gya'],'ぎゅ':['gyu'],'ぎょ':['gyo'],
+  'じゃ':['ja','zya'],'じゅ':['ju','zyu'],'じょ':['jo','zyo'],
+  'びゃ':['bya'],'びゅ':['byu'],'びょ':['byo'],
+  'ぴゃ':['pya'],'ぴゅ':['pyu'],'ぴょ':['pyo'],
+  'ちぇ':['che'],'しぇ':['she'],'じぇ':['je'],
+};
+const SMALL_Y = new Set(['ゃ','ゅ','ょ','ぇ','ぁ','ぃ','ぅ','ぉ']);
+
+function kanaToMorae(kana){
+  const chars = Array.from(kana);
+  const morae = [];
+  let i = 0;
+  while(i < chars.length){
+    const c = chars[i];
+    if(c === 'っ' || c === 'ッ'){
+      morae.push({sokuon:true});
+      i++; continue;
+    }
+    if(i+1 < chars.length && SMALL_Y.has(chars[i+1]) && YOON_TABLE[c+chars[i+1]]){
+      morae.push({kana:c+chars[i+1]});
+      i += 2; continue;
+    }
+    morae.push({kana:c});
+    i++;
+  }
+  return morae;
+}
+
+function morKeyVariants(k){
+  return (YOON_TABLE[k] || ROMAJI_TABLE[k] || [k]).slice();
+}
+
+function moraeToVariantGroups(morae){
+  const groups = [];
+  for(let i=0; i<morae.length; i++){
+    const m = morae[i];
+    if(m.sokuon) continue; // 次の実モーラで処理する
+    let variants = morKeyVariants(m.kana);
+    if(i>0 && morae[i-1].sokuon){
+      // 促音: 次の子音を重ねる(っか→kka、っぱ→ppa 等)
+      variants = variants.map(v => v[0] + v);
+    }
+    groups.push(variants);
+  }
+  return groups;
+}
+
+function cartesianLimited(groups, cap){
+  let results = [''];
+  for(const g of groups){
+    const next = [];
+    for(const prefix of results){
+      for(const suffix of g){
+        next.push(prefix + suffix);
+        if(next.length >= cap) break;
+      }
+      if(next.length >= cap) break;
+    }
+    results = next;
+  }
+  return results;
+}
+
+function genVariants(kana){
+  const groups = moraeToVariantGroups(kanaToMorae(kana));
+  return cartesianLimited(groups, 60); // 1単語あたり最大60通りまで
+}
+function seededRandom(seed){
+  // mulberry32: シンプルなシード付き乱数生成器(ホスト/ゲストで同じ結果を出すため)
+  let t = seed += 0x6D2B79F5;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function shufflePrompts(seed){
+  const arr = [...PROMPTS];
+  let s = seed;
+  for(let i=arr.length-1;i>0;i--){
+    s += 1;
+    const j=Math.floor(seededRandom(s)*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+/* お題を食べ終わった時にもらえるお金(100〜300)を、ルームのシード値と
+   そのお題の固有番号(通し番号 idx)から決定的に計算する。
+   ホスト・ゲストどちらの端末でも同じシード値+同じidxで同じ乱数になるため、
+   同じ単語を食べ終えたら必ず同じ金額がもらえる(通信で金額を送り合う必要がない)。 */
+function moneyForPlate(idx){
+  const r = seededRandom((sharedSeed||1) + idx*104729); // 104729はidxごとの乱数が偏らないようにするための大きめの素数
+  return 100 + Math.floor(r * 201); // 100〜300(201通り)
+}
+
+/* のれん転換(本家と同じ仕組み) */
+const curtainEl = document.getElementById('curtainEl');
+function curtainPulse(work, closeMs=420, openMs=250){
+  curtainEl.classList.add('closing');
+  setTimeout(()=>{
+    work();
+    setTimeout(()=> curtainEl.classList.remove('closing'), openMs);
+  }, closeMs);
+}
+function showScreen(id){
+  curtainPulse(()=>{
+    document.getElementById('auth').style.display = (id==='auth') ? 'block' : 'none';
+    document.getElementById('lobby').style.display = (id==='lobby') ? 'block' : 'none';
+    document.getElementById('battleScreen').style.display = (id==='battleScreen') ? 'flex' : 'none';
+  });
+}
+setTimeout(()=> curtainEl.classList.remove('closing'), 300);
+
+/* ルーム設定パネル */
+let currentModeSelect = 1;
+document.getElementById('modeBtn1').onclick = ()=>{
+  currentModeSelect = 1;
+  document.getElementById('modeBtn1').classList.add('active');
+  document.getElementById('modeBtn2').classList.remove('active');
+  document.getElementById('mode1Row').style.display = 'block';
+  document.getElementById('mode2Row').style.display = 'none';
+};
+document.getElementById('modeBtn2').onclick = ()=>{
+  currentModeSelect = 2;
+  document.getElementById('modeBtn2').classList.add('active');
+  document.getElementById('modeBtn1').classList.remove('active');
+  document.getElementById('mode2Row').style.display = 'block';
+  document.getElementById('mode1Row').style.display = 'none';
+};
+document.getElementById('setComboEnable').onchange = ()=>{
+  document.getElementById('comboAttackRow').style.display =
+    document.getElementById('setComboEnable').checked ? 'block' : 'none';
+};
+
+function clampInt(val, min, max, fallback){
+  const n = parseInt(val, 10);
+  if(Number.isNaN(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+function readSettingsFromUI(){
+  return {
+    time: clampInt(document.getElementById('setTime').value, 10, 300, 60),
+    comboEnable: document.getElementById('setComboEnable').checked,
+    comboAttack: clampInt(document.getElementById('setComboAttack').value, 2, 30, 8),
+    mode: currentModeSelect,
+    winSushi: clampInt(document.getElementById('setWinSushi').value, 5, 30, 8),
+    attackMoney: clampInt(document.getElementById('setAttackMoney').value, 100, 500, 200),
+  };
+}
+
+/* 認証 */
+let mode = 'login';
+document.getElementById('tabLogin').onclick = ()=>{
+  mode='login';
+  document.getElementById('tabLogin').classList.add('active');
+  document.getElementById('tabSignup').classList.remove('active');
+  document.getElementById('submitAuth').textContent='ログイン';
+};
+document.getElementById('tabSignup').onclick = ()=>{
+  mode='signup';
+  document.getElementById('tabSignup').classList.add('active');
+  document.getElementById('tabLogin').classList.remove('active');
+  document.getElementById('submitAuth').textContent='登録する';
+};
+
+let myProfile = null;
+
+document.getElementById('submitAuth').onclick = async ()=>{
+  const username = document.getElementById('username').value.trim();
+  const pin = document.getElementById('pin').value.trim();
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
+  if(!username || pin.length < 6){ msg.textContent = 'ユーザー名とPIN(6桁以上)を入力してください'; return; }
+  const email = `${username}@internal.local`;
+
+  if(mode === 'signup'){
+    const { error } = await sb.auth.signUp({ email, password: pin, options:{ data:{ username } } });
+    if(error){ msg.textContent = error.message; return; }
+    msg.textContent = '登録しました。ログインしてください。';
+    document.getElementById('tabLogin').click();
+    return;
+  }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pin });
+  if(error){ msg.textContent = 'ログイン失敗: ' + error.message; return; }
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+  myProfile = profile;
+  document.getElementById('lobbyName').textContent = profile.username;
+  showScreen('lobby');
+};
+
+/* ルーム */
+let channel = null, roomCode = null, meReady=false, oppReady=false, opponentName='相手';
+let isHost = false, sharedSeed = null, roomSettings = null;
+function randomCode(){ return Math.floor(1000 + Math.random()*9000).toString(); }
+
+document.getElementById('createRoom').onclick = ()=>{
+  roomCode = randomCode();
+  isHost = true;
+  sharedSeed = Math.floor(Math.random()*1e9); // お題の順番を対戦相手と揃えるための共有シード
+  roomSettings = readSettingsFromUI(); // ルームを作成した人の設定を対戦に使う
+  document.getElementById('lobbyMsg').textContent = `ルームコード: ${roomCode}(相手に伝えてください)`;
+  joinChannel(roomCode);
+};
+document.getElementById('joinRoom').onclick = ()=>{
+  const code = document.getElementById('joinCode').value.trim();
+  if(!code) return;
+  roomCode = code;
+  isHost = false;
+  sharedSeed = null; // ホストのhelloから受け取る
+  roomSettings = null; // ホストのhelloから受け取る(自分の設定入力は使わない)
+  joinChannel(roomCode);
+};
+
+function joinChannel(code){
+  channel = sb.channel(`room:${code}`);
+  channel.on('broadcast', {event:'hello'}, ({payload})=>{
+    if(payload.id !== myProfile.id){
+      opponentName = payload.username;
+      document.getElementById('oppHead').textContent = '👤 ' + opponentName;
+      document.getElementById('moneyOppName').textContent = opponentName;
+      if(payload.seed !== null && payload.seed !== undefined){
+        sharedSeed = payload.seed; // ホスト側から共有シードを受け取る(ゲスト側)
+      }
+      if(payload.settings){
+        roomSettings = payload.settings; // ホストのルーム設定を受け取る(ゲスト側)
+      }
+      oppReady = true;
+      maybeStart();
+      // ホストの最初のhelloは、ゲストがまだsubscribeする前に送られてしまい
+      // Supabase Realtimeのbroadcastは購読前のメッセージを受け取れないため、
+      // ゲストが永遠に相手のhelloを受信できず対戦が始まらないバグがあった。
+      // → ゲストのhelloを受け取ったこのタイミングでホストが自分のhelloを送り直すことで、
+      //   ゲスト側が確実に受信できるようにする。
+      if(isHost){
+        channel.send({ type:'broadcast', event:'hello', payload:{ id: myProfile.id, username: myProfile.username, seed: sharedSeed, settings: roomSettings } });
+      }
+    }
+  });
+  channel.on('broadcast', {event:'progress'}, ({payload})=>{
+    if(payload.id === myProfile.id) return;
+    document.getElementById('oppPlate').style.left = payload.pct+'%';
+    document.getElementById('oppComboVal').textContent = comboDisplayValue(payload.combo);
+    document.getElementById('oppCorrectVal').textContent = payload.correctChars;
+    document.getElementById('oppCountVal').textContent = payload.cleared;
+    oppMoney = payload.money || 0;
+    updateMoneyBar();
+    if(payload.kana !== undefined){
+      const done = payload.romaji.slice(0, payload.curChar), rest = payload.romaji.slice(payload.curChar);
+      document.getElementById('oppKanji').textContent = payload.kana;
+      document.getElementById('oppRomaji').innerHTML = `<span class="done">${done}</span><span class="rest">${rest}</span>`;
+    }
+  });
+  channel.on('broadcast', {event:'attack'}, ({payload})=>{
+    if(payload.id === myProfile.id) return;
+    triggerAttackOnMe();
+  });
+  channel.on('broadcast', {event:'finish'}, ({payload})=>{
+    if(payload.id === myProfile.id) return;
+    onOpponentFinish(payload);
+  });
+  channel.subscribe((status)=>{
+    if(status === 'SUBSCRIBED'){
+      channel.send({ type:'broadcast', event:'hello', payload:{ id: myProfile.id, username: myProfile.username, seed: isHost ? sharedSeed : null, settings: isHost ? roomSettings : null } });
+      meReady = true;
+      maybeStart();
+    }
+  });
+}
+let countdownStarted = false;
+function maybeStart(){
+  if(meReady && oppReady && !countdownStarted){
+    countdownStarted = true;
+    startCountdown();
+  }
+}
+
+/* ゲーム状態 */
+let curIdx, curTyped, curCandidates, combo, correctChars, cleared;
+let myMoney, oppMoney; // お金(食べ終わった時にランダムでもらえる。タイプ中は増えない)
+let startTime, timerInterval, finished=false, oppFinished=false, battleEnded=false;
+
+/* お題を必要な数だけ遅延生成する(モード1は最大30皿、モード2は時間切れまで続くため
+   固定8個のお題では足りない。シード付きシャッフルを繋げて必要な分だけ延長する) */
+let promptCache = [], promptSeedCursor = 0;
+function ensurePromptAt(idx){
+  while(promptCache.length <= idx){
+    promptCache = promptCache.concat(shufflePrompts((sharedSeed||1) + promptSeedCursor*97));
+    promptSeedCursor++;
+  }
+}
+function getPrompt(idx){
+  ensurePromptAt(idx);
+  const p = promptCache[idx];
+  if(!p.variants) p.variants = genVariants(p.kana); // 表記ゆれの候補を初回だけ生成してキャッシュ
+  return p;
+}
+function loadWord(idx){
+  const p = getPrompt(idx);
+  curCandidates = p.variants.slice(); // まだ入力可能な表記候補
+  curTyped = '';                      // ここまで入力できたローマ字文字列
+}
+
+/* コンボ表示のバグ修正:
+   以前はコンボ数をそのまま表示していたため、例えばCOMBO_ATTACKが8の設定でも
+   コンボが9になると「9/8」のような、上限を超えた見た目になってしまっていた。
+   コンボ攻撃が有効な場合は「次の攻撃まであと何コンボか」を 1〜しきい値 の範囲でループ表示し、
+   コンボ攻撃が無効な場合は純粋な連続正解数をそのまま表示する。 */
+function comboDisplayValue(rawCombo){
+  if(!roomSettings || !roomSettings.comboEnable) return rawCombo;
+  const threshold = roomSettings.comboAttack;
+  if(!threshold || threshold <= 0) return rawCombo;
+  const mod = rawCombo % threshold;
+  return (rawCombo > 0 && mod === 0) ? threshold : mod;
+}
+function updateComboMaxLabels(){
+  const label = (roomSettings && roomSettings.comboEnable) ? ('/'+roomSettings.comboAttack) : '';
+  document.getElementById('myComboMax').textContent = label;
+  document.getElementById('oppComboMax').textContent = label;
+}
+function updateMoneyBar(){
+  const mine = myMoney;
+  const opp = oppMoney;
+  document.getElementById('myMoneyVal').textContent = '¥'+mine;
+  document.getElementById('oppMoneyVal').textContent = '¥'+opp;
+  const total = mine+opp;
+  const myPct = total>0 ? (mine/total*100) : 50;
+  const oppPct = total>0 ? (opp/total*100) : 50;
+  document.getElementById('moneyFillMe').style.width = myPct+'%';
+  document.getElementById('moneyFillOpp').style.width = oppPct+'%';
+}
+function updateCountMaxLabels(){
+  const label = (roomSettings.mode === 1) ? String(roomSettings.winSushi) : '∞';
+  document.getElementById('myCountMax').textContent = label;
+  document.getElementById('oppCountMax').textContent = label;
+}
+
+function startCountdown(){
+  showScreen('battleScreen');
+  if(!roomSettings) roomSettings = { time:60, comboEnable:true, comboAttack:8, mode:1, winSushi:8, attackMoney:200 }; // 保険用デフォルト
+  promptCache = []; promptSeedCursor = 0;
+  curIdx=0; combo=0; correctChars=0; cleared=0; myMoney=0; oppMoney=0; finished=false; oppFinished=false; battleEnded=false;
+  loadWord(curIdx);
+  renderPrompt();
+  updateComboMaxLabels();
+  updateCountMaxLabels();
+
+  // 前回の対戦結果が残らないよう表示を全てリセットする
+  // (コンボ表示だけがリセットされ、正打数/皿数の表示が前回の値のまま残ってしまうバグの修正)
+  document.getElementById('myComboVal').textContent='0';
+  document.getElementById('oppComboVal').textContent='0';
+  document.getElementById('myCorrectVal').textContent='0';
+  document.getElementById('oppCorrectVal').textContent='0';
+  document.getElementById('myCountVal').textContent='0';
+  document.getElementById('oppCountVal').textContent='0';
+  document.getElementById('myTimeVal').textContent='--';
+  document.getElementById('oppTimeVal').textContent='--';
+  document.getElementById('myTimeVal').parentElement.classList.remove('warn');
+  document.getElementById('myPlate').style.left='0%';
+  document.getElementById('oppPlate').style.left='0%';
+  document.getElementById('myWordBox').classList.remove('miss');
+  document.getElementById('oppKanji').textContent = '対戦中...';
+  document.getElementById('oppRomaji').innerHTML = '';
+  document.getElementById('battleResultBox').classList.remove('show');
+  document.querySelectorAll('.battle-msg').forEach(el=>el.remove()); // 前回の攻撃通知の残骸を除去
+  updateMoneyBar(); // お金バーも0/0にリセット
+
+  const overlay = document.getElementById('battleReadyOverlay');
+  const cdText = document.getElementById('countdownText');
+  overlay.style.display='flex';
+  let n=3; cdText.textContent=n;
+  const iv = setInterval(()=>{
+    n--;
+    if(n>0){ cdText.textContent=n; }
+    else{ clearInterval(iv); overlay.style.display='none'; beginBattle(); }
+  },800);
+}
+
+function beginBattle(){
+  startTime = Date.now();
+  document.removeEventListener('keydown', onKeyDown); // 念のため既存リスナーを外してから登録(二重登録防止)
+  document.addEventListener('keydown', onKeyDown);
+  broadcastProgress(); // 開始直後のお題を相手にも即時反映する
+  timerInterval = setInterval(()=>{
+    const remain = Math.max(0, roomSettings.time - (Date.now()-startTime)/1000);
+    document.getElementById('myTimeVal').textContent = remain.toFixed(1)+'s';
+    document.getElementById('myTimeVal').parentElement.classList.toggle('warn', remain<10);
+    if(remain<=0) endBattle('timeup');
+  },100);
+}
+
+function renderPrompt(){
+  const p = getPrompt(curIdx);
+  const display = curCandidates[0] || ''; // 表示用には候補の先頭を採用
+  const done = display.slice(0,curTyped.length), rest = display.slice(curTyped.length);
+  document.getElementById('myKanji').textContent = p.kana;
+  document.getElementById('myRomaji').innerHTML = `<span class="done">${done}</span><span class="rest">${rest}</span>`;
+}
+
+function onKeyDown(e){
+  if(finished || oppFinished) return;
+  if(e.repeat) return;       // キー長押しによる自動リピートは1入力として数えない(多重入力バグ対策)
+  if(e.isComposing) return;  // IME変換中の重複keydownを無視
+  if(e.key.length !== 1) return;
+  const key = e.key;
+  const pos = curTyped.length;
+  // 今の入力位置でその文字を受理できる表記候補だけを残す(しゃべり方の揺れに対応:
+  // 例えば「し」なら shi でも si でも、その時点まで一致していれば候補として生き残る)
+  const nextCandidates = curCandidates.filter(v => v[pos] === key);
+  if(nextCandidates.length > 0){
+    curTyped += key;
+    curCandidates = nextCandidates;
+    correctChars++; combo++;
+    document.getElementById('myComboVal').textContent = comboDisplayValue(combo);
+    document.getElementById('myCorrectVal').textContent = correctChars;
+    if(roomSettings.comboEnable && combo>0 && combo % roomSettings.comboAttack === 0) sendAttack();
+    // 生き残っている候補のどれかが、たった今の入力でちょうど完成していれば単語クリア(=お皿を食べ終わった)
+    const wordDone = curCandidates.some(v => v.length === curTyped.length);
+    if(wordDone){
+      const earned = moneyForPlate(curIdx); // このお題(食べ終えたお皿)固有の番号とシード値からお金を決定
+      myMoney += earned;
+      updateMoneyBar();
+      curIdx++; cleared++;
+      document.getElementById('myCountVal').textContent = cleared;
+      if(roomSettings.mode === 1 && cleared >= roomSettings.winSushi){ finishMe('cleared'); return; }
+      loadWord(curIdx);
+    }
+    renderPrompt();
+    broadcastProgress();
+  } else {
+    combo = 0;
+    document.getElementById('myComboVal').textContent = '0';
+    const box = document.getElementById('myWordBox');
+    box.classList.add('miss');
+    setTimeout(()=>box.classList.remove('miss'), 280);
+  }
+}
+
+function broadcastProgress(){
+  const p = getPrompt(curIdx);
+  const displayRomaji = curCandidates[0] || '';
+  const pct = (roomSettings.mode === 1)
+    ? Math.min(100, (cleared / roomSettings.winSushi) * 100)
+    : Math.min(100, (curTyped.length / (displayRomaji.length||1)) * 100); // モード2は皿数上限がないので現在のお題の進み具合を表示
+  document.getElementById('myPlate').style.left = pct+'%';
+  channel.send({ type:'broadcast', event:'progress', payload:{
+    id:myProfile.id, pct, combo, correctChars, cleared, money:myMoney,
+    kana:p.kana, romaji:displayRomaji, curChar:curTyped.length
+  }});
+}
+function sendAttack(){
+  channel.send({ type:'broadcast', event:'attack', payload:{ id:myProfile.id } });
+}
+function triggerAttackOnMe(){
+  const box = document.getElementById('myWordBox');
+  box.classList.add('miss');
+  setTimeout(()=>box.classList.remove('miss'), 280);
+  const msg = document.createElement('div');
+  msg.className = 'battle-msg';
+  msg.textContent = '⚡ 攻撃を受けた!';
+  document.querySelector('.battle-split').appendChild(msg);
+  setTimeout(()=> msg.remove(), 2200);
+  if(roomSettings && roomSettings.mode === 2){
+    // モード2はお金の取り合いなので、攻撃を受けるとお金が減る
+    myMoney = Math.max(0, myMoney - roomSettings.attackMoney);
+    updateMoneyBar();
+  }
+}
+
+function finishMe(reason){
+  finished = true;
+  const elapsed = (Date.now()-startTime)/1000;
+  channel.send({ type:'broadcast', event:'finish', payload:{ id:myProfile.id, reason, elapsed, correctChars } });
+  if(oppFinished || reason==='cleared') endBattle(reason);
+}
+function onOpponentFinish(payload){
+  oppFinished = true;
+  if(finished) endBattle('both-done');
+  else if(payload.reason === 'cleared') endBattle('opp-cleared');
+}
+
+function endBattle(reason){
+  if(battleEnded) return;
+  battleEnded = true;
+  document.removeEventListener('keydown', onKeyDown);
+  clearInterval(timerInterval);
+  finished = true;
+  let didIWin;
+  if(reason === 'cleared') didIWin = true;
+  else if(reason === 'opp-cleared') didIWin = false;
+  else{
+    // タイムアップなど: モードに応じて勝敗を判定する
+    const oppCleared = Number(document.getElementById('oppCountVal').textContent);
+    if(roomSettings.mode === 1){
+      // 皿数勝負: 皿数が多い方が勝ち。同数ならお金が多い方
+      didIWin = (cleared !== oppCleared) ? (cleared > oppCleared) : (myMoney >= oppMoney);
+    } else {
+      // タイムアタック: お金が多い方が勝ち
+      didIWin = myMoney >= oppMoney;
+    }
+  }
+
+  document.getElementById('resultText').textContent = didIWin ? '🎉 勝利!' : '😢 敗北...';
+  document.getElementById('battleResultBox').classList.add('show');
+}
+
+document.getElementById('backToLobby').onclick = ()=>{
+  if(channel) sb.removeChannel(channel);
+  channel=null; meReady=false; oppReady=false; isHost=false; sharedSeed=null; countdownStarted=false; roomSettings=null;
+  showScreen('lobby');
+};
+</script>
+</body>
+</html>

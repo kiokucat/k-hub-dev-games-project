@@ -1,0 +1,74 @@
+[
+  {
+    "id": "アニマル.zip",
+    "title": "アニマル",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1788,
+    "is_unlocked": true
+  },
+  {
+    "id": "ワールドイズマイン.zip",
+    "title": "ワールドイズマイン",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1246,
+    "is_unlocked": true
+  },
+  {
+    "id": "交響曲第五番「運命」.zip",
+    "title": "交響曲第五番「運命」",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1401,
+    "is_unlocked": true
+  },
+  {
+    "id": "人マニア.zip",
+    "title": "人マニア",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1271,
+    "is_unlocked": true
+  },
+  {
+    "id": "幽玄ノ乱.zip",
+    "title": "幽玄ノ乱",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 3359,
+    "is_unlocked": true
+  },
+  {
+    "id": "愛想笑い.zip",
+    "title": "愛想笑い",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 1553,
+    "is_unlocked": true
+  },
+  {
+    "id": "拝啓ドッペルゲンガー.zip",
+    "title": "拝啓ドッペルゲンガー",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1799,
+    "is_unlocked": true
+  },
+  {
+    "id": "明星ロケット.zip",
+    "title": "明星ロケット",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1261,
+    "is_unlocked": true
+  },
+  {
+    "id": "月に叢雲華に風.zip",
+    "title": "月に叢雲華に風",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 939,
+    "is_unlocked": true
+  }
+]

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>太鼓楽曲ダウンローダー</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 6px;
+      color: #2c3e50;
+      font-size: 1.6em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 18px;
+      font-size: 0.9em;
+    }
+    .config-box {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-bottom: 16px;
+    }
+    .config-box h3 {
+      color: #856404;
+      margin-bottom: 8px;
+      font-size: 0.95em;
+    }
+    .config-box pre {
+      background: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.82em;
+      border: 1px solid #ddd;
+    }
+    .controls {
+      background: #fff;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      transition: border-color 0.3s;
+    }
+    #searchInput:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    .filter-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .filter-header button {
+      padding: 5px 10px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      background: #f8f9fa;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .filter-header button:hover { background: #e9ecef; }
+    .filter-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .filter-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #f8f9fa;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85em;
+      border: 1px solid #e0e0e0;
+      transition: all 0.2s;
+    }
+    .filter-label:hover { background: #e9ecef; }
+    .filter-label input { cursor: pointer; }
+    .bulk-download-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: #e74c3c;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .bulk-download-btn:hover { background: #c0392b; }
+    .bulk-download-btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+    .cache-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 8px;
+      font-size: 13px;
+      color: #666;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .progress-area {
+      background: #fff;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 18px;
+      background: #e0e0e0;
+      border-radius: 9px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #3498db;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-text {
+      text-align: center;
+      color: #666;
+      font-size: 0.85em;
+    }
+
+    /* カードリスト */
+    .song-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .category-group {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .category-title {
+      background: #34495e;
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 1.05em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .category-count {
+      font-size: 0.8em;
+      opacity: 0.8;
+      font-weight: 400;
+    }
+    .song-card {
+      display: flex;
+      align-items: stretch;
+      border-bottom: 1px solid #f0f0f0;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      background: #fff;
+    }
+    .song-card:last-child { border-bottom: none; }
+    .song-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      z-index: 1;
+    }
+    .card-color-bar {
+      width: 5px;
+      flex-shrink: 0;
+    }
+    .card-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 12px;
+      min-width: 0;
+    }
+    .card-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 1.08em;
+      margin-bottom: 4px;
+      color: #2c3e50;
+      word-break: break-word;
+    }
+    .card-folder {
+      font-size: 0.8em;
+      color: #888;
+      margin-bottom: 6px;
+    }
+    .card-files {
+      font-size: 0.75em;
+      color: #aaa;
+      word-break: break-all;
+    }
+    .card-difficulties {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .diff-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.78em;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-right: 14px;
+      gap: 6px;
+    }
+    .dl-btn {
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      background: #3498db;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .dl-btn:hover { background: #2980b9; }
+    .dl-btn:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+
+    .loading, .empty, .error {
+      padding: 40px;
+      text-align: center;
+      color: #666;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .error { color: #e74c3c; }
+
+    @media (max-width: 640px) {
+      .card-body { flex-direction: column; align-items: flex-start; }
+      .card-actions {
+        flex-direction: row;
+        width: 100%;
+        padding: 0 16px 14px;
+      }
+      .dl-btn { flex: 1; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🥁 太鼓楽曲ダウンローダー</h1>
+    <p class="subtitle">GitHubリポジトリから楽曲を検索・ダウンロード</p>
+    
+    <div class="config-box">
+      <h3>⚙️ 設定（必要に応じて変更）</h3>
+      <pre id="configDisplay"></pre>
+    </div>
+    
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="曲名・カテゴリ・ファイル名で検索...">
+      
+      <div class="filter-header">
+        <button onclick="toggleAllCategories(true)">全カテゴリ選択</button>
+        <button onclick="toggleAllCategories(false)">全カテゴリ解除</button>
+      </div>
+      <div class="filter-checkboxes" id="categoryFilters"></div>
+      
+      <button class="bulk-download-btn" id="downloadAllBtn" onclick="downloadAll()">
+        📦 表示中の全曲をZIPで一括ダウンロード
+      </button>
+      <button class="cache-btn" onclick="clearCache()">🗑️ メタデータキャッシュを削除して再読み込み</button>
+    </div>
+    
+    <div class="progress-area" id="progressArea" style="display: none;">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">準備中...</div>
+    </div>
+    
+    <div class="song-list" id="songList">
+      <div class="loading">リポジトリから楽曲一覧を読み込み中...</div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // === 設定（ここを変更してください）===
+    // ============================================
+    const CONFIG = {
+      GITHUB_USER: 'kiokucat',   // ← GitHubのユーザー名
+      GITHUB_REPO: 'songs',      // ← リポジトリ名
+      GITHUB_BRANCH: 'main'      // ← ブランチ名
+    };
+    // ============================================
+
+    // 難易度定義
+    const DIFF_DEFS = {
+      easy:   { name: 'かんたん', color: '#27ae60', rank: 0 },
+      normal: { name: 'ふつう',   color: '#2980b9', rank: 1 },
+      hard:   { name: 'むずかしい', color: '#f39c12', rank: 2 },
+      oni:    { name: 'おに',     color: '#e74c3c', rank: 3 },
+      edit:   { name: '裏・編集', color: '#8e44ad', rank: 4 }
+    };
+
+    let allSongs = [];
+    let filteredSongs = [];
+    let selectedCategories = new Set();
+    let isDownloading = false;
+
+    // 初期化
+    async function init() {
+      displayConfig();
+      await loadSongs();
+      setupEventListeners();
+    }
+
+    function displayConfig() {
+      const text = `const CONFIG = {
+  GITHUB_USER: '${CONFIG.GITHUB_USER}',
+  GITHUB_REPO: '${CONFIG.GITHUB_REPO}',
+  GITHUB_BRANCH: '${CONFIG.GITHUB_BRANCH}'
+};`;
+      document.getElementById('configDisplay').textContent = text;
+    }
+
+    // キャッシュ操作
+    function getCacheKey() { return 'taiko_meta_v2_' + CONFIG.GITHUB_USER + '_' + CONFIG.GITHUB_REPO; }
+    function loadCache() {
+      try {
+        const raw = localStorage.getItem(getCacheKey());
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        // 24時間有効
+        if (Date.now() - data.timestamp > 86400000) return null;
+        return data.songs;
+      } catch (e) { return null; }
+    }
+    function saveCache(songsMeta) {
+      try {
+        localStorage.setItem(getCacheKey(), JSON.stringify({
+          timestamp: Date.now(),
+          songs: songsMeta
+        }));
+      } catch (e) { console.warn('Cache save failed', e); }
+    }
+    function clearCache() {
+      localStorage.removeItem(getCacheKey());
+      alert('キャッシュを削除しました。ページを再読み込みします。');
+      location.reload();
+    }
+
+    // 楽曲一覧取得
+    async function loadSongs() {
+      const listContainer = document.getElementById('songList');
+      showProgress(true);
+      setProgress(5, 'ファイル一覧を取得中...');
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/git/trees/${CONFIG.GITHUB_BRANCH}?recursive=1`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          if (response.status === 404) throw new Error('リポジトリが見つかりません。設定を確認してください。');
+          if (response.status === 403) throw new Error('GitHub APIレート制限に達しました。しばらく待ってください。');
+          throw new Error(`GitHub APIエラー: ${response.status}`);
+        }
+
+        const data = await response.json();
+        allSongs = parseTree(data.tree);
+        setProgress(10, `${allSongs.length}曲見つかりました。メタデータを確認中...`);
+
+        // キャッシュ確認
+        const cachedMeta = loadCache();
+        if (cachedMeta) {
+          applyCachedMeta(allSongs, cachedMeta);
+          setProgress(100, 'キャッシュから復元完了');
+          showProgress(false);
+        } else {
+          // TJAメタデータを取得
+          await loadTjaMetadata(allSongs);
+          const metaToCache = allSongs.map(s => ({
+            path: s.path,
+            displayTitle: s.displayTitle,
+            difficulties: s.difficulties,
+            maxDifficulty: s.maxDifficulty
+          }));
+          saveCache(metaToCache);
+          showProgress(false);
+        }
+
+        renderCategoryFilters();
+        filteredSongs = [...allSongs];
+        renderCards();
+
+      } catch (error) {
+        listContainer.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+        showProgress(false);
+      }
+    }
+
+    // ツリー解析
+    function parseTree(tree) {
+      const songs = [];
+      const categoryEntries = tree.filter(item => item.type === 'tree' && !item.path.includes('/'));
+      categoryEntries.sort((a, b) => a.path.localeCompare(b.path));
+
+      for (const cat of categoryEntries) {
+        const catPath = cat.path;
+        const catItems = tree.filter(item => item.path.startsWith(catPath + '/'));
+        const songMap = new Map();
+
+        for (const item of catItems) {
+          const rel = item.path.slice(catPath.length + 1);
+          const parts = rel.split('/');
+
+          if (parts.length === 1 && item.type === 'tree') {
+            songMap.set(item.path, {
+              category: catPath,
+              name: parts[0],
+              path: item.path,
+              files: [],
+              displayTitle: parts[0],
+              difficulties: [],
+              maxDifficulty: null
+            });
+          } else if (parts.length >= 2 && item.type === 'blob') {
+            const songPath = catPath + '/' + parts[0];
+            if (songMap.has(songPath)) {
+              songMap.get(songPath).files.push({
+                name: parts.slice(1).join('/'),
+                path: item.path,
+                size: item.size || 0
+              });
+            }
+          }
+        }
+        for (const s of songMap.values()) songs.push(s);
+      }
+      return songs;
+    }
+
+    function applyCachedMeta(songs, cached) {
+      const map = new Map(cached.map(c => [c.path, c]));
+      for (const s of songs) {
+        const c = map.get(s.path);
+        if (c) {
+          s.displayTitle = c.displayTitle || s.name;
+          s.difficulties = c.difficulties || [];
+          s.maxDifficulty = c.maxDifficulty || null;
+        } else {
+          s.displayTitle = s.name;
+          s.difficulties = [];
+          s.maxDifficulty = null;
+        }
+      }
+    }
+
+    // TJAメタデータ読み込み（並列制限付き）
+    async function loadTjaMetadata(songs) {
+      const tasks = [];
+      for (const song of songs) {
+        for (const f of song.files) {
+          if (f.name.toLowerCase().endsWith('.tja')) {
+            tasks.push({ song, file: f });
+          }
+        }
+      }
+
+      const total = tasks.length;
+      let done = 0;
+      if (total === 0) {
+        for (const s of songs) { s.displayTitle = s.name; }
+        return;
+      }
+
+      const CONCURRENCY = 4;
+      for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+        const batch = tasks.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async ({song, file}) => {
+          try {
+            const blob = await fetchFile(file.path);
+            if (blob) {
+              const meta = await parseTja(blob);
+              if (!song._tmp) song._tmp = { titles: [], titleJas: [], diffs: [] };
+              if (meta.title) song._tmp.titles.push(meta.title);
+              if (meta.titleJa) song._tmp.titleJas.push(meta.titleJa);
+              if (meta.difficulty) song._tmp.diffs.push(meta.difficulty);
+            }
+          } catch (e) { /* ignore */ }
+          done++;
+          setProgress(10 + (done / total) * 85, `TJA解析中... ${done}/${total}`);
+        }));
+      }
+
+      for (const s of songs) {
+        if (s._tmp) {
+          s.displayTitle = s._tmp.titleJas[0] || s._tmp.titles[0] || s.name;
+          s.difficulties = s._tmp.diffs.sort((a, b) => a.rank - b.rank);
+          s.maxDifficulty = s.difficulties.length > 0 ? s.difficulties[s.difficulties.length - 1] : null;
+          delete s._tmp;
+        } else {
+          s.displayTitle = s.name;
+          s.difficulties = [];
+          s.maxDifficulty = null;
+        }
+      }
+    }
+
+    // TJAファイル解析
+    async function parseTja(blob) {
+      const buffer = await blob.arrayBuffer();
+      let text = new TextDecoder('utf-8').decode(buffer);
+      // 文字化けしていたらShift_JISで再デコード
+      if (text.includes('�') || /[\uFFFD]/.test(text)) {
+        try { text = new TextDecoder('shift_jis').decode(buffer); } catch (e) {}
+      }
+
+      const lines = text.split(/\r?\n/);
+      let title = null, titleJa = null, course = null, level = null;
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (line.startsWith('#START') || line.startsWith('#')) {
+          if (!line.includes(':')) continue; // ヘッダー終了とみなす
+        }
+        const upper = line.toUpperCase();
+        if (upper.startsWith('TITLEJA:')) titleJa = line.slice(8).trim();
+        else if (upper.startsWith('TITLE:')) title = line.slice(6).trim();
+        else if (upper.startsWith('COURSE:')) course = line.slice(7).trim();
+        else if (upper.startsWith('LEVEL:')) level = line.slice(6).trim();
+      }
+
+      const diff = normalizeDifficulty(course, level);
+      return { title, titleJa, difficulty: diff };
+    }
+
+    function normalizeDifficulty(course, level) {
+      if (!course) return null;
+      const c = String(course).trim().toLowerCase();
+      const lv = String(level || '').trim();
+      let def = null;
+
+      if (c === '0' || c === 'easy') def = DIFF_DEFS.easy;
+      else if (c === '1' || c === 'normal') def = DIFF_DEFS.normal;
+      else if (c === '2' || c === 'hard') def = DIFF_DEFS.hard;
+      else if (c === '3' || c === 'oni' || c === 'master') def = DIFF_DEFS.oni;
+      else if (c === '4' || c === 'edit' || c === 'inner' || c === 'ura') def = DIFF_DEFS.edit;
+      else return null;
+
+      return { ...def, level: lv };
+    }
+
+    // フィルタUI
+    function renderCategoryFilters() {
+      const cats = [...new Set(allSongs.map(s => s.category))].sort();
+      const container = document.getElementById('categoryFilters');
+      let html = '';
+      for (const cat of cats) {
+        const id = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '_');
+        html += `<label class="filter-label"><input type="checkbox" id="${id}" value="${escapeHtml(cat)}" checked onchange="updateCategoryFilter()"><span>${escapeHtml(cat)}</span></label>`;
+      }
+      container.innerHTML = html;
+      cats.forEach(c => selectedCategories.add(c));
+    }
+
+    function updateCategoryFilter() {
+      selectedCategories.clear();
+      document.querySelectorAll('#categoryFilters input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) selectedCategories.add(cb.value);
+      });
+      applyFilters();
+    }
+
+    function toggleAllCategories(select) {
+      document.querySelectorAll('#categoryFilters input[type="checkbox"]').forEach(cb => cb.checked = select);
+      updateCategoryFilter();
+    }
+
+    function setupEventListeners() {
+      document.getElementById('searchInput').addEventListener('input', applyFilters);
+    }
+
+    function applyFilters() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      filteredSongs = allSongs.filter(s => {
+        if (!selectedCategories.has(s.category)) return false;
+        if (!q) return true;
+        return s.displayTitle.toLowerCase().includes(q) ||
+               s.name.toLowerCase().includes(q) ||
+               s.category.toLowerCase().includes(q) ||
+               s.files.some(f => f.name.toLowerCase().includes(q));
+      });
+      renderCards();
+    }
+
+    // カード描画
+    function renderCards() {
+      const container = document.getElementById('songList');
+      if (filteredSongs.length === 0) {
+        container.innerHTML = '<div class="empty">🔍 該当する曲が見つかりません</div>';
+        return;
+      }
+
+      const grouped = {};
+      for (const s of filteredSongs) {
+        if (!grouped[s.category]) grouped[s.category] = [];
+        grouped[s.category].push(s);
+      }
+
+      let html = '';
+      for (const cat of Object.keys(grouped).sort()) {
+        const songs = grouped[cat];
+        html += `<div class="category-group">
+          <div class="category-title">${escapeHtml(cat)} <span class="category-count">(${songs.length}曲)</span></div>`;
+        
+        for (const s of songs) {
+          const barColor = s.maxDifficulty ? s.maxDifficulty.color : '#95a5a6';
+          const fileNames = s.files.map(f => f.name).join(', ');
+          const totalSize = formatBytes(s.files.reduce((sum, f) => sum + f.size, 0));
+          
+          let diffHtml = '';
+          if (s.difficulties.length > 0) {
+            diffHtml = '<div class="card-difficulties">' +
+              s.difficulties.map(d => `<span class="diff-badge" style="background:${d.color}">${escapeHtml(d.name)}${d.level ? ' ★' + escapeHtml(d.level) : ''}</span>`).join('') +
+              '</div>';
+          } else {
+            diffHtml = '<div class="card-difficulties"><span class="diff-badge" style="background:#95a5a6">未分類</span></div>';
+          }
+
+          html += `
+            <div class="song-card">
+              <div class="card-color-bar" style="background:${barColor}"></div>
+              <div class="card-body">
+                <div class="card-info">
+                  <div class="card-title">${escapeHtml(s.displayTitle)}</div>
+                  <div class="card-folder">📁 ${escapeHtml(s.name)} / ${totalSize}</div>
+                  ${diffHtml}
+                  <div class="card-files">${escapeHtml(truncate(fileNames, 70))}</div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="dl-btn" onclick="downloadSong('${encodeURIComponent(s.path)}')" ${isDownloading ? 'disabled' : ''}>個別DL</button>
+              </div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+      container.innerHTML = html;
+    }
+
+    // ダウンロード機能
+    async function downloadSong(encodedPath) {
+      if (isDownloading) return;
+      const path = decodeURIComponent(encodedPath);
+      const song = allSongs.find(s => s.path === path);
+      if (!song) return;
+
+      isDownloading = true;
+      updateUIState();
+      showProgress(true);
+
+      try {
+        const zip = new JSZip();
+        const folder = zip.folder(song.name);
+        for (let i = 0; i < song.files.length; i++) {
+          const f = song.files[i];
+          setProgress((i / song.files.length) * 100, `📥 ${song.displayTitle} - ${f.name}`);
+          const blob = await fetchFile(f.path);
+          if (blob) folder.file(f.name, blob);
+        }
+        setProgress(100, 'ZIP生成中...');
+        const content = await zip.generateAsync({type: 'blob'});
+        downloadBlob(content, `${song.displayTitle}.zip`);
+      } catch (err) {
+        alert('❌ エラー: ' + err.message);
+      } finally {
+        isDownloading = false;
+        showProgress(false);
+        updateUIState();
+      }
+    }
+
+    async function downloadAll() {
+      if (isDownloading) return;
+      if (filteredSongs.length === 0) { alert('ダウンロードする曲がありません'); return; }
+      if (!confirm(`表示中の ${filteredSongs.length} 曲を一括ダウンロードしますか？`)) return;
+
+      isDownloading = true;
+      updateUIState();
+      showProgress(true);
+
+      try {
+        const zip = new JSZip();
+        let totalFiles = 0, doneFiles = 0;
+        for (const s of filteredSongs) totalFiles += s.files.length;
+
+        for (const s of filteredSongs) {
+          const folder = zip.folder(s.path);
+          for (const f of s.files) {
+            doneFiles++;
+            setProgress((doneFiles / totalFiles) * 100, `[${doneFiles}/${totalFiles}] ${s.displayTitle}/${f.name}`);
+            const blob = await fetchFile(f.path);
+            if (blob) folder.file(f.name, blob);
+          }
+        }
+        setProgress(100, 'ZIP生成中...');
+        const content = await zip.generateAsync({type: 'blob'});
+        const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        downloadBlob(content, `taiko_songs_${ts}.zip`);
+      } catch (err) {
+        alert('❌ エラー: ' + err.message);
+      } finally {
+        isDownloading = false;
+        showProgress(false);
+        updateUIState();
+      }
+    }
+
+    async function fetchFile(filePath) {
+      const enc = filePath.split('/').map(encodeURIComponent).join('/');
+      const url = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/${CONFIG.GITHUB_BRANCH}/${enc}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.blob();
+      } catch (e) { return null; }
+    }
+
+    function updateUIState() {
+      document.getElementById('downloadAllBtn').disabled = isDownloading;
+      renderCards();
+    }
+
+    function showProgress(show) {
+      document.getElementById('progressArea').style.display = show ? 'block' : 'none';
+      if (!show) { setProgress(0, '準備中...'); }
+    }
+    function setProgress(pct, text) {
+      document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
+      document.getElementById('progressText').textContent = text;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function formatBytes(b) {
+      if (!b) return '0 B';
+      const k = 1024, s = ['B','KB','MB','GB'];
+      const i = Math.floor(Math.log(b) / Math.log(k));
+      return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
+    }
+    function escapeHtml(t) {
+      const d = document.createElement('div');
+      d.textContent = t; return d.innerHTML;
+    }
+    function truncate(str, max) {
+      return str.length > max ? str.slice(0, max) + '...' : str;
+    }
+
+    init();
+  </script>
+</body>
+</html>

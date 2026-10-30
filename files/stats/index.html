@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>データベースの生存チェック</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+<script>
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem("theme"); }catch(e){}
+  if(t!=="dark" && t!=="light") t=(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme",t);
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#EDF1F0;      /* 霧 */
+    --ink:#16252B;     /* 墨青 */
+    --sub:#566870;     /* 補助文字 */
+    --line:#C5D0D2;    /* 区切り線 */
+    --ok:#0E7A68;      /* 生存 */
+    --warn:#94580A;    /* 一部だけ動作 */
+    --bad:#B3261E;     /* 応答なし */
+    --idle:#8E9DA3;    /* 未実施 */
+    --pixel:"DotGothic16","Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  }
+  :root[data-theme="dark"]{
+    --bg:#11191C; --ink:#E4EBEA; --sub:#9DB0B6; --line:#2C3A3F;
+    --ok:#4CC3AA; --warn:#E0A04A; --bad:#FF7B70; --idle:#5E7078;
+  }
+  .material-symbols-outlined{font-family:"Material Symbols Outlined";font-weight:400;font-style:normal;font-size:22px;line-height:1;display:inline-block;letter-spacing:normal;text-transform:none;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-feature-settings:"liga";}
+  *{box-sizing:border-box;}
+  html{background:var(--bg);}
+  body{
+    margin:0;color:var(--ink);
+    font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+    font-size:15px;line-height:1.75;
+  }
+  main{max-width:880px;margin:0 auto;padding:clamp(28px,7vw,80px) clamp(16px,4vw,32px) 72px;}
+
+  .verdict{
+    font-family:var(--pixel);font-weight:400;
+    font-size:clamp(28px,5.6vw,56px);line-height:1.3;margin:0 0 12px;
+  }
+  .summary{margin:0 0 6px;color:var(--sub);min-height:1.75em;}
+  .lead{margin:0 0 24px;color:var(--sub);max-width:60ch;}
+  .controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:clamp(32px,6vw,56px);}
+  button{
+    font:inherit;font-weight:700;color:var(--bg);background:var(--ink);
+    border:0;border-radius:4px;padding:10px 20px;cursor:pointer;
+  }
+  button:disabled{opacity:.45;cursor:default;}
+  .theme{margin-left:auto;display:inline-flex;align-items:center;padding:8px;background:transparent;color:var(--ink);border:1px solid var(--line);}
+  button:focus-visible{outline:3px solid var(--ok);outline-offset:3px;}
+  .stamp{font-size:13px;color:var(--sub);}
+
+  .db{padding:30px 0 34px;border-top:1px solid var(--line);}
+  .db-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px 20px;flex-wrap:wrap;}
+  .db-name{font-family:var(--pixel);font-weight:400;font-size:clamp(18px,3vw,22px);margin:0;}
+  .db-state{font-family:var(--pixel);font-size:17px;}
+  .db-state.ok{color:var(--ok);} .db-state.warn{color:var(--warn);}
+  .db-state.bad{color:var(--bad);} .db-state.run,.db-state.idle{color:var(--sub);}
+  .db-meta{font-size:12px;color:var(--sub);word-break:break-all;margin:2px 0 18px;}
+
+  .beats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));}
+  .beat{text-align:center;--c:var(--idle);}
+  .beat.ok{--c:var(--ok);} .beat.warn{--c:var(--warn);} .beat.bad{--c:var(--bad);}
+  .beat.run{--c:var(--ink);}
+  .beat svg{display:block;width:100%;height:44px;overflow:visible;}
+  .beat path{fill:none;stroke:var(--c);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
+  .beat.skip path:first-child{stroke-dasharray:2 6;}
+  .beat circle{fill:var(--c);animation:blink 1s ease-in-out infinite;}
+  .beat.fresh svg{animation:reveal .5s ease-out both;}
+  .b-name{display:block;font-size:12.5px;font-weight:500;margin-top:6px;}
+  .b-val{display:block;font-size:11.5px;color:var(--sub);min-height:1.5em;}
+  .beat.bad .b-val{color:var(--bad);} .beat.warn .b-val{color:var(--warn);}
+
+  .db-hint{margin:16px 0 0;font-size:13px;color:var(--sub);max-width:62ch;}
+  .db-problem{margin:8px 0 0;font-size:13.5px;max-width:62ch;}
+  .db-problem span{display:block;}
+
+  .foot{margin-top:32px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--sub);max-width:62ch;}
+
+  @keyframes reveal{from{clip-path:inset(0 100% 0 0);}to{clip-path:inset(0 0 0 0);}}
+  @keyframes blink{0%,100%{opacity:.2;}50%{opacity:1;}}
+  @media (prefers-reduced-motion:reduce){
+    .beat.fresh svg,.beat circle{animation:none;}
+  }
+  @media (max-width:520px){
+    .b-name{font-size:11.5px;} .b-val{font-size:10.5px;}
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="verdict" id="verdict" aria-live="polite">確認の準備をしています</h1>
+  <p class="summary" id="summary"></p>
+  <p class="lead">ゲームで使っているSupabaseを、接続、読み取り、書き込み、読み返し、削除の順に確認します。</p>
+  <div class="controls">
+    <button id="runAll" type="button">もう一度テストする</button>
+    <span class="stamp" id="stamp"></span>
+    <button id="themeBtn" class="theme" type="button" aria-label="テーマを切り替える"><span class="material-symbols-outlined" id="themeIcon" aria-hidden="true">dark_mode</span></button>
+  </div>
+
+  <div id="list"></div>
+
+  <p class="foot">書き込みでは「__healthcheck__」という目印の付いた行を1つだけ作り、確認したらすぐ削除します。zipの中にTurso(libSQL)の接続情報は見つからなかったため、対象はSupabaseの6件です。テーブルを使わないもの（online-action）は、入室・送信・受信・退出で確認します。</p>
+</main>
+
+<script>
+const DATABASES = [
+  {
+    key: "backrooms", name: "Backrooms",
+    url: "https://oprjbpzqmkcwzwgjskyz.supabase.co",
+    anon: "sb_publishable_5rU4KFvitf-6M_VQ5G-p0g_f-5b2QKp",
+    table: "lobby_presence", mode: "upsert",
+    buildRow: () => ({ client_id: "__healthcheck__", room: "__healthcheck__", stage: "test", name: "HealthCheck", updated_at: new Date().toISOString() }),
+    onConflict: "client_id",
+    match: { client_id: "__healthcheck__" },
+  },
+  {
+    key: "blockcraft", name: "BLOCKCRAFT",
+    url: "https://rdlibqrnpzidgxmceanf.supabase.co",
+    anon: "sb_publishable_c9uEaLRLIveaos9fJyGy3Q_oywgmRf3",
+    table: "world_blocks", mode: "upsert",
+    buildRow: () => ({ seed: "__healthcheck__", x: 999999, y: 999999, z: 999999, type: "test", updated_at: new Date().toISOString() }),
+    onConflict: "seed,x,y,z",
+    match: { seed: "__healthcheck__" },
+  },
+  {
+    key: "online-action", name: "online-action",
+    url: "https://vjllolakdhwqgghoojtw.supabase.co",
+    anon: "sb_publishable_3G2tGoZ5a10JTDPgF1uhjQ_RzcL06eQ",
+    table: null, mode: "realtime",
+    labels: { read1:"入室", write:"送信", read2:"受信", clean:"退出" },
+    hint: "テーブルを使わずリアルタイム通信だけで動いているため、テスト用チャンネルに入り、自分宛てにメッセージを送って受け取れるかを確認します。",
+  },
+  {
+    key: "osero", name: "オセロ",
+    url: "https://nurrabxcvyfajsmjwgkp.supabase.co",
+    anon: "sb_publishable_45F1e-RE-mrUauuVDsDZmQ_U5QYal0r",
+    table: "rooms", mode: "insert",
+    buildRow: () => ({ name: "__healthcheck__", board_size: 4, status: "waiting", current_turn: 1, board: [] }),
+    match: { name: "__healthcheck__" },
+    hint: "ルームの作成にはログイン中のユーザーIDが必要なため、ログインなしの書き込みは拒否されることがあります。",
+  },
+  {
+    key: "sushida-pvp", name: "寿司打PVP",
+    url: "https://fxomdolnijwpmzspkvgo.supabase.co",
+    anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4b21kb2xuaWp3cG16c3BrdmdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzEwMDMsImV4cCI6MjA5ODgwNzAwM30.vC6TYNO7mnTXhOaAYrrDZouMe9rO2eUKuUPERrusXG4",
+    table: "profiles", mode: "read-only",
+    hint: "プロフィールはログインしたユーザー専用のため、読み取りだけ確認します。",
+  },
+  {
+    key: "ghost-board", name: "ゴースト掲示板",
+    url: "https://vbhnvgjqsndgwxctutap.supabase.co",
+    anon: "sb_publishable_zUIQPdwcEWgk3RHgwzGFAw_CTlQNkHp",
+    table: "ghost_posts", mode: "insert",
+    buildRow: () => ({
+      stage_id: "__healthcheck__", stage_name: "HealthCheck", poster_name: "HealthCheck",
+      message: "connection test", money: 0, miss_count: 0, word_count: 0,
+      file_path: "healthcheck/test.txt", file_name: "test.txt", file_version: "v1",
+    }),
+    match: { stage_id: "__healthcheck__" },
+  },
+    {
+    key: "sushida-pvp", name: "銃",
+    url: "https://hiflevbinrxqbmgdbqsn.supabase.co",
+    anon: "sb_publishable_d1OkE0uQWtxtvHNH0F_gTg_yVIZd5qs",
+    table: "null", mode: "realtime",
+    hint: "リアルタイムしか使用していないため、",
+  },
+];
+
+const STEPS = [["connect","接続"],["read1","読み取り"],["write","書き込み"],["read2","読み返し"],["clean","削除"]];
+const STATE_WORD = { idle:"待機中", run:"確認中", ok:"生きています", warn:"一部だけ動作", bad:"応答なし" };
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function explain(msg){
+  const m = (msg || "").toLowerCase();
+  if(m.includes("row-level security") || m.includes("permission denied")) return "権限で拒否されました。ログインが必要な設定かもしれません。";
+  if(m.includes("could not find the table") || m.includes("does not exist")) return "テーブルが見つかりません。名前が変わったか、削除された可能性があります。";
+  if(m.includes("null value") || m.includes("not-null") || m.includes("violates")) return "必須の列が足りず、テスト行を作れませんでした。";
+  if(m.includes("failed to fetch") || m.includes("networkerror") || m.includes("load failed")) return "応答がありません。プロジェクトが一時停止しているか、URLが失効している可能性があります。";
+  if(m.includes("invalid api key") || m.includes("jwt")) return "キーが無効です。Supabaseの管理画面で新しいキーを確認してください。";
+  return msg || "原因不明のエラーです。";
+}
+
+function resetDb(db){
+  db.steps = {};
+  STEPS.forEach(([k]) => db.steps[k] = { s:"idle", v:"", fresh:false });
+  db.status = "idle";
+  db.msgs = [];
+}
+
+function trace(s){
+  switch(s){
+    case "ok":   return '<path d="M0 30 H36 L43 10 L50 42 L57 30 H100"/>';
+    case "warn": return '<path d="M0 30 H38 L44 22 L50 37 L56 30 H100"/>';
+    case "bad":  return '<path d="M0 30 H100"/><path d="M43 23 L57 37 M57 23 L43 37"/>';
+    case "run":  return '<path d="M0 30 H100"/><circle cx="50" cy="30" r="4"/>';
+    default:     return '<path d="M0 30 H100"/>';
+  }
+}
+
+function render(db){
+  let art = document.getElementById("db-" + db.key);
+  if(!art){
+    art = document.createElement("article");
+    art.className = "db";
+    art.id = "db-" + db.key;
+    document.getElementById("list").appendChild(art);
+  }
+  const beats = STEPS.map(([k, defLabel]) => {
+    const label = (db.labels && db.labels[k]) || defLabel;
+    const st = db.steps[k];
+    const fresh = st.fresh && (st.s === "ok" || st.s === "warn" || st.s === "bad") ? " fresh" : "";
+    st.fresh = false;
+    return `<div class="beat ${st.s}${fresh}">
+      <svg viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true">${trace(st.s)}</svg>
+      <span class="b-name">${label}</span>
+      <span class="b-val">${esc(st.v)}</span>
+    </div>`;
+  }).join("");
+  const problems = db.msgs.map(m => `<span>${esc(m)}</span>`).join("");
+  art.innerHTML = `
+    <div class="db-head">
+      <h2 class="db-name">${esc(db.name)}</h2>
+      <span class="db-state ${db.status}">${STATE_WORD[db.status]}</span>
+    </div>
+    <div class="db-meta">${esc(db.url)}　テーブル: ${esc(db.table || "なし")}</div>
+    <div class="beats">${beats}</div>
+    ${db.hint ? `<p class="db-hint">${esc(db.hint)}</p>` : ""}
+    ${problems ? `<p class="db-problem">${problems}</p>` : ""}`;
+}
+
+function setStep(db, key, s, v){
+  db.steps[key] = { s, v: v || "", fresh:true };
+  render(db);
+}
+function skipRest(db, keys, label){
+  keys.forEach(k => { db.steps[k] = { s:"skip", v:label, fresh:false }; });
+}
+function finish(db, status){
+  db.status = status;
+  render(db);
+  updateVerdict();
+}
+
+function updateVerdict(){
+  const total = DATABASES.length;
+  const running = DATABASES.filter(d => d.status === "run" || d.status === "idle").length;
+  const count = st => DATABASES.filter(d => d.status === st).length;
+  const v = document.getElementById("verdict");
+  const sm = document.getElementById("summary");
+  if(running > 0){
+    v.textContent = `確認しています（${total - running}/${total}）`;
+    sm.textContent = "";
+    return;
+  }
+  const ok = count("ok"), warn = count("warn"), bad = count("bad");
+  if(ok === total) v.textContent = `${total}件すべてが生きています`;
+  else if(ok === 0 && warn === 0) v.textContent = "生きているデータベースはありません";
+  else v.textContent = `${total}件中${ok}件が生きています`;
+  const parts = [];
+  if(warn) parts.push(`一部だけ動作が${warn}件`);
+  if(bad) parts.push(`応答なしが${bad}件`);
+  sm.textContent = parts.length ? parts.join("、") + "です。" : "";
+}
+
+async function runOne(db){
+  resetDb(db);
+  db.status = "run";
+  render(db);
+  updateVerdict();
+  const client = window.supabase.createClient(db.url, db.anon);
+
+  // 接続
+  setStep(db, "connect", "run");
+  const t0 = performance.now();
+  let alive = false;
+  try{
+    const res = await fetch(db.url + "/rest/v1/", { headers: { apikey: db.anon } });
+    const ms = Math.round(performance.now() - t0);
+    if(res.status < 500){ alive = true; setStep(db, "connect", "ok", ms + "ms"); }
+    else { setStep(db, "connect", "bad", "HTTP " + res.status); db.msgs.push(`サーバーがエラーを返しました（HTTP ${res.status}）。`); }
+  }catch(e){
+    setStep(db, "connect", "bad", "応答なし");
+    db.msgs.push(explain(e.message));
+  }
+  if(!alive){
+    skipRest(db, ["read1","write","read2","clean"], "未実施");
+    return finish(db, "bad");
+  }
+  if(db.mode === "ping-only"){
+    skipRest(db, ["read1","write","read2","clean"], "対象外");
+    return finish(db, "ok");
+  }
+
+  if(db.mode === "realtime") return runRealtime(db, client);
+
+  // 読み取り
+  setStep(db, "read1", "run");
+  let readOk = false;
+  try{
+    const { data, error, count } = await client.from(db.table).select("*", { count:"exact" }).limit(3);
+    if(error){ setStep(db, "read1", "bad", "失敗"); db.msgs.push(explain(error.message)); }
+    else { readOk = true; setStep(db, "read1", "ok", (count ?? data.length) + "件"); }
+  }catch(e){ setStep(db, "read1", "bad", "失敗"); db.msgs.push(explain(e.message)); }
+
+  if(db.mode === "read-only"){
+    skipRest(db, ["write","read2","clean"], "対象外");
+    return finish(db, readOk ? "ok" : "warn");
+  }
+
+  // 書き込み
+  setStep(db, "write", "run");
+  let writeOk = false, insertedId = null;
+  try{
+    const row = db.buildRow();
+    const resp = db.mode === "upsert"
+      ? await client.from(db.table).upsert(row, { onConflict: db.onConflict }).select()
+      : await client.from(db.table).insert(row).select();
+    if(resp.error){ setStep(db, "write", "bad", "拒否"); db.msgs.push(explain(resp.error.message)); }
+    else {
+      writeOk = true;
+      if(resp.data && resp.data[0] && resp.data[0].id != null) insertedId = resp.data[0].id;
+      setStep(db, "write", "ok", "1行作成");
+    }
+  }catch(e){ setStep(db, "write", "bad", "失敗"); db.msgs.push(explain(e.message)); }
+
+  if(!writeOk){
+    skipRest(db, ["read2","clean"], "未実施");
+    return finish(db, "warn");
+  }
+
+  // 読み返し
+  setStep(db, "read2", "run");
+  let readBackOk = false;
+  try{
+    const { data, error } = await client.from(db.table).select("*").match(db.match).limit(5);
+    if(error){ setStep(db, "read2", "bad", "失敗"); db.msgs.push(explain(error.message)); }
+    else if(data && data.length){ readBackOk = true; setStep(db, "read2", "ok", data.length + "件"); }
+    else { setStep(db, "read2", "warn", "見つからず"); db.msgs.push("書き込めたのに読み返せませんでした。読み取り権限を確認してください。"); }
+  }catch(e){ setStep(db, "read2", "bad", "失敗"); db.msgs.push(explain(e.message)); }
+
+  // 削除
+  setStep(db, "clean", "run");
+  let cleanOk = false;
+  try{
+    let q = client.from(db.table).delete();
+    q = insertedId != null ? q.eq("id", insertedId) : q.match(db.match);
+    const { error } = await q;
+    if(error){ setStep(db, "clean", "warn", "削除できず"); db.msgs.push("テスト行（__healthcheck__）が残っている可能性があります。管理画面から削除してください。"); }
+    else { cleanOk = true; setStep(db, "clean", "ok", "削除済み"); }
+  }catch(e){ setStep(db, "clean", "warn", "削除できず"); db.msgs.push("テスト行（__healthcheck__）が残っている可能性があります。管理画面から削除してください。"); }
+
+  finish(db, (readOk && readBackOk && cleanOk) ? "ok" : "warn");
+}
+
+// テーブルを使わず、リアルタイム通信(Broadcast)だけで動くものの確認
+// 入室 → 送信 → 受信 → 退出 の順で、自分宛てのメッセージが届くかを見る
+async function runRealtime(db, client){
+  const topic = "healthcheck-" + Math.random().toString(36).slice(2, 10);
+  const channel = client.channel(topic, { config: { broadcast: { self: true, ack: true } } });
+  let gotMsg;
+  const received = new Promise(res => { gotMsg = res; });
+  channel.on("broadcast", { event: "ping" }, p => gotMsg(p));
+
+  // 入室
+  setStep(db, "read1", "run");
+  const t1 = performance.now();
+  const joined = await new Promise(resolve => {
+    const timer = setTimeout(() => resolve("TIMED_OUT"), 8000);
+    try{
+      channel.subscribe(status => {
+        if(status === "SUBSCRIBED" || status === "TIMED_OUT" || status === "CHANNEL_ERROR" || status === "CLOSED"){
+          clearTimeout(timer); resolve(status);
+        }
+      });
+    }catch(e){ clearTimeout(timer); resolve("CHANNEL_ERROR"); }
+  });
+  const joinOk = joined === "SUBSCRIBED";
+  if(joinOk) setStep(db, "read1", "ok", Math.round(performance.now() - t1) + "ms");
+  else {
+    setStep(db, "read1", "bad", "入れず");
+    db.msgs.push("リアルタイム通信のチャンネルに入れませんでした。Realtimeが無効か、プロジェクトが停止している可能性があります。");
+  }
+
+  let sendOk = false, recvOk = false;
+  if(joinOk){
+    // 送信
+    setStep(db, "write", "run");
+    try{
+      const r = await channel.send({ type: "broadcast", event: "ping", payload: { t: Date.now() } });
+      if(r === "ok"){ sendOk = true; setStep(db, "write", "ok", "送信済み"); }
+      else { setStep(db, "write", "bad", r === "timed out" ? "時間切れ" : "拒否"); db.msgs.push("メッセージを送信できませんでした。"); }
+    }catch(e){ setStep(db, "write", "bad", "失敗"); db.msgs.push(explain(e.message)); }
+
+    // 受信
+    if(sendOk){
+      setStep(db, "read2", "run");
+      const t2 = performance.now();
+      const got = await Promise.race([received.then(() => true), new Promise(r => setTimeout(() => r(false), 5000))]);
+      if(got){ recvOk = true; setStep(db, "read2", "ok", Math.round(performance.now() - t2) + "ms"); }
+      else { setStep(db, "read2", "warn", "届かず"); db.msgs.push("送ったメッセージが自分に返ってきませんでした。"); }
+    } else skipRest(db, ["read2"], "未実施");
+  } else skipRest(db, ["write", "read2"], "未実施");
+
+  // 退出
+  setStep(db, "clean", "run");
+  let leaveOk = false;
+  try{
+    await client.removeChannel(channel);
+    try{ client.realtime.disconnect(); }catch(_){}
+    leaveOk = true; setStep(db, "clean", "ok", "退出済み");
+  }catch(e){ setStep(db, "clean", "warn", "退出できず"); }
+
+  finish(db, !joinOk ? "bad" : (sendOk && recvOk && leaveOk ? "ok" : "warn"));
+}
+
+async function runAll(){
+  const btn = document.getElementById("runAll");
+  btn.disabled = true;
+  DATABASES.forEach(d => { resetDb(d); render(d); });
+  updateVerdict();
+  await Promise.all(DATABASES.map(d => runOne(d).catch(e => { d.msgs.push(explain(e.message)); finish(d, "bad"); })));
+  document.getElementById("stamp").textContent = "最終確認 " + new Date().toLocaleString("ja-JP");
+  btn.disabled = false;
+}
+
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeIcon").textContent = t === "dark" ? "light_mode" : "dark_mode";
+}
+applyTheme(document.documentElement.getAttribute("data-theme") || "light");
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const t = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  applyTheme(t);
+  try{ localStorage.setItem("theme", t); }catch(e){}
+});
+document.getElementById("runAll").addEventListener("click", runAll);
+runAll();
+</script>
+</body>
+</html>

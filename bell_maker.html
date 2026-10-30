@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bell.js メーカー</title>
+<style>
+    :root {
+        --ink: #202124;
+        --sub: #5f6368;
+        --mute: #70757a;
+        --line: #e8eaed;
+        --hover: #f1f3f4;
+        --blue: #1a73e8;
+        --blue-bg: #e8f0fe;
+        --red: #d93025;
+        --green: #188038;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Segoe UI', Arial, 'Hiragino Sans', 'Yu Gothic UI', Meiryo, sans-serif;
+        font-size: 14px;
+        color: var(--ink);
+        background: #fff;
+    }
+
+    button, input, textarea { font: inherit; color: inherit; }
+
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    /* ── 上のバー ── */
+    .bar {
+        flex: none;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .bar h1 {
+        margin: 0 12px 0 0;
+        font-size: 18px;
+        font-weight: 500;
+    }
+
+    .btn {
+        height: 36px;
+        padding: 0 16px;
+        border: 1px solid #dadce0;
+        border-radius: 18px;
+        background: #fff;
+        color: var(--blue);
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .btn:hover { background: #f6f9fe; border-color: #c6dafc; }
+
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn.primary:hover { background: #1765cc; border-color: #1765cc; }
+
+    .btn:disabled {
+        background: #f1f3f4;
+        border-color: #f1f3f4;
+        color: #9aa0a6;
+        cursor: not-allowed;
+    }
+
+    .btn.danger { color: var(--red); }
+    .btn.danger:hover { background: #fce8e6; border-color: #f4c7c3; }
+
+    .status {
+        flex: 1 1 260px;
+        min-width: 0;
+        font-size: 13px;
+        color: var(--sub);
+    }
+
+    .status.ok { color: var(--green); }
+    .status.err { color: var(--red); }
+
+    .hint {
+        flex: none;
+        margin: 0;
+        padding: 8px 20px;
+        font-size: 12px;
+        color: var(--sub);
+        background: #fef7e0;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .hint[hidden] { display: none; }
+
+    /* ── 本体：左に一覧、右に編集（モーダルと同じ並び） ── */
+    .work {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 300px 1fr;
+    }
+
+    .side {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border-right: 1px solid var(--line);
+    }
+
+    .side-head {
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px 10px 20px;
+        border-bottom: 1px solid var(--line);
+        font-weight: 500;
+    }
+
+    .side-head .count { color: var(--mute); font-weight: 400; margin-left: 6px; }
+
+    .list { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+    .row {
+        display: block;
+        width: 100%;
+        padding: 10px 18px 10px 20px;
+        border: 0;
+        border-left: 3px solid transparent;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .row:hover { background: #f8f9fa; }
+    .row[aria-current="true"] { background: var(--blue-bg); border-left-color: var(--blue); }
+
+    .row .r-date {
+        display: block;
+        font-size: 12px;
+        color: var(--mute);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .row .r-title {
+        display: block;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .row .r-title.empty { color: var(--mute); font-style: italic; }
+
+    .none {
+        padding: 24px 20px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--sub);
+    }
+
+    .edit { min-height: 0; overflow-y: auto; padding: 24px 30px 40px; }
+
+    .form { max-width: 720px; }
+
+    .field { display: block; margin-bottom: 18px; }
+
+    .field > span {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: var(--sub);
+    }
+
+    .field input, .field textarea {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .field input:focus, .field textarea:focus {
+        outline: none;
+        border-color: var(--blue);
+        box-shadow: 0 0 0 1px var(--blue);
+    }
+
+    .field textarea { min-height: 220px; line-height: 1.7; resize: vertical; }
+
+    .inline { display: flex; gap: 8px; align-items: center; }
+    .inline input { flex: 0 1 240px; }
+
+    .small { height: 32px; padding: 0 12px; font-size: 13px; }
+
+    .actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+    .help { margin: 6px 0 0; font-size: 12px; color: var(--mute); }
+
+    /* ── 出力プレビュー ── */
+    details.out { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 14px; }
+    details.out summary { cursor: pointer; color: var(--sub); }
+
+    details.out pre {
+        margin: 12px 0 10px;
+        padding: 14px;
+        max-height: 280px;
+        overflow: auto;
+        border-radius: 8px;
+        background: #f8f9fa;
+        font: 12px/1.6 ui-monospace, 'SF Mono', Consolas, monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    .drop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(232,240,254,0.92);
+        color: var(--blue);
+        font-size: 20px;
+        font-weight: 500;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .drop.show { display: flex; }
+
+    @media (max-width: 760px) {
+        .work { grid-template-columns: 1fr; grid-template-rows: minmax(0, 40%) minmax(0, 1fr); }
+        .side { border-right: 0; border-bottom: 1px solid var(--line); }
+        .edit { padding: 20px 18px 40px; }
+        .bar { padding: 10px 14px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="bar">
+    <h1>bell.js メーカー</h1>
+    <button type="button" class="btn" id="btnOpen">bell.js を開く</button>
+    <button type="button" class="btn primary" id="btnSave" disabled>上書き保存</button>
+    <button type="button" class="btn" id="btnDownload">bell.js をダウンロード</button>
+    <div class="status" id="status" role="status" aria-live="polite">bell.js を開くか、新しく作ってください。</div>
+    <input type="file" id="fileInput" accept=".js,text/javascript" hidden>
+</div>
+<p class="hint" id="hint" hidden>このブラウザでは直接の上書き保存ができません。「ダウンロード」した bell.js を、index.html と同じフォルダに置き換えてください。</p>
+
+<div class="work">
+    <section class="side" aria-label="お知らせ一覧">
+        <div class="side-head">
+            <span>お知らせ<span class="count" id="count"></span></span>
+            <button type="button" class="btn small" id="btnAdd">追加</button>
+        </div>
+        <div class="list" id="list"></div>
+    </section>
+
+    <section class="edit" aria-label="お知らせの編集">
+        <div class="form" id="form" hidden>
+            <label class="field">
+                <span>日時</span>
+                <div class="inline">
+                    <input type="datetime-local" id="fDate">
+                    <button type="button" class="btn small" id="btnNow">いまにする</button>
+                </div>
+            </label>
+            <label class="field">
+                <span>タイトル</span>
+                <input type="text" id="fTitle" maxlength="120" autocomplete="off">
+            </label>
+            <label class="field">
+                <span>内容</span>
+                <textarea id="fBody"></textarea>
+                <p class="help">改行はそのまま表示されます。http(s):// で始まるURLは自動でリンクになります。</p>
+            </label>
+            <div class="actions">
+                <button type="button" class="btn danger" id="btnDel">このお知らせを削除</button>
+            </div>
+        </div>
+        <div class="none" id="empty">左の「追加」でお知らせを作るか、bell.js を開いて既存のお知らせを読み込みます。<br>日時の新しい順に並び、index.html のお知らせにも同じ順で出ます。</div>
+
+        <details class="out" id="out">
+            <summary>書き出される bell.js の中身</summary>
+            <pre id="code"></pre>
+            <button type="button" class="btn small" id="btnCopy">コピー</button>
+        </details>
+    </section>
+</div>
+
+<div class="drop" id="drop">bell.js をここにドロップして読み込む</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var $ = function (id) { return document.getElementById(id); };
+    var items = [];          // { id, date: 'YYYY-MM-DDTHH:mm', title, body }
+    var nextId = 1;
+    var selId = null;
+    var fileHandle = null;   // 「開く」で選んだ bell.js（上書き保存に使う）
+    var dirty = false;
+    var canPick = typeof window.showOpenFilePicker === 'function';
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function nowLocal() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+               'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    // 「2026/10/30 12:00」「2026-10-30」なども受けて、入力欄の形式に揃える
+    function toInputDate(s) {
+        var m = /^\s*(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:[ T]+(\d{1,2}):(\d{2}))?/.exec(String(s || ''));
+        if (!m) return '';
+        return m[1] + '-' + pad(+m[2]) + '-' + pad(+m[3]) + 'T' + pad(+(m[4] || 0)) + ':' + (m[5] || '00');
+    }
+
+    function toFileDate(v) { return String(v || '').replace('T', ' '); }
+
+    function fmtShow(v) { return v ? v.replace(/-/g, '/').replace('T', ' ') : '日時なし'; }
+
+    function sortItems() {
+        items.sort(function (a, b) {
+            if (a.date === b.date) return 0;
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return a.date < b.date ? 1 : -1; // 新しい順
+        });
+    }
+
+    function current() {
+        for (var i = 0; i < items.length; i++) if (items[i].id === selId) return items[i];
+        return null;
+    }
+
+    function setStatus(msg, kind) {
+        var el = $('status');
+        el.textContent = msg;
+        el.className = 'status' + (kind ? ' ' + kind : '');
+    }
+
+    function markDirty() {
+        dirty = true;
+        renderCode();
+    }
+
+    // ── bell.js の読み書き ──
+    function buildText() {
+        var out = items.slice().filter(function (it) { return it.title || it.body; });
+        out.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+        var data = out.map(function (it) {
+            return { date: toFileDate(it.date), title: it.title, body: it.body };
+        });
+        return '// bell.js — お知らせデータ（bell_maker.html で作成。手で書き換えても読み込めます）\n' +
+               '// date: 通知の日時 / title: 通知タイトル / body: 内容\n' +
+               'window.BELL_ITEMS = ' + JSON.stringify(data, null, 2) + ';\n';
+    }
+
+    function parseBell(text) {
+        var arr = null;
+        var a = text.indexOf('['), b = text.lastIndexOf(']');
+        if (a >= 0 && b > a) {
+            try { arr = JSON.parse(text.slice(a, b + 1)); } catch (e) { arr = null; }
+        }
+        if (!Array.isArray(arr)) {
+            // 手書きの JS（キーに引用符なし・末尾カンマなど）も読めるように
+            var box = {};
+            try { new Function('window', text + '\n;')(box); } catch (e) { box = {}; }
+            arr = box.BELL_ITEMS;
+        }
+        if (!Array.isArray(arr)) throw new Error('window.BELL_ITEMS の配列が見つかりません');
+        return arr.filter(function (x) { return x && typeof x === 'object'; }).map(function (x) {
+            return { id: nextId++, date: toInputDate(x.date), title: String(x.title || ''), body: String(x.body || '') };
+        });
+    }
+
+    function applyText(text, label) {
+        var list = parseBell(text);
+        items = list;
+        sortItems();
+        selId = items.length ? items[0].id : null;
+        dirty = false;
+        renderAll();
+        setStatus(label + '：' + items.length + '件のお知らせを読み込みました。', 'ok');
+    }
+
+    function onReadError(e) {
+        setStatus('読み込めませんでした：' + (e && e.message ? e.message : e), 'err');
+    }
+
+    async function openFile() {
+        if (!canPick) { $('fileInput').click(); return; }
+        try {
+            var hs = await window.showOpenFilePicker({
+                types: [{ description: 'bell.js', accept: { 'text/javascript': ['.js'] } }]
+            });
+            var file = await hs[0].getFile();
+            var text = await file.text();
+            applyText(text, file.name);
+            fileHandle = hs[0];
+            $('btnSave').disabled = false;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            onReadError(e);
+        }
+    }
+
+    function readPlainFile(file) {
+        var r = new FileReader();
+        r.onload = function () {
+            try {
+                applyText(String(r.result), file.name);
+                fileHandle = null;
+                $('btnSave').disabled = true;
+            } catch (e) { onReadError(e); }
+        };
+        r.onerror = function () { onReadError(r.error); };
+        r.readAsText(file, 'utf-8');
+    }
+
+    async function saveInPlace() {
+        if (!fileHandle) return;
+        try {
+            var opt = { mode: 'readwrite' };
+            if ((await fileHandle.queryPermission(opt)) !== 'granted' &&
+                (await fileHandle.requestPermission(opt)) !== 'granted') {
+                setStatus('書き込みが許可されませんでした。', 'err');
+                return;
+            }
+            var w = await fileHandle.createWritable();
+            await w.write(buildText());
+            await w.close();
+            dirty = false;
+            setStatus(fileHandle.name + ' を上書き保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）。', 'ok');
+        } catch (e) {
+            setStatus('保存できませんでした：' + (e && e.message ? e.message : e), 'err');
+        }
+    }
+
+    function download() {
+        var url = URL.createObjectURL(new Blob([buildText()], { type: 'text/javascript;charset=utf-8' }));
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'bell.js';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        dirty = false;
+        setStatus('bell.js をダウンロードしました。index.html と同じフォルダに置き換えてください。', 'ok');
+    }
+
+    // ── 画面 ──
+    function renderList() {
+        var list = $('list');
+        list.innerHTML = '';
+        $('count').textContent = items.length ? '（' + items.length + '）' : '';
+        if (!items.length) {
+            var n = document.createElement('div');
+            n.className = 'none';
+            n.textContent = 'まだお知らせがありません。';
+            list.appendChild(n);
+            return;
+        }
+        items.forEach(function (it) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'row';
+            if (it.id === selId) b.setAttribute('aria-current', 'true');
+            var d = document.createElement('span');
+            d.className = 'r-date';
+            d.textContent = fmtShow(it.date);
+            var t = document.createElement('span');
+            t.className = 'r-title' + (it.title ? '' : ' empty');
+            t.textContent = it.title || '（無題）';
+            b.append(d, t);
+            b.addEventListener('click', function () { selId = it.id; renderAll(); });
+            list.appendChild(b);
+        });
+    }
+
+    function renderForm() {
+        var it = current();
+        $('form').hidden = !it;
+        $('empty').hidden = !!it;
+        if (!it) return;
+        $('fDate').value = it.date;
+        $('fTitle').value = it.title;
+        $('fBody').value = it.body;
+    }
+
+    function renderCode() { $('code').textContent = buildText(); }
+
+    function renderAll() { renderList(); renderForm(); renderCode(); }
+
+    function addItem() {
+        var it = { id: nextId++, date: nowLocal(), title: '', body: '' };
+        items.push(it);
+        sortItems();
+        selId = it.id;
+        markDirty();
+        renderAll();
+        $('fTitle').focus();
+    }
+
+    function deleteItem() {
+        var it = current();
+        if (!it) return;
+        if (!window.confirm('「' + (it.title || '（無題）') + '」を削除しますか？')) return;
+        var i = items.indexOf(it);
+        items.splice(i, 1);
+        selId = items.length ? items[Math.min(i, items.length - 1)].id : null;
+        markDirty();
+        renderAll();
+    }
+
+    // ── イベント ──
+    $('btnOpen').addEventListener('click', openFile);
+    $('btnSave').addEventListener('click', saveInPlace);
+    $('btnDownload').addEventListener('click', download);
+    $('btnAdd').addEventListener('click', addItem);
+    $('btnDel').addEventListener('click', deleteItem);
+    $('btnNow').addEventListener('click', function () {
+        var it = current();
+        if (!it) return;
+        it.date = nowLocal();
+        $('fDate').value = it.date;
+        sortItems();
+        markDirty();
+        renderList();
+    });
+
+    $('fileInput').addEventListener('change', function (e) {
+        var f = e.target.files && e.target.files[0];
+        if (f) readPlainFile(f);
+        e.target.value = '';
+    });
+
+    $('fTitle').addEventListener('input', function (e) {
+        var it = current();
+        if (!it) return;
+        it.title = e.target.value;
+        markDirty();
+        renderList();
+    });
+
+    $('fBody').addEventListener('input', function (e) {
+        var it = current();
+        if (!it) return;
+        it.body = e.target.value;
+        markDirty();
+    });
+
+    // 日時は入力が確定したときだけ並べ替える（入力中に行が動かないように）
+    $('fDate').addEventListener('change', function (e) {
+        var it = current();
+        if (!it) return;
+        it.date = e.target.value;
+        sortItems();
+        markDirty();
+        renderList();
+    });
+
+    $('btnCopy').addEventListener('click', function () {
+        var text = buildText();
+        var done = function () { setStatus('bell.js の中身をコピーしました。', 'ok'); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () { setStatus('コピーできませんでした。', 'err'); });
+        } else {
+            setStatus('このブラウザではコピーできません。ダウンロードを使ってください。', 'err');
+        }
+    });
+
+    // ドラッグ＆ドロップで読み込み
+    var dragDepth = 0;
+    window.addEventListener('dragenter', function (e) {
+        if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) {
+            dragDepth++;
+            $('drop').classList.add('show');
+        }
+    });
+    window.addEventListener('dragleave', function () {
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (!dragDepth) $('drop').classList.remove('show');
+    });
+    window.addEventListener('dragover', function (e) { e.preventDefault(); });
+    window.addEventListener('drop', function (e) {
+        e.preventDefault();
+        dragDepth = 0;
+        $('drop').classList.remove('show');
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) readPlainFile(f);
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (!dirty) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
+    // ── 起動 ──
+    $('hint').hidden = canPick;
+    renderAll();
+
+    // サーバー経由で開いていれば、同じフォルダの bell.js を最初に読み込む
+    if (/^https?:$/.test(location.protocol)) {
+        fetch('./bell.js', { cache: 'no-store' })
+            .then(function (r) { if (!r.ok) throw new Error('none'); return r.text(); })
+            .then(function (t) {
+                applyText(t, '同じフォルダの bell.js');
+                if (canPick) setStatus('同じフォルダの bell.js を読み込みました。上書き保存するには「bell.js を開く」で選び直してください。', 'ok');
+            })
+            .catch(function () {});
+    }
+})();
+</script>
+</body>
+</html>

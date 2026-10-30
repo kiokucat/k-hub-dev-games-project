@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回転寿司タイピング - ソースコード配布処</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --noren: #16324f;
+    --noren-deep: #0d2138;
+    --wood: #b8895f;
+    --wood-light: #d9b48a;
+    --wood-deep: #8a5f3c;
+    --rice: #fbf6ec;
+    --salmon: #e8734a;
+    --nori: #1c1c1c;
+    --gold: #c9992f;
+    --green: #3f7d5c;
+    --urushi: #1b1714;
+    --washi-deep: #efe6d2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--rice); color: var(--nori);
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    line-height: 1.7;
+  }
+  .container {
+    max-width: 720px; margin: 40px auto; padding: 30px;
+    background: #ffffff; border: 2px solid var(--wood); border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+    position: relative;
+  }
+  
+  /* 右上の戻るボタン */
+  .top-back-area {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+  }
+  .btn-back-title {
+    display: inline-block;
+    background: var(--wood);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 6px 14px;
+    border-radius: 4px;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .btn-back-title:hover {
+    background: var(--wood-deep);
+    transform: translateY(-1px);
+  }
+
+  .header {
+    text-align: center; border-bottom: 3px double var(--wood); padding-bottom: 15px; margin-bottom: 30px;
+    padding-top: 15px;
+  }
+  .header h1 {
+    margin: 0; font-family: "Yu Mincho", serif; font-size: 24px; color: var(--noren);
+    letter-spacing: 0.05em;
+  }
+  .header .subtitle { font-size: 13px; color: #666; margin-top: 5px; }
+  
+  h2 {
+    font-family: "Yu Mincho", serif; border-left: 5px solid var(--noren);
+    padding-left: 10px; font-size: 17px; color: var(--noren-deep); margin-top: 30px;
+  }
+  p { margin: 10px 0; font-size: 14px; color: #444; }
+
+  /* 同梱ファイル一覧の和風リスト */
+  .file-list-box {
+    background: var(--washi-deep);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid var(--wood);
+  }
+  .file-list-box ul {
+    margin: 0; padding-left: 20px; font-size: 13px;
+  }
+  .file-list-box li {
+    margin-bottom: 6px;
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--noren-deep);
+  }
+  .file-desc {
+    font-family: inherit;
+    font-weight: normal;
+    color: #555;
+    font-size: 12px;
+    margin-left: 10px;
+  }
+
+  /* 配布ダウンロードアクションエリア */
+  .download-zone {
+    text-align: center;
+    margin: 40px 0 20px 0;
+    padding: 30px;
+    background: #fdfaf2;
+    border: 2px dashed var(--wood);
+    border-radius: 8px;
+  }
+  .btn-dl-zip {
+    background: var(--salmon);
+    color: #ffffff;
+    border: none;
+    padding: 16px 35px;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 10px rgba(232,115,74,0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-dl-zip:hover {
+    background: #d65f37;
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 15px rgba(232,115,74,0.4);
+  }
+  .btn-dl-zip:active {
+    transform: translateY(1px);
+  }
+  .btn-dl-zip:disabled {
+    background: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .status-text {
+    margin-top: 15px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--green);
+    min-height: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="top-back-area">
+    <a href="../index.html" class="btn-back-title">🏠 タイトルにもどる</a>
+  </div>
+
+  <div class="header">
+    <h1>📦 ゲームアセット・ソースコード配布</h1>
+    <div class="subtitle">〜 システム構成資産（4フォルダ内）をZIPで一括取得 〜</div>
+  </div>
+
+  <h2>■ 配布パッケージ内容</h2>
+  <p>ボタンをクリックすると、タイピングゲームのコアファイル群が、正しいフォルダ階層構造（badges/ フォルダ含む）を保ったままパッケージングされてダウンロードされます。</p>
+
+  <div class="file-list-box">
+    <ul>
+      <li>index.html <span class="file-desc">(ゲームメイン・タイトル画面プログラム)</span></li>
+      <li>type.wav <span class="file-desc">(打鍵時のタイピングSE効果音ファイル) ※紛失時は同梱されません</span></li>
+      <li>badges/ <span class="file-desc">(職人評価ランクバッジ用フォルダ)</span></li>
+      <li style="list-style-type: none; margin-left: 10px; color: #666; font-size: 12px;">┗ rank1.png 〜 rank50.png <span class="file-desc">(全50段階の段位バッジ画像アセット)</span></li>
+    </ul>
+  </div>
+
+  <h2>■ ご利用について</h2>
+  <p>このZIPには、全50段階の職人ランクバッジ画像、ゲームメインのロジックが揃っています。ローカルでのプレイやカスタマイズ、改変の学習用としてご自由にお使いください。</p>
+
+  <div class="download-zone">
+    <p style="font-weight: bold; margin-bottom: 20px; font-size: 15px;">タイピングゲーム 構成アセット一括ダウンロード</p>
+    <button id="downloadBtn" class="btn-dl-zip">📦 ソースZIPを一括ダウンロード</button>
+    <div id="statusMessage" class="status-text"></div>
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('downloadBtn').onclick = async function() {
+    const button = document.getElementById('downloadBtn');
+    const status = document.getElementById('statusMessage');
+    
+    button.disabled = true;
+    status.style.color = "var(--gold)";
+    status.textContent = "⏳ ファイルをフェッチし、圧縮処理中...";
+    
+    const zip = new JSZip();
+    let missingFilesLog = ""; // 取得できなかったファイルを記録するログ
+
+    try {
+      // 1. index.html の取得（必須ファイル）
+      status.textContent = "⏳ index.html を読み込み中...";
+      const htmlResponse = await fetch('../4/index.html');
+      if (!htmlResponse.ok) {
+        throw new Error(`必須ファイル index.html の取得に失敗しました。パスを確認してください。`);
+      }
+      const htmlBlob = await htmlResponse.blob();
+      zip.file('index.html', htmlBlob);
+
+      // 2. type.wav の取得（紛失リスク対応：エラーを許容する）
+      status.textContent = "⏳ type.wav を読み込み中...";
+      try {
+        const wavResponse = await fetch('../4/type.wav');
+        if (wavResponse.ok) {
+          const wavBlob = await wavResponse.blob();
+          zip.file('type.wav', wavBlob);
+        } else {
+          missingFilesLog += "[警告] type.wav がサーバー上に見つからなかったため、ZIPへの同梱をスキップしました。\n";
+          console.warn("type.wav が見つかりません。スキップします。");
+        }
+      } catch (e) {
+        missingFilesLog += "[警告] type.wav のフェッチ中にエラーが発生したため、スキップしました。\n";
+        console.warn("type.wav の取得エラー:", e);
+      }
+
+      // 3. badges/ 内の rank1.png 〜 rank50.png を取得して格納
+      const badgesFolder = zip.folder("badges");
+      
+      for (let i = 1; i <= 50; i++) {
+        const badgeName = `rank${i}.png`;
+        const badgePath = `../4/badges/${badgeName}`;
+        
+        status.textContent = `⏳ バッジ画像を取得中 (${i}/50): ${badgeName}...`;
+        
+        try {
+          const response = await fetch(badgePath);
+          if (response.ok) {
+            const blob = await response.blob();
+            badgesFolder.file(badgeName, blob);
+          } else {
+            missingFilesLog += `[警告] badges/${badgeName} が見つかりませんでした。\n`;
+          }
+        } catch (e) {
+          missingFilesLog += `[警告] badges/${badgeName} のフェッチエラー。\n`;
+        }
+      }
+
+      // もし消えたファイルや警告があれば、ZIP内に説明テキストを同梱する
+      if (missingFilesLog) {
+        zip.file("README_missing_files.txt", "以下のファイルは配布元に見つからなかったため含まれていません:\n\n" + missingFilesLog);
+      }
+
+      // 4. ZIPファイルを生成してダウンロード処理を実行
+      status.style.color = "var(--gold)";
+      status.textContent = "⏳ ZIPパッケージを構築しています...";
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(content);
+      link.download = "sushida-typing-assets.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      if (missingFilesLog) {
+        status.style.color = "var(--gold)";
+        status.textContent = "⚠ 一部ファイル(type.wav等)を除いてダウンロードが完了しました！";
+      } else {
+        status.style.color = "var(--green)";
+        status.textContent = "✨ ダウンロードが完了しました！(sushida-typing-assets.zip)";
+      }
+    } catch (error) {
+      console.error(error);
+      status.style.color = "var(--salmon)";
+      status.textContent = `❌ エラー: ${error.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

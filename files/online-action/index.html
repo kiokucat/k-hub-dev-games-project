@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゲームアーカイブハブ | 公式サイト</title>
+    <style>
+        :root {
+            --bg-color: #0f111a;
+            --card-bg: #161b26;
+            --accent-main: #ffd23f;    /* 最新版：華やかなゴールド */
+            --accent-on: #ff7920;
+            --accent-old1: #3a8ef0;    /* 旧版1：落ち着いたブルー */
+            --accent-old2: #8e9aaf;    /* 旧版2：レトロなグレー */
+            --text-main: #f4f1ea;
+            --text-muted: #8e9aaf;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; }
+        
+        /* ヘッダー */
+        header { text-align: center; padding: 60px 20px 40px; background: linear-gradient(180deg, #05070a 0%, var(--bg-color) 100%); border-bottom: 1px solid #1f2633; }
+        h1 { font-size: 2.5rem; letter-spacing: 2px; margin-bottom: 10px; color: #fff; }
+        .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* メインコンテンツエリア */
+        main { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+        .section-title { font-size: 1.5rem; margin-bottom: 25px; padding-left: 10px; border-left: 4px solid var(--accent-main); }
+
+        /* グリッドレイアウト */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 50px; }
+
+        /* カード型リンク (aタグ) */
+        .portal-card { display: flex; flex-direction: column; background-color: var(--card-bg); text-decoration: none; color: inherit; border-radius: 12px; border: 1px solid #222b3d; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+        .portal-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        
+        /* 各カードの専用ホバーエフェクト */
+        .card-main:hover { border-color: var(--accent-main); box-shadow: 0 10px 20px rgba(255, 210, 63, 0.15); }
+        .card-game1:hover { border-color: var(--accent-old1); box-shadow: 0 10px 20px rgba(58, 142, 240, 0.15); }
+        .card-game2:hover { border-color: var(--accent-old2); box-shadow: 0 10px 20px rgba(142, 154, 175, 0.15); }
+
+        /* バッジ */
+        .card-badge { padding: 8px 16px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #fff; align-self: flex-start; border-radius: 0 0 8px 0; }
+        .bg-main { background-color: var(--accent-main); color: #000; }
+        .bg-old1 { background-color: var(--accent-old1); }
+        .bg-old2 { background-color: var(--accent-old2); }
+
+        /* カード内部 */
+        .card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-title { font-size: 1.4rem; color: #fff; margin-bottom: 10px; }
+        .card-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; }
+        
+        .card-action { font-size: 0.9rem; font-weight: bold; text-align: right; color: #fff; }
+        .portal-card:hover .card-action { text-decoration: underline; }
+        .card-main:hover .card-action { color: var(--accent-main); }
+        .card-game1:hover .card-action { color: var(--accent-old1); }
+        .card-game2:hover .card-action { color: var(--accent-old2); }
+
+        footer { text-align: center; padding: 40px 20px; color: #4e5d78; font-size: 0.85rem; border-top: 1px solid #1f2633; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>PLATFORMER ARCHIVE</h1>
+        <p class="subtitle">4Pランダムステージ・プラットフォーマー 各バージョン紹介サイト</p>
+    </header>
+
+    <main>
+        <h2 class="section-title">バージョンを選択してプレイ</h2>
+        
+        <div class="grid-container">
+            <a href="Main/index.html" class="portal-card card-main">
+                <span class="card-badge bg-main">LATEST / CURRENT</span>
+                <div class="card-body">
+                    <div>
+                        <h3 class="card-title">いつものゲーム (最新版)</h3>
+                        <p class="card-desc">現在メインで稼働している通常バージョンです。最新の機能追加、バグ修正、オンライン快適化が適用された最も安定した環境で遊べます。</p>
+                    </div>
+                    <div class="card-action">このバージョンを遊ぶ &rarr;</div>
+                </div>
+            </a>
+
+            <a href="online/index.html" class="portal-card card-main">
+                <span class="card-badge bg-on">Online Edision</span>
+                <div class="card-body">
+                    <div>
+                        <h3 class="card-title">online正式対応版</h3>
+                        <p class="card-desc">オンラインを正式対応しています、ですがバグがわからないのでいつものゲームをお勧めします</p>
+                    </div>
+                    <div class="card-action">Onlineを遊ぶ &rarr;</div>
+                </div>
+            </a>
+
+            <a href="Game1/index.html" class="portal-card card-game1">
+                <span class="card-badge bg-old1">OLD VERSION 1</span>
+                <div class="card-body">
+                    <div>
+                        <h3 class="card-title">旧バージョン (Game1)</h3>
+                        <p class="card-desc">1つ前の世代のゲームバージョンです。現在の最新版とは異なる当時のゲームバランスや、懐かしい仕様のステージをそのまま残しています。</p>
+                    </div>
+                    <div class="card-action">旧版1を遊ぶ &rarr;</div>
+                </div>
+            </a>
+
+
+            <a href="Game2/index.html" class="portal-card card-game2">
+                <span class="card-badge bg-old2">OLD VERSION 2</span>
+                <div class="card-body">
+                    <div>
+                        <h3 class="card-title">旧バージョン2 (Game2)</h3>
+                        <p class="card-desc">さらに初期に近い過去のバージョンです。開発初期の挙動の確認や、当時の思い出に浸りたいプレイヤー向けの長期アーカイブ環境です。</p>
+                    </div>
+                    <div class="card-action">旧版2を遊ぶ &rarr;</div>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Random Stage Platformer Project. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>

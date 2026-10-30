@@ -1,0 +1,3649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ワイヤーすごろく — ステージメーカー付きボードゲーム</title>
+<style>
+
+  :root{
+    --ink:#3a3344; --ink-soft:#9a90a8;
+    --pink:#ff5d8f; --pink-deep:#e8437a; --cream:#fff8f2; --paper:#fffdf9;
+    --violet:#9a6ff0; --violet-deep:#7a4fd6;
+    --sky:#59b8f0; --sky-deep:#2f8fd6;
+    --danger:#e05252; --positive:#2fae5f; --gold:#f2b90d;
+    --line:rgba(58,51,68,.9);
+    --shadow:0 4px 0 rgba(58,51,68,.14);
+    --shadow-lg:0 14px 30px rgba(58,51,68,.16),0 4px 0 rgba(58,51,68,.14);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Yuanti SC","Varela Round","Rounded Mplus 1c",sans-serif;
+    background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;}
+  input,select{font-family:inherit;}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;}
+  .screen.on{display:flex;}
+
+  /* ---------- common ---------- */
+  .btn{
+    padding:12px 22px;border-radius:14px;font-size:15px;font-weight:800;border:3px solid var(--ink);
+    box-shadow:0 4px 0 rgba(61,51,64,.25);transition:transform .08s;letter-spacing:1px;background:#fff;
+  }
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(61,51,64,.25);}
+  .btn.primary{background:linear-gradient(180deg,#ff7ba3,#ff4f88);color:#fff;}
+  .btn.gold{background:linear-gradient(180deg,#ffd66b,#f5b301);}
+  .btn:disabled{filter:grayscale(.7);opacity:.5;cursor:not-allowed;}
+  .dot{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--ink);flex-shrink:0;}
+  .pill{
+    background:var(--paper);border:3px solid var(--ink);border-radius:999px;
+    padding:6px 14px;font-size:13px;font-weight:800;box-shadow:0 3px 0 rgba(61,51,64,.2);
+    display:flex;align-items:center;gap:6px;white-space:nowrap;
+  }
+  .hbtn{
+    width:40px;height:40px;border-radius:12px;background:var(--paper);border:3px solid var(--ink);
+    box-shadow:0 3px 0 rgba(61,51,64,.2);display:grid;place-items:center;font-size:16px;font-weight:800;
+  }
+  .overlay{
+    position:fixed;inset:0;background:rgba(61,51,64,.45);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .overlay.hidden{display:none;}
+  .modal{
+    width:min(540px,94vw);max-height:92vh;overflow:auto;background:var(--paper);
+    border:4px solid var(--ink);border-radius:24px;box-shadow:0 10px 0 rgba(0,0,0,.18);
+    padding:24px;animation:pop .25s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes pop{from{transform:scale(.85);opacity:0}}
+  .modal h2{font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .modal h2 .badge{font-size:11px;background:var(--pink);color:#fff;border:2px solid var(--ink);border-radius:999px;padding:3px 10px;letter-spacing:1px;}
+
+  /* ---------- title ---------- */
+  #s-title{
+    align-items:center;justify-content:center;gap:0;
+    background:
+      radial-gradient(circle at 15% 20%, #ffe1ec 0%, transparent 30%),
+      radial-gradient(circle at 85% 75%, #dcefff 0%, transparent 32%),
+      radial-gradient(circle at 75% 15%, #fff3c9 0%, transparent 26%),
+      var(--cream);
+  }
+  .float-dot{position:absolute;border-radius:50%;opacity:.5;animation:floaty 6s ease-in-out infinite;}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
+  #titleLogo{
+    font-size:min(64px,10vw);font-weight:900;letter-spacing:4px;text-align:center;line-height:1.15;
+    text-shadow:0 4px 0 rgba(61,51,64,.12);margin-bottom:8px;
+  }
+  #titleLogo .w1{color:#ff4f88;}#titleLogo .w2{color:#3d9be9;}#titleLogo .w3{color:#f2b90d;}
+  #titleSub{font-size:15px;font-weight:800;color:var(--ink-soft);letter-spacing:3px;margin-bottom:44px;text-align:center;}
+  .menu{display:flex;flex-direction:column;gap:16px;width:min(360px,86vw);}
+  .menu button{
+    padding:18px 24px;border-radius:20px;font-size:20px;font-weight:900;letter-spacing:3px;
+    border:4px solid var(--ink);box-shadow:0 6px 0 rgba(61,51,64,.25);
+    display:flex;align-items:center;gap:14px;transition:transform .1s;
+  }
+  .menu button:hover{transform:translateY(-3px);}
+  .menu button:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(61,51,64,.25);}
+  .menu button small{display:block;font-size:11px;font-weight:700;letter-spacing:1px;opacity:.75;}
+  .menu .ic{width:34px;height:34px;flex-shrink:0;}
+  #m-play{background:linear-gradient(180deg,#ff8fb3,#ff5d8f);color:#fff;}
+  #m-custom{background:linear-gradient(180deg,#7cc0f2,#3d9be9);color:#fff;}
+  #m-maker{background:linear-gradient(180deg,#ffd66b,#f5b301);color:#fff;}
+
+  /* ---------- maker ---------- */
+  #makerBar{
+    height:60px;display:flex;align-items:center;gap:10px;padding:0 14px;
+    background:linear-gradient(180deg,#fff0d9,#ffe6c4);border-bottom:4px solid var(--ink);z-index:20;
+  }
+  #makerBar .ttl{font-size:18px;font-weight:900;letter-spacing:2px;display:flex;align-items:center;gap:8px;}
+  .hspace{flex:1;}
+  .select{padding:8px 12px;border-radius:12px;border:3px solid var(--ink);background:#fff;font-weight:800;font-size:13px;max-width:220px;}
+  .txtin{padding:8px 12px;border-radius:12px;border:3px solid var(--ink);background:#fff;font-weight:800;font-size:13px;width:140px;}
+  #makerMain{flex:1;display:flex;min-height:0;}
+  #palette{
+    width:130px;border-right:4px solid var(--ink);background:var(--paper);
+    display:flex;flex-direction:column;gap:10px;padding:14px 10px;align-items:center;overflow:auto;
+  }
+  #palette .pttl{font-size:11px;font-weight:900;letter-spacing:2px;color:var(--ink-soft);}
+  .pal{
+    width:96px;padding:10px 6px;border-radius:14px;border:3px solid var(--ink);background:#fff;
+    box-shadow:0 4px 0 rgba(61,51,64,.2);display:flex;flex-direction:column;align-items:center;gap:6px;
+    cursor:grab;user-select:none;text-align:center;
+  }
+  .pal:active{cursor:grabbing;}
+  .pal .pc{width:30px;height:30px;border-radius:50%;border:3px solid var(--ink);}
+  .pal b{font-size:11.5px;line-height:1.3;}
+  #mkWrap{flex:1;position:relative;min-width:0;background:#f2ecff;}
+  #mkScroller{position:absolute;inset:0;overflow:auto;padding:20px;}
+  #mkSvg{display:block;margin:0 auto;}
+  .zoomctl{position:absolute;right:14px;bottom:14px;display:flex;gap:8px;z-index:5;}
+  .zoomctl button{width:42px;height:42px;border-radius:13px;background:var(--paper);border:3px solid var(--ink);font-size:19px;font-weight:900;box-shadow:0 4px 0 rgba(61,51,64,.2);}
+  #inspector{
+    position:absolute;left:14px;bottom:14px;z-index:6;background:var(--paper);border:3px solid var(--ink);
+    border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;display:none;max-width:320px;
+  }
+  #inspector .it{font-size:13px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  #inspector .cats{display:flex;gap:5px;flex-wrap:wrap;}
+  #inspector .cats button{width:30px;height:30px;border-radius:9px;border:2.5px solid var(--ink);background:#fff;font-weight:900;font-size:13px;}
+  #inspector .cats button.on{background:var(--ink);color:#fff;}
+  .mkhelp{position:absolute;top:12px;left:14px;z-index:6;background:rgba(255,253,249,.92);border:2.5px solid var(--ink);border-radius:12px;padding:8px 12px;font-size:11.5px;font-weight:700;color:var(--ink-soft);line-height:1.7;}
+  .dragGhost{
+    position:fixed;z-index:99;pointer-events:none;width:34px;height:34px;border-radius:50%;
+    border:3px solid var(--ink);opacity:.85;transform:translate(-50%,-50%);
+  }
+
+  /* ---------- setup ---------- */
+  #s-setup{background:var(--cream);align-items:center;justify-content:center;}
+  .setup-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+  .setup-row label{font-size:13px;font-weight:900;width:88px;letter-spacing:1px;}
+  .stepper{display:flex;align-items:center;gap:8px;}
+  .stepper button{width:38px;height:38px;border-radius:12px;border:3px solid var(--ink);background:#fff;font-size:18px;font-weight:900;box-shadow:0 3px 0 rgba(61,51,64,.2);}
+  .stepper b{font-size:20px;min-width:32px;text-align:center;font-variant-numeric:tabular-nums;}
+  #playerRows{display:flex;flex-direction:column;gap:8px;margin:14px 0;}
+  .prow{display:flex;align-items:center;gap:10px;border:3px solid var(--ink);border-radius:14px;padding:7px 10px;background:#fff;}
+  .prow input{flex:1;min-width:0;border:none;outline:none;font-size:14px;font-weight:700;background:transparent;color:var(--ink);}
+  .seg{display:flex;border:2.5px solid var(--ink);border-radius:999px;overflow:hidden;}
+  .seg button{padding:5px 12px;font-size:12px;font-weight:800;background:#fff;color:var(--ink-soft);}
+  .seg button.on{background:var(--ink);color:#fff;}
+
+  .stepper input{width:64px;height:38px;border:3px solid var(--ink);border-radius:12px;text-align:center;font-size:18px;font-weight:900;font-family:inherit;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .stepper .mini{width:auto;min-width:46px;padding:0 8px;font-size:13px;}
+  .hint{font-size:12px;color:var(--ink-soft);font-weight:800;}
+  .hint b{color:var(--ink);font-size:14px;}
+  .prow .tag{font-size:11px;font-weight:900;color:var(--ink-soft);}
+  #cpuDetails{margin:0 0 14px;border:3px solid var(--ink);border-radius:14px;background:#fff;}
+  #cpuDetails summary{padding:10px 14px;font-size:13px;font-weight:900;cursor:pointer;letter-spacing:1px;}
+  #cpuRows{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:0 10px 10px;}
+  #cpuRows .prow{padding:4px 8px;gap:8px;border-width:2.5px;border-radius:12px;}
+  #cpuRows .prow .select{width:auto;padding:4px 4px;font-size:11px;border-width:2.5px;border-radius:9px;}
+  .mksize{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:900;}
+  .mksize input{width:54px;padding:6px 4px;border-radius:10px;border:3px solid var(--ink);background:#fff;font-weight:800;font-size:13px;text-align:center;font-family:inherit;}
+
+  /* ---------- play ---------- */
+  #playBar{height:60px;display:flex;align-items:center;gap:10px;padding:0 14px;background:linear-gradient(180deg,#e6f4ff,#d5ecff);border-bottom:4px solid var(--ink);z-index:20;}
+  #playBar .ttl{font-size:18px;font-weight:900;letter-spacing:2px;}
+  #playMain{flex:1;display:flex;min-height:0;}
+  #plWrap{flex:1;position:relative;min-width:0;background:#eef7ff;}
+  #plScroller{position:absolute;inset:0;overflow:auto;padding:20px;}
+  #plSvg{display:block;margin:0 auto;}
+  aside{width:336px;flex-shrink:0;border-left:4px solid var(--ink);background:var(--paper);display:flex;flex-direction:column;min-height:0;}
+  #nowCard{margin:12px 12px 6px;border:3px solid var(--ink);border-radius:var(--radius);padding:10px 12px;background:linear-gradient(135deg,#fff,#f2f9ff);box-shadow:var(--shadow);}
+  #nowCard .turn{font-size:11px;font-weight:900;color:var(--ink-soft);letter-spacing:2px;}
+  #nowName{font-size:20px;font-weight:900;display:flex;align-items:center;gap:8px;margin-top:2px;}
+  #nowCoin{font-size:14px;font-weight:800;margin-top:4px;}
+  #nowCoin b{font-size:21px;font-variant-numeric:tabular-nums;}
+  #diceZone{padding:2px 12px 8px;display:flex;flex-direction:column;gap:8px;align-items:center;}
+  .die{width:54px;height:54px;border-radius:14px;background:#fff;border:3px solid var(--ink);box-shadow:0 5px 0 rgba(61,51,64,.25);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:8px;}
+  .die.rolling{animation:shake .12s infinite;}
+  @keyframes shake{0%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}100%{transform:rotate(-10deg)}}
+  .pip{width:10px;height:10px;border-radius:50%;background:var(--ink);place-self:center;opacity:0;}
+  .pip.on{opacity:1;}
+  #die2 .pip.on{background:#ff4f88;}
+  #rollBtn{width:100%;padding:13px;border-radius:16px;font-size:18px;font-weight:900;letter-spacing:2px;background:linear-gradient(180deg,#ff7ba3,#ff4f88);color:#fff;border:3px solid var(--ink);box-shadow:0 5px 0 rgba(61,51,64,.3);}
+  #rollBtn:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 rgba(61,51,64,.3);}
+  #rollBtn:disabled{filter:grayscale(.7);opacity:.55;cursor:not-allowed;}
+  #cancelRollBtn{width:100%;margin-top:8px;padding:10px;border-radius:14px;font-size:14px;font-weight:900;letter-spacing:1px;background:linear-gradient(180deg,#ffe9e9,#ffc9c9);border:3px solid var(--ink);box-shadow:0 4px 0 rgba(61,51,64,.25);cursor:pointer;}
+  #cancelRollBtn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(61,51,64,.3);}
+  .sideTitle{font-size:11px;font-weight:900;letter-spacing:2px;color:var(--ink-soft);padding:6px 14px 4px;}
+  #hand{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 4px;min-height:44px;max-height:150px;overflow:auto;}
+  .card{
+    border:2.5px solid var(--ink);border-radius:10px;background:#fff;padding:5px 8px;font-size:11px;font-weight:800;
+    box-shadow:0 2px 0 rgba(61,51,64,.2);cursor:pointer;max-width:100px;line-height:1.35;
+  }
+  .card:hover{transform:translateY(-2px);}
+  .card.max{opacity:.4;pointer-events:none;}
+  #ranking{list-style:none;padding:0 12px;max-height:150px;min-height:126px;overflow:auto;}
+  #ranking li{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;font-size:13px;font-weight:800;}
+  #ranking li.me{background:#ffe9f1;outline:2px dashed var(--pink);}
+  #ranking .rnum{width:20px;text-align:center;color:var(--ink-soft);}
+  #ranking .rname{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #ranking .rval{font-variant-numeric:tabular-nums;}
+  #ranking li.gap{justify-content:center;color:var(--ink-soft);font-size:11px;padding:1px 8px;}
+  #log{flex:1;min-height:120px;overflow:auto;margin:0 12px 12px;border:3px solid var(--ink);border-radius:14px;background:#fffdf5;padding:8px 10px;font-size:12.5px;line-height:1.7;}
+  #log p{padding:2px 0;border-bottom:1px dashed #eadcf0;}
+  #log .t{font-weight:900;color:#ff4f88;margin-right:4px;}
+
+  /* slot */
+  #slotReels{display:flex;gap:12px;justify-content:center;margin:14px 0 6px;}
+  .reel{
+    width:110px;height:88px;border-radius:14px;border:3.5px solid var(--ink);background:#fff;
+    box-shadow:0 5px 0 rgba(61,51,64,.25);display:grid;place-items:center;font-weight:900;
+    overflow:hidden;line-height:1.3;padding:4px;text-align:center;word-break:keep-all;
+  }
+  .reel.spin{animation:reelblur .1s infinite;}
+  @keyframes reelblur{0%{transform:translateY(-3px)}50%{transform:translateY(3px)}100%{transform:translateY(-3px)}}
+  #slotMsg{text-align:center;font-size:16px;font-weight:900;margin:8px 0 14px;}
+
+  /* shop */
+  .shopItem{display:flex;align-items:center;gap:10px;border:3px solid var(--ink);border-radius:14px;padding:9px 12px;margin-bottom:8px;background:#fff;}
+  .shopItem .swatch{width:26px;height:26px;border-radius:8px;border:2.5px solid var(--ink);flex-shrink:0;}
+  .shopItem .si-name{font-size:13.5px;font-weight:900;}
+  .shopItem .si-desc{font-size:11.5px;color:var(--ink-soft);font-weight:700;}
+  .shopItem button{margin-left:auto;padding:7px 13px;border-radius:10px;border:2.5px solid var(--ink);font-weight:900;font-size:12px;background:#fff;box-shadow:0 3px 0 rgba(61,51,64,.2);}
+  .shopItem button:disabled{opacity:.4;}
+  #shopTabs{display:flex;gap:5px;margin-bottom:12px;}
+  #shopTabs button{flex:1;padding:7px 0;border-radius:10px;border:2.5px solid var(--ink);font-weight:900;font-size:12px;background:#fff;}
+  #shopTabs button.on{background:var(--ink);color:#fff;}
+
+  /* end */
+  #endList{list-style:none;margin:10px 0 18px;}
+  #endList li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:3px solid var(--ink);border-radius:14px;margin-bottom:8px;background:#fff;font-weight:900;}
+  #endList li.first{background:linear-gradient(90deg,#fff6d8,#fff);border-color:#c98f00;}
+  .medal{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font-size:16px;background:var(--cream);flex-shrink:0;}
+  #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:55;transition:opacity .5s;}
+  .confetti{position:fixed;top:-20px;width:12px;height:18px;z-index:60;border-radius:3px;pointer-events:none;animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+  #announce{
+    position:fixed;left:50%;bottom:9vh;transform:translateX(-50%) translateY(26px);
+    background:var(--paper);border:3.5px solid var(--ink);border-radius:18px;
+    padding:13px 28px;box-shadow:0 8px 0 rgba(61,51,64,.2);z-index:40;
+    font-weight:800;text-align:center;opacity:0;pointer-events:none;line-height:1.7;
+    transition:opacity .25s,transform .3s cubic-bezier(.2,1.4,.4,1);max-width:82vw;
+  }
+  #announce.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .choiceBtns{display:flex;flex-direction:column;gap:8px;}
+  .choiceBtns button{padding:12px;border-radius:12px;border:3px solid var(--ink);background:#fff;font-weight:900;font-size:14px;box-shadow:0 3px 0 rgba(61,51,64,.2);display:flex;align-items:center;gap:8px;justify-content:center;}
+  .choiceBtns .cnum{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--ink);color:#fff;font-size:12px;font-weight:900;flex-shrink:0;}
+
+  @media (max-width:900px){
+    #playMain{flex-direction:column;}
+    aside{width:100%;height:46%;border-left:none;border-top:4px solid var(--ink);}
+  }
+/* === UI polish === */
+.overlay{background:rgba(40,32,48,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.btn{transition:transform .08s ease,box-shadow .08s ease,filter .15s ease;}
+.btn:hover{filter:brightness(1.06);}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--ink);}
+.select,.txtin{transition:box-shadow .15s ease;}
+.select:focus,.txtin:focus{outline:none;box-shadow:0 0 0 3px rgba(154,111,232,.35);}
+.hbtn{transition:transform .08s ease;}
+.hbtn:active{transform:scale(.92);}
+#pauseOv .btn{width:100%;justify-content:center;}
+:focus-visible{outline:3px solid rgba(154,111,232,.6);outline-offset:2px;}
+/* info drawer (ランキング/できごと分離パネル) */
+#infoPanel{position:fixed;top:57px;right:0;bottom:0;width:min(320px,88vw);background:var(--paper);border-left:4px solid var(--ink);z-index:30;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease;box-shadow:-6px 0 0 rgba(61,51,64,.12);}
+#infoPanel.open{transform:none;}
+#infoHead{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:3px solid var(--ink);font-weight:900;background:linear-gradient(180deg,#fff,#f6f1e7);}
+#infoHead .hbtn{margin-left:auto;}
+#infoPanel .sideTitle{margin:10px 12px 4px;}
+#infoPanel #ranking{flex:0 1 auto;max-height:36%;min-height:110px;overflow:auto;padding:0 12px;}
+#infoPanel #log{flex:1;min-height:110px;overflow:auto;margin:0 12px 12px;border:3px solid var(--ink);border-radius:14px;background:#fffdf5;padding:8px 10px;font-size:12.5px;line-height:1.7;}
+#infoBack{display:none;position:fixed;inset:0;background:rgba(40,32,48,.35);z-index:29;}
+/* joystick */
+#joyBase{position:absolute;left:16px;bottom:16px;width:118px;height:118px;border-radius:50%;background:rgba(255,253,249,.88);border:4px solid var(--ink);z-index:9;touch-action:none;box-shadow:0 5px 0 rgba(61,51,64,.2);display:none;user-select:none;-webkit-user-select:none;}
+#joyKnob{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#fff,#ffe3b3);border:4px solid var(--ink);transform:translate(-50%,-50%);box-shadow:0 3px 0 rgba(61,51,64,.25);pointer-events:none;}
+#joyShow{display:none;position:absolute;left:16px;bottom:16px;z-index:9;width:54px;height:54px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);font-size:24px;align-items:center;justify-content:center;box-shadow:0 4px 0 rgba(61,51,64,.2);cursor:pointer;}
+.diceBox{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;}
+.diceBox.many .die{width:38px;height:38px;border-radius:10px;padding:5px;box-shadow:0 3px 0 rgba(61,51,64,.25);}
+.diceBox.many .pip{width:7px;height:7px;}
+
+/* ドラッグでのテキスト選択防止（入力欄は除く） */
+body,#plWrap,#playBar,#joyBase,#joyKnob,#minimap,.zoomctl,#infoPanel,aside,#turnMenu,#diceBox,#hand{cursor:default;-webkit-user-select:none;user-select:none;}
+input,textarea,.txtin{-webkit-user-select:text;user-select:text;}
+/* 現在操作中プレイヤーの強調 */
+.pp-pulse{animation:pp-pulse 1.1s ease-in-out infinite;pointer-events:none;}
+@keyframes pp-pulse{0%,100%{opacity:.85}50%{opacity:.12}}
+#plSvg g.pp-cur .pname{fill:#ffd94d;}
+/* コイン増減のフロート演出 */
+.coinfloat{position:fixed;transform:translateX(-50%);font-weight:900;font-size:23px;pointer-events:none;z-index:60;text-shadow:0 2px 0 #fff,0 -1px 0 #fff,1px 0 0 #fff,-1px 0 0 #fff;animation:cf-float 1.05s ease-out forwards;}
+.cf-plus{color:#2fae5f;}.cf-minus{color:#e2504c;}
+@keyframes cf-float{0%{opacity:1;transform:translate(-50%,0) scale(.9)}20%{transform:translate(-50%,-14px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-64px) scale(1)}}
+#nowCoin.cf-up{animation:cf-flash .7s ease-out;}
+#nowCoin.cf-down{animation:cf-flash2 .7s ease-out;}
+@keyframes cf-flash{0%{color:#2fae5f;transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes cf-flash2{0%{color:#e2504c;transform:scale(1.3)}100%{transform:scale(1)}}
+/* stats & achievements panel */
+.statGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:4px;}
+.statBox{border:3px solid var(--ink);border-radius:12px;background:#fff;padding:6px 10px;box-shadow:0 3px 0 rgba(61,51,64,.12);}
+.statBox b{font-size:15.5px;display:block;font-variant-numeric:tabular-nums;}
+.statBox span{font-size:10.5px;color:var(--ink-soft);font-weight:800;}
+.achGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ach{border:3px solid var(--ink);border-radius:12px;padding:8px 10px;background:#fffdf5;font-weight:800;box-shadow:0 3px 0 rgba(61,51,64,.12);}
+.ach .an{font-size:13px;}
+.ach .ad{font-size:10.5px;color:var(--ink-soft);font-weight:700;margin-top:2px;}
+.ach.locked{opacity:.45;filter:grayscale(.85);}
+@media(max-width:560px){.achGrid,.statGrid{grid-template-columns:1fr;}}
+#m-stats small{display:block;}
+/* ============================================================
+   UI REFRESH 2026 — modern playful restyle (override layer)
+============================================================ */
+html{scroll-behavior:smooth;}
+body{
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,93,143,.07) 0 90px, transparent 91px),
+    radial-gradient(circle at 88% 12%, rgba(154,111,240,.08) 0 110px, transparent 111px),
+    radial-gradient(circle at 80% 85%, rgba(89,184,240,.07) 0 100px, transparent 101px),
+    linear-gradient(180deg,#fffaf5,#fdf2ea);
+}
+button{cursor:pointer;font-family:inherit;}
+/* --- 基本コントロール --- */
+.btn{
+  border-radius:16px;border:3px solid var(--ink);
+  background:linear-gradient(180deg,#ffffff,#f4edf7);
+  box-shadow:0 4px 0 rgba(58,51,68,.28),inset 0 2px 0 rgba(255,255,255,.9);
+}
+.btn.primary{background:linear-gradient(180deg,#ff7ba3,var(--pink-deep));color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.15);}
+.btn.gold{background:linear-gradient(180deg,#ffd95e,var(--gold));color:#5c4300;}
+.btn:hover{filter:brightness(1.05);transform:translateY(-1px);}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(58,51,68,.3);}
+.hbtn{border-radius:13px;background:linear-gradient(180deg,#fff,#f6f0f7);box-shadow:0 3px 0 rgba(58,51,68,.22),inset 0 1.5px 0 #fff;}
+.select,.txtin{border-radius:13px;border-color:var(--line);box-shadow:inset 0 2px 4px rgba(58,51,68,.06);}
+.badge{background:linear-gradient(180deg,var(--pink),var(--pink-deep));box-shadow:0 2px 0 rgba(58,51,68,.25);}
+/* --- モーダル/オーバーレイ --- */
+.modal{border:3.5px solid var(--ink);border-radius:26px;box-shadow:var(--shadow-lg);}
+.modal h2{margin-bottom:6px;}
+.overlay{background:rgba(48,40,60,.5);}
+/* --- プレイバー --- */
+#playBar{background:rgba(255,253,249,.92);backdrop-filter:blur(6px);border-bottom:3px solid var(--ink);}
+#turnPill,#roundPill,#goalPill,#nowCoin,#goalInfo{
+  border:2.5px solid var(--ink);border-radius:999px;padding:5px 14px;font-weight:900;
+  background:linear-gradient(180deg,#fff,#f6f1f8);box-shadow:0 3px 0 rgba(58,51,68,.16);
+}
+#turnPill{background:linear-gradient(180deg,#b79cf5,var(--violet-deep));color:#fff;}
+#nowCoin{background:linear-gradient(180deg,#ffe27a,var(--gold));color:#5c4300;}
+#goalPill{background:linear-gradient(180deg,#8fd4f8,var(--sky-deep));color:#fff;}
+/* --- サイドカラム(カード等) --- */
+aside{background:rgba(255,253,249,.9);border-left:3px solid var(--ink);}
+.sideTitle{font-weight:900;color:var(--ink);display:flex;align-items:center;gap:6px;}
+.sideTitle::before{content:"";width:10px;height:10px;border-radius:3px;background:linear-gradient(180deg,var(--pink),var(--pink-deep));border:2px solid var(--ink);}
+#hand .card{background:linear-gradient(180deg,#fff,#fdf6ee);border:3px solid var(--ink);border-radius:14px;box-shadow:0 3px 0 rgba(58,51,68,.18);transition:transform .1s;}
+#hand .card:hover{transform:translateY(-2px);}
+/* --- ランキング --- */
+#ranking li{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:12px;margin:2px 0;font-weight:800;}
+#ranking li:nth-child(odd){background:rgba(154,111,240,.07);}
+#ranking li.me{background:linear-gradient(90deg,rgba(255,93,143,.16),transparent);outline:2px solid rgba(255,93,143,.55);}
+#ranking li .rnum{width:26px;height:26px;display:grid;place-items:center;border-radius:9px;border:2.5px solid var(--ink);background:#fff;font-size:12px;flex:0 0 auto;}
+#ranking li:nth-child(1) .rnum{background:linear-gradient(180deg,#ffe27a,var(--gold));}
+#ranking li:nth-child(2) .rnum{background:linear-gradient(180deg,#eef1f6,#c9cfd9);}
+#ranking li:nth-child(3) .rnum{background:linear-gradient(180deg,#f2c29b,#d08a4e);}
+#ranking li .dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);flex:0 0 auto;}
+#ranking li .rname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#ranking li .rval{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-weight:900;}
+/* --- イベントログ --- */
+#log{background:linear-gradient(180deg,#fffdf8,#fff8ee);}
+#log>div{padding:4px 6px;border-bottom:2px dashed rgba(58,51,68,.12);line-height:1.6;}
+#log>div:last-child{border-bottom:none;}
+#log b{color:var(--pink-deep);}
+/* --- サイコロ --- */
+.die{background:linear-gradient(180deg,#ffffff,#f1e9f5);border:3.5px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 rgba(58,51,68,.22),inset 0 2px 0 #fff;}
+.pip{background:var(--ink);box-shadow:inset 0 -1px 0 rgba(255,255,255,.35);}
+.die.rolling{animation:die-shake .12s linear infinite;}
+@keyframes die-shake{0%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}100%{transform:rotate(-4deg)}}
+/* --- ジョイスティック --- */
+#joyBase{background:radial-gradient(circle at 35% 30%,#ffffff,#f2e9f3);border-width:4px;}
+#joyKnob{background:radial-gradient(circle at 35% 30%,#fff,#ffd9e6);border-color:var(--ink);}
+#joyShow{background:linear-gradient(180deg,#fff,#f6eef6);}
+/* --- 情報パネル --- */
+#infoPanel{background:linear-gradient(180deg,#fffdf9,#fbf4ef);border-left-width:4px;}
+#infoHead{background:linear-gradient(90deg,#ffe3ee,#f3e8ff);}
+/* --- 結果画面 --- */
+#endOv .modal h2{letter-spacing:1px;}
+#endList li{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:13px;margin:4px 0;background:rgba(154,111,240,.06);border:2.5px solid transparent;font-weight:800;}
+#endList li:nth-child(1){background:linear-gradient(90deg,rgba(242,185,13,.22),transparent);border-color:rgba(242,185,13,.7);}
+#endList li:nth-child(2){background:linear-gradient(90deg,rgba(180,190,205,.25),transparent);border-color:rgba(180,190,205,.7);}
+#endList li:nth-child(3){background:linear-gradient(90deg,rgba(208,138,78,.2),transparent);border-color:rgba(208,138,78,.6);}
+/* --- 設定画面の行 --- */
+.setup-row{align-items:center;}
+.setup-row label{font-weight:900;color:var(--ink);}
+/* --- 実績・統計パネル拡張 --- */
+.statBox{border-radius:14px;background:linear-gradient(180deg,#fff,#faf5ff);border-width:2.5px;}
+.ach{border-radius:14px;background:linear-gradient(180deg,#fffdf5,#fff6e8);border-width:2.5px;}
+.ach.locked{background:#f2eef2;}
+/* --- スクロールバー --- */
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(58,51,68,.28);border-radius:99px;border:2px solid #fff;}
+::-webkit-scrollbar-thumb:hover{background:rgba(58,51,68,.45);}
+/* --- 通知トースト --- */
+#announce{border:3px solid var(--ink);border-radius:16px;box-shadow:var(--shadow-lg);}
+/* --- コマの彩り --- */
+#plSvg g.pp-cur .pname{fill:#ffe36e;paint-order:stroke;}
+</style>
+</head>
+<body>
+
+<!-- ============ TITLE ============ -->
+<div class="screen on" id="s-title">
+  <div id="titleLogo"><span class="w1">ワイヤー</span><span class="w2">すごろく</span><span class="w3">！</span></div>
+  <div id="titleSub">つなげて作って ふって遊ぼう</div>
+  <div id="savedCount" style="font-size:12px;font-weight:800;color:var(--ink-soft);margin:-34px 0 4px;letter-spacing:1px;"></div>
+  <div id="hallOfFame" style="margin:0 0 22px;"></div>
+  <div class="menu">
+    <button id="m-play">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="#fff" stroke="none"/></svg>
+      プレイ<small>内蔵ステージでさっそく対戦</small>
+    </button>
+    <button id="m-resume" style="display:none;background:linear-gradient(180deg,#9be29b,#43c465);color:#fff;">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9" fill="#fff" stroke="none"/></svg>
+      途中から再開<small>保存した試合の続きから</small>
+    </button>
+    <button id="m-custom">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+      カスタムステージ<small>作った18ステージから選んで遊ぶ</small>
+    </button>
+    <button id="m-maker">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>
+      ステージメーカー<small>マスを置いてワイヤーでつなごう</small>
+    </button>
+    <button id="titleHelp" style="margin-top:6px;padding:10px;border-radius:14px;font-size:13px;font-weight:900;letter-spacing:2px;border:3px solid var(--ink);background:var(--paper);box-shadow:0 4px 0 rgba(61,51,64,.2);">？ 遊び方</button>
+    <button id="m-stats" style="margin-top:6px;padding:10px;border-radius:14px;font-size:13px;font-weight:900;letter-spacing:2px;border:3px solid var(--ink);background:linear-gradient(180deg,#fdf3d7,#f7dfa8);box-shadow:0 4px 0 rgba(61,51,64,.2);">📊 実績・統計<small style="display:block;font-size:10px;letter-spacing:0;font-weight:800;color:var(--ink-soft);margin-top:2px;">これまでの記録と実績</small></button>
+  </div>
+</div>
+
+<!-- ============ MAKER ============ -->
+<div class="screen" id="s-maker">
+  <div id="makerBar">
+    <button class="hbtn" id="mkBack">←</button>
+    <div class="ttl">ステージメーカー</div>
+    <div class="mksize" title="マップの大きさ（横×縦のマス数 / 5〜60）"><span>マップ</span><input type="number" id="mkCols" min="5" max="60" value="20" aria-label="横のマス数"><span>×</span><input type="number" id="mkRows" min="5" max="60" value="20" aria-label="縦のマス数"></div>
+    <div class="hspace"></div>
+    <button class="btn gold" id="mkTry" style="padding:8px 14px;font-size:13px;">このステージで遊ぶ</button>
+    <input class="txtin" id="mkName" placeholder="ステージ名" maxlength="12">
+    <span id="saveInd" style="font-size:11px;font-weight:900;color:#2fae5f;opacity:0;transition:opacity .3s;">✓ 保存しました</span>
+    <select class="select" id="mkSlot"></select>
+    <button class="btn" id="mkExport" style="padding:8px 14px;font-size:13px;">出力</button>
+    <button class="btn" id="mkImport" style="padding:8px 14px;font-size:13px;">読込</button>
+    <input type="file" id="mkFile" accept=".json,application/json" style="display:none;">
+    <button class="btn" id="mkAutoLink" style="padding:8px 14px;font-size:13px;">近接自動接続</button>
+    <button class="btn" id="mkCheck" style="padding:8px 14px;font-size:13px;">マップ検証</button>
+    <button class="btn" id="mkClear" style="padding:8px 14px;font-size:13px;">クリア</button>
+  </div>
+  <div id="makerMain">
+    <div id="palette">
+      <div class="pttl">マスをドラッグ</div>
+    </div>
+    <div id="mkWrap">
+      <div id="placeBanner" style="display:none;position:absolute;top:12px;right:14px;z-index:8;background:var(--ink);color:#fff;font-size:12px;font-weight:900;padding:8px 14px;border-radius:12px;">連続配置中 (Escで解除)</div>
+      <div class="mkhelp">
+        ・左のマスをドラッグして配置（マス目にぴったり収まる）<br>
+        ・上の「マップ」で横×縦のマス数を変更（5〜60）<br>
+        ・マスの右の「●」から別マスへドラッグでワイヤー接続<br>
+        ・マスを選んで <b>Delete</b> で削除<br>
+        ・紫マスはクリック or <b>1〜9</b> でカテゴリ変更<br>
+        ・無色マスは着地すると稀に「隠れゴール」<br>
+        ・ワイヤーをクリックして Delete で削除
+      </div>
+      <div id="mkScroller"><svg id="mkSvg" viewBox="0 0 5700 3750" width="4200"></svg></div>
+      <div class="zoomctl"><button id="mkZOut">−</button><button id="mkZIn">＋</button></div>
+      <div id="inspector">
+        <div class="it" id="inspType"></div>
+        <div class="cats" id="inspCats" style="display:none"></div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn" id="inspDel" style="padding:7px 14px;font-size:12px;">削除 (Del)</button>
+          <button class="btn" id="inspDup" style="padding:7px 14px;font-size:12px;">複製</button>
+          <button class="btn" id="inspCutW" style="padding:7px 14px;font-size:12px;">線を消す</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETUP ============ -->
+<div class="screen" id="s-setup">
+  <div class="modal">
+    <h2><span class="badge">SETUP</span> ゲーム設定 <span id="setupStageName" style="font-size:13px;color:var(--ink-soft);"></span></h2>
+    <div class="setup-row">
+      <label>人間</label>
+      <div class="stepper"><button id="hMinus">−</button><b id="hCount">1</b><button id="hPlus">＋</button></div>
+      <span class="hint">(1〜8人) ／ 合計 <b id="totalCount">4</b> 人</span>
+    </div>
+    <div class="setup-row">
+      <label>CPU</label>
+      <div class="stepper"><button class="mini" id="cMinus10">−10</button><button id="cMinus">−</button><input type="number" id="cCount" min="0" max="99" value="3" inputmode="numeric"><button id="cPlus">＋</button><button class="mini" id="cPlus10">+10</button></div>
+      <span class="hint">(0〜99体)</span>
+    </div>
+    <div class="setup-row" id="stageRow" style="display:none;">
+      <label>ステージ</label>
+      <select class="select" id="stSel" style="max-width:280px;"></select>
+    </div>
+    <div class="setup-row">
+      <label>ゲームルール</label>
+      <select class="select" id="ruleSel">
+        <option value="sugoroku" selected>すごろくルール（ゴールマスを目指す）</option>
+        <option value="momo">隠れゴール桃鉄（無色マスのどれかが隠れゴール）</option>
+        <option value="momoMove">移動ゴール桃鉄（⭐がどんどん移動する）</option>
+        <option value="momoKai">桃鉄ルール・改（ゴール回数を競う・制限ターンまで続く）</option>
+      </select>
+    </div>
+    <div class="setup-row">
+      <label>移動方法</label>
+      <select class="select" id="moveSel">
+        <option value="force" selected>強制移動（自動で進む）</option>
+        <option value="free">自由移動（WASD/矢印キー）</option>
+      </select>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;">※桃鉄ルールでは必ず自由移動になります</span>
+    </div>
+    <div class="setup-row">
+      <label>途中停止</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;">
+        <input type="checkbox" id="stopOkChk" checked> 自由移動で「ここで止まる」を使えるようにする
+      </label>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;">OFFだと出目のマス数だけ必ず進む</span>
+    </div>
+    <div class="setup-row">
+      <label>マップ生成</label>
+      <select class="select" id="mapSel">
+        <option value="builtin" selected>内蔵ステージ（分岐あり）</option>
+        <option value="normal">通常（シードで自動生成: 一本道+分岐）</option>
+        <option value="mesh">網状（シードで自動生成: ループ・迂回路）</option>
+      </select>
+    </div>
+    <div class="setup-row" id="seedRow" style="display:none;">
+      <label>シード値</label>
+      <input class="txtin" id="seedIn" placeholder="未入力=毎回自動" inputmode="numeric" style="width:150px;">
+      <button class="hbtn" id="seedDice" title="ランダムなシードを出す">🎲</button>
+      <span class="hint">同じ数字なら同じマップ</span>
+    </div>
+    <div class="setup-row">
+      <label>CPU標準設定</label>
+      <select class="select" id="cpuSpd">
+        <option value="0">速度: 即時</option>
+        <option value="0.4">速度: 高速</option>
+        <option value="1" selected>速度: 通常</option>
+        <option value="1.8">速度: ゆっくり</option>
+      </select>
+      <select class="select" id="cpuLvl">
+        <option value="0">強さ: かんたん</option>
+        <option value="1" selected>強さ: ふつう</option>
+        <option value="2">強さ: つよい</option>
+      </select>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;">(CPUごとの個別設定は下の一覧で変更可)</span>
+    </div>
+    <div class="setup-row">
+      <label>ゴール数</label>
+      <select class="select" id="goalSel">
+        <option value="0" selected>全員がゴール（従来通り）</option>
+        <option value="1">1人がゴールで終了</option>
+        <option value="2">2人がゴールで終了</option>
+        <option value="3">3人がゴールで終了</option>
+      </select>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;">(すごろくルールのみ)</span>
+    </div>
+    <div class="setup-row">
+      <label>制限ターン</label>
+      <select class="select" id="turnSel">
+        <option value="20" selected>20ターン</option>
+        <option value="40">40ターン</option>
+        <option value="60">60ターン</option>
+        <option value="0">なし(無限)</option>
+      </select>
+    </div>
+    <div class="setup-row">
+      <label>カードセット</label>
+      <select class="select" id="cardSetSel">
+        <option value="default" selected>デフォルト（全カード）</option>
+        <option value="custom">カスタム（個別ON/OFF）</option>
+      </select>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;">カスタムで使うカードを選択</span>
+    </div>
+    <div class="setup-row" id="cardTogglesRow" style="display:none;">
+      <label>カード選択</label>
+      <div id="cardToggles" style="display:flex;flex-wrap:wrap;gap:6px;flex:1;padding:8px;border:3px solid var(--ink);border-radius:12px;background:#fffdf5;max-height:160px;overflow:auto;"></div>
+    </div>
+    <div class="setup-row">
+      <label>カード上限</label>
+      <select class="select" id="handSel">
+        <option value="3">3枚</option><option value="5">5枚</option><option value="8" selected>8枚</option>
+        <option value="10">10枚</option><option value="15">15枚</option><option value="20">20枚</option>
+        <option value="30">30枚</option><option value="50">50枚</option><option value="Infinity">無制限</option>
+      </select>
+      <span style="font-size:11px;color:var(--ink-soft);font-weight:700;">(1人が持てるカードの最大枚数)</span>
+    </div>
+    <div class="setup-row">
+      <label>手番順</label>
+      <select class="select" id="orderSel">
+        <option value="humanFirst" selected>人間 → CPU の順</option>
+        <option value="mix">人間とCPUを交互に</option>
+        <option value="random">ランダム</option>
+      </select>
+    </div>
+    <div id="playerRows"></div>
+    <details id="cpuDetails">
+      <summary id="cpuSum">CPUの個別設定</summary>
+      <div id="cpuRows"></div>
+    </details>
+    <div style="display:flex;gap:10px;">
+      <button class="btn" id="setupBack" style="flex:1;">もどる</button>
+      <button class="btn gold" id="randBtn" style="flex:1.4;font-size:13px;">🎲 おまかせ</button>
+      <button class="btn primary" id="startBtn" style="flex:2;font-size:17px;">スタート！</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PLAY ============ -->
+<div class="screen" id="s-play">
+  <div id="playBar">
+    <button class="hbtn" id="plBack">←</button>
+    <div class="ttl">ワイヤーすごろく</div>
+    <div class="hspace"></div>
+    <div class="pill" id="roundPill">1ターン目</div>
+    <div class="pill" id="goalPill"></div>
+    <div class="pill" id="goalInfo">？</div>
+    <button class="hbtn" id="sndBtn">♪</button>
+    <button class="hbtn" id="playHelpBtn">?</button>
+    <button class="hbtn" id="infoToggle" title="情報パネル (ランキング/できごと)">📋</button>
+    <button class="hbtn" id="pauseBtn" title="ポーズ (Esc)">⏸</button>
+  </div>
+  <div id="playMain">
+    <div id="plWrap">
+      <div id="plScroller"><svg id="plSvg" viewBox="0 0 5700 3750" width="12540"></svg></div>
+      <svg id="minimap" viewBox="0 0 570 375" title="ミニマップ（クリックでジャンプ）" style="position:absolute;top:12px;left:12px;z-index:6;width:150px;background:rgba(255,253,249,.93);border:3px solid var(--ink);border-radius:12px;cursor:crosshair;box-shadow:0 4px 0 rgba(61,51,64,.15);"></svg>
+      <button id="camBack" style="display:none;position:absolute;top:12px;right:14px;z-index:7;padding:10px 16px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);font-weight:900;font-size:13px;box-shadow:0 4px 0 rgba(61,51,64,.2);">📷 プレイヤーに戻る</button>
+      <div class="zoomctl"><button id="plZOut">−</button><button id="plZIn">＋</button></div>
+      <div id="joyBase"><div id="joyKnob"></div></div>
+      <button id="joyShow" title="ジョイスティックを表示">🕹</button>
+    </div>
+    <aside>
+      <div id="nowCard">
+        <div class="turn">NOW PLAYING</div>
+        <div id="nowName"><span class="dot"></span><span>—</span></div>
+        <div id="nowCoin">コイン <b>1000</b> 枚</div>
+      </div>
+      <div id="diceZone">
+        <div style="display:flex;gap:12px;">
+          <div class="die" id="die1"></div>
+          <div class="die" id="die2" style="display:none;"></div>
+        </div>
+        <button id="rollBtn" style="display:none;">止める！</button>
+        <button id="cancelRollBtn" style="display:none;">✕ やめる</button>
+        <div id="turnMenu" style="display:none;width:100%;flex-direction:column;gap:8px;">
+          <button class="btn primary" id="tmRoll" style="width:100%;padding:12px;font-size:17px;">🎲 サイコロを振る</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" id="tmCard" style="flex:1;padding:11px 2px;font-size:13px;">🃏 カード</button>
+            <button class="btn" id="tmMap" style="flex:1;padding:11px 2px;font-size:13px;">🗺️ マップ</button>
+          </div>
+        </div>
+        <div id="moveHud" style="display:none;font-weight:900;font-size:13px;color:var(--ink-soft);text-align:center;width:100%;"></div>
+        <button class="btn" id="stopHereBtn" style="display:none;width:100%;padding:10px;font-size:14px;background:#e9f4ff;">ここで止まる</button>
+      </div>
+      <div class="sideTitle" id="handTitle">カード (最大8枚 / 自分のターンに使用)</div>
+      <div id="hand"></div>
+    </aside>
+  </div>
+  <div id="infoBack"></div>
+  <div id="infoPanel">
+    <div id="infoHead"><b>📋 情報</b><span style="font-size:10.5px;color:var(--ink-soft);font-weight:800;">ランキング・できごと</span><button class="hbtn" id="infoClose">×</button></div>
+    <div class="sideTitle">ランキング</div>
+    <ol id="ranking"></ol>
+    <div class="sideTitle">できごと</div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<!-- center-bottom announcement banner -->
+<div id="announce"></div>
+<div id="cellTip" style="display:none;position:fixed;z-index:35;pointer-events:none;background:var(--paper);border:2.5px solid var(--ink);border-radius:10px;padding:6px 11px;font-size:11.5px;font-weight:800;line-height:1.6;box-shadow:0 4px 0 rgba(61,51,64,.18);"></div>
+<div id="flash"></div>
+
+<div id="replayHud" style="display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:45;background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:8px 14px;gap:10px;align-items:center;font-weight:900;box-shadow:0 5px 0 rgba(61,51,64,.2);">
+  🎬 リプレイ再生中
+  <select id="replaySpeed" class="select" style="padding:4px 8px;font-size:12px;"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+  <button class="btn" id="replayStop" style="padding:6px 12px;font-size:12px;">■ 終了</button>
+</div>
+
+<!-- pause menu (A) -->
+<div class="overlay hidden" id="pauseOv">
+  <div class="modal" style="width:min(360px,92vw);text-align:center;">
+    <h2 style="justify-content:center;"><span class="badge">PAUSE</span> 一時停止</h2>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+      <button class="btn primary" id="psResume" style="font-size:16px;">▶ 再開</button>
+      <button class="btn gold" id="psSave">💾 ここまでの記録を保存</button>
+      <div id="psSaveMsg" style="font-size:11.5px;color:var(--ink-soft);font-weight:800;min-height:16px;"></div>
+      <button class="btn" id="psSettings">⚙️ 設定を変更</button>
+      <button class="btn" id="psTitle" style="background:#ffe3e3;">🏠 タイトルに戻る</button>
+    </div>
+  </div>
+</div>
+<!-- settings (C) -->
+<div class="overlay hidden" id="setOv">
+  <div class="modal" style="width:min(440px,94vw);">
+    <h2><span class="badge">⚙</span> 設定</h2>
+    <div id="setRows" style="display:flex;flex-direction:column;gap:12px;font-weight:800;font-size:13.5px;"></div>
+    <div style="text-align:center;margin-top:16px;"><button class="btn primary" id="setClose">とじる</button></div>
+  </div>
+</div>
+
+<!-- stats / achievements panel -->
+<div class="overlay hidden" id="statsOv">
+  <div class="modal" style="width:min(560px,94vw);">
+    <h2><span class="badge">🏆</span> 実績・統計</h2>
+    <div id="statsBody" style="max-height:62vh;overflow:auto;padding:2px;"></div>
+    <div style="text-align:center;margin-top:14px;"><button class="btn primary" id="statsClose">とじる</button></div>
+  </div>
+</div>
+
+<!-- help -->
+<div class="overlay hidden" id="helpOv">
+  <div class="modal">
+    <h2><span class="badge">HELP</span> 遊び方</h2>
+    <div style="font-size:13.5px;line-height:2;font-weight:700;color:var(--ink-soft);">
+      <b style="color:var(--ink);">基本:</b> サイコロを振ってマスを進み、コインを集めて勝負！自分のターンは「サイコロ / カード / マップ」から選べる。<br>
+      <b style="color:var(--ink);">移動:</b> 強制移動は自動で進む（分岐は選択）、自由移動は<b style="color:var(--ink);">WASD/矢印キー</b>で1マスずつ進める（来た道も引き返せる）。<br>
+      <b style="color:var(--ink);">マス:</b>
+      <span style="color:#3d9be9;">■青</span>=ルーレットでコイン獲得 /
+      <span style="color:#e5484d;">■赤</span>=ルーレットでコイン減少 /
+      <span style="color:#c9a100;">■黄</span>=カードを1枚獲得(所持上限まで) /
+      <span style="color:#8b6ff0;">■紫</span>=カードショップ(売買) /
+      □無色=何もない…のかも /
+      ◎ゴール=止まると順位確定(すごろくルール)<br>
+      <b style="color:var(--ink);">桃鉄ルール:</b> 無色マスのどれか1つがランダムで「隠れゴール」。誰かが見つけるとボーナス+3000で即終了。移動は必ず自由移動。<br>
+      <b style="color:var(--ink);">カード:</b> 移動・妨害・交換・倍率など全23種。ターン開始時に「カード」から使用（対象ありは数字キーで選択可）。<br>
+      <b style="color:var(--ink);">決着:</b> 全員ゴール or 制限ターン終了時、コインの多い順でランキング。
+    </div>
+    <div style="text-align:center;margin-top:16px;"><button class="btn primary" onclick="document.getElementById('helpOv').classList.add('hidden')">とじる</button></div>
+  </div>
+</div>
+
+<!-- generic modal -->
+<div class="overlay hidden" id="evOv">
+  <div class="modal" id="evModal" style="width:min(460px,94vw);"></div>
+</div>
+
+<!-- end -->
+<div class="overlay hidden" id="endOv">
+  <div class="modal">
+    <h2><span class="badge" style="background:var(--gold);">RESULT</span> 最終結果</h2>
+    <div id="endChart"></div>
+    <ol id="endList"></ol>
+    <div style="display:flex;gap:10px;">
+      <button class="btn" id="replayBtn" style="flex:1;">🎬 リプレイを再生</button>
+      <button class="btn" onclick="location.reload()" style="flex:1;">タイトルへ</button>
+      <button class="btn gold" id="retryBtn" style="flex:1;">もう一度</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   data
+================================================================ */
+const NODE_TYPES = {
+  start :{label:"スタート", color:"#43c465", desc:"ここから出発"},
+  goal  :{label:"ゴール",   color:"#3d3340", desc:"止まるとゴール！"},
+  red   :{label:"赤スロット",color:"#e5484d", desc:"スロットで減る枚数が決まる"},
+  blue  :{label:"青スロット",color:"#3d9be9", desc:"スロットでもらう枚数が決まる"},
+  yellow:{label:"黄スロット",color:"#f2c018", desc:"スロットでカードがもらえる(所持上限まで)"},
+  purple:{label:"カードショップ",color:"#8b6ff0", desc:"カードの買い売りができる"},
+  back  :{label:"戻るマス", color:"#e8862e", desc:"止まると数字のマス数だけ戻る(1〜9)"},
+  plain :{label:"無色マス",   color:"#e8e2ee", desc:"止まると少しだけゴールになるかも"},
+};
+const CARD_CATS = [
+  {name:"移動", color:"#3d9be9", cards:[
+    {id:"m2", name:"2マス進む", price:25, desc:"2マス進む", fx:{type:"move",n:2}},
+    {id:"m3", name:"3マス進む", price:45, desc:"3マス進む", fx:{type:"move",n:3}},
+    {id:"m5", name:"5マス進む", price:95, desc:"5マス進む", fx:{type:"move",n:5}},
+    {id:"mb", name:"みんな戻る", price:70, desc:"他の全員を2マス戻す", fx:{type:"allback",n:2}},
+  ]},
+  {name:"コイン", color:"#43c465", cards:[
+    {id:"c100", name:"100コイン", price:35, desc:"100コインもらう", fx:{type:"gain",v:100}},
+    {id:"c300", name:"300コイン", price:85, desc:"300コインもらう", fx:{type:"gain",v:300}},
+    {id:"c500", name:"500コイン", price:150, desc:"500コインもらう", fx:{type:"gain",v:500}},
+    {id:"s200", name:"200コイン奪う", price:75, desc:"一番お金持ちから200コイン奪う", fx:{type:"stealRich",v:200}},
+  ]},
+  {name:"サイコロ", color:"#ff9636", cards:[
+    {id:"again", name:"もう一度振る", price:55, desc:"このターンにもう一度サイコロが振れる", fx:{type:"again"}},
+    {id:"p2", name:"出目アップ", price:40, desc:"次の出目を+2する", fx:{type:"modNext",v:2}},
+    {id:"fix2", name:"出目固定2", price:45, desc:"次の出目を2にする", fx:{type:"fixNext",v:2}},
+    {id:"wdice", name:"Wサイコロ", price:95, desc:"サイコロが1個増える！複数使うとさらに増える(最大6個)", fx:{type:"doubleDice",v:1}},
+    {id:"tdice", name:"3サイコロ", price:150, desc:"サイコロが2個増える！Wサイコロと併用で最大6個", fx:{type:"doubleDice",v:2}},
+    {id:"p3", name:"高出目", price:60, desc:"次の出目を+3する", fx:{type:"modNext",v:3}},
+  ]},
+  {name:"休息", color:"#a8795a", cards:[
+    {id:"gRest", name:"休みガード", price:25, desc:"次の「休み」を防ぐ", fx:{type:"guardRest"}},
+    {id:"restO", name:"ねんねこ", price:65, desc:"誰かを1ターン休みにする", fx:{type:"restOther"}},
+    {id:"heal", name:"休み解除", price:20, desc:"自分の「休み」を解除する", fx:{type:"heal"}},
+  ]},
+  {name:"交換", color:"#f783ac", cards:[
+    {id:"swC", name:"コイン交換", price:130, desc:"一番お金持ちの人とコインを交換", fx:{type:"swapRich"}},
+    {id:"swP", name:"場所交換", price:95, desc:"誰かと今いるマスを交換", fx:{type:"swapPos"}},
+    {id:"swK", name:"カード交換", price:55, desc:"誰かとカードを1枚交換", fx:{type:"swapCard"}},
+  ]},
+  {name:"防御", color:"#8a8f98", cards:[
+    {id:"rG", name:"赤ガード", price:45, desc:"次の赤スロットを無効にする", fx:{type:"redGuard"}},
+    {id:"inv", name:"完全ガード", price:85, desc:"1ターン、マスのダメージを受けない", fx:{type:"inv"}},
+  ]},
+  {name:"奪取", color:"#5a4a8a", cards:[
+    {id:"stC", name:"カード奪う", price:65, desc:"誰かのカードをランダムで1枚奪う", fx:{type:"stealCard"}},
+  ]},
+  {name:"倍率", color:"#e8a100", cards:[
+    {id:"x2", name:"スロット2倍", price:55, desc:"次のスロットの結果が2倍になる", fx:{type:"slotX",v:2}},
+    {id:"x3", name:"スロット3倍", price:170, desc:"次のスロットの結果が3倍になる", fx:{type:"slotX",v:3}},
+  ]},
+  {name:"特殊", color:"#b04ae0", cards:[
+    {id:"tax", name:"みんなから50", price:90, desc:"他の全員から50コインずつもらう", fx:{type:"taxAll",v:50}},
+    {id:"tax2", name:"みんなから100", price:170, desc:"他の全員から100コインずつもらう", fx:{type:"taxAll",v:100}},
+  ]},
+];
+const CARD_MAP = {};
+CARD_CATS.forEach((c,ci)=>c.cards.forEach(k=>{k.cat=ci;CARD_MAP[k.id]=k;}));
+const NAMES = ["プレイヤー1","プレイヤー2","プレイヤー3","プレイヤー4","プレイヤー5","プレイヤー6","プレイヤー7","プレイヤー8"];
+const PCOLORS = ["#ff5d8f","#3d9be9","#43c465","#ff9636","#8b6ff0","#2bbcb0","#e5484d","#f2c018"];
+const HUMAN_MAX=8, CPU_MAX=99;
+// CPU用の色: 黄金角で色相をずらして、人数が多くても見分けやすくする
+function cpuColor(k){return `hsl(${Math.round((k*137.508+20)%360)},68%,${[52,44,60][k%3]}%)`;}
+// 列名: 0→A, 25→Z, 26→AA …
+function colName(c){let s="";c+=1;while(c>0){const m=(c-1)%26;s=String.fromCharCode(65+m)+s;c=Math.floor((c-1)/26);}return s;}
+
+/* ================================================================
+   utils / audio
+================================================================ */
+const $=id=>document.getElementById(id);
+const rand=n=>Math.floor(Math.random()*n);
+const sleep=ms=>new Promise(r=>{
+  ms=Math.max(0,Math.round(ms*animSpeed));
+  const t0=Date.now();
+  const tick=()=>{
+    if(paused){setTimeout(tick,120);return;} // ポーズ中は待機
+    const left=ms-(Date.now()-t0);
+    if(left<=0)r();else setTimeout(tick,Math.min(left,120));
+  };
+  tick();
+});
+const fmt=n=>n.toLocaleString("ja-JP");
+let soundOn=true, actx=null, quiet=false; // quiet: 即時CPUのターン中は効果音を止める
+function beep(f=600,d=.08,type="square",v=.05){
+  if(!soundOn||quiet)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type=type;o.frequency.value=f;g.gain.value=v*sfxVol;
+    g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+d);
+    o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);
+  }catch(e){}
+}
+const BGMS=[
+  [523,659,784,659,587,740,880,0,659,784,1047,784,587,698,880,0],
+  [523,523,659,784,880,784,659,587,523,587,659,0,440,523,659,0],
+  [659,784,880,784,659,587,523,587,659,0,523,659,784,880,1047,0],
+];
+let bgmTimer=null,bgmStep=0,bgmTune=0;
+function bgmStart(){
+  if(bgmTimer)return;
+  bgmTimer=setInterval(()=>{
+    if(!soundOn)return;
+    const f=BGMS[bgmTune][bgmStep%BGMS[bgmTune].length];
+    if(f)beep(f,.13,"triangle",.028*bgmVol);
+    bgmStep++;
+  },300);
+}
+const sfx={
+  roll:()=>{for(let i=0;i<6;i++)setTimeout(()=>beep(500+rand(300),.05),i*90);},
+  step:()=>beep(700,.05),
+  slot:()=>beep(900+rand(600),.04),
+  good:()=>{[660,880,1100].forEach((f,i)=>setTimeout(()=>beep(f,.12),i*110));},
+  bad:()=>beep(200,.2,"sawtooth"),
+  buy:()=>{beep(880,.1);setTimeout(()=>beep(1320,.12),110);},
+  goal:()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.16),i*130));},
+};
+/* 即時CPUターン(quiet)では効果音を鳴らさない。BGMはbeep直接呼びのため対象外 */
+Object.keys(sfx).forEach(k=>{const f=sfx[k];if(typeof f==="function")sfx[k]=(...a)=>{if(quiet)return;f(...a);};});
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));$(id).classList.add("on");}
+const LOG_COLORS={"カード":"#3d9be9","ゴール":"#c98f00","隠れゴール":"#c98f00","ルーレット":"#8b6ff0","ショップ":"#8b6ff0","出目":"#e8632f","サイコロ":"#e8632f","休み":"#8a8f98","休息":"#8a8f98","移動":"#43c465","自由移動":"#43c465","交換":"#f783ac","奪取":"#b04ae0","特殊":"#b04ae0","イベント":"#3d9be9","無色マス":"#8a8f98","給料":"#c98f00","休みガード":"#8a8f98"};
+function log(tag,msg){
+  const e=document.createElement("p");
+  e.innerHTML=`<span class="t" style="color:${LOG_COLORS[tag]||"#ff4f88"};">【${tag}】</span>${msg}`;
+  $("log").prepend(e);
+  while($("log").children.length>60)$("log").lastChild.remove();
+}
+let announceTimer=null;
+function announce(html,color,ms){
+  const a=$("announce");
+  a.innerHTML=html;
+  a.style.borderColor=color||"var(--ink)";
+  a.classList.remove("show");
+  void a.offsetWidth;
+  a.classList.add("show");
+  clearTimeout(announceTimer);
+  announceTimer=setTimeout(()=>a.classList.remove("show"),ms||2400);
+}
+function modal(html){$("evModal").innerHTML=html;$("evOv").classList.remove("hidden");}
+function closeModal(){$("evOv").classList.add("hidden");}
+function showEvent(html,autoMs=0){
+  if(autoMs<0)return Promise.resolve();
+  return new Promise(res=>{
+    modal(html+`<div style="text-align:center;"><button class="btn primary" id="evOk">OK</button></div>`);
+    const done=()=>{closeModal();res();};
+    $("evOk").onclick=done;
+    if(autoMs){
+      let left=autoMs;
+      const iv=setInterval(()=>{
+        if(paused)return;
+        left-=120;
+        if(left<=0){clearInterval(iv);if(!$("evOv").classList.contains("hidden"))done();}
+      },120);
+    }
+  });
+}
+function choiceModal(title,options){
+  return new Promise(res=>{
+    modal(`<h2>${title}</h2><div class="choiceBtns">`+
+      options.map((o,i)=>`<button data-i="${i}"><span class="cnum">${i+1}</span><span class="dot" style="background:${o.color||"#ccc"}"></span>${o.label}</button>`).join("")+
+      `</div>`);
+    const btns=[...$("evModal").querySelectorAll(".choiceBtns button")];
+    const onKey=e=>{
+      if($("evOv").classList.contains("hidden"))return;
+      if(/^[1-9]$/.test(e.key)&&btns[+e.key-1])btns[+e.key-1].click();
+    };
+    window.addEventListener("keydown",onKey);
+    btns.forEach(b=>b.onclick=()=>{window.removeEventListener("keydown",onKey);closeModal();res(+b.dataset.i);});
+  });
+}
+
+/* ================================================================
+   stages (localStorage 18 slots)
+================================================================ */
+const LS_KEY="wire_sugoroku_stages_v2";
+let stages=Array.from({length:18},()=>null);
+try{
+  const raw=localStorage.getItem(LS_KEY);
+  if(raw){const arr=JSON.parse(raw);arr.forEach((s,i)=>{if(i<18&&s)stages[i]=s;});}
+}catch(e){}
+function saveStages(){try{localStorage.setItem(LS_KEY,JSON.stringify(stages));}catch(e){}}
+function slotLabel(i){
+  const s=stages[i];
+  return s?`ステージ ${i+1}: ${s.name||"(無題)"}`:`ステージ ${i+1}: (空)`;
+}
+const GX=c=>450+c*240, GY=r=>75+r*180;
+// マップの大きさ（マス数）。既定は20×20 → 世界サイズ 5700×3750
+const DEF_COLS=20, DEF_ROWS=20, MAP_MIN=5, MAP_MAX=60;
+const worldW=cols=>GX(cols-1)+690, worldH=rows=>GY(rows-1)+255;
+const stageCols=st=>Math.max(MAP_MIN,Math.min(MAP_MAX,((st&&st.cols)|0)||DEF_COLS));
+const stageRows=st=>Math.max(MAP_MIN,Math.min(MAP_MAX,((st&&st.rows)|0)||DEF_ROWS));
+// 保存された大きさと、実際に置かれているマスの範囲の大きい方
+function fitStageDims(st){
+  let cols=stageCols(st),rows=stageRows(st);
+  (st.nodes||[]).forEach(n=>{
+    const c=n.gc!==undefined?n.gc:Math.round((n.x-450)/240);
+    const r=n.gr!==undefined?n.gr:Math.round((n.y-75)/180);
+    if(c+1>cols)cols=c+1;
+    if(r+1>rows)rows=r+1;
+  });
+  return {cols,rows};
+}
+function defaultStage(){
+  const E=[];
+  const addChain=pts=>{for(let i=0;i<pts.length-1;i++)E.push([pts[i],pts[i+1]]);};
+  // メイン道路（蛇行して最終ゴールへ）
+  addChain([[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[6,1],[6,2],[6,3],[5,3],[4,3],[3,3],[3,4],[3,5],[4,5],[5,5],[6,5],[7,5],[7,6],[7,7],[6,7],[5,7],[5,8],[5,9],[6,9],[7,9],[8,9],[9,9],[9,10],[9,11],[10,11],[11,11],[12,11],[12,12],[12,13],[11,13],[10,13],[10,14],[10,15],[11,15],[12,15],[13,15],[14,15],[15,15],[16,15],[16,16],[16,17],[17,17],[18,17],[19,17]]);
+  // 枝1: ショートカット (6,3)->(7,5)
+  addChain([[6,3],[7,3],[8,3],[9,3],[10,3],[10,4],[10,5],[9,5],[8,5],[7,5]]);
+  // 枝2: ゴール2への別ルート
+  addChain([[12,11],[13,11],[14,11],[15,11],[15,12],[15,13],[16,13],[17,13],[18,13]]);
+  // 枝3: 序盤の細い道 (2,0)->(4,3)
+  addChain([[2,0],[2,1],[2,2],[3,2],[4,2],[4,3]]);
+  // 枝4: 大回りの迂回ルート (5,9)->(9,11)
+  addChain([[5,9],[4,9],[3,9],[3,10],[3,11],[3,12],[4,12],[5,12],[6,12],[7,12],[8,12],[8,11],[9,11]]);
+  // 枝5: 手前のゴール3（分かれ道）
+  addChain([[16,15],[16,14],[17,14],[18,14]]);
+  const goals=new Set(["19,17","18,13","18,14"]);
+  const nodeMap={};const nodes=[];const wires=[];let seq=0;let ti=0;
+  const typePlan=["blue","red","yellow","purple","plain","blue","red","yellow","red","blue","yellow","purple","plain","red","blue","yellow"];
+  E.forEach(([a,b])=>{
+    [a,b].forEach(pt=>{
+      const k=pt.join(",");
+      if(!nodeMap[k]){
+        const id="n"+(seq++);
+        let type;
+        if(k==="0,0")type="start";
+        else if(goals.has(k))type="goal";
+        else type=typePlan[ti++%typePlan.length];
+        nodeMap[k]={id,type,x:GX(pt[0]),y:GY(pt[1]),cat:1+(seq%9),gc:pt[0],gr:pt[1]};
+        nodes.push(nodeMap[k]);
+      }
+    });
+    wires.push({f:nodeMap[a.join(",")].id,t:nodeMap[b.join(",")].id});
+  });
+  return {name:"内蔵ステージ（分岐あり）",nodes,wires,cols:DEF_COLS,rows:DEF_ROWS};
+}
+let builtinStage=null;
+function getBuiltin(){if(!builtinStage)builtinStage=defaultStage();return builtinStage;}
+/* ---------- シード付き乱数 & 自動マップ生成 (F) ---------- */
+function hashSeed(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=(h<<13)|(h>>>19);}return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function seededStage(kind,seedStr){
+  const hasSeed=seedStr&&String(seedStr).trim();
+  const seed=hasSeed?hashSeed(String(seedStr).trim()):(Math.random()*0xffffffff)>>>0;
+  const rng=mulberry32(seed);
+  const R=n=>Math.floor(rng()*n);
+  for(let a=0;a<8;a++){
+    const st=kind==="mesh"?genMeshMap(rng,R):genNormalMap(rng,R);
+    st.name=(kind==="mesh"?"自動生成・網状マップ":"自動生成・通常マップ")+(hasSeed?" (シード:"+String(seedStr).trim()+")":"");
+    if(validateStage(st).ok)return st;
+  }
+  return null; // 失敗時は呼び元で内蔵ステージへフォールバック
+}
+function genNormalMap(rng,R){
+  const cols=DEF_COLS,rows=DEF_ROWS,nodes=[],wires=[],map={},es=new Set();
+  let seq=0;
+  const add=(c,r,type)=>{const k=c+","+r;if(map[k])return map[k];const id="n"+(seq++);
+    const n={id,type,x:GX(c),y:GY(r),cat:1+(R(9)),gc:c,gr:r};map[k]=n;nodes.push(n);return n;};
+  const link=(a,b)=>{const k=a.id+">"+b.id;if(a.id!==b.id&&!es.has(k)){es.add(k);wires.push({f:a.id,t:b.id});}};
+  const T=["blue","red","yellow","purple","plain","plain","back"];
+  const tp=()=>R(10)<8?T[R(T.length)]:"plain";
+  let r=0,c=0,prev=add(0,0,"start");
+  while(c<cols-1){
+    const run=Math.min(cols-1-c,3+R(4));
+    for(let i=0;i<run;i++){c++;const n=add(c,r,tp());link(prev,n);prev=n;}
+    if(c>=cols-1)break;
+    if(r+1<rows){r++;const n=add(c,r,tp());link(prev,n);prev=n;}else break;
+  }
+  for(let rr=r+1;rr<rows-1;rr++){const n=add(cols-1,rr,tp());link(prev,n);prev=n;}
+  const gEnd=add(cols-1,rows-1,"goal");gEnd.type="goal";link(prev,gEnd);
+  for(let b=0;b<4;b++){
+    const from=nodes[R(nodes.length)];
+    let cc=from.gc,rr=from.gr,pp=from;
+    for(let i=0;i<2+R(3);i++){
+      cc=Math.max(0,Math.min(cols-1,cc+R(3)-1));rr=Math.min(rows-1,rr+R(2));
+      const n=add(cc,rr,tp());link(pp,n);pp=n;
+    }
+    let best=null,bd=1e9;
+    nodes.forEach(m=>{if(m===pp)return;const d=Math.abs(m.gc-cc)+Math.abs(m.gr-rr);if(d>0&&d<bd){bd=d;best=m;}});
+    if(best&&bd<=4)link(pp,best);
+  }
+  for(let g=0;g<2;g++){
+    const from=nodes[R(nodes.length)];
+    const gc=Math.min(cols-1,from.gc+1+R(2)),gr=Math.min(rows-1,from.gr+R(3));
+    let pp=from;
+    for(let x=from.gc+1;x<=gc;x++){const n=add(x,from.gr,tp());link(pp,n);pp=n;}
+    for(let y=from.gr+1;y<=gr;y++){const n=add(gc,y,tp());link(pp,n);pp=n;}
+    const gx=add(gc,gr,"goal");gx.type="goal";link(pp,gx);
+  }
+  return {nodes,wires,cols:DEF_COLS,rows:DEF_ROWS};
+}
+function genMeshMap(rng,R){
+  const cols=DEF_COLS,rows=DEF_ROWS,nodes=[],wires=[],map={},es=new Set();
+  let seq=0;
+  const add=(c,r,type)=>{const k=c+","+r;if(map[k])return map[k];const id="n"+(seq++);
+    const n={id,type,x:GX(c),y:GY(r),cat:1+(R(9)),gc:c,gr:r};map[k]=n;nodes.push(n);return n;};
+  const link=(a,b)=>{const k=a.id+">"+b.id;if(a.id!==b.id&&!es.has(k)){es.add(k);wires.push({f:a.id,t:b.id});}};
+  const link2=(a,b)=>{link(a,b);link(b,a);};
+  const T=["blue","red","yellow","purple","plain","plain","back"];
+  const tp=()=>R(10)<8?T[R(T.length)]:"plain";
+  let r=0,c=0,prev=add(0,0,"start");
+  while(c<cols-1){
+    const run=Math.min(cols-1-c,2+R(3));
+    for(let i=0;i<run;i++){c++;const n=add(c,r,tp());link2(prev,n);prev=n;}
+    if(c>=cols-1)break;
+    if(r+1<rows){r++;const n=add(c,r,tp());link2(prev,n);prev=n;}else break;
+  }
+  for(let rr=r+1;rr<rows-1;rr++){const n=add(cols-1,rr,tp());link2(prev,n);prev=n;}
+  const gEnd=add(cols-1,rows-1,"goal");gEnd.type="goal";link2(prev,gEnd);
+  for(let s=0;s<40;s++)add(R(cols),R(rows),tp());
+  const near=[[1,0],[0,1],[1,1],[1,-1],[2,0],[0,2],[2,1],[1,2]];
+  nodes.forEach(a=>near.forEach(([dc,dr])=>{
+    const b=map[(a.gc+dc)+","+(a.gr+dr)];
+    if(b&&rng()<0.65)link2(a,b);
+  }));
+  nodes.forEach(a=>{
+    if(!wires.some(w=>w.f===a.id)){
+      let best=null,bd=1e9;
+      nodes.forEach(b=>{if(a===b)return;const d=Math.abs(b.gc-a.gc)+Math.abs(b.gr-a.gr);if(d<bd){bd=d;best=b;}});
+      if(best)link2(a,best);
+    }
+  });
+  const cand=nodes.filter(n=>n.type!=="start"&&n.type!=="goal"&&n.gc>=cols-4&&n.gr>=rows-4);
+  if(cand.length)cand[R(cand.length)].type="goal";
+  return {nodes,wires,cols:DEF_COLS,rows:DEF_ROWS};
+}
+function validateStage(st){
+  if(!st)return {ok:false,msg:"ステージが空です"};
+  if(!st.nodes.some(n=>n.type==="start"))return {ok:false,msg:"スタートがありません"};
+  if(!st.nodes.some(n=>n.type==="goal"))return {ok:false,msg:"ゴールがありません"};
+  // reachability start -> goal
+  const start=st.nodes.find(n=>n.type==="start");
+  const seen=new Set([start.id]); const q=[start.id];
+  while(q.length){
+    const cur=q.shift();
+    st.wires.filter(w=>w.f===cur).forEach(w=>{if(!seen.has(w.t)){seen.add(w.t);q.push(w.t);}});
+  }
+  if(![...seen].some(id=>st.nodes.find(n=>n.id===id&&n.type==="goal")))
+    return {ok:false,msg:"スタートからゴールにつながっていません"};
+  return {ok:true};
+}
+
+/* ================================================================
+   STAGE MAKER
+================================================================ */
+const SVGNS="http://www.w3.org/2000/svg";
+let mkSlot=0, mkNodes=[], mkWires=[], sel={kind:null,id:null}, nidSeq=0;
+const mkSvg=$("mkSvg");
+let mkCols=DEF_COLS, mkRows=DEF_ROWS, mkZoom=1, wireEls=[];
+const MK_PX=4200/5700; // 世界1単位あたりの表示px（ズーム1倍）
+function applyMkSize(){
+  const W=worldW(mkCols),H=worldH(mkRows);
+  mkSvg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  mkSvg.style.width=(W*MK_PX*mkZoom)+"px";
+  $("mkCols").value=mkCols;$("mkRows").value=mkRows;
+}
+function mkEl(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||mkSvg).appendChild(e);return e;}
+function toSvgPoint(svg,e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
+
+function edgePath(a,b){
+  const ax=b.x-a.x, ay=b.y-a.y;
+  if(Math.abs(ay)>=Math.abs(ax)){
+    // 縦方向が主体の接続: 制御点も縦に（横に膨らんで変なカクつきを防ぐ）
+    const dy=Math.max(60,Math.abs(ay)*0.5)*Math.sign(ay||1);
+    return `M ${a.x} ${a.y} C ${a.x} ${a.y+dy}, ${b.x} ${b.y-dy}, ${b.x} ${b.y}`;
+  }
+  const dx=Math.max(60,Math.abs(ax)*0.5)*Math.sign(ax||1);
+  return `M ${a.x} ${a.y} C ${a.x+dx} ${a.y}, ${b.x-dx} ${b.y}, ${b.x} ${b.y}`;
+}
+function nodeById(id){return mkNodes.find(n=>n.id===id);}
+
+function renderPalette(){
+  const pal=$("palette");
+  Object.keys(NODE_TYPES).forEach(t=>{
+    const d=NODE_TYPES[t];
+    const e=document.createElement("div");
+    e.className="pal";e.dataset.type=t;
+    e.innerHTML=`<div class="pc" style="background:${d.color}"></div><b>${d.label}</b>`;
+    e.title=d.desc;
+    pal.appendChild(e);
+  });
+}
+function renderMaker(){
+  mkSvg.innerHTML="";
+  wireEls=[];
+  const W=worldW(mkCols),H=worldH(mkRows);
+  const byId=new Map(mkNodes.map(n=>[n.id,n]));
+  // grid background
+  const pat=mkEl("defs",{});
+  const mk=mkEl("marker",{id:"arrow",viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},pat);
+  mk.innerHTML='<path d="M 0 0 L 10 5 L 0 10 z" fill="#7a6f85"/>';
+  const p=mkEl("pattern",{id:"dots",width:60,height:60,patternUnits:"userSpaceOnUse"},pat);
+  mkEl("circle",{cx:3,cy:3,r:2.5,fill:"#d9cdf0"},p);
+  mkEl("rect",{x:0,y:0,width:W,height:H,fill:"url(#dots)"});
+  for(let c=0;c<mkCols;c++){
+    mkEl("line",{x1:GX(c),y1:GY(0),x2:GX(c),y2:GY(mkRows-1),stroke:"#e4d9f2","stroke-width":2});
+    const t=mkEl("text",{x:GX(c),y:GY(0)-46,"text-anchor":"middle","font-size":22,"font-weight":900,fill:"#b3a2cc"});
+    t.textContent=colName(c);
+  }
+  for(let r=0;r<mkRows;r++){
+    mkEl("line",{x1:GX(0),y1:GY(r),x2:GX(mkCols-1),y2:GY(r),stroke:"#e4d9f2","stroke-width":2});
+    const t=mkEl("text",{x:GX(0)-52,y:GY(r)+7,"text-anchor":"end","font-size":22,"font-weight":900,fill:"#b3a2cc"});
+    t.textContent=r+1;
+  }
+  // wires
+  const wg=mkEl("g",{});
+  mkWires.forEach((w,i)=>{
+    const a=byId.get(w.f),b=byId.get(w.t);
+    if(!a||!b)return;
+    const isSel=sel.kind==="wire"&&sel.id===i;
+    const halo=mkEl("path",{d:edgePath(a,b),fill:"none",stroke:"#fff","stroke-width":isSel?16:12,"stroke-linecap":"round"},wg);
+    const line=mkEl("path",{d:edgePath(a,b),fill:"none",stroke:isSel?"#ff4f88":"#7a6f85","stroke-width":isSel?6:4,"stroke-linecap":"round","marker-end":"url(#arrow)","data-wire":i,style:"cursor:pointer;"},wg);
+    wireEls[i]=[halo,line];
+  });
+  // nodes
+  const ng=mkEl("g",{});
+  mkNodes.forEach(n=>{
+    const d=NODE_TYPES[n.type];
+    const g=mkEl("g",{transform:`translate(${n.x},${n.y})`,"data-nid":n.id,style:"cursor:grab;"},ng);
+    const isSel=sel.kind==="node"&&sel.id===n.id;
+    mkEl("circle",{r:30,fill:"#fff",stroke:isSel?"#ff4f88":"var(--ink)","stroke-width":isSel?6:4},g);
+    mkEl("circle",{r:22,fill:d.color,stroke:"#fff","stroke-width":3},g);
+    if(n.type==="start")mkEl("text",{y:7,"text-anchor":"middle","font-size":19,"font-weight":900,fill:"#fff"},g).textContent="▶";
+    if(n.type==="goal")mkEl("text",{y:7,"text-anchor":"middle","font-size":19,"font-weight":900,fill:"#fff"},g).textContent="◎";
+    if(n.type==="purple")mkEl("text",{y:7,"text-anchor":"middle","font-size":19,"font-weight":900,fill:"#fff"},g).textContent=n.cat;
+    if(n.type==="plain")mkEl("text",{y:6,"text-anchor":"middle","font-size":17,"font-weight":900,fill:"#b3a8bd"},g).textContent="?";
+    // port
+    mkEl("circle",{cx:34,r:7,fill:"#fff",stroke:"var(--ink)","stroke-width":3,"data-port":n.id,style:"cursor:crosshair;"},g);
+    const t=mkEl("text",{y:52,"text-anchor":"middle","font-size":13,"font-weight":800,fill:"var(--ink)"},g);
+    t.textContent=d.label;
+    if(n.type==="purple"){
+      const t2=mkEl("text",{y:66,"text-anchor":"middle","font-size":11,"font-weight":800,fill:"var(--ink-soft)"},g);
+      t2.textContent="["+(CARD_CATS[n.cat-1]?.name||"?")+"]";
+    }
+  });
+  // temp wire
+  if(tempWire)mkEl("path",{id:"tempWirePath",d:tempWire.d,fill:"none",stroke:"#ff4f88","stroke-width":4,"stroke-dasharray":"8 6","stroke-linecap":"round","pointer-events":"none"});
+  updateInspector();
+}
+let tempWire=null;
+function updateInspector(){
+  const box=$("inspector");
+  if(!sel.kind){box.style.display="none";return;}
+  box.style.display="block";
+  if(sel.kind==="node"){
+    const n=nodeById(sel.id); if(!n){sel={kind:null,id:null};box.style.display="none";return;}
+    const d=NODE_TYPES[n.type];
+    $("inspType").innerHTML=`<span class="pc dot" style="background:${d.color};width:18px;height:18px;"></span>${d.label} <span style="color:var(--ink-soft);font-weight:700;font-size:11px;">${d.desc}</span>`;
+    const cats=$("inspCats");
+    if(n.type==="purple"||n.type==="back"){
+      cats.style.display="flex";
+      cats.innerHTML=Array.from({length:9},(_,i)=>`<button data-c="${i+1}" class="${n.cat===i+1?"on":""}">${i+1}</button>`).join("");
+      cats.querySelectorAll("button").forEach(b=>b.onclick=()=>{n.cat=+b.dataset.c;scheduleSave();renderMaker();});
+    }else cats.style.display="none";
+  }else{
+    $("inspType").innerHTML="ワイヤー <span style='color:var(--ink-soft);font-size:11px;'>Delete で削除</span>";
+    $("inspCats").style.display="none";
+  }
+}
+let saveTimer=null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    stages[mkSlot]={name:$("mkName").value||"(無題)",nodes:mkNodes,wires:mkWires,cols:mkCols,rows:mkRows};
+    saveStages(); refreshSlotSelect();
+    const ind=$("saveInd");
+    ind.style.opacity="1";
+    clearTimeout(ind._t);
+    ind._t=setTimeout(()=>ind.style.opacity="0",1400);
+  },400);
+}
+function loadSlot(i){
+  mkSlot=i;
+  const s=stages[i];
+  mkNodes=s?s.nodes.map(n=>({...n})): [];
+  mkNodes.forEach(n=>{
+    if(n.gc===undefined||n.gr===undefined){n.gc=Math.round((n.x-450)/240);n.gr=Math.round((n.y-75)/180);}
+    n.gc=Math.max(0,Math.min(MAP_MAX-1,Math.round(+n.gc)||0));
+    n.gr=Math.max(0,Math.min(MAP_MAX-1,Math.round(+n.gr)||0));
+    n.x=GX(n.gc);n.y=GY(n.gr);
+  });
+  const fit=fitStageDims({cols:s&&s.cols,rows:s&&s.rows,nodes:mkNodes});
+  mkCols=fit.cols;mkRows=fit.rows;
+  mkWires=s?s.wires.map(w=>({...w})): [];
+  nidSeq=mkNodes.reduce((m,n)=>Math.max(m,parseInt(n.id.slice(1))+1||0),0);
+  $("mkName").value=s?(s.name||""):"";
+  $("mkSlot").value=i;
+  sel={kind:null,id:null};
+  applyMkSize();
+  renderMaker();
+}
+function refreshSlotSelect(){
+  const s=$("mkSlot");
+  s.innerHTML=stages.map((st,i)=>`<option value="${i}">${slotLabel(i)}</option>`).join("");
+  s.value=mkSlot;
+  const stSel=$("stSel");
+  if(stSel)stSel.innerHTML=stages.map((st,i)=>st?`<option value="${i}">${slotLabel(i)}</option>`:"").join("");
+}
+function snapNode(n){
+  let c=Math.max(0,Math.min(mkCols-1,Math.round((n.x-450)/240)));
+  let r=Math.max(0,Math.min(mkRows-1,Math.round((n.y-75)/180)));
+  const occ=new Set();
+  mkNodes.forEach(m=>{if(m!==n)occ.add(m.gc+","+m.gr);});
+  let guard=0;const total=mkCols*mkRows;
+  while(occ.has(c+","+r)&&guard++<total){c=(c+1)%mkCols;if(c===0)r=(r+1)%mkRows;}
+  n.gc=c;n.gr=r;n.x=GX(c);n.y=GY(r);
+}
+function addNode(type,x,y){
+  const id="n"+(nidSeq++);
+  const n={id,type,x,y,cat:1};
+  snapNode(n);
+  mkNodes.push(n);
+  sel={kind:"node",id};
+  scheduleSave();renderMaker();
+}
+function deleteSelection(){
+  if(sel.kind==="node"){
+    mkNodes=mkNodes.filter(n=>n.id!==sel.id);
+    mkWires=mkWires.filter(w=>w.f!==sel.id&&w.t!==sel.id);
+  }else if(sel.kind==="wire"){
+    mkWires.splice(sel.id,1);
+  }
+  sel={kind:null,id:null};
+  scheduleSave();renderMaker();
+}
+/* maker interactions */
+let dragMode=null, dragFrom=null, dragMoved=false, ghostEl=null, placeMode=null;
+document.querySelectorAll(".pal").forEach(()=>{}); // palette built later
+function bindPalette(){
+  document.querySelectorAll("#palette .pal").forEach(elm=>{
+    elm.addEventListener("dblclick",()=>{
+      placeMode=(placeMode===elm.dataset.type)?null:elm.dataset.type;
+      const b=$("placeBanner");
+      b.style.display=placeMode?"block":"none";
+      b.textContent=`連続配置: ${NODE_TYPES[placeMode].label} (Escで解除)`;
+    });
+    elm.addEventListener("pointerdown",e=>{
+      e.preventDefault();
+      dragMode="palette";dragFrom=elm.dataset.type;dragMoved=true;
+      ghostEl=document.createElement("div");
+      ghostEl.className="dragGhost";
+      ghostEl.style.background=NODE_TYPES[dragFrom].color;
+      document.body.appendChild(ghostEl);
+      moveGhost(e);
+    });
+  });
+}
+function moveGhost(e){if(ghostEl){ghostEl.style.left=e.clientX+"px";ghostEl.style.top=e.clientY+"px";}}
+window.addEventListener("pointermove",e=>{
+  moveGhost(e);
+  if(dragMode==="node"&&dragFrom){
+    const p=toSvgPoint(mkSvg,e);
+    const n=nodeById(dragFrom);
+    if(n){
+      n.x=Math.max(60,Math.min(worldW(mkCols)-60,p.x));n.y=Math.max(60,Math.min(worldH(mkRows)-60,p.y));
+      const g=mkSvg.querySelector(`[data-nid="${n.id}"]`);
+      if(g)g.setAttribute("transform",`translate(${n.x},${n.y})`);
+      mkWires.forEach((w,i)=>{
+        if(w.f!==n.id&&w.t!==n.id)return;
+        const a=nodeById(w.f),b=nodeById(w.t);
+        if(!a||!b||!wireEls[i])return;
+        const d=edgePath(a,b);
+        wireEls[i][0].setAttribute("d",d);wireEls[i][1].setAttribute("d",d);
+      });
+    }
+    dragMoved=true;
+  }
+  if(dragMode==="wire"&&dragFrom){
+    const p=toSvgPoint(mkSvg,e);
+    const a=nodeById(dragFrom);
+    tempWire={d:edgePath(a,{x:p.x,y:p.y})};
+    let tp=mkSvg.querySelector("#tempWirePath");
+    if(!tp)tp=mkEl("path",{id:"tempWirePath",fill:"none",stroke:"#ff4f88","stroke-width":4,"stroke-dasharray":"8 6","stroke-linecap":"round","pointer-events":"none"});
+    tp.setAttribute("d",tempWire.d);
+  }
+});
+window.addEventListener("pointerup",e=>{
+  if(dragMode==="palette"){
+    // drop over svg?
+    const r=mkSvg.getBoundingClientRect();
+    if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+      const p=toSvgPoint(mkSvg,e);
+      addNode(dragFrom,p.x,p.y);
+    }
+    if(ghostEl)ghostEl.remove();ghostEl=null;
+  }
+  else if(dragMode==="wire"&&dragFrom){
+    const hit=document.elementFromPoint(e.clientX,e.clientY);
+    const g=hit&&hit.closest?hit.closest("[data-nid]"):null;
+    if(g&&g.dataset.nid!==dragFrom){
+      const exists=mkWires.some(w=>w.f===dragFrom&&w.t===g.dataset.nid);
+      if(!exists){mkWires.push({f:dragFrom,t:g.dataset.nid});scheduleSave();}
+    }
+    tempWire=null;renderMaker();
+  }
+  else if(dragMode==="node"&&dragFrom){
+    if(dragMoved){const n=nodeById(dragFrom);if(n){snapNode(n);}scheduleSave();renderMaker();}
+  }
+  dragMode=null;dragFrom=null;dragMoved=false;
+});
+mkSvg.addEventListener("pointerdown",e=>{
+  if(placeMode&&!e.target.closest("[data-nid]")){
+    const p=toSvgPoint(mkSvg,e);
+    addNode(placeMode,p.x,p.y);
+    e.preventDefault();
+    return;
+  }
+  const port=e.target.dataset&&e.target.dataset.port;
+  if(port){dragMode="wire";dragFrom=port;tempWire={d:""};e.preventDefault();return;}
+  const g=e.target.closest?e.target.closest("[data-nid]"):null;
+  if(g){
+    const id=g.dataset.nid;
+    const n=nodeById(id);
+    sel={kind:"node",id};
+    // purple: click cycles category (unless dragging far)
+    dragMode="node";dragFrom=id;dragMoved=false;
+    dragStartPos={x:n.x,y:n.y};
+    renderMaker();
+  }else{
+    const wp=e.target.dataset&&e.target.dataset.wire!==undefined?e.target:null;
+    if(wp){sel={kind:"wire",id:+wp.dataset.wire};renderMaker();}
+    else{sel={kind:null,id:null};renderMaker();}
+  }
+});
+let dragStartPos=null;
+mkSvg.addEventListener("pointerup",e=>{
+  if(dragMode==="node"&&dragFrom&&!dragMoved){
+    const n=nodeById(dragFrom);
+    if(n&&n.type==="purple"){
+      n.cat=n.cat%9+1;scheduleSave();renderMaker();
+      beep(600,.06);
+    }
+  }
+});
+window.addEventListener("keydown",e=>{
+  if(!$("s-maker").classList.contains("on"))return;
+  if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
+  if(e.key==="Escape"&&placeMode){
+    placeMode=null;$("placeBanner").style.display="none";
+    return;
+  }
+  if(e.key==="Delete"||e.key==="Backspace"){deleteSelection();}
+  if(sel.kind==="node"){
+    const n=nodeById(sel.id);
+    if(n&&n.type==="purple"&&/^[1-9]$/.test(e.key)){n.cat=+e.key;scheduleSave();renderMaker();}
+  }
+});
+$("inspDel").onclick=()=>deleteSelection();
+$("inspDup").onclick=()=>{
+  if(sel.kind!=="node")return;
+  const src=nodeById(sel.id);
+  if(!src)return;
+  const id="n"+(nidSeq++);
+  const n={id,type:src.type,x:src.x+40,y:src.y+40,cat:src.cat||1};
+  snapNode(n);
+  mkNodes.push(n);
+  sel={kind:"node",id};
+  scheduleSave();renderMaker();
+};
+$("inspCutW").onclick=()=>{
+  if(sel.kind!=="node")return;
+  mkWires=mkWires.filter(w=>w.f!==sel.id&&w.t!==sel.id);
+  scheduleSave();renderMaker();
+};
+$("mkExport").onclick=()=>{
+  const st=stages[mkSlot]||{name:$("mkName").value||"stage",nodes:mkNodes,wires:mkWires,cols:mkCols,rows:mkRows};
+  const blob=new Blob([JSON.stringify(st,null,1)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=((st.name||"stage").replace(/[\/:*?"<>|]/g,"_"))+".json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$("mkImport").onclick=()=>$("mkFile").click();
+$("mkFile").addEventListener("change",e=>{
+  const f=e.target.files[0];
+  e.target.value="";
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const st=JSON.parse(r.result);
+      if(!Array.isArray(st.nodes)||!Array.isArray(st.wires))throw new Error("bad");
+      if(!st.nodes.every(n=>n.id&&n.type&&typeof n.x==="number"))throw new Error("bad");
+      stages[mkSlot]={name:st.name||"imported",nodes:st.nodes,wires:st.wires,cols:st.cols,rows:st.rows};
+      saveStages();refreshSlotSelect();loadSlot(mkSlot);refreshSavedCount();
+document.addEventListener("click",function once(){
+  if($("s-title").classList.contains("on"))bgmStart();
+  document.removeEventListener("click",once);
+});
+      alert("ステージを読み込みました！");
+    }catch(err){alert("読み込めないファイルです");}
+  };
+  r.readAsText(f);
+});
+$("mkSlot").addEventListener("change",e=>loadSlot(+e.target.value));
+$("mkName").addEventListener("input",scheduleSave);
+$("mkAutoLink").onclick=()=>{
+  let added=0;
+  const es=new Set(mkWires.map(w=>w.f+">"+w.t));
+  for(const a of mkNodes)for(const b of mkNodes){
+    if(a===b)continue;
+    if(Math.abs(a.gc-b.gc)+Math.abs(a.gr-b.gr)===1){
+      const k=a.id+">"+b.id;
+      if(!es.has(k)){es.add(k);mkWires.push({f:a.id,t:b.id});added++;}
+    }
+  }
+  scheduleSave();renderMaker();
+  alert(added?added+"本のワイヤーを追加しました":"追加できるワイヤーはありませんでした");
+};
+$("mkCheck").onclick=()=>{
+  const msgs=[];
+  const v=validateStage({nodes:mkNodes,wires:mkWires});
+  msgs.push(v.ok?"✓ スタートからゴールへ到達できます":"✕ "+v.msg);
+  const linked=new Set();mkWires.forEach(w=>{linked.add(w.f);linked.add(w.t);});
+  const iso=mkNodes.filter(n=>!linked.has(n.id));
+  if(iso.length)msgs.push("⚠ 孤立マス: "+iso.length+"個");
+  const st=mkNodes.find(n=>n.type==="start");
+  if(st){
+    const seen=new Set([st.id]);const q=[st.id];
+    while(q.length){const cc=q.shift();mkWires.filter(w=>w.f===cc).forEach(w=>{if(!seen.has(w.t)){seen.add(w.t);q.push(w.t);}});}
+    const ng=mkNodes.filter(n=>n.type==="goal"&&!seen.has(n.id));
+    if(ng.length)msgs.push("⚠ 到達不能なゴール: "+ng.length+"個");
+    const nr=mkNodes.filter(n=>!seen.has(n.id)&&linked.has(n.id));
+    if(nr.length)msgs.push("⚠ スタートから到達できないマス: "+nr.length+"個");
+  }
+  alert(msgs.join("\n"));
+};
+$("mkClear").onclick=()=>{mkNodes=[];mkWires=[];sel={kind:null,id:null};$("mkName").value="";scheduleSave();renderMaker();};
+$("mkBack").onclick=()=>{refreshSavedCount();showScreen("s-title");};
+$("mkTry").onclick=()=>{
+  const v=validateStage({nodes:mkNodes,wires:mkWires});
+  if(!v.ok){alert("このステージでは遊べません: "+v.msg);return;}
+  openSetup("slot",mkSlot);
+};
+$("mkZIn").onclick=()=>{mkZoom=Math.min(3,mkZoom+.2);applyMkSize();};
+$("mkZOut").onclick=()=>{mkZoom=Math.max(.1,mkZoom-.2);applyMkSize();};
+// マップの大きさ変更（横×縦のマス数）
+function resizeMap(){
+  const cl=(v,d)=>{v=Math.round(+v);return isFinite(v)?Math.max(MAP_MIN,Math.min(MAP_MAX,v)):d;};
+  const c=cl($("mkCols").value,mkCols),r=cl($("mkRows").value,mkRows);
+  const out=mkNodes.filter(n=>n.gc>=c||n.gr>=r);
+  if(out.length&&!confirm(`はみ出す ${out.length} 個のマスが削除されます。よろしいですか？`)){
+    $("mkCols").value=mkCols;$("mkRows").value=mkRows;return;
+  }
+  if(out.length){
+    const ids=new Set(out.map(n=>n.id));
+    mkNodes=mkNodes.filter(n=>!ids.has(n.id));
+    mkWires=mkWires.filter(w=>!ids.has(w.f)&&!ids.has(w.t));
+    sel={kind:null,id:null};
+  }
+  mkCols=c;mkRows=r;
+  applyMkSize();scheduleSave();renderMaker();
+}
+$("mkCols").onchange=resizeMap;
+$("mkRows").onchange=resizeMap;
+
+/* ================================================================
+   SETUP
+================================================================ */
+let setupMode="builtin", setupSlotIdx=0;
+let hNum=1, cNum=3;                          // 人間(1〜8) / CPU(0〜99)
+let hNames=[], hColorIdx=[0,1,2,3,4,5,6,7];  // 人間の名前・色
+let hCustomColor=[]; // RGBカスタム色（優先）
+let cNames=[], cSpdOv=[], cLvlOv=[];         // CPU個別の上書き（未設定=CPU標準設定に合わせる）
+const isSet=v=>v!==undefined&&v!==null&&v!=="";
+const humanName=i=>isSet(hNames[i])?hNames[i]:NAMES[i];
+const cpuName=i=>isSet(cNames[i])?cNames[i]:"CPU"+(i+1);
+function openSetup(mode,slotIdx=0){
+  setupMode=mode;setupSlotIdx=slotIdx;
+  $("stageRow").style.display=mode==="slot"?"flex":"none";
+  refreshSlotSelect();
+  if(mode==="slot")$("stSel").value=slotIdx;
+  const st=mode==="builtin"?getBuiltin():stages[slotIdx];
+  const dim=st?fitStageDims(st):null;
+  $("setupStageName").textContent="ステージ: "+(st?(st.name||"(無題)"):"?")+(dim?`（${dim.cols}×${dim.rows}マス）`:"");
+  renderSetupRows();
+  showScreen("s-setup");
+}
+const SPD_LABELS=[["0","即時"],["0.4","高速"],["1","通常"],["1.8","ゆっくり"]];
+const LVL_LABELS=[["0","かんたん"],["1","ふつう"],["2","つよい"]];
+const optsHtml=(list,head)=>(head?`<option value="">${head}</option>`:"")+list.map(([v,l])=>`<option value="${v}">${l}</option>`).join("");
+function renderSetupRows(){
+  $("hCount").textContent=hNum;
+  $("cCount").value=cNum;
+  $("totalCount").textContent=hNum+cNum;
+  const zone=$("playerRows");zone.innerHTML="";
+  for(let i=0;i<hNum;i++){
+    if(hColorIdx[i]===undefined)hColorIdx[i]=i%8;
+    const row=document.createElement("div");
+    row.className="prow";
+    row.innerHTML=`<button class="pcol" data-i="${i}" title="色を変更" style="width:26px;height:26px;border-radius:50%;border:2.5px solid var(--ink);background:${PCOLORS[hColorIdx[i]]};flex-shrink:0;cursor:pointer;"></button>
+      <input maxlength="8" class="hname" data-i="${i}"><span class="tag">人間</span>`;
+    row.querySelector("input").value=humanName(i);
+    zone.appendChild(row);
+  }
+  renderCpuRows();
+}
+function renderCpuRows(){
+  const box=$("cpuRows");box.innerHTML="";
+  $("cpuDetails").style.display=cNum>0?"block":"none";
+  $("cpuSum").textContent=`CPUの個別設定（${cNum}体）— 名前・速度・強さ`;
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<cNum;i++){
+    const row=document.createElement("div");
+    row.className="prow";
+    row.innerHTML=`<span class="dot" style="background:${cpuColor(i)}"></span>
+      <input maxlength="8" class="cname" data-i="${i}">
+      <select class="select cspd" data-i="${i}" title="速度">${optsHtml(SPD_LABELS,"速度:標準")}</select>
+      <select class="select clvl" data-i="${i}" title="強さ">${optsHtml(LVL_LABELS,"強さ:標準")}</select>`;
+    row.querySelector(".cname").value=cpuName(i);
+    row.querySelector(".cspd").value=isSet(cSpdOv[i])?String(cSpdOv[i]):"";
+    row.querySelector(".clvl").value=isSet(cLvlOv[i])?String(cLvlOv[i]):"";
+    frag.appendChild(row);
+  }
+  box.appendChild(frag);
+}
+// 行のイベントは親要素でまとめて受ける（CPUが最大99体でも軽い）
+$("playerRows").addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest(".pcol");if(!b)return;
+  const i=+b.dataset.i;
+  const old=$("colorPop");if(old)old.remove();
+  const cur=hCustomColor[i]||PCOLORS[hColorIdx[i]];
+  const m=cur.match(/^#([0-9a-f]{6})$/i);
+  let r=m?parseInt(m[1].slice(0,2),16):255,g=m?parseInt(m[1].slice(2,4),16):130,bl=m?parseInt(m[1].slice(4,6),16):60;
+  const pop=document.createElement("div");
+  pop.id="colorPop";
+  pop.style.cssText="position:fixed;z-index:70;background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:12px;width:252px;box-shadow:0 8px 0 rgba(61,51,64,.2);font-weight:800;";
+  pop.innerHTML=`
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${PCOLORS.map((c,j2)=>`<button data-j="${j2}" title="標準色${j2+1}" style="width:26px;height:26px;border-radius:50%;border:3px solid var(--ink);background:${c};"></button>`).join("")}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0;"><span style="width:14px;color:#e5484d;">R</span><input type="range" class="rgbR" min="0" max="255" value="${r}" style="flex:1;"><input type="number" class="rgbRv" min="0" max="255" value="${r}" style="width:48px;" class="txtin"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0;"><span style="width:14px;color:#43c465;">G</span><input type="range" class="rgbG" min="0" max="255" value="${g}" style="flex:1;"><input type="number" class="rgbGv" min="0" max="255" value="${g}" style="width:48px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0;"><span style="width:14px;color:#3d9be9;">B</span><input type="range" class="rgbB" min="0" max="255" value="${bl}" style="flex:1;"><input type="number" class="rgbBv" min="0" max="255" value="${bl}" style="width:48px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+      <span id="cpPrev" style="width:30px;height:30px;border-radius:50%;border:3px solid var(--ink);background:${cur};"></span>
+      <input class="hexIn" value="${m?cur:"#"}" maxlength="7" style="flex:1;padding:6px 8px;border:3px solid var(--ink);border-radius:10px;font-weight:800;background:#fff;">
+      <button class="btn" style="padding:5px 12px;font-size:12px;" data-close>OK</button>
+    </div>`;
+  document.body.appendChild(pop);
+  const rr=b.getBoundingClientRect();
+  pop.style.left=Math.min(innerWidth-272,Math.max(8,rr.left))+"px";
+  pop.style.top=Math.min(innerHeight-310,rr.bottom+8)+"px";
+  const apply=()=>{
+    r=Math.max(0,Math.min(255,r|0));g=Math.max(0,Math.min(255,g|0));bl=Math.max(0,Math.min(255,bl|0));
+    const hex="#"+[r,g,bl].map(v=>v.toString(16).padStart(2,"0")).join("");
+    hCustomColor[i]=hex;b.style.background=hex;
+    pop.querySelector("#cpPrev").style.background=hex;
+    pop.querySelector(".hexIn").value=hex;
+    pop.querySelector(".rgbR").value=r;pop.querySelector(".rgbRv").value=r;
+    pop.querySelector(".rgbG").value=g;pop.querySelector(".rgbGv").value=g;
+    pop.querySelector(".rgbB").value=bl;pop.querySelector(".rgbBv").value=bl;
+  };
+  const setC=(li,v)=>{if(li===0)r=v;else if(li===1)g=v;else bl=v;apply();};
+  ["R","G","B"].forEach((L,li)=>{
+    pop.querySelector(".rgb"+L).oninput=ev=>setC(li,+ev.target.value);
+    pop.querySelector(".rgb"+L+"v").oninput=ev=>setC(li,+ev.target.value);
+  });
+  pop.querySelector(".hexIn").oninput=ev=>{
+    const v=ev.target.value.trim();
+    if(/^#[0-9a-f]{6}$/i.test(v)){const n=parseInt(v.slice(1),16);r=n>>16;g=(n>>8)&255;bl=n&255;apply();}
+  };
+  pop.addEventListener("click",ev=>{
+    const bb=ev.target.closest&&ev.target.closest("[data-j]");
+    if(bb){hColorIdx[i]=+bb.dataset.j;hCustomColor[i]=null;b.style.background=PCOLORS[hColorIdx[i]];beep(700+hColorIdx[i]*60,.06);pop.remove();return;}
+    if(ev.target.closest("[data-close]"))pop.remove();
+  });
+  const away=ev=>{if(!pop.contains(ev.target)&&ev.target!==b){pop.remove();document.removeEventListener("pointerdown",away);}};
+  setTimeout(()=>document.addEventListener("pointerdown",away),0);
+});;
+$("playerRows").addEventListener("input",e=>{const t=e.target;if(t.classList.contains("hname"))hNames[+t.dataset.i]=t.value;});
+$("cpuRows").addEventListener("input",e=>{const t=e.target;if(t.classList.contains("cname"))cNames[+t.dataset.i]=t.value;});
+$("cpuRows").addEventListener("change",e=>{
+  const t=e.target,i=+t.dataset.i;
+  if(t.classList.contains("cspd"))cSpdOv[i]=t.value===""?undefined:+t.value;
+  if(t.classList.contains("clvl"))cLvlOv[i]=t.value===""?undefined:+t.value;
+});
+function setCounts(h,c){
+  hNum=Math.max(1,Math.min(HUMAN_MAX,h));
+  cNum=Math.max(0,Math.min(CPU_MAX,c));
+  renderSetupRows();
+}
+$("hMinus").onclick=()=>setCounts(hNum-1,cNum);
+$("hPlus").onclick=()=>setCounts(hNum+1,cNum);
+$("cMinus").onclick=()=>setCounts(hNum,cNum-1);
+$("cPlus").onclick=()=>setCounts(hNum,cNum+1);
+$("cMinus10").onclick=()=>setCounts(hNum,cNum-10);
+$("cPlus10").onclick=()=>setCounts(hNum,cNum+10);
+$("cCount").onchange=()=>setCounts(hNum,parseInt($("cCount").value,10)||0);
+$("setupBack").onclick=()=>showScreen("s-title");
+$("mapSel").onchange=()=>{$("seedRow").style.display=$("mapSel").value==="builtin"?"none":"flex";};
+$("seedDice").onclick=()=>{$("seedIn").value=String(100000+rand(899999));beep(880,.08);};
+$("randBtn").onclick=()=>{
+  const pool=["もも","きび","さる","きじ","鬼","桃","鉄","駅","王","姫","博士","忍者","ロボ","猫","犬","UFO","海","山"];
+  const used=new Set();
+  const pick=()=>{
+    let nm,t=0;
+    do{nm=pool[rand(pool.length)]+(rand(9)+1);}while(used.has(nm)&&++t<40);
+    if(used.has(nm))nm=pool[rand(pool.length)]+(used.size+1);
+    used.add(nm);return nm;
+  };
+  for(let i=0;i<hNum;i++){hNames[i]=pick();hColorIdx[i]=i%8;}
+  for(let i=0;i<cNum;i++){cNames[i]=pick();cLvlOv[i]=rand(3);}
+  renderSetupRows();
+  sfx.good();
+};
+$("m-play").onclick=()=>openSetup("builtin");
+$("m-custom").onclick=()=>{
+  if(!stages.some(s=>s)){alert("カスタムステージがまだありません！\nステージメーカーで作ってね。");return;}
+  openSetup("slot",stages.findIndex(s=>s));
+};
+$("m-maker").onclick=()=>{refreshSlotSelect();loadSlot(mkSlot);showScreen("s-maker");};
+const REC_KEY="wire_sugoroku_records_v1";
+let records={};
+try{records=JSON.parse(localStorage.getItem(REC_KEY))||{};}catch(e){records={};}
+function saveRecords(){try{localStorage.setItem(REC_KEY,JSON.stringify(records));}catch(e){}}
+function refreshHallOfFame(){
+  const arr=Object.entries(records).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  $("hallOfFame").innerHTML=arr.length?`<div style="font-size:12px;font-weight:900;color:#c98f00;letter-spacing:1px;margin-top:10px;">🏆 殿堂 ${arr.map(([n,c])=>`${n}×${c}勝`).join(" ／ ")}</div>`:"";
+}
+function refreshSavedCount(){
+  const n=stages.filter(Boolean).length;
+  $("savedCount").textContent=n>0?`カスタムステージ: ${n}/18 作成済み`:"カスタムステージはまだありません";
+  refreshHallOfFame();refreshMidBtn();
+}
+refreshSavedCount();
+
+/* ================================================================
+   PLAY
+================================================================ */
+let stage=null, players=[], cur=0, round=1, turnLimit=20, playing=false, finishOrder=[], busy=false;
+let ruleMode="sugoroku", hiddenGoalId=null;
+/* --- 追加機能共通状態 --- */
+let paused=false;            // ポーズ中
+let diceRolling=false;       // サイコロ演出/待機中
+let midDirty=false;          // 未保存の進行があるか
+let momoGoalId=null;         // 移動ゴール桃鉄: 現在のゴール(無色マスid)
+let momoHistory=[];          // 使ったゴール履歴
+let momoGoalEl=null;         // 盤面の⭐マーカー要素
+let goalCount=0;             // すごろくルールのゴール数(0=全員がゴール=従来通り)
+let stopAllowed=true;        // 自由移動で「ここで止まる」を許可するか
+let mapGen="builtin";        // マップ生成: builtin / normal / mesh
+let animSpeed=1, cpuDispMul=1, fxOn=true, textScale=1; // 設定(C)用
+const MID_KEY="wire_sugoroku_mid_v1";   // 途中セーブ専用キー(既存キーとは別)
+const SET_KEY="wire_sugoroku_settings_v1"; // 設定保存用キー
+let bgmVol=1,sfxVol=1;
+let replayBuf=null,replaying=false,lastReplayId=null,replaySpeed=1;
+let joyOff=false,infoOpen=true;
+let cpuSpeed=1, cpuLevel=1;
+let coinHistory=[];
+function cpuSpdOf(p){return (p&&p.cpuSpd!==undefined)?p.cpuSpd:cpuSpeed;}
+function cpuLvlOf(p){return (p&&p.cpuLvl!==undefined)?p.cpuLvl:cpuLevel;}
+function cpuDelay(ms,p){return Math.round(ms*cpuSpdOf(p)*cpuDispMul);}
+function cpuBrain(p){return [0.3,0.7,0.95][cpuLvlOf(p)];}
+function cpuCardAggro(p){return [0.35,0.65,0.9][cpuLvlOf(p)];}
+// 速度「即時」のCPU: 演出・待ち時間・ダイアログ・効果音をすべて飛ばして一気に進める
+function cpuInstant(p){return !!(p&&p.cpu&&cpuSpdOf(p)===0);}
+// モーダル自動クローズ時間: 人間=0(手動) / 即時CPU=-1(表示しない) / 他CPU=速度に応じた時間
+function evAuto(p,ms){if(!p||!p.cpu)return 0;if(cpuInstant(p))return -1;return Math.max(250,cpuDelay(ms,p));}
+// カード所持上限
+let maxHand=8;
+const handFull=p=>p.hand.length>=(maxHand===Infinity||(typeof maxHand==="number"&&isFinite(maxHand)&&maxHand>0)?maxHand:8);
+const handMaxLabel=()=>maxHand===Infinity?"∞":String(maxHand);
+let shownCoin=null, coinAnimT=null;
+function renderCoin(v){
+  const p=players[cur];
+  const n=p?stageNode(p.pos):null;
+  const coord=(n&&n.gc!==undefined)?` ・ 現在地 <b>${colName(n.gc)}${n.gr+1}</b>`:"";
+  $("nowCoin").innerHTML=`コイン <b>${fmt(v)}</b> 枚 ・ カード${p.hand.length}枚${coord}${p.done?" ・ <b style='color:#2fae5f;'>GOAL!</b>":""}`;
+}
+function animCoin(to){
+  if(to===undefined||to===null)return;
+  if(quiet){shownCoin=to;renderCoin(to);return;}
+  const from=(shownCoin===null)?to:shownCoin;
+  if(coinAnimT)clearTimeout(coinAnimT);
+  if(from===to){shownCoin=to;renderCoin(to);return;}
+  const t0=performance.now();
+  const tick=()=>{
+    const k=Math.min(1,(performance.now()-t0)/500);
+    shownCoin=Math.round(from+(to-from)*k);
+    renderCoin(shownCoin);
+    if(k<1)coinAnimT=setTimeout(tick,33);
+    else{coinAnimT=null;shownCoin=to;renderCoin(to);}
+  };
+  tick();
+}
+const plSvg=$("plSvg");
+function plEl(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||plSvg).appendChild(e);return e;}
+const EMPTY=[];
+let nodeIdx=new Map(),outIdx=new Map(),inIdx=new Map(),goalDist=new Map();
+let plW=worldW(DEF_COLS),plH=worldH(DEF_ROWS),plCols=DEF_COLS,plRows=DEF_ROWS,mmK=1;
+function stageNode(id){return nodeIdx.get(id);}
+function outs(id){return outIdx.get(id)||EMPTY;}
+function ins(id){return inIdx.get(id)||EMPTY;}
+// マス数が多くても速いように、検索用の索引とゴールまでの距離を作る
+function indexStage(){
+  nodeIdx=new Map(stage.nodes.map(n=>[n.id,n]));
+  outIdx=new Map();inIdx=new Map();
+  stage.wires.forEach(w=>{
+    if(!nodeIdx.has(w.f)||!nodeIdx.has(w.t))return;
+    if(!outIdx.has(w.f))outIdx.set(w.f,[]);
+    if(!inIdx.has(w.t))inIdx.set(w.t,[]);
+    outIdx.get(w.f).push(w);inIdx.get(w.t).push(w);
+  });
+  goalDist=new Map();
+  const q=[];
+  stage.nodes.forEach(n=>{if(n.type==="goal"){goalDist.set(n.id,0);q.push(n.id);}});
+  for(let h=0;h<q.length;h++){
+    const c=q[h],d=goalDist.get(c);
+    ins(c).forEach(w=>{if(!goalDist.has(w.f)){goalDist.set(w.f,d+1);q.push(w.f);}});
+  }
+}
+function playerNode(p){return stageNode(p.pos);}
+const MMNS="http://www.w3.org/2000/svg";
+function mmEl(tag,attrs,parent){const e=document.createElementNS(MMNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||$("minimap")).appendChild(e);return e;}
+function buildMinimap(){
+  const mm=$("minimap");mm.innerHTML="";
+  const vw=plW/10,vh=plH/10,asp=plH/plW;
+  mm.setAttribute("viewBox",`0 0 ${vw} ${vh}`);
+  const w=Math.max(48,asp>0.75?Math.round(112/asp):150);
+  mm.style.width=w+"px";mm.style.height=Math.round(w*asp)+"px";
+  mmK=vw/570; // マップの大きさが変わっても点や線の見た目の太さを保つ
+  stage.wires.forEach(w=>{
+    const a=stageNode(w.f),b=stageNode(w.t);
+    if(a&&b)mmEl("line",{x1:a.x/10,y1:a.y/10,x2:b.x/10,y2:b.y/10,stroke:"#cbbadd","stroke-width":2*mmK});
+  });
+  stage.nodes.forEach(n=>{
+    mmEl("circle",{cx:n.x/10,cy:n.y/10,r:((n.type==="goal"||n.type==="start")?4.4:2.8)*mmK,fill:NODE_TYPES[n.type].color,stroke:"#fff","stroke-width":mmK});
+  });
+  mmEl("g",{id:"mmPlayers"});
+  drawMinimapPlayers();
+}
+function drawMinimapPlayers(){
+  const g=$("mmPlayers");
+  if(!g)return;
+  g.innerHTML="";
+  players.forEach(p=>{
+    if(p.done)return;
+    const n=stageNode(p.pos);
+    if(!n)return;
+    mmEl("circle",{cx:n.x/10,cy:n.y/10,r:3.6*mmK,fill:p.color,stroke:"#fff","stroke-width":1.3*mmK},g);
+  });
+}
+// 人数が多いと更新が重いので、描画フレームごとに1回にまとめる
+let mmPending=false;
+function updateMinimap(){
+  if(mmPending)return;
+  mmPending=true;
+  requestAnimationFrame(()=>{mmPending=false;drawMinimapPlayers();});
+}
+$("minimap").addEventListener("click",e=>{
+  if(!playing)return;
+  const r=$("minimap").getBoundingClientRect();
+  const wx=(e.clientX-r.left)/r.width*plW;
+  const wy=(e.clientY-r.top)/r.height*plH;
+  const sc=$("plScroller"),wrap=$("plWrap");
+  const scale=plSvg.clientWidth/plW;
+  cam.free=false;$("camBack").style.display="none";
+  cam.tx=Math.max(0,wx*scale-wrap.clientWidth/2);
+  cam.ty=Math.max(0,wy*scale-wrap.clientHeight/2);
+  cam.x=cam.tx;cam.y=cam.ty;cam.init=true;
+  sc.scrollLeft=cam.tx;sc.scrollTop=cam.ty;
+});
+plSvg.addEventListener("mousemove",e=>{
+  const tip=$("cellTip");
+  const g=e.target.closest&&e.target.closest("[data-nid]");
+  if(!g){tip.style.display="none";return;}
+  const n=stageNode(g.dataset.nid);
+  if(!n){tip.style.display="none";return;}
+  const d=NODE_TYPES[n.type];
+  let html=`<span style="font-size:13px;">${d.label}</span><br><span style="color:var(--ink-soft);font-weight:700;">${d.desc}</span>`;
+  if(n.type==="purple")html+=`<br><span style="color:#8b6ff0;">カテゴリ: ${CARD_CATS[n.cat-1].name}</span>`;
+  tip.innerHTML=html;
+  tip.style.display="block";
+  tip.style.left=(e.clientX+16)+"px";
+  tip.style.top=(e.clientY+16)+"px";
+});
+plSvg.addEventListener("mouseleave",()=>{$("cellTip").style.display="none";});
+// 特定ノードまでの「次の一手」を返す（見つからなければ null = フォールバックでランダム）
+function bfsToward(fromId,targetId){
+  if(fromId===targetId)return null;
+  const prev={};const q=[fromId];const seen=new Set([fromId]);
+  while(q.length){
+    const c=q.shift();
+    if(c===targetId){
+      let n=targetId;
+      while(prev[n]!==undefined&&prev[n]!==fromId)n=prev[n];
+      return prev[n]===fromId?n:null;
+    }
+    outs(c).forEach(w=>{if(!seen.has(w.t)){seen.add(w.t);prev[w.t]=c;q.push(w.t);}});
+  }
+  return null;
+}
+function bfsNext(fromId,targetTypes){
+  const prev={};const q=[fromId];const seen=new Set([fromId]);
+  let found=null;
+  while(q.length){
+    const c=q.shift();
+    if(c!==fromId&&targetTypes.includes(stageNode(c).type)){found=c;break;}
+    outs(c).forEach(w=>{if(!seen.has(w.t)){seen.add(w.t);prev[w.t]=c;q.push(w.t);}});
+  }
+  if(!found)return null;
+  let c=found;
+  while(prev[c]!==undefined&&prev[c]!==fromId)c=prev[c];
+  return prev[c]===fromId?c:null;
+}
+
+function relocateMomoGoal(excludeId){
+  const plains=stage.nodes.filter(n=>n.type==="plain");
+  if(!plains.length){momoGoalId=null;return;}
+  let pool=plains.filter(n=>n.id!==excludeId&&!momoHistory.includes(n.id)); // 未使用を優先
+  if(!pool.length)pool=plains.filter(n=>n.id!==excludeId);                  // 候補が尽きたら履歴リセット
+  if(!pool.length)pool=plains;                                              // 無色マス1つのみの場合
+  momoGoalId=pool[rand(pool.length)].id;
+  momoHistory.push(momoGoalId);
+  stats.moves++;
+  if(momoHistory.length>300)momoHistory=momoHistory.slice(-150);
+}
+function updateMomoGoalMarker(){
+  if(!momoGoalEl)return;
+  const n=momoGoalId?stageNode(momoGoalId):null;
+  if(!n){momoGoalEl.setAttribute("display","none");return;}
+  momoGoalEl.removeAttribute("display");
+  momoGoalEl.setAttribute("transform",`translate(${n.x},${n.y})`);
+}
+function renderPlayBoard(){
+  plSvg.innerHTML="";
+  plSvg.setAttribute("viewBox",`0 0 ${plW} ${plH}`);
+  const pat=plEl("defs",{});
+  const mk=plEl("marker",{id:"parrow",viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},pat);
+  mk.innerHTML='<path d="M 0 0 L 10 5 L 0 10 z" fill="#7a6f85"/>';
+  const p=plEl("pattern",{id:"pdots",width:60,height:60,patternUnits:"userSpaceOnUse"},pat);
+  plEl("circle",{cx:3,cy:3,r:2.5,fill:"#cfe0f2"},p);
+  plEl("rect",{x:0,y:0,width:plW,height:plH,fill:"url(#pdots)"});
+  for(let c=0;c<plCols;c++)plEl("line",{x1:GX(c),y1:GY(0),x2:GX(c),y2:GY(plRows-1),stroke:"#dbe8f6","stroke-width":2});
+  for(let r=0;r<plRows;r++)plEl("line",{x1:GX(0),y1:GY(r),x2:GX(plCols-1),y2:GY(r),stroke:"#dbe8f6","stroke-width":2});
+  // wires
+  stage.wires.forEach(w=>{
+    const a=stageNode(w.f),b=stageNode(w.t);
+    if(!a||!b)return;
+    plEl("path",{d:edgePath(a,b),fill:"none",stroke:"#fff","stroke-width":12,"stroke-linecap":"round"});
+    plEl("path",{d:edgePath(a,b),fill:"none",stroke:"#7a6f85","stroke-width":4,"stroke-linecap":"round","marker-end":"url(#parrow)"});
+  });
+  // nodes
+  stage.nodes.forEach(n=>{
+    const d=NODE_TYPES[n.type];
+    const g=plEl("g",{transform:`translate(${n.x},${n.y})`,"data-nid":n.id});
+    plEl("circle",{r:30,fill:"#fff",stroke:"var(--ink)","stroke-width":4},g);
+    plEl("circle",{r:22,fill:d.color,stroke:"#fff","stroke-width":3},g);
+    if(n.type==="start")plEl("text",{y:7,"text-anchor":"middle","font-size":19,"font-weight":900,fill:"#fff"},g).textContent="▶";
+    if(n.type==="goal")plEl("text",{y:7,"text-anchor":"middle","font-size":19,"font-weight":900,fill:"#fff"},g).textContent="◎";
+    if(n.type==="purple")plEl("text",{y:7,"text-anchor":"middle","font-size":19,"font-weight":900,fill:"#fff"},g).textContent=n.cat;
+    if(n.type==="back")plEl("text",{y:7,"text-anchor":"middle","font-size":16,"font-weight":900,fill:"#fff"},g).textContent="↩"+(n.cat||3);
+    if(n.type==="plain")plEl("text",{y:6,"text-anchor":"middle","font-size":17,"font-weight":900,fill:"#b3a8bd"},g).textContent="?";
+    const t=plEl("text",{y:52,"text-anchor":"middle","font-size":13,"font-weight":800,fill:"var(--ink)"},g);
+    t.textContent=d.label;
+    if(n.type==="purple"){
+      const t2=plEl("text",{y:66,"text-anchor":"middle","font-size":11,"font-weight":800,fill:"var(--ink-soft)"},g);
+      t2.textContent="["+(CARD_CATS[n.cat-1]?.name||"?")+"]";
+    }
+  });
+  // 移動ゴール桃鉄の⭐マーカー
+  momoGoalEl=null;
+  if(ruleMode==="momoMove"){
+    momoGoalEl=plEl("g",{});
+    plEl("circle",{r:36,fill:"none",stroke:"#f2b90d","stroke-width":5,"stroke-dasharray":"12 7"},momoGoalEl);
+    const mt=plEl("text",{y:10,"text-anchor":"middle","font-size":28},momoGoalEl);
+    mt.textContent="⭐";
+    updateMomoGoalMarker();
+  }
+  // markers（9人以上は小さくして、CPUは番号を表示）
+  nodeOcc=new Map();spotPl=null;
+  const R=pieceR(),many=players.length>8;
+  players.forEach((pl,i)=>{
+    const g=plEl("g",{});
+    pl.ringEl=plEl("circle",{r:R+5,fill:"none",stroke:"#f2b90d","stroke-width":3,"stroke-dasharray":"5 4",display:"none"},g);
+    plEl("circle",{r:R,fill:pl.color,stroke:"var(--ink)","stroke-width":many?2.5:3.5},g);
+    plEl("circle",{cx:-R*0.34,cy:-R*0.34,r:R*0.34,fill:"rgba(255,255,255,.6)"},g); // ハイライト
+    pl.nameEl=plEl("text",{y:-R-9,"text-anchor":"middle","class":"pname","font-size":Math.max(10,13-Math.floor(players.length/14)),"font-weight":900,fill:"#fff",stroke:"rgba(61,51,64,.75)","stroke-width":3.5,"paint-order":"stroke"},g);
+    pl.nameEl.textContent=pl.name;
+    if(players.length>16)pl.nameEl.setAttribute("display","none"); // 99体時は視認性のため非表示
+    pl.pulseEl=plEl("circle",{r:R+13,fill:"none",stroke:"#ffd94d","stroke-width":4,class:"pp-pulse",display:"none"},g);
+    const label=(many&&pl.cpu)?String(pl.cpuNo):GLYPHS[(many?pl.hi:i)%8];
+    const fs=!many?11:(label.length>=3?R*0.62:label.length===2?R*0.78:R*1.0);
+    const gt=plEl("text",{y:fs*0.36,"text-anchor":"middle","font-size":fs,"font-weight":900,fill:"#fff"},g);
+    if(many){gt.setAttribute("stroke","rgba(61,51,64,.55)");gt.setAttribute("stroke-width",fs*0.18);gt.setAttribute("paint-order","stroke");}
+    gt.textContent=label;
+    pl.gEl=g;pl._at=undefined;
+    placePiece(pl,true);
+  });
+}
+const OFFS=[[0,-9],[9,-3],[9,6],[0,10],[-9,6],[-9,-3],[15,-12],[-15,-12]];
+const GLYPHS=["●","★","■","▲","◆","♥","✚","◎"];
+let nodeOcc=new Map(),spotPl=null; // マスごとの在席プレイヤー（重なりを避けて並べる）
+function pieceR(){const n=players.length;return n<=8?13:n<=24?10:8;}
+function pieceOffset(k,tot){
+  if(tot<=8)return OFFS[k];
+  const c=pieceR()*1.15,a=k*2.39996323,r=c*Math.sqrt(k+.5); // 多いときは渦巻き状に並べる
+  return [Math.cos(a)*r,Math.sin(a)*r];
+}
+function layoutNode(id,instant){
+  const l=nodeOcc.get(id),n=stageNode(id);
+  if(!l||!n)return;
+  l.forEach((pl,k)=>{
+    const [ox,oy]=pieceOffset(k,l.length);
+    pl.gEl.style.transition=instant?"none":"transform .2s cubic-bezier(.3,1.3,.5,1)";
+    pl.gEl.setAttribute("transform",`translate(${n.x+ox},${n.y+oy})`);
+  });
+}
+function placePiece(p,instant){
+  if(!p.gEl||!stageNode(p.pos))return;
+  if(p._at!==p.pos){
+    if(p._at!==undefined){
+      const old=nodeOcc.get(p._at);
+      if(old){const i=old.indexOf(p);if(i>=0)old.splice(i,1);if(!old.length)nodeOcc.delete(p._at);}
+      layoutNode(p._at,instant);
+    }
+    if(!nodeOcc.has(p.pos))nodeOcc.set(p.pos,[]);
+    nodeOcc.get(p.pos).push(p);
+    p._at=p.pos;
+  }
+  layoutNode(p.pos,instant);
+  updateMinimap();
+}
+// 手番のコマを手前に出して、金色のリングを付ける
+function spotlight(p){
+  if(spotPl&&spotPl.gEl){if(spotPl.ringEl)spotPl.ringEl.setAttribute("display","none");if(spotPl.pulseEl)spotPl.pulseEl.setAttribute("display","none");spotPl.gEl.removeAttribute("class");}
+  spotPl=p;
+  if(p&&p.gEl){plSvg.appendChild(p.gEl);if(p.ringEl)p.ringEl.setAttribute("display","inline");if(p.pulseEl)p.pulseEl.setAttribute("display","inline");p.gEl.setAttribute("class","pp-cur");}
+}
+const cam={x:0,y:0,tx:0,ty:0,init:false,free:false};
+let camFollow=null;
+function setCamTarget(p,snap){
+  camFollow=p;
+  if(!p||!p.gEl)return;
+  const wrap=$("plWrap"),sc=$("plScroller");
+  const r=p.gEl.getBoundingClientRect(),w=wrap.getBoundingClientRect();
+  cam.tx=Math.max(0,r.left-w.left+sc.scrollLeft-wrap.clientWidth/2);
+  cam.ty=Math.max(0,r.top-w.top+sc.scrollTop-wrap.clientHeight/2);
+  if(snap||!cam.init){cam.x=cam.tx;cam.y=cam.ty;cam.init=true;sc.scrollLeft=cam.x;sc.scrollTop=cam.y;}
+}
+(function camLoop(){
+  requestAnimationFrame(camLoop);
+  if(cam.free||!camFollow||!camFollow.gEl)return;
+  const wrap=$("plWrap"),sc=$("plScroller");
+  const r=camFollow.gEl.getBoundingClientRect(),w=wrap.getBoundingClientRect();
+  cam.tx=Math.max(0,r.left-w.left+sc.scrollLeft-wrap.clientWidth/2);
+  cam.ty=Math.max(0,r.top-w.top+sc.scrollTop-wrap.clientHeight/2);
+  const dx=cam.tx-cam.x,dy=cam.ty-cam.y;
+  if(Math.abs(dx)<.6&&Math.abs(dy)<.6)return;
+  cam.x+=dx*.09;cam.y+=dy*.09;
+  sc.scrollLeft=cam.x;sc.scrollTop=cam.y;
+})();
+function scrollToPiece(p){setCamTarget(p);}
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function buildDie(){
+  const base=$("die1");
+  const box=base.parentElement;
+  box.classList.add("diceBox");
+  box.querySelectorAll(".die.dyn").forEach(e=>e.remove());
+  for(let i=3;i<=6;i++){const d=base.cloneNode(true);d.id="die"+i;d.classList.add("dyn");box.appendChild(d);}
+  for(let i=1;i<=6;i++){const d=$("die"+i);d.innerHTML="";d.classList.remove("rolling");
+    for(let k=0;k<9;k++){const s=document.createElement("span");s.className="pip";d.appendChild(s);}}
+  setDieEl($("die1"),6);
+}
+function setDieEl(el,v){[...el.children].forEach((p,i)=>p.classList.toggle("on",PIPS[v].includes(i)));}
+function setDie(v){setDieEl($("die1"),v);}
+function syncDice(){
+  const p=players[cur];
+  const n=(p&&(p.diceCount||1))||1;
+  for(let i=1;i<=6;i++){const d=$("die"+i);if(d)d.style.display=i<=n?"grid":"none";}
+  const box=$("die1").parentElement;
+  if(box)box.classList.toggle("many",n>2);
+}
+let diceCycleIv=null, diceStopRequested=false;
+async function rollDiceStop(p){
+  diceRolling=true;
+  const count=Math.min(6,p.diceCount||1); // 複数サイコロ併用で最大6個
+  if(cpuInstant(p)){diceRolling=false;return Array.from({length:count},()=>1+rand(6));} // 即時: 演出なしで出目だけ決める
+  const els=[];
+  for(let k=1;k<=count;k++)els.push($("die"+k));
+  els.forEach(el=>el.classList.add("rolling"));
+  diceStopRequested=false;
+  diceCycleIv=setInterval(()=>{els.forEach(el=>setDieEl(el,1+rand(6)));sfx.slot();},65);
+  const rb=$("rollBtn");
+  rb.style.display="block";rb.textContent="止める！";rb.disabled=false;
+  const cb=$("cancelRollBtn");
+  let cancelled=false;
+  cb.style.display=p.cpu?"none":"inline-block"; // 人間のみ: キャンセルボタンを表示
+  await new Promise(res=>{
+    let done=false;
+    const fin=()=>{if(done)return;done=true;res();};
+    rb.onclick=()=>{if(!diceStopRequested){diceStopRequested=true;beep(300,.1,"sawtooth");fin();}};
+    cb.onclick=()=>{if(!diceStopRequested){cancelled=true;diceStopRequested=true;beep(220,.12,"sawtooth");fin();}};
+    if(p.cpu)setTimeout(fin,Math.round((600+rand(900))*cpuSpdOf(p)));
+  });
+  cb.style.display="none";
+  rb.disabled=true;
+  const PITCH=[900,800,700,610,530,450,380,310];
+  for(let k=0;k<8;k++){await sleep([40,55,75,100,140,190,260,340][k]);els.forEach(el=>setDieEl(el,1+rand(6)));beep(PITCH[k],.05);}
+  clearInterval(diceCycleIv);
+  rb.style.display="none";
+  diceRolling=false;
+  els.forEach(el=>el.classList.remove("rolling"));
+  if(cancelled){log("出目",`${p.name}はサイコロをやめた`);return null;} // キャンセル: 出目なしでターン冒頭へ戻る
+  const vals=els.map(()=>1+rand(6));
+  els.forEach((el,i)=>setDieEl(el,vals[i]));
+  return vals;
+}
+function refreshHand(){
+  const p=players[cur];
+  const usable=playing&&!p.cpu&&!p.done&&!turnRolled&&!busy;
+  $("handTitle").textContent=`カード (最大${handMaxLabel()}枚 / 自分のターンに使用)`;
+  $("hand").innerHTML=p.hand.map((cid,i)=>{
+    const c=CARD_MAP[cid];
+    return `<div class="card ${usable?"":"max"}" data-i="${i}" style="border-color:${CARD_CATS[c.cat].color};">${c.name}</div>`;
+  }).join("");
+  $("hand").querySelectorAll(".card").forEach(elm=>{
+    elm.onclick=()=>{if(!p.cpu)useCard(p,+elm.dataset.i);};
+    elm.title=CARD_MAP[p.hand[+elm.dataset.i]].desc;
+  });
+}
+function refreshNow(){
+  const p=players[cur];
+  $("nowName").innerHTML=`<span class="dot" style="background:${p.color}"></span><span>${p.name}${p.cpu?" (CPU)":""}</span>`;
+  animCoin(p.coin);
+  $("roundPill").textContent=turnLimit?`${round}ターン目 / ${turnLimit}`:`${round}ターン目`;
+  updateMinimap();
+  syncDice();
+  refreshHand();
+  scheduleRanking();
+  goalInfoUpdate();
+  joyUpdate();
+}
+// ランキングは描画フレームごとに1回だけ更新。人数が多いときは上位＋人間＋手番の人だけ表示
+let rankPending=false;
+function scheduleRanking(){
+  if(rankPending)return;
+  rankPending=true;
+  requestAnimationFrame(()=>{rankPending=false;renderRanking();});
+}
+function renderRanking(){
+  if(!players.length)return;
+  const cp=players[cur];
+  const arr=[...players].sort((a,b)=>ruleMode==="momoKai"?((b.clears||0)-(a.clears||0)||(b.coin-a.coin)):((b.done-a.done)||(b.coin-a.coin)));
+  const row=(pl,i)=>{
+    const isMe=playing&&cp===pl;
+    return `<li class="${isMe?"me":""}"><span class="rnum">${i+1}</span><span class="dot" style="background:${pl.color}"></span><span class="rname">${pl.name}${pl.done?" 🏁":""}${ruleMode==="momoKai"?` 🏁${pl.clears||0}回`:""}</span><span class="rval">${ruleMode==="momoKai"?`${pl.clears||0}回・${fmt(pl.coin)}`:fmt(pl.coin)}</span></li>`;
+  };
+  if(arr.length<=12){$("ranking").innerHTML=arr.map(row).join("");return;}
+  let html="",prev=-1;
+  arr.forEach((pl,i)=>{
+    if(i<8||!pl.cpu||pl===cp){
+      if(prev>=0&&i>prev+1)html+=`<li class="gap">… ${i-prev-1}人 …</li>`;
+      html+=row(pl,i);prev=i;
+    }
+  });
+  $("ranking").innerHTML=html;
+}
+async function pickNext(p){
+  const o=outs(p.pos);
+  if(o.length===0)return null;
+  if(o.length===1)return o[0].t;
+  if(p.cpu){
+    if(Math.random()<cpuBrain(p)){
+      const nx=ruleMode==="momoMove"?bfsToward(p.pos,momoGoalId):bfsNext(p.pos,ruleMode==="momo"?["plain"]:["goal"]);
+      if(nx&&o.some(w=>w.t===nx))return nx;
+    }
+    return o[rand(o.length)].t;
+  }
+  const idx=await choiceModal("どっちに進む？",o.map(w=>{
+    const n=stageNode(w.t);
+    return {label:`${NODE_TYPES[n.type].label}${n.type==="purple"?" ["+CARD_CATS[n.cat-1].name+"]":""} へ`,color:NODE_TYPES[n.type].color};
+  }));
+  return o[idx].t;
+}
+async function moveGraph(p,steps,trigger=true,depth=0){
+  let moved=0;
+  const fast=cpuInstant(p);
+  for(let i=0;i<steps;i++){
+    const next=await pickNext(p);
+    if(!next)break;
+    p.pos=next;moved++;
+    placePiece(p,fast);sfx.step();
+    if(!fast){scrollToPiece(p);await sleep(p.cpu?cpuDelay(220,p):220);}
+  }
+  if(trigger&&moved>0)await land(p,depth);
+}
+async function moveBackward(p,steps,fast){
+  for(let i=0;i<steps;i++){
+    const incoming=ins(p.pos);
+    if(!incoming.length)break;
+    p.pos=incoming[rand(incoming.length)].f;
+    placePiece(p,fast);
+    if(!fast){sfx.step();scrollToPiece(p);await sleep(p.cpu?cpuDelay(220,p):220);}
+  }
+}
+function flash(){
+  if(!fxOn)return;
+  const f=$("flash");
+  f.style.transition="none";f.style.opacity=".85";
+  requestAnimationFrame(()=>{f.style.transition="opacity .6s";f.style.opacity="0";});
+}
+// 桃鉄ルール・改: ゴールしても終了せず、クリア回数をカウントしてスタートへ戻る
+async function doClearKai(p){
+  p.clears=(p.clears||0)+1;
+  stats.clears++;
+  p.coin+=3000;sfx.goal();
+  if(!quiet){flash();confettiBurst(25);}
+  log("クリア",`<b>${p.name}</b>が${p.clears}回目のゴール！ ボーナス <b>+3000コイン</b>`);
+  if(!quiet)announce(`<div style="font-size:18px;">🏁 <b>${p.name}</b> が${p.clears}回目クリア！ +3000コイン</div>`,"#c98f00");
+  await showEvent(`<div style="text-align:center;"><div style="font-size:52px;">🏁</div><div style="font-size:20px;font-weight:900;margin:8px 0;">${p.clears}回目のクリア！</div><div style="color:var(--ink-soft);font-weight:700;">${p.name}がボーナス <b>+3000コイン</b>！<br>スタートに戻って、もう一度ゴールを目指そう！</div></div>`,evAuto(p,900));
+  const st=stage.nodes.find(x=>x.type==="start");
+  if(st){
+    p.pos=st.id; // placePiece が在席管理(nodeOcc)も併せて処理する
+    placePiece(p,true);
+    drawMinimapPlayers();
+  }
+  refreshNow();
+}
+async function doGoal(p,isHidden=false){
+  stats.goals++;
+  p.done=true;finishOrder.push(p);sfx.goal();if(!quiet){flash();confettiBurst(25);}
+  if(!quiet)announce(`<div style="font-size:18px;">🏁 <b>${p.name}</b> が${isHidden?"隠れ":""}ゴール！ ${finishOrder.length}位確定！</div>`,"#c98f00");
+  log("ゴール",`<b>${p.name}</b>が${isHidden?"隠れ":""}ゴールに到着！（${finishOrder.length}位確定）`);
+  await showEvent(`<div style="text-align:center;"><div style="font-size:52px;">🏁</div><div id="evT" style="font-size:20px;font-weight:900;margin:8px 0;">${isHidden?"隠れゴール発見！":"ゴール！"}</div><div style="color:var(--ink-soft);font-weight:700;">${p.name}が ${finishOrder.length} 位でフィニッシュ！</div></div>`,evAuto(p,900));
+  if(players.every(x=>x.done))endGame();
+}
+async function land(p,depth=0){
+  const n=stageNode(p.pos);
+  if(p.done)return;
+  if(n.type==="goal"){
+    if(ruleMode==="momo"||ruleMode==="momoMove"){
+      log("ゴール？",`${p.name}「ここはゴールじゃなかった…」`);
+    }else if(ruleMode==="momoKai"){
+      await doClearKai(p);
+    }else{
+      await doGoal(p);
+    }
+    return;
+  }
+  if(n.type==="plain"){
+    if(ruleMode==="momoMove"&&n.id===momoGoalId){
+      p.coin+=3000;sfx.goal();
+      log("移動ゴール",`<b>${p.name}</b>が⭐ゴールに到着！ ボーナス <b>+3000コイン</b>`);
+      if(!quiet){flash();announce(`<div style="font-size:18px;">⭐ <b>${p.name}</b> がゴールに到着！ +3000コイン</div>`,"#c98f00");}
+      await showEvent(`<div style="text-align:center;"><div style="font-size:52px;">⭐</div><div style="font-size:20px;font-weight:900;margin:8px 0;">移動ゴール到達！</div><div style="color:var(--ink-soft);font-weight:700;">${p.name}がボーナス <b>+3000コイン</b>！<br>ゴールは別の無色マスへ移動する…</div></div>`,evAuto(p,900));
+      relocateMomoGoal(momoGoalId);
+      updateMomoGoalMarker();
+      log("移動ゴール",`⭐ゴールが新しい無色マスへ移動しました！`);
+      if(!quiet)announce(`<div style="font-size:17px;">⭐ ゴールが移動しました！</div>`,"#f2b90d",2000);
+      refreshNow();
+      return;
+    }
+    if(ruleMode==="momo"&&n.id===hiddenGoalId){
+      stats.hidden++;
+      p.coin+=3000;sfx.goal();
+      log("隠れゴール",`<b>${p.name}</b>が隠れゴールを発見！ ボーナス <b>+3000コイン</b>`);
+      flash();
+      announce(`<div style="font-size:18px;">🏁 <b>${p.name}</b> が隠れゴールを発見！ ゲーム終了！</div>`,"#c98f00");
+      await showEvent(`<div style="text-align:center;"><div style="font-size:52px;">🏁</div><div style="font-size:20px;font-weight:900;margin:8px 0;">隠れゴール発見！</div><div style="color:var(--ink-soft);font-weight:700;">${p.name}がゴールを見つけて<br>ボーナス <b>+3000コイン</b>！<br>これでゲーム終了だ！</div></div>`,evAuto(p,900));
+      endGame();
+      return;
+    }
+    if(ruleMode==="sugoroku"&&Math.random()<0.12){
+      // 隠れゴール！
+      await showEvent(`<div style="text-align:center;"><div style="font-size:44px;">✨</div><div style="font-size:19px;font-weight:900;margin:8px 0;">無色マスが光り出した！</div><div style="color:var(--ink-soft);font-weight:700;">このマス、実はゴールだった！</div></div>`,evAuto(p,900));
+      await doGoal(p,true);
+    }else{
+      log("無色マス",`${p.name} 「なにもなかった…」`);
+      await showEvent(`<div style="text-align:center;"><div style="font-size:44px;">🌫️</div><div style="font-size:19px;font-weight:900;margin:8px 0;">無色マス</div><div style="color:var(--ink-soft);font-weight:700;">今回はなにも起きなかった。</div></div>`,evAuto(p,700));
+    }
+    return;
+  }
+  if(n.type==="back"){
+    const bk=Math.max(1,Math.min(9,n.cat||3));
+    sfx.bad();
+    log("戻る",`<b>${p.name}</b>が <b>↩${bk}マス戻る</b> マスに着地`);
+    if(!quiet){flash();announce(`<div style="font-size:20px;">↩ ${bk}マス戻る！</div>`,"#e8862e");}
+    await showEvent(`<div style="text-align:center;"><div style="font-size:52px;">↩</div><div style="font-size:19px;font-weight:900;margin:8px 0;">戻るマス！</div><div style="color:var(--ink-soft);font-weight:700;">${p.name}は <b>${bk}マス</b> 戻る…</div></div>`,evAuto(p,800));
+    await moveBackward(p,bk,cpuInstant(p));
+    refreshNow();
+    if(depth<6)await land(p,depth+1); // 戻った先の効果も適用（連鎖防止で深さ制限）
+    return;
+  }
+  if(n.type==="red"||n.type==="blue"||n.type==="yellow"){
+    await slotMachine(p,n);
+    return;
+  }
+  if(n.type==="purple"){
+    await openShop(p,n);
+    return;
+  }
+  if(n.type==="start"){
+    p.coin+=100;sfx.good();
+    log("スタート",`${p.name}はスタートで休憩。 +100コイン`);
+    refreshNow();
+  }
+  if(depth<1&&n.type==="start"){/* no chain */}
+}
+/* ---------- slot machine ---------- */
+const SLOT_AMOUNTS=[50,80,100,150,200,300,500,800,1000,1500,2000]; // コイン（表示・加減ともにこの枚数）
+const SLOT_CARDS=Object.values(CARD_MAP);
+/* カードスイッチ: デフォルト/カスタム（個別ON/OFF） */
+let cardSetMode="default",cardEnabled={};
+function enabledCards(){
+  if(cardSetMode!=="custom")return SLOT_CARDS;
+  const en=SLOT_CARDS.filter(c=>cardEnabled[c.id]!==false);
+  return en.length?en:SLOT_CARDS; // 全部OFFならデフォルトにフォールバック
+}
+function enabledCatCards(cat){
+  if(cardSetMode!=="custom")return cat.cards;
+  const en=cat.cards.filter(c=>cardEnabled[c.id]!==false);
+  return en;
+}
+async function slotMachine(p,n){
+  p.stats=p.stats||{cards:0,roulette:0};
+  p.stats.roulette++;
+  const mult=p.slotMult||1;p.slotMult=1;
+  const guarded=(n.type==="red")&&(p.redGuard||p.inv);
+  if(p.redGuard)p.redGuard=false;
+  const fast=cpuInstant(p); // 即時CPUはルーレット演出なしで結果だけ反映
+  const auto=(p.cpu&&!fast)?Math.round(1200*cpuSpdOf(p)):0;
+  const isCard=n.type==="yellow";
+  const pool=isCard?enabledCards():SLOT_AMOUNTS;
+  const final=pool[rand(pool.length)];
+  if(!fast){
+    const reelFs=isCard?"20px":"24px";
+    modal(`<h2 style="justify-content:center;"><span class="badge" style="background:${NODE_TYPES[n.type].color};">ROULETTE</span> ${NODE_TYPES[n.type].label}</h2>
+    <div id="slotReels" style="margin:18px 0 10px;"><div class="reel" id="r0" style="width:220px;height:96px;font-size:${reelFs};margin:0 auto;">-</div></div>
+    <div id="slotMsg">...</div>
+    <div style="text-align:center;"><button class="btn primary" id="slotOk" style="display:none;">OK</button></div>`);
+    const reel=$("r0");
+    reel.classList.add("spin");
+    const iv=setInterval(()=>{
+      if(isCard){
+        reel.textContent=enabledCards()[rand(enabledCards().length)].name;
+        reel.style.color="var(--ink)";
+      }else{
+        const a=SLOT_AMOUNTS[rand(SLOT_AMOUNTS.length)];
+        reel.textContent=a+"コイン";
+        reel.style.color=a>=1000?"#c98f00":"var(--ink)";
+        reel.style.textShadow=a>=1000?"0 0 8px #ffd66b":"none";
+      }
+      sfx.slot();
+    },70);
+    // 1枚だけのルーレット → 止まったものをそのままもらう
+    await new Promise(res=>{
+      setTimeout(()=>{
+        reel.classList.remove("spin");
+        reel.textContent=isCard?final.name:final+"コイン";
+        if(!isCard){
+          reel.style.color=final>=1000?"#c98f00":"var(--ink)";
+          reel.style.textShadow=final>=1000?"0 0 10px #ffd66b":"none";
+        }
+        beep(1100,.12);
+        clearInterval(iv);res();
+      },auto?auto*0.7:(650+rand(500)));
+    });
+  }
+  let msg="";
+  if(isCard){
+    if(!handFull(p)){
+      p.hand.push(final.id);
+      sfx.good();
+      msg=`「${final.name}」 を手に入れた！`;
+    }else{
+      sfx.bad();
+      msg=`カードがいっぱい！ 「${final.name}」を取りこぼした…`;
+    }
+  }else{
+    let coins=final*mult; // コイン: 書かれた枚数をそのまま加減
+    if(final>=2000){coins*=2;} // 大当たり: 2倍ボーナス
+    if(final>=2000&&n.type!=="red"){sfx.goal();}
+    if(n.type==="red"){
+      if(guarded||p.inv){msg="ガード発動！ ダメージなし。";}
+      else{const lose=Math.min(p.coin,coins);p.coin-=lose;sfx.bad();msg="-"+coins+"コイン …！";floatCoin(p,-lose);}
+    }else{
+      p.coin+=coins;floatCoin(p,coins);sfx.good();
+      msg="+"+coins+"コイン！"+(final>=2000?" 🎉大当たり2倍！":"")+(mult>1?" ("+mult+"倍！)":"");
+    }
+  }
+  log("ルーレット",`${p.name} ${NODE_TYPES[n.type].label} → ${msg}`);
+  if(!fast){
+    $("slotMsg").textContent=msg;
+    const okB=$("slotOk");okB.style.display="inline-block";
+    await new Promise(res=>{okB.onclick=()=>{closeModal();res();};if(auto)setTimeout(()=>{if(!$("evOv").classList.contains("hidden")){closeModal();res();}},auto);});
+  }
+  refreshNow();
+}
+/* ---------- shop ---------- */
+async function openShop(p,n){
+  const cat=CARD_CATS[(n.cat||1)-1];
+  let tab="buy";
+  const render=()=>{
+    const sellPrice=c=>Math.max(5,Math.floor(c.price/2));
+    let body="";
+    if(tab==="buy"){
+      body=enabledCatCards(cat).map(c=>{
+        const can=p.coin>=c.price&&!handFull(p);
+        return `<div class="shopItem"><div class="swatch" style="background:${cat.color};"></div>
+          <div><div class="si-name">${c.name}</div><div class="si-desc">${c.desc}</div></div>
+          <button data-buy="${c.id}" ${can?"":"disabled"}>${c.price}コイン</button></div>`;
+      }).join("")+(handFull(p)?`<div style="text-align:center;font-size:12px;color:var(--danger);font-weight:800;">カードがいっぱい(${handMaxLabel()}枚)です</div>`:"");
+    }else{
+      body=p.hand.length?p.hand.map((cid,i)=>{
+        const c=CARD_MAP[cid];
+        return `<div class="shopItem"><div class="swatch" style="background:${CARD_CATS[c.cat].color};"></div>
+          <div><div class="si-name">${c.name}</div><div class="si-desc">${c.desc}</div></div>
+          <button data-sell="${i}">売る +${sellPrice(c)}</button></div>`;
+      }).join(""):`<div style="text-align:center;color:var(--ink-soft);font-weight:700;padding:16px 0;">カードを持っていません</div>`;
+    }
+    modal(`<h2><span class="badge" style="background:${cat.color};">SHOP</span> カードショップ <span style="font-size:12px;color:var(--ink-soft);">${cat.name}の店</span></h2>
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px;">${p.name} のコイン: <b>${fmt(p.coin)}</b></div>
+      <div id="shopTabs"><button data-tab="buy" class="${tab==="buy"?"on":""}">買う</button><button data-tab="sell" class="${tab==="sell"?"on":""}">売る</button></div>
+      ${body}
+      <div style="text-align:center;margin-top:10px;"><button class="btn primary" id="shopOut">でる</button></div>`);
+    $("evModal").querySelectorAll("#shopTabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();});
+    $("evModal").querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{
+      const c=CARD_MAP[b.dataset.buy];
+      if(p.coin>=c.price&&!handFull(p)){p.coin-=c.price;p.hand.push(c.id);stats.shops++;sfx.buy();log("ショップ",`${p.name}が「${c.name}」を買った！`);refreshNow();render();}
+    });
+    $("evModal").querySelectorAll("[data-sell]").forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.sell,cid=p.hand[i],c=CARD_MAP[cid];
+      p.hand.splice(i,1);p.coin+=sellPrice(c);sfx.buy();log("ショップ",`${p.name}が「${c.name}」を売った。`);refreshNow();render();
+    });
+    $("shopOut").onclick=()=>closeModal();
+  };
+  if(p.cpu){
+    // CPU: いらないカードを売って、価値の高いカードを買う（手札がいっぱいなら入れ替える）
+    const r=cpuShop(p,cat);
+    if(r.bought.length&&!cpuInstant(p)){
+      announce(`<div style="font-size:16px;">🛒 <b>${p.name}</b> が ${r.bought.map(c=>"「"+c.name+"」").join("")} を購入</div>`,cat.color,1600);
+      await sleep(cpuDelay(700,p));
+    }
+    if(!r.bought.length&&!r.sold.length)log("ショップ",`${p.name}は何も買わなかった。`);
+    refreshNow();return;
+  }
+  render();
+  await new Promise(res=>{
+    const check=setInterval(()=>{
+      if($("evOv").classList.contains("hidden")){clearInterval(check);res();}
+    },200);
+  });
+}
+// ゴールまでの距離（小さいほどゴールに近い）
+function progressOf(pl){const d=goalDist.get(pl.pos);return d===undefined?Infinity:d;}
+// カードの価値（ショップで買う/売る判断と、使う順番に使う）
+function cpuCardValue(p,c){
+  const momo=ruleMode==="momo";
+  switch(c.fx.type){
+    case "gain": return 6;
+    case "stealRich": return 4.5;
+    case "taxAll": return 4;
+    case "doubleDice": case "again": return 3.2;
+    case "swapRich": return 3;
+    case "modNext": return 2.8;
+    case "move": return 2.6;
+    case "slotX": return 2.2;
+    case "restOther": return 2.2;
+    case "swapPos": return momo?0.8:2.4;
+    case "stealCard": case "swapCard": case "allback": return 2;
+    case "redGuard": case "inv": case "guardRest": return 1.6;
+    case "fixNext": return 0.8;
+    case "heal": return 0.3;
+  }
+  return 1;
+}
+// 対象を選ぶカードの相手を決める
+function cpuPickTarget(p,c,others){
+  const t=c.fx.type;
+  const byCoin=[...others].sort((a,b)=>b.coin-a.coin);
+  const leader=[...others].sort((a,b)=>progressOf(a)-progressOf(b)||b.coin-a.coin)[0];
+  if(t==="stealCard"||t==="swapCard"){
+    const w=others.filter(o=>o.hand.length);
+    if(w.length)return w.reduce((a,b)=>b.hand.length>a.hand.length?b:a);
+    return byCoin[0];
+  }
+  if(t==="swapPos"||t==="restOther")return ruleMode==="momo"?byCoin[0]:leader;
+  return byCoin[0];
+}
+// このターンに使うカードを決める（使う確率はCPUの強さで変わる）
+function cpuPlanCards(p){
+  const lv=cpuLvlOf(p),ag=cpuCardAggro(p),momo=ruleMode==="momo";
+  const others=players.filter(x=>x!==p&&!x.done);
+  const richest=others.length?others.reduce((a,b)=>b.coin>a.coin?b:a):null;
+  const myProg=progressOf(p),known=myProg!==Infinity&&!momo;
+  const lead=(!momo&&others.length)?others.reduce((a,b)=>progressOf(b)<progressOf(a)?b:a):null;
+  const aheadRate=(known&&others.length)?others.filter(o=>progressOf(o)<myProg).length/others.length:0;
+  const cand=[];
+  p.hand.forEach(cid=>{
+    const c=CARD_MAP[cid],fx=c.fx;
+    let want=0,target=null;
+    switch(fx.type){
+      case "gain": want=Math.min(1,ag+0.3);break;
+      case "stealRich": want=(richest&&richest.coin>=150)?Math.min(1,ag+0.2):0;break;
+      case "taxAll": want=others.some(o=>o.coin>0)?Math.min(1,ag+0.25):0;break;
+      case "again": case "doubleDice": case "modNext": want=ag;break;
+      case "move": want=(known&&myProg<=fx.n)?1:ag*0.7;break;
+      case "fixNext": want=(known&&myProg===2)?0.95:0;break; // ゴールまでちょうど2マスのときだけ
+      case "slotX": want=ag*0.7;break;
+      case "swapRich": want=(richest&&richest.coin>p.coin+(lv===2?300:600))?Math.min(1,ag+0.2):0;break;
+      case "swapPos": if(known&&lead&&progressOf(lead)+4<=myProg){want=Math.min(1,ag+0.2);target=lead;}break;
+      case "restOther": if(others.length){target=momo?richest:(lead||richest);want=ag*0.9;}break;
+      case "stealCard":{
+        const w=others.filter(o=>o.hand.length);
+        if(w.length&&!handFull(p)){target=w.reduce((a,b)=>b.hand.length>a.hand.length?b:a);want=ag*0.8;}
+        break;}
+      case "swapCard":{
+        const w=others.filter(o=>o.hand.length>p.hand.length);
+        if(w.length&&p.hand.length){target=w.reduce((a,b)=>b.hand.length>a.hand.length?b:a);want=ag*0.3;}
+        break;}
+      case "allback": if(others.length)want=Math.min(1,ag*0.25+aheadRate*0.7);break;
+      case "redGuard": want=p.redGuard?0:ag*0.3;break;
+      case "inv": want=ag*0.25;break;
+      case "guardRest": want=p.guardRest?0:ag*0.15;break;
+      case "heal": want=p.rest>0?1:0;break;
+    }
+    if(want>0&&Math.random()<want)cand.push({cid,target,prio:cpuCardValue(p,c)});
+  });
+  cand.sort((a,b)=>b.prio-a.prio);
+  return cand.slice(0,[3,4,6][lv]); // 1ターンに使う枚数の上限
+}
+async function cpuUseCards(p){
+  if(!p.hand.length||busy)return;
+  const plan=cpuPlanCards(p);
+  for(const item of plan){
+    if(!playing||p.done)break;
+    const i=p.hand.indexOf(item.cid);
+    if(i<0)continue;
+    const ok=await useCard(p,i,item.target&&!item.target.done?item.target:undefined);
+    if(ok){const d=cpuDelay(500,p);if(d>0)await sleep(d);}
+  }
+}
+// CPUのショップ: 不要カードを売る → 価値の高い順に買う（手札がいっぱいなら安いカードと入れ替え）
+function cpuShop(p,cat){
+  const lv=cpuLvlOf(p);
+  const reserve=[400,250,120][lv];   // 手元に残しておきたいコイン
+  const minValue=[2.4,2,1.8][lv];    // これ未満の価値のカードは買わない
+  const maxBuy=[1,2,3][lv];
+  const sellPrice=c=>Math.max(5,Math.floor(c.price/2));
+  const bought=[],sold=[];
+  for(let i=p.hand.length-1;i>=0;i--){
+    const c=CARD_MAP[p.hand[i]];
+    if(cpuCardValue(p,c)<1){ // ほぼ役に立たないカードは売ってコインにする
+      p.hand.splice(i,1);p.coin+=sellPrice(c);sold.push(c);
+      log("ショップ",`${p.name}が「${c.name}」を売った。`);
+    }
+  }
+  const stock=[...enabledCatCards(cat)].sort((a,b)=>cpuCardValue(p,b)-cpuCardValue(p,a));
+  for(const c of stock){
+    if(bought.length>=maxBuy)break;
+    const v=cpuCardValue(p,c);
+    if(v<minValue||Math.random()>[0.6,0.85,1][lv])continue;
+    if(handFull(p)){
+      let wi=-1,wv=Infinity;
+      p.hand.forEach((cid,i)=>{const val=cpuCardValue(p,CARD_MAP[cid]);if(val<wv){wv=val;wi=i;}});
+      if(wi<0||wv+1>=v)continue;
+      const old=CARD_MAP[p.hand[wi]];
+      if(p.coin+sellPrice(old)-c.price<reserve)continue;
+      p.hand.splice(wi,1);p.coin+=sellPrice(old);sold.push(old);
+      log("ショップ",`${p.name}が「${old.name}」を売った。`);
+    }else if(p.coin-c.price<reserve)continue;
+    p.coin-=c.price;p.hand.push(c.id);bought.push(c);sfx.buy();
+    log("ショップ",`${p.name}が「${c.name}」を買った！`);
+  }
+  return {bought,sold};
+}
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    if(/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return; // 入力欄のEscはポーズを開かない
+    if(!$("statsOv").classList.contains("hidden")){$("statsOv").classList.add("hidden");return;}
+    if(!$("setOv").classList.contains("hidden")){$("setOv").classList.add("hidden");return;}
+    if(!$("pauseOv").classList.contains("hidden")){closePause();return;}
+    if(!$("helpOv").classList.contains("hidden")){$("helpOv").classList.add("hidden");return;}
+    if($("evOv").classList.contains("hidden")){
+      if($("s-play").classList.contains("on")&&playing)openPause();
+      return;
+    }
+    if($("evModal").querySelector(".choiceBtns"))return;
+    for(const id of ["evOk","slotOk","shopOut","cmClose","ciBack","caBack"]){
+      const b=$(id);
+      if(b){b.click();return;}
+    }
+  }
+  if(e.repeat)return;
+  if(paused)return;
+  if(e.code!=="Space"&&e.code!=="Enter")return;
+  if(!$("evOv").classList.contains("hidden")){
+    const primary=$("evModal").querySelector(".btn.primary");
+    if(primary){e.preventDefault();primary.click();}
+    return;
+  }
+  if(!$("s-play").classList.contains("on"))return;
+  if($("rollBtn").style.display!=="none"){e.preventDefault();$("rollBtn").click();return;}
+  if($("turnMenu").style.display!=="none"){e.preventDefault();$("tmRoll").click();return;}
+});
+/* ---------- cards ---------- */
+function targetOthers(p){return players.filter(x=>x!==p&&!x.done);}
+async function useCard(p,handIdx,presetTarget){
+  if(!playing||players[cur]!==p||p.done||busy||turnRolled)return false;
+  const cid=p.hand[handIdx];if(!cid)return false;
+  const c=CARD_MAP[cid];
+  const needTarget=["restOther","swapPos","swapCard","stealCard"];
+  let target=null;
+  if(needTarget.includes(c.fx.type)){
+    const others=targetOthers(p);
+    if(!others.length)return false;
+    if(presetTarget&&others.includes(presetTarget))target=presetTarget;
+    else if(p.cpu)target=cpuPickTarget(p,c,others);
+    else{
+      const list=others.length>9?[...others].sort((a,b)=>b.coin-a.coin):others; // 人数が多いときはコイン順
+      const i=await choiceModal("だれに使う？",list.map(o=>({label:`${o.name}（${fmt(o.coin)}コイン）`,color:o.color})));
+      target=list[i];
+    }
+  }
+  p.hand.splice(handIdx,1);
+  p.stats=p.stats||{cards:0,roulette:0};
+  p.stats.cards++;
+  $("rollBtn").disabled=true;
+  log("カード",`<b>${p.name}</b>は「${c.name}」カードを使用しました`);
+  if(!cpuInstant(p))announce(`<div style="font-size:16px;"><b>${p.name}</b> は「${c.name}」カードを使用しました</div><div style="font-size:12.5px;color:var(--ink-soft);">${c.desc}</div>`, CARD_CATS[c.cat].color);
+  await runFx(p,c.fx,target);
+  refreshNow();
+  if(playing&&players[cur]===p&&!p.cpu)$("rollBtn").disabled=false;
+  return true;
+}
+async function runFx(p,fx,target){
+  busy=true;
+  try{
+  switch(fx.type){
+    case "move": await moveGraph(p,fx.n,true,1); break;
+    case "allback":{
+      const fast=players.length>8||cpuInstant(p); // 人数が多いときは順番に動かさず一斉に戻す
+      for(const o of players){if(o!==p&&!o.done)await moveBackward(o,fx.n,fast);}
+      if(fast&&!cpuInstant(p))await sleep(350);
+      break;}
+    case "gain": p.coin+=fx.v;sfx.good();break;
+    case "stealRich":{
+      const others=targetOthers(p).sort((a,b)=>b.coin-a.coin);
+      if(others.length){const t=others[0],v=Math.min(t.coin,fx.v);t.coin-=v;p.coin+=v;log("奪取",`${p.name}が${t.name}から ${v}コイン奪った！`);}
+      break;}
+    case "again": p.again=true;log("サイコロ",`${p.name}はこのターンもう一度振れる！`);break;
+    case "modNext": p.modNext=(p.modNext||0)+fx.v;break;
+    case "doubleDice": p.diceCount=Math.min(6,(p.diceCount||1)+(fx.v||1));log("サイコロ",`${p.name}の次のターンはサイコロ${p.diceCount}個に！(併用可)`);break;
+    case "fixNext": p.fixNext=fx.v;break;
+    case "guardRest": p.guardRest=true;break;
+    case "restOther": if(target){if(target.guardRest){target.guardRest=false;log("休息",`${target.name}は休みガードで防いだ！`);}else{target.rest=1;log("休息",`${target.name}は次のターン休み！`);}}break;
+    case "heal": p.rest=0;log("休息",`${p.name}の休みが解除された。`);break;
+    case "swapRich":{
+      const others=targetOthers(p).sort((a,b)=>b.coin-a.coin);
+      if(others.length){const t=others[0];[p.coin,t.coin]=[t.coin,p.coin];log("交換",`${p.name}と${t.name}のコインを交換！`);}
+      break;}
+    case "swapPos": if(target){[p.pos,target.pos]=[target.pos,p.pos];placePiece(p);placePiece(target);log("交換",`${p.name}と${target.name}の場所を交換！`);}break;
+    case "swapCard":{
+      if(target&&p.hand.length&&target.hand.length){
+        const i=rand(p.hand.length),j=rand(target.hand.length);
+        [p.hand[i],target.hand[j]]=[target.hand[j],p.hand[i]];
+        log("交換",`${p.name}と${target.name}がカードを1枚交換！`);
+      }else log("交換","交換できるカードがない…");
+      break;}
+    case "redGuard": p.redGuard=true;break;
+    case "inv": p.inv=true;break;
+    case "stealCard":{
+      if(target&&target.hand.length){
+        const j=rand(target.hand.length);const[cid]=target.hand.splice(j,1);
+        if(!handFull(p)){p.hand.push(cid);log("奪取",`${p.name}が${target.name}の「${CARD_MAP[cid].name}」を奪った！`);}
+        else{target.hand.push(cid);log("奪取","カードがいっぱいで奪えなかった…");}
+      }else log("奪取","奪えるカードがない…");
+      break;}
+    case "slotX": p.slotMult=fx.v;log("倍率",`${p.name}の次のスロットが${fx.v}倍に！`);break;
+    case "taxAll":{
+      for(const o of targetOthers(p)){const v=Math.min(o.coin,fx.v);o.coin-=v;p.coin+=v;}
+      log("特殊",`${p.name}が全員から${fx.v}コインずつ奪った！`);break;}
+  }
+  }finally{busy=false;}
+}
+/* ---------- turn loop ---------- */
+let moveMode="force", stepsLeft=0, movedSteps=0, freeMoving=false, freeResolve=null, turnRolled=false, freeTotal=0;
+function moveBarHUD(){
+  return "■".repeat(movedSteps)+"□".repeat(Math.max(0,stepsLeft));
+}
+let gameSeq=0,camSnapNext=false;
+async function gameLoop(){
+  const gid=++gameSeq;
+  const alive=()=>playing&&gid===gameSeq;
+  playing=true;
+  if(!replayBuf)replayBuf={meta:{startedAt:Date.now(),ruleMode,turnLimit,players:players.map(p=>({name:p.name,color:p.color,cpu:p.cpu}))},turns:[]}; // 防御初期化
+  while(alive()){
+    const p=players[cur];
+    const inst=cpuInstant(p);
+    quiet=inst;
+    turnRolled=false;
+    refreshNow();
+    if(!inst){setCamTarget(p,camSnapNext);camSnapNext=false;spotlight(p);}
+    if(p.done){advance();continue;}
+    if(p.rest>0){
+      if(p.guardRest){p.guardRest=false;log("休息",`${p.name}は休みガードで休みを防いだ！`);}
+      else{
+        log("休み",`${p.name}はおやすみ中…`);
+        p.rest--;await sleep(p.cpu?cpuDelay(700,p):700);advance();continue;
+      }
+    }
+    if(!inst)announce(`<b>${p.name}</b> のターン${p.cpu?" (CPU)":""}`,p.color,1200);
+    $("moveHud").style.display="block";
+    const rec={p:cur,from:p.pos};
+    let vals;
+    if(p.cpu){
+      $("moveHud").textContent="CPUのターン…";
+      $("turnMenu").style.display="none";
+      await sleep(cpuDelay(600,p)); // 即時でも1手ごとに描画へ処理を返す
+      if(!alive())return;
+      await cpuUseCards(p);         // ターン開始時にカードを使う
+      if(!alive())return;
+      if(p.done){$("moveHud").style.display="none";advance();continue;}
+      turnRolled=true;
+      vals=await rollDiceStop(p);
+    }else{
+      $("moveHud").textContent="どうする？";
+      turnRolled=false;
+      await new Promise(res=>{
+        $("turnMenu").style.display="flex";
+        $("tmRoll").onclick=async()=>{
+          $("turnMenu").style.display="none";
+          turnRolled=true;
+          vals=await rollDiceStop(p);
+          res();
+        };
+        $("tmCard").onclick=()=>openCardMenu(p);
+        $("tmMap").onclick=()=>openMapView(p);
+      });
+    }
+    if(!alive())return;
+    if(vals===null){continue;} // サイコロをキャンセル: ターンの冒頭(メニュー)に戻る
+    rec.roll=vals.slice();
+    const dc=p.diceCount||1;
+    let steps;
+    if(dc>1){
+      vals.forEach((v,k)=>log("出目",`${p.name} が <b>${v}</b>！ (Wサイコロ ${k+1}/${dc})`));
+      steps=vals.reduce((a,b)=>a+b,0)+(p.modNext||0);
+    }else{
+      steps=p.fixNext!=null?p.fixNext:vals[0]+(p.modNext||0);
+    }
+    p.diceCount=1;p.fixNext=null;p.modNext=0;
+    log("出目",`${p.name} の進めるマス → <b>${steps}</b>`);
+    do{
+      if(moveMode==="force"){
+        try{
+          await moveGraph(p,steps);
+        }catch(err){
+          console.error(err);
+          log("移動","分岐処理で問題が発生…この移動は中断された");
+        }
+      }else{
+        stepsLeft=steps;movedSteps=0;freeMoving=true;freeTotal=steps;
+        if(p.cpu){
+          while(stepsLeft>0){
+            const fw=outs(p.pos).map(w=>w.t);
+            const bw=ins(p.pos).map(w=>w.f);
+            let pool=fw;
+            if(!fw.length)pool=bw;
+            else if(bw.length&&Math.random()<0.25)pool=fw.concat(bw);
+            if(!pool.length){log("自由移動",`${p.name}は行き止まり！`);break;}
+            let chosen=null;
+            if(Math.random()<cpuBrain(p)){
+              const nx=ruleMode==="momoMove"?bfsToward(p.pos,momoGoalId):bfsNext(p.pos,ruleMode==="momo"?["plain"]:["goal"]);
+              if(nx&&pool.includes(nx))chosen=nx;
+            }
+            p.pos=chosen||pool[rand(pool.length)];stepsLeft--;movedSteps++;
+            placePiece(p,inst);sfx.step();
+            if(!inst){setCamTarget(p);await sleep(cpuDelay(240,p));}
+          }
+          freeMoving=false;
+        }else{
+          $("moveHud").innerHTML=`${moveBarHUD()}<br>あと <b>${stepsLeft}</b> マス — <b>矢印キー / WASD</b> で移動`;
+          $("stopHereBtn").style.display=stopAllowed?"block":"none";
+          await new Promise(res=>{freeResolve=res;});
+          $("stopHereBtn").style.display="none";
+        }
+        if(movedSteps>0)await land(p);
+      }
+      if(!alive())return;
+      steps=null;
+      if(p.again&&!p.done){
+        p.again=false; // カードでセットされたフラグをここで消費（ターン開始直後にクリアされて発動しなかった問題を修正）
+        log("出目",`${p.name}はもう一度振る！`);
+        const av=await rollDiceStop(p);
+        steps=av.reduce((a,b)=>a+b,0);
+        log("出目",`${p.name} が <b>${steps}</b> を出した！`);
+      }
+    }while(steps&&alive());
+    p.inv=false;
+    $("moveHud").style.display="none";
+    if(!inst)await sleep(p.cpu?cpuDelay(300,p):300);
+    else camSnapNext=true; // 即時CPUの後は、次の手番でカメラを一気に移す
+    rec.to=p.pos;rec.coin=p.coin;if(replayBuf)replayBuf.turns.push(rec);
+    advance();
+  }
+}
+function advance(){
+  if(!playing)return;
+  midDirty=true;
+  if(players.every(x=>x.done)||(goalCount>0&&finishOrder.length>=goalCount)){endGame();return;}
+  do{cur=(cur+1)%players.length;if(cur===0){coinHistory.push(players.map(pl=>pl.coin));round++;if(turnLimit&&round>turnLimit){endGame();return;}}}while(players[cur].done);
+  refreshNow();
+}
+// 自由移動1ステップ（キーボード・ジョイスティック共通）
+function freeStep(dx,dy){
+  const p=players[cur];
+  if(!p||p.cpu||busy||!playing||!freeMoving||paused)return false;
+  if(!$("evOv").classList.contains("hidden"))return false;
+  const curN=stageNode(p.pos);
+  if(!curN)return false;
+  const cand=[];
+  outs(p.pos).forEach(w=>cand.push({id:w.t}));
+  ins(p.pos).forEach(w=>cand.push({id:w.f}));
+  if(!cand.length){
+    beep(160,.15,"sawtooth");
+    $("moveHud").innerHTML=`<span style="color:var(--danger);">行き止まり！ ${stopAllowed?"「ここで止まる」を押してね":"逆方向に進んでね"}</span>`;
+    return false;
+  }
+  let best=null,bestDot=-Infinity;
+  cand.forEach(c=>{
+    const t=stageNode(c.id);
+    const vx=t.x-curN.x,vy=t.y-curN.y;
+    const len=Math.hypot(vx,vy)||1;
+    const dot=(vx*dx+vy*dy)/len;
+    if(dot>bestDot){bestDot=dot;best=c;}
+  });
+  p.pos=best.id;stepsLeft--;movedSteps++;
+  placePiece(p);sfx.step();setCamTarget(p);refreshNow();
+  if(stepsLeft>0)$("moveHud").innerHTML=`${moveBarHUD()}<br>あと <b>${stepsLeft}</b> マス — <b>矢印キー / WASD / ジョイスティック</b> で移動`;
+  else{
+    $("moveHud").textContent="移動終了！";
+    freeMoving=false;
+    if(freeResolve){const r=freeResolve;freeResolve=null;r();}
+  }
+  joyUpdate();
+  return true;
+}
+window.addEventListener("keydown",e=>{
+  if(!playing||!freeMoving||paused)return;
+  const p=players[cur];
+  if(!p||p.cpu||busy)return;
+  if(!$("evOv").classList.contains("hidden"))return;
+  const DK={ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1],ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0]};
+  const d=DK[e.code];if(!d)return;
+  e.preventDefault();
+  joySetOff(true); // 矢印キーで操作したらジョイスティックを非表示に
+  freeStep(d[0],d[1]);
+});
+$("stopHereBtn").onclick=()=>{
+  if(!stopAllowed)return;
+  freeMoving=false;
+  if(freeResolve){const r=freeResolve;freeResolve=null;r();}
+  joyUpdate();
+};
+function openCardMenu(p){
+  if(!playing||players[cur]!==p||p.done||turnRolled)return;
+  const renderList=()=>{
+    if(!p.hand.length){
+      modal(`<h2>カード</h2><div style="text-align:center;color:var(--ink-soft);font-weight:700;padding:12px 0;">カードを持っていません</div><div style="text-align:center;"><button class="btn primary" id="cmClose">とじる</button></div>`);
+      $("cmClose").onclick=closeModal;
+      return;
+    }
+    modal(`<h2><span class="badge">CARD</span> カード一覧 (${p.hand.length}/${handMaxLabel()})</h2>`+
+      p.hand.map((cid,i)=>{
+        const c=CARD_MAP[cid];
+        return `<div class="shopItem"><div class="swatch" style="background:${CARD_CATS[c.cat].color};"></div>
+          <div><div class="si-name">${c.name}</div><div class="si-desc">${CARD_CATS[c.cat].name}カード</div></div>
+          <button data-menu="${i}" title="メニュー" style="font-size:18px;line-height:1;padding:8px 14px;letter-spacing:2px;">⋯</button></div>`;
+      }).join("")+
+      `<div style="text-align:center;margin-top:10px;"><button class="btn" id="cmClose">とじる</button></div>`);
+    $("cmClose").onclick=closeModal;
+    $("evModal").querySelectorAll("[data-menu]").forEach(b=>b.onclick=()=>renderAction(+b.dataset.menu));
+  };
+  const renderAction=(i)=>{
+    const cid=p.hand[i],c=CARD_MAP[cid];
+    modal(`<h2><span class="badge" style="background:${CARD_CATS[c.cat].color};">CARD</span> ${c.name}</h2>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn primary" id="caUse">使用する</button>
+        <button class="btn" id="caInfo">説明</button>
+        <button class="btn" id="caDrop" style="background:#ffe3e3;">捨てる</button>
+        <button class="btn ghost" id="caBack">もどる</button>
+      </div>`);
+    $("caUse").onclick=()=>{
+      modal(`<h2><span class="badge" style="background:${CARD_CATS[c.cat].color};">CARD</span> ${c.name}</h2>
+        <div style="text-align:center;font-weight:800;padding:4px 0 16px;">使用しますか？</div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button class="btn" id="ccNo">やめる</button>
+          <button class="btn primary" id="ccYes">使用する</button>
+        </div>`);
+      $("ccNo").onclick=renderAction.bind(null,i);
+      $("ccYes").onclick=async()=>{
+        closeModal();
+        await useCard(p,i);
+        if(playing&&players[cur]===p&&!turnRolled)renderList();
+      };
+    };
+    $("caInfo").onclick=()=>{
+      modal(`<h2><span class="badge" style="background:${CARD_CATS[c.cat].color};">CARD</span> ${c.name}</h2>
+        <div style="font-size:14.5px;font-weight:700;color:var(--ink-soft);line-height:2;text-align:center;">${c.desc}<br>
+        <span style="color:#c98f00;font-weight:900;">売却価格: ${Math.max(5,Math.floor(c.price/2))}コイン</span></div>
+        <div style="text-align:center;margin-top:16px;"><button class="btn primary" id="ciBack">もどる</button></div>`);
+      $("ciBack").onclick=renderList;
+    };
+    $("caDrop").onclick=()=>{
+      p.hand.splice(i,1);
+      log("カード",`${p.name}が「${c.name}」を捨てた。`);
+      sfx.bad();
+      refreshNow();renderList();
+    };
+    $("caBack").onclick=renderList;
+  };
+  renderList();
+}
+function applyPlZoom(){plSvg.style.width=(plW*plZoom)+"px";}
+// マップ全体が画面に収まる倍率
+function fitZoom(){
+  const w=$("plWrap");
+  return Math.max(0.02,Math.min(1.2,Math.min((w.clientWidth-16)/plW,(w.clientHeight-16)/plH)));
+}
+function animateZoomTo(target){
+  return new Promise(res=>{
+    const step=()=>{
+      plZoom+=(target-plZoom)*0.12;
+      applyPlZoom();
+      if(Math.abs(target-plZoom)<Math.max(0.0008,target*0.02)){
+        plZoom=target;applyPlZoom();res();return;
+      }
+      requestAnimationFrame(step);
+    };
+    step();
+  });
+}
+async function openMapView(p){
+  $("moveHud").textContent="マップを縮小中…";
+  // プレイヤー中心のままイージングでズームアウト → 全体を見渡せる
+  await animateZoomTo(fitZoom());
+  cam.free=true;
+  $("camBack").style.display="block";
+  $("moveHud").textContent="マップを見ている — スクロールして探索してね";
+}
+$("camBack").onclick=async()=>{
+  $("camBack").style.display="none";
+  $("moveHud").textContent="もとの大きさに戻る…";
+  cam.free=false;
+  const sc=$("plScroller");
+  cam.x=sc.scrollLeft;cam.y=sc.scrollTop;cam.init=true;
+  await animateZoomTo(2.2);
+  const p=players[cur];
+  if(p)setCamTarget(p);
+  if(playing&&!players[cur].cpu&&!turnRolled)$("moveHud").textContent="どうする？";
+  else if(playing)$("moveHud").textContent="CPUのターン…";
+};
+function renderCoinChart(){
+  const w=470,h=150,pad=10;
+  if(coinHistory.length<2)return "";
+  const many=players.length>12; // 人数が多いときは、人間＋コイン上位のCPU6体だけ線を引く
+  const shown=many?players.filter(p=>!p.cpu).concat(players.filter(p=>p.cpu).sort((a,b)=>b.coin-a.coin).slice(0,6)):players;
+  let maxV=100,minV=0;
+  coinHistory.forEach(snap=>snap.forEach(v=>{if(v>maxV)maxV=v;if(v<minV)minV=v;}));
+  const xs=i=>pad+i*(w-2*pad)/(coinHistory.length-1);
+  const ys=v=>h-pad-(v-minV)*(h-2*pad)/Math.max(1,maxV-minV);
+  let lines="";
+  shown.forEach(p=>{
+    const pts=coinHistory.map((snap,ri)=>`${xs(ri).toFixed(1)},${ys(snap[p.idx]||0).toFixed(1)}`).join(" ");
+    lines+=`<polyline points="${pts}" fill="none" stroke="${p.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  return `<div style="font-size:12px;font-weight:900;color:var(--ink-soft);letter-spacing:1px;margin-bottom:4px;">コイン推移${many?"（人間と上位CPUのみ）":""}</div>
+  <svg viewBox="0 0 ${w} ${h}" style="width:100%;background:#fffdf5;border:3px solid var(--ink);border-radius:12px;">${lines}</svg>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0 4px;">${shown.map(p=>`<span style="font-size:11px;font-weight:900;color:${p.color};">●${p.name}</span>`).join("")}</div>`;
+}
+/* ---------- 実績・統計 (achievements & aggregate stats) ---------- */
+const STATS_KEY="wire_sugoroku_stats_v1"; // 実績・統計専用キー(既存キー無変更)
+const stats={games:0,wins:0,earned:0,maxCoins:0,roulette:0,cards:0,goals:0,clears:0,hidden:0,moves:0,shops:0,unlocked:[]};
+function loadStats(){
+  try{
+    const s=JSON.parse(localStorage.getItem(STATS_KEY));
+    if(s&&typeof s==="object")Object.keys(stats).forEach(k=>{if(s[k]!==undefined)stats[k]=s[k];});
+  }catch(e){}
+}
+function saveStats(){try{localStorage.setItem(STATS_KEY,JSON.stringify(stats));}catch(e){}}
+const ACHIEVEMENTS=[
+  {id:"first_game",icon:"🎲",name:"はじめの一歩",desc:"1回プレイする",ck:s=>s.games>=1},
+  {id:"games10",icon:"🎯",name:"常連さん",desc:"10回プレイする",ck:s=>s.games>=10},
+  {id:"games50",icon:"🏆",name:"すごろくマニア",desc:"50回プレイする",ck:s=>s.games>=50},
+  {id:"first_win",icon:"👑",name:"初優勝！",desc:"1回優勝する",ck:s=>s.wins>=1},
+  {id:"wins10",icon:"💪",name:"勝負師",desc:"10回優勝する",ck:s=>s.wins>=10},
+  {id:"earner",icon:"💰",name:"コイン職人",desc:"累計10万コイン稼ぐ",ck:s=>s.earned>=100000},
+  {id:"rich",icon:"💎",name:"大富豪",desc:"一度に5万コイン所持する",ck:s=>s.maxCoins>=50000},
+  {id:"roulette30",icon:"🎰",name:"ルーレット好き",desc:"累計30回ルーレットを回す",ck:s=>s.roulette>=30},
+  {id:"cards50",icon:"🃏",name:"カード使い",desc:"累計50枚カードを使う",ck:s=>s.cards>=50},
+  {id:"clear10",icon:"🏁",name:"桃鉄マスター",desc:"累計10回クリアする",ck:s=>s.clears>=10},
+  {id:"moves20",icon:"⭐",name:"ゴールを追う者",desc:"移動ゴールの移動を20回目撃する",ck:s=>s.moves>=20},
+  {id:"shop20",icon:"🛒",name:"ショッピング王",desc:"累計20回ショップで買い物する",ck:s=>s.shops>=20},
+];
+function checkAchievements(toast=true){
+  const fresh=[];
+  ACHIEVEMENTS.forEach(a=>{
+    if(!stats.unlocked.includes(a.id)&&a.ck(stats)){stats.unlocked.push(a.id);fresh.push(a);}
+  });
+  if(fresh.length){
+    saveStats();
+    if(toast)fresh.forEach(a=>{
+      if(!quiet)announce(`<div style="font-size:17px;">🏅 実績解除！ <b>${a.name}</b></div><div style="font-size:11.5px;font-weight:800;color:var(--ink-soft);">${a.desc}</div>`,"#c98f00",3500);
+      log("実績",`🏅「${a.name}」を解除！ ${a.desc}`);
+    });
+  }
+  return fresh.length;
+}
+function openStatsPanel(){
+  loadStats();checkAchievements(false);
+  const s=stats;
+  const rows=[
+    ["総プレイ回数",s.games+"回"],["優勝回数",s.wins+"回"],
+    ["累計獲得コイン",fmt(s.earned)+"コイン"],["最大所持コイン",fmt(s.maxCoins)+"コイン"],
+    ["ゴール到達",s.goals+"回"],["クリア(桃鉄・改)",s.clears+"回"],
+    ["隠れゴール発見",s.hidden+"回"],["移動ゴール移動",s.moves+"回"],
+    ["ルーレット",s.roulette+"回"],["カード使用",s.cards+"枚"],
+    ["ショップ購入",s.shops+"回"],
+  ];
+  $("statsBody").innerHTML=`
+    <div style="font-size:12px;font-weight:900;color:var(--ink-soft);margin:4px 0 8px;">📊 統計</div>
+    <div class="statGrid">${rows.map(r=>`<div class="statBox"><b>${r[1]}</b><span>${r[0]}</span></div>`).join("")}</div>
+    <div style="font-size:12px;font-weight:900;color:var(--ink-soft);margin:10px 0 8px;">🏅 実績 <span style="font-weight:800;">(${s.unlocked.length}/${ACHIEVEMENTS.length})</span></div>
+    <div class="achGrid">${ACHIEVEMENTS.map(a=>{
+      const un=s.unlocked.includes(a.id);
+      return `<div class="ach ${un?"":"locked"}"><div class="an">${un?a.icon:"❓"} ${a.name}</div><div class="ad">${a.desc}</div></div>`;
+    }).join("")}</div>`;
+  $("statsOv").classList.remove("hidden");
+}
+$("m-stats").onclick=openStatsPanel;
+$("statsClose").onclick=()=>$("statsOv").classList.add("hidden");
+/* ---------- リプレイ (IndexedDB) ---------- */
+function idbOpen(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error("no idb"));const rq=indexedDB.open("wire_sugoroku_replays",1);rq.onupgradeneeded=()=>{rq.result.createObjectStore("replays",{keyPath:"id"});};rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);});}
+async function idbPut(rec){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction("replays","readwrite");tx.objectStore("replays").put(rec);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+async function idbGet(id){const db=await idbOpen();return new Promise((res,rej)=>{const rq=db.transaction("replays").objectStore("replays").get(id);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);});}
+async function idbPrune(keep=20){const db=await idbOpen();return new Promise((res,rej)=>{const st=db.transaction("replays","readwrite").objectStore("replays");const rq=st.getAll();rq.onsuccess=()=>{try{const all=(rq.result||[]).sort((a,b)=>b.id-a.id);all.slice(keep).forEach(r=>st.delete(r.id));}catch(e){}res();};rq.onerror=()=>res();});}
+async function saveReplay(){
+  if(!replayBuf||!replayBuf.turns.length)return null;
+  try{
+    const rec={id:Date.now(),savedAt:Date.now(),meta:replayBuf.meta,turns:replayBuf.turns};
+    await idbPut(rec);await idbPrune(20);
+    return rec.id;
+  }catch(e){console.warn("replay save failed",e);return null;}
+}
+function findReplayPath(fromId,toId){
+  if(fromId===toId)return[toId];
+  const prev={};const q=[fromId];const seen=new Set([fromId]);
+  while(q.length){
+    const c=q.shift();
+    if(c===toId){const path=[];let n=toId;while(n!==fromId){path.unshift(n);n=prev[n];}return path;}
+    outs(c).forEach(w=>{if(!seen.has(w.t)){seen.add(w.t);prev[w.t]=c;q.push(w.t);}});
+  }
+  return null;
+}
+async function startReplay(id){
+  let data;
+  try{data=await idbGet(id);}catch(e){data=null;}
+  if(!data){alert("リプレイの読み込みに失敗しました(IndexedDBが無効かも)");return;}
+  $("endOv").classList.add("hidden");
+  replaying=true;replaySpeed=+$("replaySpeed").value||1;
+  const st=stage.nodes.find(n=>n.type==="start");
+  players.forEach(p=>{p.pos=st.id;p.coin=1000;placePiece(p,true);});
+  shownCoin=null;renderCoin(1000);
+  camSnapNext=true;setCamTarget(players[0]);
+  $("log").innerHTML="";
+  $("goalPill").textContent="🎬 リプレイ再生中…";
+  $("replayHud").style.display="flex";
+  log("リプレイ",`🎬 ${data.meta.players.length}人プレイ・${data.meta.ruleMode} ルール`);
+  await sleep(400);
+  for(const t of data.turns){
+    if(!replaying)break;
+    replaySpeed=+$("replaySpeed").value||1;
+    const p=players[t.p];if(!p)continue;
+    setCamTarget(p);
+    const sum=(t.roll||[]).reduce((a,b)=>a+b,0);
+    log("出目",`<b style="color:${p.color};">${p.name}</b> が ${(t.roll||[]).join("・")} (計${sum})`);
+    (t.roll||[]).forEach((v,i)=>{if(i<6)setDieEl($("die"+(i+1)),v);});
+    const path=findReplayPath(t.from,t.to)||[t.to];
+    for(const nid of path){
+      if(!replaying)break;
+      p.pos=nid;placePiece(p,false);sfx.step();
+      await sleep(Math.max(30,Math.round(110/replaySpeed)));
+    }
+    if(t.coin!=null){p.coin=t.coin;animCoin(t.coin);}
+    renderRanking();
+    await sleep(Math.max(40,Math.round(200/replaySpeed)));
+  }
+  if(replaying)log("リプレイ","🎬 リプレイ終了。「■ 終了」で結果画面に戻れます");
+}
+function stopReplay(){
+  replaying=false;
+  $("replayHud").style.display="none";
+  $("endOv").classList.remove("hidden");
+}
+$("replayBtn").onclick=()=>{if(lastReplayId)startReplay(lastReplayId);else alert("リプレイを保存できませんでした");};
+$("replayStop").onclick=stopReplay;
+
+/* ---------- カードスイッチ ---------- */
+function buildCardToggles(){
+  const box=$("cardToggles");
+  box.innerHTML=CARD_CATS.map(cat=>`<div style="width:100%;font-size:11px;font-weight:900;color:${cat.color};margin-top:4px;">${cat.name}</div>`+
+    cat.cards.map(c=>`<label class="ctog" style="display:inline-flex;align-items:center;gap:4px;border:2px solid var(--ink);border-radius:10px;padding:3px 8px;background:#fff;font-size:12px;font-weight:800;cursor:pointer;">
+      <input type="checkbox" data-cid="${c.id}" ${cardEnabled[c.id]===false?"":"checked"}> ${c.name}</label>`).join("")).join("");
+  box.querySelectorAll("input[data-cid]").forEach(inp=>{
+    inp.onchange=()=>{cardEnabled[inp.dataset.cid]=inp.checked;saveConfig();};
+  });
+  $("cardSetSel").value=cardSetMode;
+  $("cardTogglesRow").style.display=cardSetMode==="custom"?"flex":"none";
+  $("cardSetSel").onchange=()=>{cardSetMode=$("cardSetSel").value;$("cardTogglesRow").style.display=cardSetMode==="custom"?"flex":"none";saveConfig();};
+}
+
+/* ---------- ジョイスティック & 情報パネル ---------- */
+function joyActive(){
+  const p=players[cur];
+  return !!(playing&&p&&!p.cpu); // 人間ターンなら常時表示
+}
+function joyUpdate(){
+  const act=joyActive()&&!busy&&!paused&&!replaying&&!diceRolling&&$("evOv").classList.contains("hidden");
+  $("joyBase").style.display=(act&&!joyOff)?"block":"none";
+  $("joyShow").style.display=(act&&joyOff)?"flex":"none";
+  if(act)$("joyBase").style.opacity=freeMoving?"1":".5"; // 自由移動中のみフル表示
+}
+function joySetOff(v){
+  joyOff=!!v;
+  try{const s=JSON.parse(localStorage.getItem(SET_KEY))||{};s.joyOff=joyOff;localStorage.setItem(SET_KEY,JSON.stringify(s));}catch(e){}
+  joyUpdate();
+}
+(function(){
+  const base=$("joyBase"),knob=$("joyKnob");
+  let pid=null,curKey=null,repT=null;
+  const R=38;
+  function fire(vx,vy){
+    clearTimeout(repT);
+    if(!freeStep(vx,vy))return; // 行き止まり等で失敗したら連打しない
+    repT=setTimeout(()=>{if(pid!==null&&curKey!==null)fire(vx,vy);},270); // 長押し連続移動
+  }
+  function quantize(dx,dy){
+    const a=Math.atan2(dy,dx);
+    const q=Math.round(a/(Math.PI/4))*(Math.PI/4); // 8方向に量子化
+    return{vx:Math.cos(q),vy:Math.sin(q),key:Math.round(q*100)};
+  }
+  base.addEventListener("pointerdown",e=>{
+    if(busy||paused)return;
+    pid=e.pointerId;
+    try{base.setPointerCapture(e.pointerId);}catch(err){}
+    e.preventDefault();
+  });
+  base.addEventListener("pointermove",e=>{
+    if(pid!==e.pointerId)return;
+    const r=base.getBoundingClientRect();
+    const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+    const len=Math.hypot(dx,dy);
+    if(len<12){knob.style.transform="translate(-50%,-50%)";curKey=null;clearTimeout(repT);return;}
+    const q=quantize(dx,dy);
+    knob.style.transform=`translate(calc(-50% + ${q.vx*R}px),calc(-50% + ${q.vy*R}px))`;
+    if(curKey!==q.key){curKey=q.key;fire(q.vx,q.vy);}
+    e.preventDefault();
+  });
+  const end=e=>{
+    if(pid!==e.pointerId)return;
+    pid=null;curKey=null;clearTimeout(repT);
+    knob.style.transform="translate(-50%,-50%)";
+  };
+  base.addEventListener("pointerup",end);
+  base.addEventListener("pointercancel",end);
+})();
+$("joyShow").onclick=()=>joySetOff(false);
+function setInfo(open){
+  infoOpen=!!open;
+  $("infoPanel").classList.toggle("open",infoOpen);
+  $("infoBack").style.display=(infoOpen&&innerWidth<=980)?"block":"none";
+  try{const s=JSON.parse(localStorage.getItem(SET_KEY))||{};s.infoOpen=infoOpen;localStorage.setItem(SET_KEY,JSON.stringify(s));}catch(e){}
+}
+$("infoToggle").onclick=()=>setInfo(!$("infoPanel").classList.contains("open"));
+$("infoClose").onclick=()=>setInfo(false);
+$("infoBack").onclick=()=>setInfo(false);
+
+/* コイン増減のフロート演出（ルーレット等） */
+function floatCoin(p,delta){
+  if(!delta)return;
+  const box=$("fx")||document.body;
+  const d=document.createElement("div");
+  d.className="coinfloat "+(delta>0?"cf-plus":"cf-minus");
+  d.textContent=(delta>0?"+":"")+delta+"コイン";
+  let x=innerWidth/2,y=innerHeight/2;
+  try{const r=p.gEl&&p.gEl.getBoundingClientRect();if(r&&r.width){x=r.left+r.width/2;y=r.top;}}catch(e){}
+  d.style.left=x+"px";d.style.top=y+"px";
+  box.appendChild(d);
+  setTimeout(()=>{try{d.remove();}catch(e){}},1150);
+  const nc=$("nowCoin");
+  if(nc){nc.classList.remove("cf-up","cf-down");void nc.offsetWidth;nc.classList.add(delta>0?"cf-up":"cf-down");}
+}
+/* ---------- ゴールの方角・距離表示 ---------- */
+function bfsDist(fromId,toId){
+  if(fromId===toId)return 0;
+  const seen=new Set([fromId]);const q=[[fromId,0]];
+  while(q.length){
+    const[c,d]=q.shift();
+    if(c===toId)return d;
+    outs(c).forEach(w=>{if(!seen.has(w.t)){seen.add(w.t);q.push([w.t,d+1]);}});
+  }
+  return -1;
+}
+const GOAL_ARROWS=["→","↘","↓","↙","←","↖","↑","↗"];
+function goalInfoUpdate(){
+  const el=$("goalInfo");if(!el)return;
+  const p=players[cur];
+  if(!playing||!p||p.done){el.textContent="—";el.style.opacity=".5";return;}
+  let target=null;
+  if(ruleMode==="momoMove")target=momoGoalId;
+  else if(ruleMode!=="momo"){
+    let bd=Infinity;
+    stage.nodes.forEach(g=>{
+      if(g.type!=="goal")return;
+      const d=bfsDist(p.pos,g.id);
+      if(d>=0&&d<bd){bd=d;target=g.id;}
+    });
+  }
+  if(ruleMode==="momo"||!target){el.textContent="？ ？？？";el.style.opacity=".6";return;}
+  const pn=stageNode(p.pos),tn=stageNode(target);
+  if(!pn||!tn){el.textContent="？ ？？？";return;}
+  el.style.opacity="1";
+  if(pn.id===tn.id){el.textContent="🏁 ゴール！";return;}
+  const d=bfsDist(p.pos,target);
+  const q=Math.round(Math.atan2(tn.y-pn.y,tn.x-pn.x)/(Math.PI/4));
+  el.textContent=`${GOAL_ARROWS[((q%8)+8)%8]} あと${d<0?"?":d}マス`;
+}
+
+/* ---------- UIスタイル (50テーマ) ---------- */
+let uiTheme=0;
+function hslHex(h,s,l){
+  s/=100;l/=100;
+  const k=n=>(n+h/30)%12;
+  const a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return "#"+[f(0),f(8),f(4)].map(v=>Math.round(v*255).toString(16).padStart(2,"0")).join("");
+}
+const THEMES=[null]; // 0=デフォルト
+for(let i=0;i<49;i++){
+  const h=Math.round(i*(360/49));
+  THEMES.push({
+    "--ink":hslHex(h,22,23),
+    "--pink":hslHex(h,88,63),"--pink-deep":hslHex(h,78,47),
+    "--violet":hslHex((h+45)%360,72,63),"--violet-deep":hslHex((h+45)%360,62,46),
+    "--sky":hslHex((h+210)%360,78,60),"--sky-deep":hslHex((h+210)%360,66,44),
+    "--paper":hslHex(h,45,98),"--cream":hslHex(h,60,95),
+    "--gold":"#f2b90d"
+  });
+}
+function applyUiTheme(idx){
+  uiTheme=(idx>=0&&idx<THEMES.length)?idx:0;
+  const r=document.documentElement.style;
+  if(!uiTheme){
+    ["--ink","--pink","--pink-deep","--violet","--violet-deep","--sky","--sky-deep","--paper","--cream","--gold"].forEach(v=>r.removeProperty(v));
+    r.setProperty("--line","rgba(58,51,68,.9)");
+    return;
+  }
+  const t=THEMES[uiTheme];
+  Object.keys(t).forEach(k=>r.setProperty(k,t[k]));
+  r.setProperty("--line","color-mix(in srgb, "+t["--ink"]+" 88%, transparent)");
+}
+
+function endGame(){
+  playing=false;quiet=false;
+  try{localStorage.removeItem(MID_KEY);}catch(e){}
+  refreshMidBtn();midDirty=false;
+  $("turnMenu").style.display="none";$("moveHud").style.display="none";
+  $("rollBtn").style.display="none";$("stopHereBtn").style.display="none";
+  freeMoving=false;
+  const rank=[...players].sort((a,b)=>{
+    if(ruleMode==="momoKai")return (b.clears||0)-(a.clears||0)||b.coin-a.coin; // 桃鉄・改: クリア回数順
+    if(a.done&&b.done)return finishOrder.indexOf(a)-finishOrder.indexOf(b);
+    if(a.done)return -1;if(b.done)return 1;
+    return b.coin-a.coin;
+  });
+  $("endChart").innerHTML=renderCoinChart();
+  if(rank[0]){records[rank[0].name]=(records[rank[0].name]||0)+1;saveRecords();}
+  // 統計集計 (実績・統計パネル用)
+  stats.games++;stats.wins++;
+  players.forEach(p=>{
+    stats.earned+=Math.max(0,p.coin-1000);
+    if(p.coin>stats.maxCoins)stats.maxCoins=p.coin;
+    if(p.stats){stats.roulette+=p.stats.roulette||0;stats.cards+=p.stats.cards||0;}
+  });
+  saveStats();
+  checkAchievements(true);
+  lastReplayId=null;
+  saveReplay().then(id=>{lastReplayId=id;});
+  $("endList").innerHTML=rank.map((p,i)=>`
+    <li class="${i===0?"first":""}">
+      <span class="medal">${["🥇","🥈","🥉"][i]||(i+1)}</span>
+      <span class="dot" style="background:${p.color}"></span>
+      <span style="flex:1;">${p.name}${p.done?" 🏁":""}${ruleMode==="momoKai"?` <b style="color:#c98f00;">🏁クリア${p.clears||0}回</b>`:""}<br><small style="color:var(--ink-soft);font-weight:700;">カード${p.hand.length}枚 ・ 使用${p.stats?p.stats.cards:0}回 ・ ルーレット${p.stats?p.stats.roulette:0}回</small></span>
+      <span style="font-variant-numeric:tabular-nums;">${fmt(p.coin)}コイン</span>
+    </li>`).join("");
+  $("endOv").classList.remove("hidden");
+  sfx.goal();
+  confettiBurst(70);
+}
+function confettiBurst(count){
+  if(!fxOn)return;
+  const cols=PCOLORS.concat(["#ffd66b","#fff","#8b6ff0"]);
+  for(let i=0;i<count;i++){
+    const c=document.createElement("div");
+    c.className="confetti";c.style.left=Math.random()*100+"vw";
+    c.style.background=cols[rand(cols.length)];
+    c.style.animationDuration=(2+Math.random()*2.5)+"s";
+    c.style.animationDelay=(Math.random()*1.2)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),6000);
+  }
+}
+$("retryBtn").onclick=()=>{
+  $("endOv").classList.add("hidden");
+  startPlay();
+};
+$("plBack").onclick=()=>{playing=false;gameSeq++;quiet=false;busy=false;freeMoving=false;replaying=false;$("replayHud").style.display="none";$("announce").classList.remove("show");$("helpOv").classList.add("hidden");closeModal();$("endOv").classList.add("hidden");$("camBack").style.display="none";cam.free=false;showScreen("s-title");};
+$("sndBtn").onclick=()=>{soundOn=!soundOn;$("sndBtn").style.opacity=soundOn?1:.4;};
+$("titleHelp").onclick=()=>$("helpOv").classList.remove("hidden");
+$("playHelpBtn").onclick=()=>$("helpOv").classList.remove("hidden");
+let plZoom=2.2;
+$("plZIn").onclick=()=>{plZoom=Math.min(4,plZoom*1.2);applyPlZoom();};
+$("plZOut").onclick=()=>{plZoom=Math.max(Math.min(.5,fitZoom()),plZoom/1.2);applyPlZoom();};
+
+/* ================================================================
+   PAUSE (A) / MID-SAVE (B) / SETTINGS (C)
+================================================================ */
+function isIdle(){
+  if(!playing||busy||freeMoving||diceRolling)return false;
+  if(!$("evOv").classList.contains("hidden"))return false;
+  if(!$("helpOv").classList.contains("hidden"))return false;
+  if(!$("endOv").classList.contains("hidden"))return false;
+  return true;
+}
+function openPause(){
+  if(replaying)return;
+  if(!playing||paused)return;
+  if(!$("evOv").classList.contains("hidden"))return; // モーダル中は既存Esc優先
+  paused=true;
+  const ok=isIdle();
+  $("psSave").disabled=!ok;
+  $("psSaveMsg").textContent=ok?"":"今は保存できません（移動・演出・CPU処理の途中です）";
+  $("psSaveMsg").style.color="var(--ink-soft)";
+  $("pauseOv").classList.remove("hidden");
+}
+function closePause(){paused=false;$("pauseOv").classList.add("hidden");$("setOv").classList.add("hidden");joyUpdate();}
+$("pauseBtn").onclick=()=>{if(paused)closePause();else openPause();};
+$("psResume").onclick=closePause;
+$("psTitle").onclick=()=>{
+  if(midDirty&&!confirm("未保存の進行があります。タイトルに戻りますか？"))return;
+  closePause();
+  $("plBack").click();
+};
+$("psSave").onclick=()=>{
+  if(!isIdle()){$("psSaveMsg").textContent="今は保存できません（処理の途中です）";return;}
+  if(saveMid()){
+    midDirty=false;
+    $("psSaveMsg").textContent="✓ 保存しました（タイトルから「途中から再開」で読めます）";
+    $("psSaveMsg").style.color="#2fae5f";
+  }else{
+    $("psSaveMsg").textContent="保存に失敗しました（容量不足の可能性）";
+  }
+};
+$("psSettings").onclick=openSettings;
+$("setClose").onclick=()=>$("setOv").classList.add("hidden");
+
+/* ---- mid-save (B) ---- */
+function midData(){
+  return {
+    v:1,savedAt:Date.now(),
+    stage:JSON.parse(JSON.stringify(stage)),
+    setup:{setupMode,setupSlotIdx,ruleMode,moveMode,turnLimit,maxHand:maxHand===Infinity?"inf":(isFinite(maxHand)&&maxHand>0?maxHand:8),cpuSpeed,cpuLevel,goalCount,mapGen,stopAllowed},
+    cur,round,hiddenGoalId,momoGoalId,momoHistory:[...momoHistory],
+    finishOrder:finishOrder.map(p=>players.indexOf(p)),
+    coinHistory:JSON.parse(JSON.stringify(coinHistory)),
+    players:players.map(p=>({name:p.name,color:p.color,cpu:p.cpu,cpuNo:p.cpuNo,hi:p.hi,
+      cpuSpd:p.cpuSpd,cpuLvl:p.cpuLvl,coin:p.coin,hand:[...p.hand],pos:p.pos,rest:p.rest,done:p.done,clears:p.clears||0,
+      again:p.again,modNext:p.modNext||0,fixNext:p.fixNext??null,redGuard:!!p.redGuard,guardRest:!!p.guardRest,
+      inv:!!p.inv,slotMult:p.slotMult||1,diceCount:p.diceCount||1,
+      stats:p.stats?{...p.stats}:{cards:0,roulette:0}}))
+  };
+}
+function saveMid(){
+  try{localStorage.setItem(MID_KEY,JSON.stringify(midData()));refreshMidBtn();return true;}
+  catch(e){return false;}
+}
+function loadMidRaw(){
+  try{
+    const raw=localStorage.getItem(MID_KEY);
+    if(!raw)return null;
+    const d=JSON.parse(raw);
+    if(!d||d.v!==1||!d.stage||!Array.isArray(d.stage.nodes)||!Array.isArray(d.stage.wires)
+      ||!Array.isArray(d.players)||!d.players.length||!d.setup)return{bad:true};
+    return d;
+  }catch(e){return{bad:true};}
+}
+function refreshMidBtn(){
+  const d=loadMidRaw();
+  $("m-resume").style.display=(d&&!d.bad)?"flex":"none";
+}
+$("m-resume").onclick=()=>{
+  const d=loadMidRaw();
+  if(!d||d.bad){
+    if(confirm("途中セーブが壊れているか読み込めません。\n壊れた途中セーブを削除しますか？")){
+      try{localStorage.removeItem(MID_KEY);}catch(e){}
+      refreshMidBtn();
+    }
+    return;
+  }
+  resumePlay(d);
+};
+function resumePlay(d){
+  paused=false;diceRolling=false;busy=false;freeMoving=false;quiet=false;turnRolled=false;camSnapNext=false;
+  closeModal();$("helpOv").classList.add("hidden");$("endOv").classList.add("hidden");$("pauseOv").classList.add("hidden");
+  stage=JSON.parse(JSON.stringify(d.stage));
+  setupMode=d.setup.setupMode;setupSlotIdx=d.setup.setupSlotIdx;
+  ruleMode=d.setup.ruleMode;moveMode=d.setup.moveMode;
+  turnLimit=d.setup.turnLimit;maxHand=d.setup.maxHand==="inf"?Infinity:((typeof d.setup.maxHand==="number"&&isFinite(d.setup.maxHand)&&d.setup.maxHand>0)?d.setup.maxHand:8);
+  cpuSpeed=d.setup.cpuSpeed;cpuLevel=d.setup.cpuLevel;
+  goalCount=d.setup.goalCount||0;mapGen=d.setup.mapGen||"builtin";
+  stopAllowed=d.setup.stopAllowed!==false;
+  cur=Math.min(d.cur|0,d.players.length-1);round=d.round||1;
+  if(ruleMode==="momoMove")stage.nodes.forEach(n=>{if(n.type==="goal")n.type="plain";}); // 旧セーブ互換: 通常ゴールを無色マス化
+  hiddenGoalId=d.hiddenGoalId||null;
+  momoGoalId=d.momoGoalId||null;momoHistory=d.momoHistory||[];
+  coinHistory=d.coinHistory||[];
+  const dim=fitStageDims(stage);
+  plCols=stage.cols=dim.cols;plRows=stage.rows=dim.rows;
+  plW=worldW(plCols);plH=worldH(plRows);
+  indexStage();
+  players=d.players.map(o=>Object.assign({coin:1000,hand:[],rest:0,done:false,clears:0,again:false,modNext:0,fixNext:null,
+    redGuard:false,guardRest:false,inv:false,slotMult:1,diceCount:1},o));
+  players.forEach((p,i)=>p.idx=i);
+  replayBuf={meta:{startedAt:Date.now(),ruleMode,turnLimit,players:players.map(p=>({name:p.name,color:p.color,cpu:p.cpu}))},turns:[]};
+  finishOrder=(d.finishOrder||[]).map(i=>players[i]).filter(Boolean);
+  cam.init=false;cam.free=false;$("camBack").style.display="none";
+  $("turnMenu").style.display="none";$("moveHud").style.display="none";
+  $("stopHereBtn").style.display="none";$("rollBtn").style.display="none";
+  plZoom=2.2;applyPlZoom();
+  renderPlayBoard();buildDie();buildMinimap();
+  bgmStart();
+  showScreen("s-play");
+  $("log").innerHTML="";
+  shownCoin=null;
+  $("goalPill").textContent=ruleMode==="momo"?"目標: ？？？":ruleMode==="momoMove"?"⭐ 移動ゴールを追え！":ruleMode==="momoKai"?"🏁 ゴール回数を競え！（制限ターンまで）":"ゴールマスを目指せ！";
+  log("再開","保存した試合を再開しました！");
+  midDirty=false;
+  refreshNow();
+  gameLoop();
+}
+
+/* ---- settings (C) ---- */
+function applySettings(){document.body.style.zoom=textScale;}
+function saveSettings(){try{localStorage.setItem(SET_KEY,JSON.stringify({sfxVol,bgmVol,animSpeed,cpuDispMul,fxOn,textScale,uiTheme}));}catch(e){}}
+function loadSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SET_KEY))||{};
+    if(isFinite(s.sfxVol))sfxVol=Math.max(0,Math.min(1,s.sfxVol));
+    if(isFinite(s.bgmVol))bgmVol=Math.max(0,Math.min(1,s.bgmVol));
+    if(isFinite(s.animSpeed))animSpeed=Math.max(.3,Math.min(3,s.animSpeed));
+    if(isFinite(s.cpuDispMul))cpuDispMul=Math.max(.3,Math.min(3,s.cpuDispMul));
+    if(typeof s.fxOn==="boolean")fxOn=s.fxOn;
+    if(isFinite(s.textScale))textScale=Math.max(.85,Math.min(1.4,s.textScale));
+    if(typeof s.joyOff==="boolean")joyOff=s.joyOff;
+    if(typeof s.infoOpen==="boolean")infoOpen=s.infoOpen;
+    if(isFinite(s.uiTheme))uiTheme=Math.max(0,Math.min(49,s.uiTheme|0));
+  }catch(e){}
+  applySettings();
+  applyUiTheme(uiTheme);
+}
+function openSettings(){
+  const row=(label,ctrl)=>`<div style="display:flex;align-items:center;gap:10px;"><span style="width:130px;">${label}</span><span style="flex:1;display:flex;">${ctrl}</span></div>`;
+  const sel=(id,cur,list)=>`<select id="${id}" class="select" style="flex:1;">${list.map(([v,l])=>`<option value="${v}" ${cur===v?"selected":""}>${l}</option>`).join("")}</select>`;
+  $("setRows").innerHTML=
+    row("BGM音量",`<input type="range" id="stBgm" min="0" max="100" value="${Math.round(bgmVol*100)}" style="flex:1;">`)+
+    row("効果音音量",`<input type="range" id="stSfx" min="0" max="100" value="${Math.round(sfxVol*100)}" style="flex:1;">`)+
+    row("アニメーション速度",sel("stAnim",animSpeed,[[0.5,"0.5倍"],[1,"ふつう"],[1.5,"1.5倍"],[2,"2倍"]]))+
+    row("CPU表示速度",sel("stCpu",cpuDispMul,[[0.5,"0.5倍"],[1,"ふつう"],[1.5,"1.5倍"],[2,"2倍"]]))+
+    row("演出",`<label style="display:flex;align-items:center;gap:6px;font-size:12px;"><input type="checkbox" id="stFx" ${fxOn?"checked":""}> 紙吹雪・フラッシュを表示する</label>`)+
+    row("文字・UIサイズ",sel("stTxt",textScale,[[0.9,"小さい"],[1,"ふつう"],[1.15,"大きい"],[1.3,"特大"]]))+
+    row("UIスタイル",`<select id="stUi" class="select" style="flex:1;">${THEMES.map((t,i)=>`<option value="${i}" ${uiTheme===i?"selected":""}>${i===0?"デフォルト":`スタイル ${String(i).padStart(2,"0")}`}</option>`).join("")}</select>`);
+  $("setOv").classList.remove("hidden");
+  $("stBgm").oninput=e=>{bgmVol=+e.target.value/100;saveSettings();};
+  $("stSfx").oninput=e=>{sfxVol=+e.target.value/100;saveSettings();beep(700,.06);};
+  $("stAnim").onchange=e=>{animSpeed=+e.target.value;saveSettings();};
+  $("stCpu").onchange=e=>{cpuDispMul=+e.target.value;saveSettings();};
+  $("stFx").onchange=e=>{fxOn=e.target.checked;saveSettings();};
+  $("stTxt").onchange=e=>{textScale=+e.target.value;applySettings();saveSettings();};
+  $("stUi").onchange=e=>{applyUiTheme(+e.target.value);saveSettings();};
+}
+
+const CFG_KEY="wire_sugoroku_config_v1";
+function saveConfig(){
+  try{
+    localStorage.setItem(CFG_KEY,JSON.stringify({
+      v:2,hNum,cNum,
+      cpuSpd:$("cpuSpd").value,cpuLvl:$("cpuLvl").value,
+      rule:$("ruleSel").value,move:$("moveSel").value,turn:$("turnSel").value,
+      order:$("orderSel").value,hand:$("handSel").value,
+      goal:$("goalSel").value,map:$("mapSel").value,seed:$("seedIn").value,
+      cardSet:cardSetMode,cardEn:cardEnabled,
+      stop:(typeof $("stopOkChk").checked==="boolean")?$("stopOkChk").checked:true,
+      hNames:hNames.slice(0,hNum),hColors:hColorIdx.slice(0,hNum),hCustom:hCustomColor.slice(0,hNum),
+      cNames:cNames.slice(0,cNum),cSpds:cSpdOv.slice(0,cNum),cLvls:cLvlOv.slice(0,cNum)
+    }));
+  }catch(e){}
+}
+const clampInt=(v,lo,hi,def)=>{v=Math.round(+v);return isFinite(v)?Math.max(lo,Math.min(hi,v)):def;};
+function loadConfig(){
+  try{
+    const c=JSON.parse(localStorage.getItem(CFG_KEY));
+    if(!c)return;
+    if(isSet(c.cpuSpd))$("cpuSpd").value=c.cpuSpd;
+    if(isSet(c.cpuLvl))$("cpuLvl").value=c.cpuLvl;
+    if(isSet(c.rule))$("ruleSel").value=c.rule;
+    if(isSet(c.move))$("moveSel").value=c.move;
+    if(isSet(c.turn))$("turnSel").value=c.turn;
+    if(isSet(c.order))$("orderSel").value=c.order;
+    if(isSet(c.hand))$("handSel").value=c.hand;
+    if(isSet(c.goal))$("goalSel").value=c.goal;
+    if(isSet(c.map)){$("mapSel").value=c.map;$("seedRow").style.display=c.map==="builtin"?"none":"flex";}
+    if(isSet(c.seed))$("seedIn").value=c.seed;
+    if(isSet(c.cardSet))cardSetMode=c.cardSet;
+    if(c.cardEn&&typeof c.cardEn==="object")cardEnabled=c.cardEn;
+    if(typeof c.stop==="boolean"&&$("stopOkChk"))$("stopOkChk").checked=c.stop;
+    if(c.v===2){
+      hNum=clampInt(c.hNum,1,HUMAN_MAX,1);cNum=clampInt(c.cNum,0,CPU_MAX,3);
+      if(Array.isArray(c.hNames))hNames=c.hNames;
+      if(Array.isArray(c.hColors))c.hColors.forEach((v,i)=>{if(isSet(v))hColorIdx[i]=clampInt(v,0,7,i%8);});
+    hCustomColor=[];
+    if(Array.isArray(c.hCustom))c.hCustom.forEach((v,i)=>{if(typeof v==="string"&&/^#[0-9a-f]{6}$/i.test(v))hCustomColor[i]=v;});
+      if(Array.isArray(c.cNames))cNames=c.cNames;
+      if(Array.isArray(c.cSpds))cSpdOv=c.cSpds.map(v=>isSet(v)?+v:undefined);
+      if(Array.isArray(c.cLvls))cLvlOv=c.cLvls.map(v=>isSet(v)?+v:undefined);
+    }else{
+      // 旧形式（人数＋各行の人間/CPU）からの引き継ぎ
+      const pl=Array.isArray(c.players)?c.players:[];
+      const hs=[];
+      pl.forEach((x,i)=>{if(!x.cpu)hs.push({name:x.name,color:Array.isArray(c.colors)?c.colors[i]:undefined});});
+      hNum=clampInt(hs.length,1,HUMAN_MAX,1);
+      cNum=clampInt(pl.length-hs.length,0,CPU_MAX,0);
+      hNames=hs.map(x=>x.name);
+      hs.forEach((x,i)=>{if(isSet(x.color))hColorIdx[i]=clampInt(x.color,0,7,i%8);});
+    }
+    renderSetupRows();
+  }catch(e){}
+}
+// 手番順: humanFirst=人間→CPU / mix=交互 / random=ランダム
+function orderPlayers(hs,cs,mode){
+  if(mode==="random"){
+    const a=hs.concat(cs);
+    for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}
+    return a;
+  }
+  if(mode==="mix"){
+    const out=[],per=cs.length/hs.length;let ci=0;
+    hs.forEach((h,k)=>{out.push(h);const end=Math.round(per*(k+1));while(ci<end)out.push(cs[ci++]);});
+    while(ci<cs.length)out.push(cs[ci++]);
+    return out;
+  }
+  return hs.concat(cs);
+}
+function startPlay(){
+  mapGen=$("mapSel").value;
+  let baseStage;
+  if(mapGen==="builtin"){
+    baseStage=setupMode==="builtin"?getBuiltin():stages[setupSlotIdx];
+  }else{
+    baseStage=seededStage(mapGen,$("seedIn").value);
+    if(!baseStage){alert("マップ生成に失敗したので内蔵ステージで開始します");mapGen="builtin";baseStage=getBuiltin();}
+  }
+  stage=JSON.parse(JSON.stringify(baseStage));
+  saveConfig();
+  turnLimit=+$("turnSel").value;
+  goalCount=+$("goalSel").value;
+  if(cardSetMode==="custom"&&SLOT_CARDS.every(c=>cardEnabled[c.id]===false))alert("全カードがOFFのため、デフォルトセットで開始します");
+  stopAllowed=$("stopOkChk").checked;
+  cpuSpeed=+$("cpuSpd").value;
+  cpuLevel=+$("cpuLvl").value;
+  maxHand=$("handSel").value==="Infinity"?Infinity:Math.max(1,+$("handSel").value||8);
+  ruleMode=$("ruleSel").value;
+  moveMode=$("moveSel").value;
+  if(ruleMode!=="sugoroku")moveMode="free";
+  let v;
+  if(ruleMode==="momo"||ruleMode==="momoMove"){
+    // 桃鉄ルール: ゴールマスは不要（無色マスが隠れゴールになる）
+    v=stage.nodes.some(n=>n.type==="start")?{ok:true}:{ok:false,msg:"スタートがありません"};
+    if(v.ok&&!stage.nodes.some(n=>n.type==="plain"))v={ok:false,msg:"桃鉄ルールには無色マスが必要です（ステージメーカーで無色マスを置いてね）"};
+  }else{
+    v=validateStage(stage);
+  }
+  if(!v.ok){alert("このステージでは遊べません: "+v.msg);return;}
+  if(ruleMode==="momoMove")stage.nodes.forEach(n=>{if(n.type==="goal")n.type="plain";}); // 通常ゴールをランダム(無色)マスに置き換え
+  const plains0=stage.nodes.filter(n=>n.type==="plain");
+  if(ruleMode==="momo"){
+    hiddenGoalId=plains0[rand(plains0.length)].id;
+  }else hiddenGoalId=null;
+  if(ruleMode==="momoMove"){
+    momoGoalId=plains0[rand(plains0.length)].id;
+    momoHistory=[momoGoalId];
+  }else{momoGoalId=null;momoHistory=[];}
+  // マップの大きさ
+  const dim=fitStageDims(stage);
+  plCols=stage.cols=dim.cols;plRows=stage.rows=dim.rows;
+  plW=worldW(plCols);plH=worldH(plRows);
+  indexStage();
+  // ゴール数の妥当性チェック＆到達不能ゴールの警告 (D)
+  if(ruleMode==="sugoroku"||ruleMode==="momoKai"){
+    const startId0=stage.nodes.find(n=>n.type==="start").id;
+    const seen0=new Set([startId0]);const q0=[startId0];
+    while(q0.length){const c0=q0.shift();outs(c0).forEach(w=>{if(!seen0.has(w.t)){seen0.add(w.t);q0.push(w.t);}});}
+    const goalNodes=stage.nodes.filter(n=>n.type==="goal");
+    const ng=goalNodes.filter(n=>!seen0.has(n.id)).length;
+    if(ng>0)alert("警告: スタートから到達できないゴールが "+ng+" か所あります");
+    if(goalCount>0&&goalNodes.length<goalCount){alert("ゴール数がステージのゴールマス数より多いため「全員がゴール」に変更します");goalCount=0;}
+  }
+  // プレイヤー作成（人間 → CPU、手番順は設定に従う）
+  players=[];finishOrder=[];cur=0;round=1;
+  coinHistory=[];
+  const startId=stage.nodes.find(n=>n.type==="start").id;
+  const mk=o=>Object.assign({coin:1000,hand:[],pos:startId,rest:0,done:false,clears:0,again:false,modNext:0,fixNext:null,redGuard:false,guardRest:false,inv:false,slotMult:1},o);
+  const hs=[],cs=[];
+  for(let i=0;i<hNum;i++){
+    hs.push(mk({name:(humanName(i)||NAMES[i]).trim()||NAMES[i],color:hCustomColor[i]||PCOLORS[(hColorIdx[i]!==undefined?hColorIdx[i]:i)%8],cpu:false,hi:i}));
+  }
+  for(let i=0;i<cNum;i++){
+    cs.push(mk({name:(cpuName(i)||"CPU"+(i+1)).trim()||"CPU"+(i+1),color:cpuColor(i),cpu:true,cpuNo:i+1,
+      cpuSpd:isSet(cSpdOv[i])?+cSpdOv[i]:cpuSpeed,cpuLvl:isSet(cLvlOv[i])?+cLvlOv[i]:cpuLevel}));
+  }
+  players=orderPlayers(hs,cs,$("orderSel").value);
+  players.forEach((p,i)=>{p.idx=i;});
+  cam.init=false;cam.free=false;$("camBack").style.display="none";
+  busy=false;turnRolled=false;freeMoving=false;quiet=false;camSnapNext=false;
+  midDirty=false;
+  replayBuf={meta:{startedAt:Date.now(),ruleMode,turnLimit,players:players.map(p=>({name:p.name,color:p.color,cpu:p.cpu}))},turns:[]};
+  replaying=false;$("replayHud").style.display="none";
+  $("turnMenu").style.display="none";$("moveHud").style.display="none";
+  $("stopHereBtn").style.display="none";$("rollBtn").style.display="none";
+  plZoom=2.2;applyPlZoom();
+  renderPlayBoard();buildDie();buildMinimap();
+  bgmTune=rand(BGMS.length);
+  bgmStart();
+  showScreen("s-play");
+  $("log").innerHTML="";
+  shownCoin=null;
+  $("goalPill").textContent=ruleMode==="momo"?"目標: ？？？":ruleMode==="momoMove"?"⭐ 移動ゴールを追え！":ruleMode==="momoKai"?"🏁 ゴール回数を競え！（制限ターンまで）":"ゴールマスを目指せ！";
+  $("goalPill").style.borderColor=ruleMode==="momo"?"#8b6ff0":"var(--ink)";
+  log("出発",`「${stage.name||"ステージ"}」で対戦開始！（${players.length}人 / ${plCols}×${plRows}マス）${ruleMode==="momo"?"無色マスのどれかがゴールだ！":"ゴールを目指そう。"}`);
+  refreshNow();
+  gameLoop();
+}
+$("startBtn").onclick=startPlay;
+
+/* ================================================================
+   init
+================================================================ */
+renderPalette();bindPalette();refreshSlotSelect();loadConfig();
+loadSettings();
+refreshMidBtn();
+loadStats();
+setInfo(infoOpen);
+joyUpdate();
+buildCardToggles();
+loadSlot(0);
+// title floating dots
+(function(){
+  const cols=["#ff9ec4","#7cc7f0","#ffd66b","#8fd98f","#c9b3f5"];
+  for(let i=0;i<14;i++){
+    const d=document.createElement("div");
+    d.className="float-dot";
+    const s=8+rand(18);
+    d.style.width=d.style.height=s+"px";
+    d.style.background=cols[rand(cols.length)];
+    d.style.left=rand(96)+"vw";
+    d.style.top=rand(96)+"vh";
+    d.style.animationDelay=(rand(60)/10)+"s";
+    d.style.animationDuration=(4+rand(5))+"s";
+    $("s-title").appendChild(d);
+  }
+})();
+</script>
+</body>
+</html>

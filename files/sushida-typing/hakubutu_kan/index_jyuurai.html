@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回転寿司タイピング - 寿司博物館（過去作スライダー）</title>
+<style>
+  :root {
+    --washi: #f7f1e3;
+    --washi-deep: #efe6d2;
+    --noren: #1b3350;
+    --noren-deep: #0c1e33;
+    --wood: #b8895f;
+    --wood-deep: #8a5f3c;
+    --urushi: #1b1714;
+    --gold: #b8903f;
+    --shu: #a8402c;
+    --sumi: #2b2622;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: var(--washi); color: var(--sumi);
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    overflow: hidden;
+  }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+    transition: background-color 0.7s ease-in-out;
+  }
+
+  /* 画面全体の黒フェードアウトレイヤー */
+  .fade-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000000; z-index: 9999;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.7s ease-in-out;
+  }
+  body.is-switching .fade-overlay {
+    opacity: 1; pointer-events: auto;
+  }
+
+  /* 博物館全体のコンテナ */
+  .museum-wrapper {
+    width: 100%; max-width: 1000px; text-align: center;
+    position: relative; padding: 20px 40px;
+    transition: transform 0.75s cubic-bezier(0.64, 0, 0.78, 0), opacity 0.65s ease-in;
+    transform: scale(1.0);
+  }
+  
+  /* 100%から300%へ超特大ダイナミック・イージングズーム移動 */
+  body.is-switching .museum-wrapper {
+    transform: scale(3.0);
+    opacity: 0;
+  }
+
+  .back-to-main { position: absolute; top: -35px; right: 40px; z-index: 10; }
+  .btn-back {
+    display: inline-block; background: var(--noren); color: #ffffff;
+    text-decoration: none; font-size: 12px; font-weight: bold;
+    padding: 8px 16px; border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: background-color 0.2s, transform 0.2s;
+  }
+  .btn-back:hover { background: var(--noren-deep); transform: translateY(-1px); }
+  
+  .hub-header { margin-bottom: 25px; }
+  h1 { color: var(--urushi); font-size: 30px; margin: 0 0 6px 0; letter-spacing: 0.1em; }
+  .hub-subtitle { color: var(--gold); font-size: 14px; font-weight: bold; margin: 0; }
+
+  /* スライダー外枠とカード構造 */
+  .slider-container {
+    width: 100%; overflow: hidden; background: #ffffff;
+    border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    border-top: 8px solid var(--wood); position: relative;
+    padding: 50px 20px; margin-bottom: 25px;
+  }
+  .slider-stage {
+    display: flex; width: 1200%; /* ★ 全12枚分（1200%）にパワーアップ！ */
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+  
+  .version-card {
+    width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 10px 60px;
+  }
+  .card-inner {
+    max-width: 550px; width: 100%; background: var(--washi-deep);
+    padding: 35px; border-radius: 6px; border-bottom: 4px solid var(--gold);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  }
+  .ver-num { font-size: 14px; color: var(--gold); font-weight: bold; margin-bottom: 6px; display: block; }
+  .ver-title { font-size: 24px; color: var(--urushi); font-weight: bold; margin-bottom: 18px; display: block; }
+  .ver-desc { font-size: 14.5px; line-height: 1.8; color: #555; margin-bottom: 25px; height: 55px; }
+  
+  .play-btn {
+    display: inline-block; width: 100%; padding: 15px;
+    background: var(--shu); color: #ffffff; text-decoration: none;
+    font-weight: bold; font-size: 16px; border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(168,64,44,0.2); transition: all 0.2s;
+  }
+  .play-btn:hover { background: #be4933; transform: translateY(-2px); }
+
+  /* 左右のナビゲーションボタン */
+  .nav-btn {
+    position: absolute; top: 55%; transform: translateY(-50%);
+    width: 52px; height: 52px; background: var(--urushi); color: #ffffff;
+    border: none; border-radius: 50%; font-size: 20px; font-weight: bold;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 5; transition: all 0.2s;
+  }
+  .nav-btn:hover { background: var(--gold); transform: translateY(-50%) scale(1.1); }
+  .btn-prev { left: 15px; }
+  .btn-next { right: 15px; }
+
+  .keyboard-guide { color: #888; font-size: 12px; margin-top: 10px; }
+  .key-icon {
+    display: inline-block; padding: 2px 6px; background: #e0e0e0;
+    border: 1px solid #b5b5b5; border-radius: 3px; font-size: 11px;
+    color: #333; margin: 0 3px; box-shadow: 0 2px 0 #b5b5b5;
+  }
+</style>
+</head>
+<body>
+
+<div class="fade-overlay"></div>
+
+<div class="museum-wrapper" id="museumWrapper">
+  <div class="back-to-main">
+    <a href="/" class="btn-back">⛺ 表舞台へ戻る</a>
+  </div>
+
+  <div class="hub-header">
+    <h1>🍣 寿司博物館</h1>
+    <p class="hub-subtitle">〜 左右キー【←】【→】またはボタンで世代を巡る 〜</p>
+  </div>
+
+  <div class="slider-container">
+    <button class="nav-btn btn-prev" id="prevBtn">◀</button>
+    <button class="nav-btn btn-next" id="nextBtn">▶</button>
+
+    <div class="slider-stage" id="sliderStage">
+      
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 01</span>
+          <span class="ver-title">🍣 0.25代目寿司うち</span>
+          <p class="ver-desc">すべての原点。最古のシステム検証用に構築された超貴重な初期プロトタイプです。</p>
+          <a href="./sushi_stock/0.25代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 02</span>
+          <span class="ver-title">🍣 0.5代目寿司うち</span>
+          <p class="ver-desc">タイピングゲームとしての根本アルゴリズムや判定ロジックをテストした環境。</p>
+          <a href="./sushi_stock/0.5代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 03</span>
+          <span class="ver-title">🍣 1代目寿司うち</span>
+          <p class="ver-desc">独自のランク査定メカニズムを初搭載した、栄光のファースト完成バージョン。</p>
+          <a href="./sushi_stock/1代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 04</span>
+          <span class="ver-title">🍣 2代目寿司うち</span>
+          <p class="ver-desc">キー入力時の反応速度をチューニングし、プレイの違和感を解消した改良モデル。</p>
+          <a href="./sushi_stock/2代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 05</span>
+          <span class="ver-title">🍣 3代目寿司うち</span>
+          <p class="ver-desc">エンジン構造を完全に一本化させ、長時間のタイピング動作における安定性を確保。</p>
+          <a href="./sushi_stock/3代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 06</span>
+          <span class="ver-title">🍣 4代目寿司うち</span>
+          <p class="ver-desc">複数コースの切り替え処理や、最終リザルト画面の演出試験を行ったビルド。</p>
+          <a href="./sushi_stock/4代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 07</span>
+          <span class="ver-title">🍣 5代目寿司うち</span>
+          <p class="ver-desc">動的な画面変化（アニメーション）をタイピングのコアシステムに統合した意欲作。</p>
+          <a href="./sushi_stock/5代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 08</span>
+          <span class="ver-title">🍣 6代目寿司うち</span>
+          <p class="ver-desc">プログラム全域をリファクタリングし、予期せぬバグを徹底排除した快適パッチ版。</p>
+          <a href="./sushi_stock/6代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 09</span>
+          <span class="ver-title">🎨 7代目寿司打ち</span>
+          <p class="ver-desc">ここから本格的な漢字デザインへ！ユーザーインターフェースを今風に刷新。</p>
+          <a href="./sushi_stock/7代目寿司打ち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 10</span>
+          <span class="ver-title">🏮 8代目寿司打ち</span>
+          <p class="ver-desc">ステージコンテンツを大幅拡張。高難度の連続文字入力に挑む耐久用バージョン。</p>
+          <a href="./sushi_stock/8代目寿司打ち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 11</span>
+          <span class="ver-title">⚡ 9代目寿司打ち</span>
+          <p class="ver-desc">新機能の実装やゲームシステムの大幅改修が施された、期待の第11弾ビルド！</p>
+          <a href="./sushi_stock/9代目寿司打ち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+      <div class="version-card">
+        <div class="card-inner">
+          <span class="ver-num">STAGE 12</span>
+          <span class="ver-title">🏆 10代目寿司打ち</span>
+          <p class="ver-desc">集大成。すべてのグラフィックとシステムが最高潮に達した第12弾の記念碑モデル。</p>
+          <a href="./sushi_stock/10代目寿司うち/index.html" class="play-btn js-nav-link">この世代を呼び出す ➔</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="keyboard-guide">
+    キーボードの <span class="key-icon">←</span> キーで過去へ、<span class="key-icon">→</span> キーで未来へなめらかに移動できます。
+  </div>
+</div>
+
+<script>
+  const stage = document.getElementById('sliderStage');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  
+  let currentIndex = 0;
+  const maxIndex = 11; // 0番〜11番の全12枚に対応！
+
+  function updateSlider() {
+    // ★ 全12枚並びなので、移動量を「100 / 12 = 8.333%」に完全自動調整！
+    const percentage = currentIndex * -(100 / 12);
+    stage.style.transform = `translateX(${percentage}%)`;
+  }
+
+  function nextSlide() {
+    if (currentIndex < maxIndex) { currentIndex++; } else { currentIndex = 0; }
+    updateSlider();
+  }
+
+  function prevSlide() {
+    if (currentIndex > 0) { currentIndex--; } else { currentIndex = maxIndex; }
+    updateSlider();
+  }
+
+  nextBtn.addEventListener('click', nextSlide);
+  prevBtn.addEventListener('click', prevSlide);
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'ArrowRight') { nextSlide(); }
+    else if (event.key === 'ArrowLeft') { prevSlide(); }
+  });
+
+  const navLinks = document.querySelectorAll('.js-nav-link');
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(event) {
+      event.preventDefault();
+      const targetUrl = this.getAttribute('href');
+      
+      document.body.classList.add('is-switching');
+      
+      setTimeout(() => { 
+        window.location.href = targetUrl; 
+      }, 700);
+    });
+  });
+</script>
+
+</body>
+</html>

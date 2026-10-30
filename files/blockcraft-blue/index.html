@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLOCKCRAFT</title>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#87ceeb;font-family:'Courier New',monospace;color:#eaffea;user-select:none;}
+  canvas{display:block;}
+
+  #titleScreen{
+    position:fixed;inset:0;z-index:20;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#4a7fc9 0%,#2c4f7c 60%,#1a2f4a 100%);
+  }
+  #titleScreen h1{
+    font-size:3rem;letter-spacing:.3rem;margin:0 0 .1rem 0;color:#8fe870;
+    text-shadow:3px 3px 0 #2a5a1a, 0 0 20px rgba(140,230,110,.4);font-weight:700;
+  }
+  #titleScreen .sub{color:#c8e8c0;margin-bottom:1.6rem;font-size:.75rem;letter-spacing:.25rem;}
+  .panel{
+    background:rgba(10,16,10,.62);border:2px solid rgba(140,230,110,.35);
+    border-radius:4px;padding:1.5rem 2rem;backdrop-filter:blur(3px);min-width:340px;
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;margin:.55rem 0;gap:1rem;}
+  .row label{font-size:.72rem;color:#cfe8c8;letter-spacing:.04rem;}
+  .row input[type=text]{
+    background:#0e1a0e;border:1px solid #3a5a3a;color:#eaffea;border-radius:3px;
+    padding:.4rem .6rem;width:150px;font-size:.8rem;outline:none;font-family:inherit;
+  }
+  .row input[type=range]{width:130px;accent-color:#8fe870;}
+  .row input:focus{border-color:#8fe870;}
+  button{cursor:pointer;border:none;border-radius:3px;padding:.7rem 1.3rem;font-size:.85rem;letter-spacing:.08rem;font-weight:700;font-family:inherit;}
+  #startBtn{margin-top:1.3rem;width:100%;background:#8fe870;color:#0e1a0e;box-shadow:0 4px 16px rgba(120,220,90,.35);}
+  #startBtn:hover{filter:brightness(1.08);}
+  #randSeedBtn{background:#1c2c1c;color:#9fc898;padding:.4rem .7rem;font-size:.7rem;border:1px solid #3a5a3a;}
+  #randSeedBtn:hover{color:#fff;}
+  .hint{font-size:.62rem;color:#7a9a72;margin-top:1rem;text-align:center;line-height:1.7;}
+
+  #hud{position:fixed;top:12px;left:12px;z-index:10;font-size:.72rem;color:#eaffea;text-shadow:0 1px 3px #000;pointer-events:none;display:none;}
+  #posDisp{margin-top:2px;}
+  #chunkDisp{margin-top:2px;color:#9fc898;}
+
+  #crosshair{
+    position:fixed;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;
+    z-index:10;display:none;pointer-events:none;
+  }
+  #crosshair:before,#crosshair:after{content:'';position:absolute;background:rgba(255,255,255,.85);}
+  #crosshair:before{left:7px;top:0;width:2px;height:16px;}
+  #crosshair:after{top:7px;left:0;height:2px;width:16px;}
+
+  #hotbar{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:10;display:none;gap:6px;}
+  .slot{
+    width:52px;height:52px;background:rgba(10,16,10,.7);border:2px solid #3a5a3a;border-radius:5px;
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .slot .num{position:absolute;top:2px;left:4px;font-size:.55rem;color:#7a9a72;}
+  .slot .swatch{width:30px;height:30px;border-radius:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.3);}
+  .slot.active{border-color:#8fe870;box-shadow:0 0 10px rgba(140,230,110,.5);}
+
+  #pauseHint{
+    position:fixed;bottom:14px;right:14px;z-index:10;font-size:.62rem;color:#cfe8c8;
+    text-shadow:0 1px 3px #000;display:none;text-align:right;
+  }
+  #centerLock{
+    position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;
+    background:rgba(4,8,4,.55);color:#eaffea;font-size:.9rem;letter-spacing:.1rem;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="titleScreen">
+  <h1>BLOCKCRAFT</h1>
+  <div class="sub">VOXEL SANDBOX PROTOTYPE</div>
+  <div class="panel">
+    <div class="row">
+      <label>シード値</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="seedInput" value="world-1">
+        <button id="randSeedBtn">🎲</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>描画距離(チャンク)</label>
+      <input type="range" id="renderDistInput" min="3" max="8" value="5" step="1">
+      <span id="renderDistVal" style="width:24px;text-align:right;font-size:.75rem;color:#9fc898;">5</span>
+    </div>
+    <div class="row">
+      <label>リソースパック(任意)</label>
+      <input type="file" id="resourcePackInput" accept=".zip" style="width:150px;font-size:.65rem;color:#cfe8c8;">
+    </div>
+    <div id="resourcePackStatus" style="font-size:.62rem;color:#7a9a72;margin:-.3rem 0 .3rem;min-height:1.2em;text-align:right;"></div>
+    <button id="startBtn">ワールドへ入る</button>
+    <div class="hint">
+      W/A/S/D:移動　Space:ジャンプ　クリックでポインターロック<br>
+      左クリック:ブロック破壊　右クリック:ブロック設置<br>
+      1〜7 またはホイール:ブロック選択　Esc:ロック解除<br>
+      リソースパックは.zip内のgrass_block_top.png等、Minecraft系の標準的なファイル名を自動検出します
+    </div>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="posDisp">X:0 Y:0 Z:0</div>
+  <div id="chunkDisp">CHUNK: 0,0</div>
+</div>
+<div id="crosshair"></div>
+<div id="hotbar"></div>
+<div id="pauseHint">Escでロック解除 / クリックで再ロック</div>
+<div id="centerLock">クリックして操作を開始</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+
+/* ==================================================================
+   BLOCKCRAFT — Three.js製ボクセルサンドボックスのプロトタイプ
+   ・シードからチャンク単位で地形を手続き生成(fbm value noise)
+   ・面カリング(隣接ブロックが不透明なら面を描画しない)による軽量メッシュ生成
+   ・レイマーチによるブロック照準・設置/破壊
+   ・オンライン同期はSupabaseの接続情報が入っていれば有効化される(下記参照)
+
+   マルチプレイを有効にする場合:
+   1. Supabaseプロジェクトを作成し、supabase_blockcraft.sqlのテーブルを作成
+   2. 下のSUPABASE_URL / SUPABASE_ANON_KEYを設定する
+   (未設定のままなら完全にオフラインのシングルプレイとして動作する)
+================================================================== */
+const SUPABASE_URL = 'https://rdlibqrnpzidgxmceanf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_c9uEaLRLIveaos9fJyGy3Q_oywgmRf3';
+let sb = null;
+try {
+  if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e){ sb = null; }
+const clientId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('c-'+Math.random().toString(36).slice(2));
+let worldChannel = null;
+
+/* ---------- hash / noise ---------- */
+function hash01(str){
+  let h = 2166136261;
+  for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h>>>13; h = Math.imul(h, 0x85ebca6b); h ^= h>>>16;
+  return ((h>>>0) % 1000000) / 1000000;
+}
+function lerp(a,b,t){ return a + (b-a)*t; }
+function smooth(t){ return t*t*(3-2*t); }
+function valueNoise2D(seed, x, z){
+  const x0=Math.floor(x), z0=Math.floor(z), x1=x0+1, z1=z0+1;
+  const sx=smooth(x-x0), sz=smooth(z-z0);
+  const n00=hash01(seed+'|'+x0+'|'+z0), n10=hash01(seed+'|'+x1+'|'+z0);
+  const n01=hash01(seed+'|'+x0+'|'+z1), n11=hash01(seed+'|'+x1+'|'+z1);
+  return lerp(lerp(n00,n10,sx), lerp(n01,n11,sx), sz);
+}
+function fbm2D(seed, x, z, octaves){
+  let total=0, amp=1, freq=1, maxAmp=0;
+  for (let i=0;i<octaves;i++){
+    total += valueNoise2D(seed+'|o'+i, x*freq, z*freq) * amp;
+    maxAmp += amp; amp *= 0.5; freq *= 2;
+  }
+  return total / maxAmp;
+}
+
+/* ---------- block types ---------- */
+const AIR=0, GRASS=1, DIRT=2, STONE=3, SAND=4, WOOD=5, LEAVES=6, PLANK=7, WATER=8;
+const SOLID = { [GRASS]:true, [DIRT]:true, [STONE]:true, [SAND]:true, [WOOD]:true, [LEAVES]:true, [PLANK]:true };
+const BLOCK_COLOR = {
+  [GRASS]:  { top:0x69c24a, side:0x8a6a3a, bottom:0x6b4a2a },
+  [DIRT]:   { top:0x8a6a3a, side:0x8a6a3a, bottom:0x8a6a3a },
+  [STONE]:  { top:0x8c8c8c, side:0x8c8c8c, bottom:0x8c8c8c },
+  [SAND]:   { top:0xe0d190, side:0xe0d190, bottom:0xe0d190 },
+  [WOOD]:   { top:0x8a6535, side:0x6b4a2a, bottom:0x8a6535 },
+  [LEAVES]: { top:0x4a9c3c, side:0x4a9c3c, bottom:0x4a9c3c },
+  [PLANK]:  { top:0xba9160, side:0xba9160, bottom:0xba9160 },
+  [WATER]:  { top:0x3a7fc9, side:0x3a7fc9, bottom:0x3a7fc9 }
+};
+const HOTBAR = [GRASS, DIRT, STONE, SAND, WOOD, LEAVES, PLANK];
+const HOTBAR_HEX = { [GRASS]:'#69c24a', [DIRT]:'#8a6a3a', [STONE]:'#8c8c8c', [SAND]:'#e0d190', [WOOD]:'#8a6535', [LEAVES]:'#4a9c3c', [PLANK]:'#ba9160' };
+
+/* ---------- リソースパック用テクスチャスロット ---------- */
+// 各ブロック×面がアトラス上のどのスロット(名前)を使うか。名前ごとの実画像は
+// resource pack読み込み時に見つかった場合だけ差し替わり、無い場合は単色のまま。
+const FACE_SLOT = {
+  [GRASS]:  { top:'grass_top', side:'grass_side', bottom:'dirt' },
+  [DIRT]:   { top:'dirt', side:'dirt', bottom:'dirt' },
+  [STONE]:  { top:'stone', side:'stone', bottom:'stone' },
+  [SAND]:   { top:'sand', side:'sand', bottom:'sand' },
+  [WOOD]:   { top:'wood_top', side:'wood_side', bottom:'wood_top' },
+  [LEAVES]: { top:'leaves', side:'leaves', bottom:'leaves' },
+  [PLANK]:  { top:'planks', side:'planks', bottom:'planks' },
+  [WATER]:  { top:'water', side:'water', bottom:'water' }
+};
+const SLOT_NAMES = ['grass_top','grass_side','dirt','stone','sand','wood_top','wood_side','leaves','planks','water'];
+const ATLAS_COLS = 5, ATLAS_ROWS = 2, TILE = 16;
+const ATLAS_W = ATLAS_COLS*TILE, ATLAS_H = ATLAS_ROWS*TILE;
+const slotIndex = {}; SLOT_NAMES.forEach((n,i)=>slotIndex[n]=i);
+const slotRect = {}; // name -> {u0,v0,u1,v1}(0〜1、アトラス内の矩形)
+SLOT_NAMES.forEach((n,i) => {
+  const col = i % ATLAS_COLS, row = Math.floor(i / ATLAS_COLS);
+  const pad = 0.4; // 隣接タイルの色が滲まないよう少し内側を使う
+  slotRect[n] = {
+    u0:(col*TILE+pad)/ATLAS_W, v0:1-((row+1)*TILE-pad)/ATLAS_H,
+    u1:((col+1)*TILE-pad)/ATLAS_W, v1:1-(row*TILE+pad)/ATLAS_H
+  };
+});
+// アトラスキャンバス: 初期状態は全スロット白(=テクスチャなし)。vertexColorsで
+// 従来通りのブロック色を掛けるので、リソースパック未読込でも見た目は変わらない。
+const atlasCanvas = document.createElement('canvas');
+atlasCanvas.width = ATLAS_W; atlasCanvas.height = ATLAS_H;
+const atlasCtx = atlasCanvas.getContext('2d');
+atlasCtx.imageSmoothingEnabled = false;
+atlasCtx.fillStyle = '#ffffff';
+atlasCtx.fillRect(0,0,ATLAS_W,ATLAS_H);
+const atlasTexture = new THREE.CanvasTexture(atlasCanvas);
+atlasTexture.magFilter = THREE.NearestFilter;
+atlasTexture.minFilter = THREE.NearestFilter;
+atlasTexture.wrapS = THREE.ClampToEdgeWrapping;
+atlasTexture.wrapT = THREE.ClampToEdgeWrapping;
+atlasTexture.generateMipmaps = false;
+
+/* ---------- resource pack (.zip) 読み込み ----------
+   標準的なMinecraft系リソースパックのファイル名を探して、見つかった画像だけ
+   アトラスの対応スロットに描き込む(見つからないスロットは白=単色のまま)。 */
+const RP_CANDIDATES = {
+  grass_top:  ['grass_block_top.png','grass_top.png'],
+  grass_side: ['grass_block_side.png','grass_side.png'],
+  dirt:       ['dirt.png'],
+  stone:      ['stone.png'],
+  sand:       ['sand.png'],
+  wood_top:   ['oak_log_top.png','log_oak_top.png','wood_top.png'],
+  wood_side:  ['oak_log.png','log_oak.png','wood.png','wood_side.png'],
+  leaves:     ['oak_leaves.png','leaves_oak.png','leaves.png'],
+  planks:     ['oak_planks.png','planks_oak.png','planks.png'],
+  water:      ['water_still.png','water.png']
+};
+async function loadResourcePack(file, statusEl){
+  if (!window.JSZip){ if(statusEl) statusEl.textContent='JSZipの読み込みに失敗しました'; return; }
+  if (statusEl) statusEl.textContent = '読み込み中...';
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const entries = Object.keys(zip.files).filter(n => !zip.files[n].dir);
+    let found = 0;
+    for (const slotName of SLOT_NAMES){
+      const candidates = RP_CANDIDATES[slotName];
+      let matchPath = null;
+      for (const cand of candidates){
+        matchPath = entries.find(n => n.toLowerCase().endsWith('/'+cand) || n.toLowerCase()===cand);
+        if (matchPath) break;
+      }
+      if (!matchPath) continue;
+      try {
+        const blob = await zip.files[matchPath].async('blob');
+        const bitmap = await createImageBitmap(blob);
+        const col = slotIndex[slotName] % ATLAS_COLS, row = Math.floor(slotIndex[slotName] / ATLAS_COLS);
+        atlasCtx.clearRect(col*TILE, row*TILE, TILE, TILE);
+        atlasCtx.drawImage(bitmap, col*TILE, row*TILE, TILE, TILE);
+        found++;
+      } catch(e){}
+    }
+    atlasTexture.needsUpdate = true;
+    if (statusEl) statusEl.textContent = found>0 ? (found+'個のテクスチャを適用しました') : 'テクスチャが見つかりませんでした(単色のまま)';
+  } catch(e){
+    if (statusEl) statusEl.textContent = '読み込みに失敗しました: ' + e.message;
+  }
+}
+
+/* ---------- world / chunk config ---------- */
+const CS = 16;          // チャンクの一辺(X,Z)
+const CH = 48;          // ワールド高さ
+const WATER_LEVEL = 20;
+let seed = 'world-1';
+let renderDist = 5;
+
+function idx(x,y,z){ return x + z*CS + y*CS*CS; }
+
+const chunks = new Map(); // "cx,cz" -> {cx,cz,blocks:Uint8Array,mesh,waterMesh,generated,dirty,hasRemoteDiffs}
+function key(cx,cz){ return cx+','+cz; }
+
+function terrainHeight(wx, wz){
+  const n = fbm2D(seed, wx*0.018, wz*0.018, 4);
+  return Math.floor(18 + n*22);
+}
+
+function generateChunk(cx, cz){
+  const blocks = new Uint8Array(CS*CH*CS);
+  for (let lz=0; lz<CS; lz++){
+    for (let lx=0; lx<CS; lx++){
+      const wx = cx*CS+lx, wz = cz*CS+lz;
+      const h = terrainHeight(wx, wz);
+      const sandy = fbm2D(seed+'|beach', wx*0.05, wz*0.05, 2) > 0.62;
+      for (let y=0; y<CH; y++){
+        let b = AIR;
+        if (y === 0) b = STONE;
+        else if (y < h-4) b = STONE;
+        else if (y < h) b = (sandy && h<=WATER_LEVEL+2) ? SAND : DIRT;
+        else if (y === h) b = (sandy && h<=WATER_LEVEL+2) ? SAND : GRASS;
+        else if (y <= WATER_LEVEL && y > h) b = WATER;
+        blocks[idx(lx,y,lz)] = b;
+      }
+      // 木をまばらに生成(草の上、境界付近は隣接チャンク未生成でも見た目上問題ない範囲のみ)
+      if (h > WATER_LEVEL && lx>1 && lx<CS-2 && lz>1 && lz<CS-2){
+        const tp = hash01(seed+'|tree|'+wx+'|'+wz);
+        if (tp < 0.006 && blocks[idx(lx,h,lz)] === GRASS){
+          const trunkH = 4 + Math.floor(hash01(seed+'|treeh|'+wx+'|'+wz)*2);
+          for (let ty=1; ty<=trunkH; ty++){
+            if (h+ty < CH) blocks[idx(lx,h+ty,lz)] = WOOD;
+          }
+          const topY = h+trunkH;
+          for (let dy=-2; dy<=1; dy++){
+            const ry = topY+dy;
+            if (ry<0 || ry>=CH) continue;
+            const rad = dy===1 ? 1 : 2;
+            for (let dx=-rad; dx<=rad; dx++){
+              for (let dz=-rad; dz<=rad; dz++){
+                if (Math.abs(dx)===2 && Math.abs(dz)===2) continue;
+                const bx=lx+dx, bz=lz+dz;
+                if (bx<0||bx>=CS||bz<0||bz>=CS) continue;
+                const at = idx(bx,ry,bz);
+                if (blocks[at] === AIR) blocks[at] = LEAVES;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return blocks;
+}
+
+function ensureChunk(cx, cz){
+  const k = key(cx,cz);
+  let c = chunks.get(k);
+  if (!c){
+    c = { cx, cz, blocks: generateChunk(cx,cz), mesh:null, waterMesh:null, generated:true, dirty:true, remoteApplied:false };
+    chunks.set(k, c);
+    applyRemoteDiffsToChunk(c); // Supabase接続時、永続化済みの変更をこのチャンクに適用
+  }
+  return c;
+}
+
+function getBlock(wx, wy, wz){
+  if (wy < 0 || wy >= CH) return AIR;
+  const cx = Math.floor(wx/CS), cz = Math.floor(wz/CS);
+  const c = chunks.get(key(cx,cz));
+  if (!c) return STONE; // 未生成領域は「壁」として扱い、境界の穴あきを防ぐ
+  const lx = ((wx%CS)+CS)%CS, lz = ((wz%CS)+CS)%CS;
+  return c.blocks[idx(lx,wy,lz)];
+}
+function isSolidBlock(t){ return !!SOLID[t]; }
+function isSolidAt(wx,wy,wz){ return isSolidBlock(getBlock(wx,wy,wz)); }
+
+function setBlock(wx, wy, wz, type, opts){
+  if (wy<0 || wy>=CH) return false;
+  const cx = Math.floor(wx/CS), cz = Math.floor(wz/CS);
+  const c = ensureChunk(cx,cz);
+  const lx = ((wx%CS)+CS)%CS, lz = ((wz%CS)+CS)%CS;
+  c.blocks[idx(lx,wy,lz)] = type;
+  c.dirty = true;
+  // チャンク境界のブロックなら隣接チャンクの面も再計算が必要
+  if (lx===0) markDirty(cx-1,cz);
+  if (lx===CS-1) markDirty(cx+1,cz);
+  if (lz===0) markDirty(cx,cz-1);
+  if (lz===CS-1) markDirty(cx,cz+1);
+  if (!(opts && opts.silent)) broadcastBlockChange(wx,wy,wz,type);
+  return true;
+}
+function markDirty(cx,cz){ const c = chunks.get(key(cx,cz)); if (c) c.dirty = true; }
+
+/* ---------- mesh building(面カリング方式) ---------- */
+const FACES = [
+  { dir:[0,1,0],  t:'top',    corners:[[0,1,0],[0,1,1],[1,1,1],[1,1,0]], shade:1.0 },
+  { dir:[0,-1,0], t:'bottom', corners:[[0,0,0],[1,0,0],[1,0,1],[0,0,1]], shade:0.5 },
+  { dir:[0,0,-1], t:'side',   corners:[[1,0,0],[0,0,0],[0,1,0],[1,1,0]], shade:0.75 },
+  { dir:[0,0,1],  t:'side',   corners:[[0,0,1],[1,0,1],[1,1,1],[0,1,1]], shade:0.85 },
+  { dir:[1,0,0],  t:'side',   corners:[[1,0,1],[1,0,0],[1,1,0],[1,1,1]], shade:0.7 },
+  { dir:[-1,0,0], t:'side',   corners:[[0,0,0],[0,0,1],[0,1,1],[0,1,0]], shade:0.65 }
+];
+const FACE_UV = [[0,0],[1,0],[1,1],[0,1]]; // corners配列と対応する順のUV(0-1、後でアトラス上の矩形にマップする)
+const tmpColor = new THREE.Color();
+
+function buildChunkMesh(scene, c){
+  if (c.mesh){ scene.remove(c.mesh); c.mesh.geometry.dispose(); c.mesh = null; }
+  if (c.waterMesh){ scene.remove(c.waterMesh); c.waterMesh.geometry.dispose(); c.waterMesh = null; }
+  const positions=[], normals=[], colors=[], uvs=[], indices=[];
+  const wpositions=[], wnormals=[], wcolors=[], wuvs=[], windices=[];
+  let vi=0, wvi=0;
+  const baseX = c.cx*CS, baseZ = c.cz*CS;
+  for (let ly=0; ly<CH; ly++){
+    for (let lz=0; lz<CS; lz++){
+      for (let lx=0; lx<CS; lx++){
+        const t = c.blocks[idx(lx,ly,lz)];
+        if (t === AIR) continue;
+        const isWater = (t === WATER);
+        const wx = baseX+lx, wz = baseZ+lz, wy = ly;
+        for (const f of FACES){
+          const nx=wx+f.dir[0], ny=wy+f.dir[1], nz=wz+f.dir[2];
+          const neighbor = getBlock(nx,ny,nz);
+          // 水以外: 隣が不透明(SOLID)なら面を描かない。水: 隣が空気の面だけ描く
+          const skip = isWater ? (neighbor !== AIR) : isSolidBlock(neighbor);
+          if (skip) continue;
+          const col = BLOCK_COLOR[t][f.t==='top'?'top':(f.t==='bottom'?'bottom':'side')];
+          tmpColor.set(col).multiplyScalar(f.shade);
+          const slotName = (FACE_SLOT[t] && FACE_SLOT[t][f.t]) || null;
+          const rect = slotName ? slotRect[slotName] : null;
+          const P = isWater ? wpositions : positions;
+          const N = isWater ? wnormals : normals;
+          const C = isWater ? wcolors : colors;
+          const UV = isWater ? wuvs : uvs;
+          const I = isWater ? windices : indices;
+          let vcount = isWater ? wvi : vi;
+          for (let ci=0; ci<f.corners.length; ci++){
+            const co = f.corners[ci];
+            P.push(wx+co[0], wy+co[1], wz+co[2]);
+            N.push(f.dir[0], f.dir[1], f.dir[2]);
+            C.push(tmpColor.r, tmpColor.g, tmpColor.b);
+            const uv = FACE_UV[ci];
+            if (rect){
+              UV.push(rect.u0 + uv[0]*(rect.u1-rect.u0), rect.v0 + uv[1]*(rect.v1-rect.v0));
+            } else {
+              UV.push(0,0);
+            }
+          }
+          I.push(vcount, vcount+1, vcount+2, vcount, vcount+2, vcount+3);
+          if (isWater) wvi += 4; else vi += 4;
+        }
+      }
+    }
+  }
+  if (positions.length){
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals,3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors,3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs,2));
+    geo.setIndex(indices);
+    const mat = new THREE.MeshLambertMaterial({ vertexColors:true, map:atlasTexture });
+    c.mesh = new THREE.Mesh(geo, mat);
+    scene.add(c.mesh);
+  }
+  if (wpositions.length){
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(wpositions,3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(wnormals,3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(wcolors,3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(wuvs,2));
+    geo.setIndex(windices);
+    const mat = new THREE.MeshLambertMaterial({ vertexColors:true, map:atlasTexture, transparent:true, opacity:0.65 });
+    c.waterMesh = new THREE.Mesh(geo, mat);
+    scene.add(c.waterMesh);
+  }
+  c.dirty = false;
+}
+
+/* ---------- Supabase: ブロック変更の永続化・同期(URL/KEY未設定なら完全に無効) ----------
+   テーブル定義は supabase_blockcraft.sql を参照。
+   world_blocks(seed, x, y, z, type, updated_at) を1ブロックごとの差分として保持し、
+   チャンク生成時にそのチャンク範囲の差分を地形の上に適用することで
+   「誰かが置いた/壊したブロック」を全員が同じ形で見られるようにする。
+------------------------------------------------------------------ */
+const pendingRemoteDiffs = []; // {x,y,z,type} まだどのチャンクにも適用していない差分
+function applyRemoteDiffsToChunk(c){
+  if (!sb) return;
+  const baseX=c.cx*CS, baseZ=c.cz*CS;
+  sb.from('world_blocks').select('x,y,z,type')
+    .eq('seed', seed)
+    .gte('x', baseX).lt('x', baseX+CS)
+    .gte('z', baseZ).lt('z', baseZ+CS)
+    .then(({data,error})=>{
+      if (error || !data) return;
+      for (const row of data){
+        const lx=((row.x%CS)+CS)%CS, lz=((row.z%CS)+CS)%CS;
+        if (row.y>=0 && row.y<CH) c.blocks[idx(lx,row.y,lz)] = row.type;
+      }
+      if (data.length) c.dirty = true;
+    }).catch(()=>{});
+}
+function broadcastBlockChange(x,y,z,type){
+  if (!sb) return;
+  try {
+    sb.from('world_blocks').upsert({ seed, x, y, z, type, updated_at:new Date().toISOString() }, { onConflict:'seed,x,y,z' }).then(()=>{}).catch(()=>{});
+    if (worldChannel) worldChannel.send({ type:'broadcast', event:'block', payload:{ x,y,z,type, from:clientId } });
+  } catch(e){}
+}
+function initMultiplayer(){
+  if (!sb) return;
+  worldChannel = sb.channel('world:'+seed, { config:{ broadcast:{ self:false } } });
+  worldChannel.on('broadcast', { event:'block' }, ({payload}) => {
+    if (!payload || payload.from===clientId) return;
+    setBlock(payload.x, payload.y, payload.z, payload.type, { silent:true });
+  });
+  worldChannel.subscribe();
+}
+
+/* ---------- three.js scene ---------- */
+let scene, camera, renderer, dirLight;
+let running = false;
+let selectedSlot = 0;
+const keys = {};
+let yaw = 0, pitch = 0;
+const player = { x:0.5, y:40, z:0.5, vy:0, onGround:false, width:0.6, height:1.8, eye:1.62 };
+
+function initScene(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+  scene.fog = new THREE.Fog(0x87ceeb, 60, (renderDist)*CS*0.9+20);
+  camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.05, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+  document.body.appendChild(renderer.domElement);
+
+  const amb = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(amb);
+  dirLight = new THREE.DirectionalLight(0xfff6d8, 0.85);
+  dirLight.position.set(60, 120, 40);
+  scene.add(dirLight);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+/* ---------- チャンクのロード/アンロード管理 ---------- */
+const genQueue = [];
+const meshQueue = [];
+let lastPlayerChunk = null;
+
+function playerChunk(){ return { cx: Math.floor(player.x/CS), cz: Math.floor(player.z/CS) }; }
+
+function refreshChunkQueues(){
+  const pc = playerChunk();
+  if (lastPlayerChunk && lastPlayerChunk.cx===pc.cx && lastPlayerChunk.cz===pc.cz) return;
+  lastPlayerChunk = pc;
+  const R = renderDist;
+  const need = new Set();
+  for (let dz=-R; dz<=R; dz++){
+    for (let dx=-R; dx<=R; dx++){
+      if (dx*dx+dz*dz > R*R+1) continue;
+      const cx=pc.cx+dx, cz=pc.cz+dz;
+      need.add(key(cx,cz));
+      if (!chunks.has(key(cx,cz)) && !genQueue.find(q=>q.cx===cx&&q.cz===cz)) genQueue.push({cx,cz});
+    }
+  }
+  // 描画範囲を外れたチャンクは破棄
+  for (const [k,c] of chunks){
+    if (!need.has(k) && Math.hypot(c.cx-pc.cx, c.cz-pc.cz) > R+2){
+      if (c.mesh){ scene.remove(c.mesh); c.mesh.geometry.dispose(); }
+      if (c.waterMesh){ scene.remove(c.waterMesh); c.waterMesh.geometry.dispose(); }
+      chunks.delete(k);
+    }
+  }
+}
+
+function processQueues(){
+  for (let i=0;i<2 && genQueue.length;i++){
+    const q = genQueue.shift();
+    if (!chunks.has(key(q.cx,q.cz))){
+      ensureChunk(q.cx,q.cz);
+      meshQueue.push(q);
+      // 隣接チャンクは面カリングの結果が変わるため、既存でも再メッシュが必要
+      markDirty(q.cx-1,q.cz); markDirty(q.cx+1,q.cz);
+      markDirty(q.cx,q.cz-1); markDirty(q.cx,q.cz+1);
+      meshQueue.push({cx:q.cx-1,cz:q.cz}); meshQueue.push({cx:q.cx+1,cz:q.cz});
+      meshQueue.push({cx:q.cx,cz:q.cz-1}); meshQueue.push({cx:q.cx,cz:q.cz+1});
+    }
+  }
+  let built = 0;
+  while (built < 2 && meshQueue.length){
+    const q = meshQueue.shift();
+    const c = chunks.get(key(q.cx,q.cz));
+    if (c && c.dirty){ buildChunkMesh(scene, c); built++; }
+  }
+  // ブロック設置/破壊などでdirtyになった既存チャンクも拾う
+  if (built < 2){
+    for (const c of chunks.values()){
+      if (c.dirty){ buildChunkMesh(scene, c); built++; if (built>=2) break; }
+    }
+  }
+}
+
+/* ---------- 入力 ---------- */
+let pointerLocked = false;
+document.addEventListener('keydown', e => { keys[e.code]=true; if (running) handleHotbarKey(e.code); });
+document.addEventListener('keyup', e => { keys[e.code]=false; });
+
+function handleHotbarKey(code){
+  const n = parseInt(code.replace('Digit',''),10);
+  if (n>=1 && n<=HOTBAR.length){ selectedSlot = n-1; updateHotbarUI(); }
+}
+document.addEventListener('wheel', e => {
+  if (!running) return;
+  selectedSlot = (selectedSlot + (e.deltaY>0?1:-1) + HOTBAR.length) % HOTBAR.length;
+  updateHotbarUI();
+});
+
+const centerLock = document.getElementById('centerLock');
+centerLock.addEventListener('click', () => { renderer.domElement.requestPointerLock(); });
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === renderer.domElement;
+  centerLock.style.display = (running && !pointerLocked) ? 'flex' : 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!pointerLocked || !running) return;
+  yaw -= e.movementX * 0.0022;
+  pitch -= e.movementY * 0.0022;
+  pitch = Math.max(-Math.PI/2+0.02, Math.min(Math.PI/2-0.02, pitch));
+});
+
+let breakQueued=false, placeQueued=false;
+document.addEventListener('mousedown', e => {
+  if (!running || !pointerLocked) return;
+  if (e.button===0) breakQueued=true;
+  if (e.button===2) placeQueued=true;
+});
+document.addEventListener('contextmenu', e => { if (running) e.preventDefault(); });
+
+/* ---------- レイマーチによるブロック照準 ---------- */
+function lookDir(){
+  return {
+    x: -Math.sin(yaw)*Math.cos(pitch),
+    y: Math.sin(pitch),
+    z: -Math.cos(yaw)*Math.cos(pitch)
+  };
+}
+function raycastBlock(){
+  const dir = lookDir();
+  const ex = player.x, ey = player.y+player.eye, ez = player.z;
+  const step = 0.08, maxDist = 6.5;
+  let px=ex, py=ey, pz=ez;
+  let prevCell = null;
+  for (let d=0; d<maxDist; d+=step){
+    const wx=ex+dir.x*d, wy=ey+dir.y*d, wz=ez+dir.z*d;
+    const cell = { x:Math.floor(wx), y:Math.floor(wy), z:Math.floor(wz) };
+    if (isSolidAt(cell.x,cell.y,cell.z)){
+      return { hit:cell, place: prevCell };
+    }
+    prevCell = cell;
+  }
+  return null;
+}
+
+function tryBreak(){
+  const r = raycastBlock();
+  if (!r) return;
+  setBlock(r.hit.x, r.hit.y, r.hit.z, AIR);
+}
+function tryPlace(){
+  const r = raycastBlock();
+  if (!r || !r.place) return;
+  const t = HOTBAR[selectedSlot];
+  const px=r.place.x, py=r.place.y, pz=r.place.z;
+  // プレイヤー自身のいるマスには設置しない
+  const overlapsPlayer = boxIntersectsBlock(player.x,player.y,player.z,px,py,pz);
+  if (overlapsPlayer) return;
+  setBlock(px,py,pz,t);
+}
+function boxIntersectsBlock(pxp,pyp,pzp,bx,by,bz){
+  const hw = player.width/2;
+  const minX=pxp-hw, maxX=pxp+hw, minZ=pzp-hw, maxZ=pzp+hw, minY=pyp, maxY=pyp+player.height;
+  return (maxX>bx && minX<bx+1 && maxZ>bz && minZ<bz+1 && maxY>by && minY<by+1);
+}
+
+/* ---------- 物理・移動 ---------- */
+function collidesAt(x,y,z){
+  const hw = player.width/2;
+  const minX=Math.floor(x-hw), maxX=Math.floor(x+hw);
+  const minZ=Math.floor(z-hw), maxZ=Math.floor(z+hw);
+  const minY=Math.floor(y), maxY=Math.floor(y+player.height-0.02);
+  for (let by=minY; by<=maxY; by++){
+    for (let bz=minZ; bz<=maxZ; bz++){
+      for (let bx=minX; bx<=maxX; bx++){
+        if (isSolidAt(bx,by,bz)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function updatePlayer(dt){
+  const speed = (keys['ShiftLeft']||keys['ShiftRight']) ? 6.2 : 4.3;
+  let mx=0, mz=0;
+  const fwdX=-Math.sin(yaw), fwdZ=-Math.cos(yaw);
+  const rightX=Math.cos(yaw), rightZ=-Math.sin(yaw);
+  if (keys['KeyW']){ mx+=fwdX; mz+=fwdZ; }
+  if (keys['KeyS']){ mx-=fwdX; mz-=fwdZ; }
+  if (keys['KeyD']){ mx+=rightX; mz+=rightZ; }
+  if (keys['KeyA']){ mx-=rightX; mz-=rightZ; }
+  const mlen = Math.hypot(mx,mz);
+  if (mlen>0){ mx/=mlen; mz/=mlen; }
+
+  // 重力・ジャンプ
+  player.vy -= 22*dt;
+  if (player.vy < -30) player.vy = -30;
+  if (keys['Space'] && player.onGround){ player.vy = 8.2; player.onGround=false; }
+
+  // X移動
+  const nx = player.x + mx*speed*dt;
+  if (!collidesAt(nx, player.y, player.z)) player.x = nx;
+  // Z移動
+  const nz = player.z + mz*speed*dt;
+  if (!collidesAt(player.x, player.y, nz)) player.z = nz;
+  // Y移動
+  const ny = player.y + player.vy*dt;
+  if (!collidesAt(player.x, ny, player.z)){
+    player.y = ny; player.onGround=false;
+  } else {
+    if (player.vy < 0) player.onGround = true;
+    player.vy = 0;
+  }
+  if (player.y < -10){ player.y = 44; player.vy = 0; } // 落下しすぎた場合の保険
+}
+
+/* ---------- HUD ---------- */
+function updateHotbarUI(){
+  const bar = document.getElementById('hotbar');
+  bar.innerHTML = '';
+  HOTBAR.forEach((t,i) => {
+    const el = document.createElement('div');
+    el.className = 'slot' + (i===selectedSlot?' active':'');
+    el.innerHTML = '<div class="num">'+(i+1)+'</div><div class="swatch" style="background:'+HOTBAR_HEX[t]+'"></div>';
+    bar.appendChild(el);
+  });
+}
+function updateHud(){
+  document.getElementById('posDisp').textContent = 'X:'+player.x.toFixed(1)+' Y:'+player.y.toFixed(1)+' Z:'+player.z.toFixed(1);
+  const pc = playerChunk();
+  document.getElementById('chunkDisp').textContent = 'CHUNK: '+pc.cx+','+pc.cz;
+}
+
+/* ---------- メインループ ---------- */
+let lastT = performance.now();
+function loop(now){
+  if (!running) return;
+  const dt = Math.min(0.05, (now-lastT)/1000);
+  lastT = now;
+
+  updatePlayer(dt);
+  refreshChunkQueues();
+  processQueues();
+
+  if (breakQueued){ tryBreak(); breakQueued=false; }
+  if (placeQueued){ tryPlace(); placeQueued=false; }
+
+  camera.position.set(player.x, player.y+player.eye, player.z);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = yaw;
+  camera.rotation.x = pitch;
+
+  updateHud();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 開始処理 ---------- */
+function findSpawnY(x,z){
+  for (let y=CH-1;y>0;y--){
+    if (isSolidAt(Math.floor(x),y,Math.floor(z))) return y+1.05;
+  }
+  return 40;
+}
+
+function startGame(){
+  seed = document.getElementById('seedInput').value.trim() || 'world-1';
+  renderDist = parseInt(document.getElementById('renderDistInput').value,10) || 5;
+
+  document.getElementById('titleScreen').style.display='none';
+  document.getElementById('hud').style.display='block';
+  document.getElementById('crosshair').style.display='block';
+  document.getElementById('hotbar').style.display='flex';
+  document.getElementById('pauseHint').style.display='block';
+  updateHotbarUI();
+
+  if (!scene) initScene();
+  // 前回のワールドが残っていればクリア
+  for (const c of chunks.values()){
+    if (c.mesh) scene.remove(c.mesh);
+    if (c.waterMesh) scene.remove(c.waterMesh);
+  }
+  chunks.clear(); genQueue.length=0; meshQueue.length=0; lastPlayerChunk=null;
+
+  player.x=0.5; player.z=0.5; player.vy=0;
+  ensureChunk(0,0);
+  player.y = findSpawnY(player.x, player.z);
+
+  initMultiplayer();
+  running = true;
+  centerLock.style.display='flex';
+  lastT = performance.now();
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('randSeedBtn').addEventListener('click', () => {
+  document.getElementById('seedInput').value = 'world-' + Math.floor(Math.random()*100000);
+});
+document.getElementById('renderDistInput').addEventListener('input', e => {
+  document.getElementById('renderDistVal').textContent = e.target.value;
+});
+document.getElementById('resourcePackInput').addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  const statusEl = document.getElementById('resourcePackStatus');
+  if (file) loadResourcePack(file, statusEl);
+});
+document.getElementById('startBtn').addEventListener('click', startGame);
+
+})();
+</script>
+</body>
+</html>

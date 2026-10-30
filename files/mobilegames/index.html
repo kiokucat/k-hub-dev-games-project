@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=240,height=320,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>ミニゲームセンター</title>
+<style type="text/css">
+/* mamorino5 / Android 6.0.1向け。設計座標は240x320。表示領域に合わせて全体を拡大縮小 */
+html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#eaf3f6;color:#263740;font-family:Meiryo,sans-serif;-webkit-text-size-adjust:none;}
+*{box-sizing:border-box;} button,textarea,select,input{font-family:Meiryo,sans-serif;} button{-webkit-tap-highlight-color:transparent;}
+#アプリ{width:240px;height:320px;position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);transform-origin:center center;overflow:hidden;background:#f8fcfd;}
+#ヘッダー{width:240px;height:30px;line-height:30px;position:absolute;left:0;top:0;z-index:20;background:#1c718e;border-bottom:2px solid #10536a;color:#fff;}
+#ホームボタン{width:30px;height:28px;float:left;margin:0 4px;padding:0;border:0;background:transparent;color:#fff;font-size:19px;line-height:27px;}
+#見出し{display:block;height:28px;overflow:hidden;white-space:nowrap;font-size:13px;font-weight:bold;}
+.画面{width:240px;height:290px;position:absolute;top:30px;left:0;display:none;overflow-x:hidden;overflow-y:auto;}
+.表示中{display:block;}.中央{width:220px;margin:0 auto;}
+#ホーム{width:240px;height:290px;padding:8px 0 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}#ホーム::-webkit-scrollbar{width:0;height:0;}
+.案内{margin:0 0 7px;text-align:center;font-size:12px;color:#456;}
+.選択一覧{width:220px;margin:0 auto;text-align:center;font-size:0;padding-bottom:8px;}
+.ゲーム選択{width:106px;height:34px;margin:2px;padding:1px;display:inline-block;vertical-align:top;overflow:hidden;border:1px solid #70a9bb;border-radius:5px;background:#fff;color:#174e65;font-size:10px;font-weight:bold;line-height:14px;cursor:pointer;}
+.実装済{background:#def3f8;border-color:#2888a6;}
+.ゲーム選択:active,.小ボタン:active,.数ボタン:active,.ゲーム大ボタン:active,.音鍵:active{background:#ffec9e;}
+.ゲーム画面{padding-top:5px;text-align:center;overflow-x:hidden;overflow-y:auto;}
+.説明{width:220px;height:25px;margin:0 auto;overflow:hidden;color:#36505d;font-size:11px;line-height:12px;}
+.遊び場{width:220px;height:220px;margin:0 auto;position:relative;overflow:hidden;border:2px solid #4b8294;border-radius:6px;background:#fff;}
+.下操作{width:220px;min-height:35px;height:auto;margin:3px auto 0;overflow:visible;text-align:center;font-size:11px;padding-bottom:6px;line-height:1.1;}
+.小ボタン{min-width:48px;min-height:28px;height:28px;margin:2px;padding:2px 5px;border:1px solid #397c94;border-radius:4px;background:#e5f5fa;color:#174e65;font-size:11px;font-weight:bold;cursor:pointer;}
+.ゲーム大ボタン{min-width:52px;min-height:30px;height:30px;margin:2px;padding:3px 6px;border:1px solid #397c94;border-radius:4px;background:#e5f5fa;color:#174e65;font-size:11px;font-weight:bold;cursor:pointer;}
+.状態{display:block;min-height:15px;margin:1px auto;color:#a52d20;font-size:11px;font-weight:bold;line-height:14px;}
+/* 1: 5x5の躍動将棋 */
+#将棋情報{width:220px;height:20px;margin:0 auto;font-size:11px;line-height:20px;}#将棋手番{float:left;color:#b23b23;font-weight:bold;}#将棋案内{float:right;color:#42606c;}
+#将棋盤{width:220px;height:220px;margin:0 auto;position:relative;background:#e8b96d;border:2px solid #804a1d;font-size:0;}
+.将棋マス{width:43.2px;height:43.2px;display:inline-block;vertical-align:top;position:relative;border-right:1px solid #80521f;border-bottom:1px solid #80521f;background:#edc77f;}
+.選択{background:#ffdf75!important;}.動ける{background:#a9df95!important;}.駒{width:34px;height:36px;margin:3px auto 0;display:block;overflow:hidden;border:1px solid #5e3b1e;border-radius:3px 3px 8px 8px;background:#fff1c5;color:#212121;font-size:17px;font-weight:bold;line-height:34px;text-align:center;}
+.後手{-webkit-transform:rotate(180deg);transform:rotate(180deg);color:#7b2631;}#カメラ表示{width:48px;height:17px;position:absolute;right:2px;bottom:2px;z-index:3;border-radius:3px;background:rgba(20,40,50,.72);color:#fff;font-size:8px;line-height:17px;text-align:center;pointer-events:none;}
+#スティック{width:42px;height:42px;position:absolute;right:4px;bottom:22px;z-index:3;border:2px solid rgba(255,255,255,.72);border-radius:22px;background:rgba(15,55,75,.28);pointer-events:none;}#スティック中心{width:16px;height:16px;margin:11px;border-radius:9px;background:rgba(255,255,255,.82);}
+/* 2: 日記 */
+#日記帳{padding-top:4px;}#日記入力{width:210px;height:140px;margin:0 auto;display:block;resize:none;border:1px solid #8bb2c0;border-radius:4px;background:#fffdf2;color:#34302c;font-size:12px;line-height:17px;}#日記時刻{margin:3px 0;color:#59717b;font-size:10px;}
+/* 3: ○× */
+#まるばつ盤{width:150px;height:150px;margin:18px auto 0;border-collapse:collapse;table-layout:fixed;}#まるばつ盤 td{width:50px;height:50px;padding:0;border:2px solid #447d93;background:#f9ffff;color:#173f55;font-size:29px;font-weight:bold;text-align:center;vertical-align:middle;}
+/* 4: 連打 */
+#連打箱{padding-top:18px;background:#f7f1db;}#連打数{height:48px;color:#bd452d;font-size:34px;font-weight:bold;line-height:48px;}#連打時間{color:#315d6c;font-size:17px;}#連打ボタン{width:160px;height:83px;margin-top:18px;border:3px solid #b84a27;border-radius:10px;background:#ff9b57;color:#fff;font-size:23px;font-weight:bold;box-shadow:0 3px 0 #9e361e;}#連打ボタン:active{margin-top:21px;box-shadow:none;}
+/* 5: 数当て */
+#数当て箱{padding-top:10px;}#予想数{height:56px;color:#17627d;font-size:43px;font-weight:bold;line-height:56px;}.数列{height:36px;margin:2px 0;}.数ボタン{width:47px;height:31px;margin:1px;padding:0;border:1px solid #3a829a;border-radius:5px;background:#d9f2f7;color:#1b5066;font-size:13px;font-weight:bold;}#数当て助言{height:25px;padding-top:4px;color:#a13b2b;font-size:12px;font-weight:bold;}
+/* 6: 反射 */
+#反射板{width:200px;height:160px;margin:29px auto 0;border:3px solid #813331;border-radius:8px;background:#db4b43;color:#fff;font-size:23px;font-weight:bold;line-height:154px;text-align:center;}#反射板.待機{background:#5d8494;border-color:#365967;}#反射板.成功{background:#38a652;border-color:#1f7132;}
+/* 7: スロット */
+#スロット箱{padding-top:38px;background:#2d4253;}#リール{width:190px;height:72px;margin:0 auto;border:4px solid #f8c95d;border-radius:8px;background:#fff;white-space:nowrap;}.絵文字{width:59px;height:64px;display:inline-block;vertical-align:top;border-right:1px solid #b6b6b6;font-size:39px;line-height:64px;text-align:center;}#スロット結果{height:32px;margin-top:13px;color:#fff;font-size:16px;font-weight:bold;}
+/* 8: ニム */
+#ニム箱{padding-top:10px;background:#f3f5e9;}#コイン数{height:30px;color:#555;font-size:12px;line-height:30px;}#コイン並び{width:190px;height:74px;margin:0 auto;overflow:hidden;font-size:0;text-align:center;}.コイン{width:17px;height:17px;margin:2px;display:inline-block;border:2px solid #bd8116;border-radius:9px;background:#ffd55b;}#ニム文{height:25px;color:#a14027;font-size:12px;font-weight:bold;}
+/* 9: サイコロ */
+#さいころ箱{padding:4px 5px;height:220px;} .さいころレイアウト{width:210px;height:210px;margin:0 auto;display:block;font-size:0;overflow:hidden;} .さいころ操作欄{width:72px;height:210px;display:inline-block;vertical-align:top;margin-right:6px;padding-top:10px;text-align:center;border-right:1px solid #b6cbd2;} .さいころ操作見出し{height:26px;color:#36505d;font-size:10px;font-weight:bold;line-height:13px;} .さいころ振るボタン{width:60px;height:60px;margin:4px auto;display:block;border:2px solid #397c94;border-radius:7px;background:#dff4fa;color:#174e65;font-size:11px;font-weight:bold;line-height:14px;overflow:hidden;} .さいころ振るボタン:active{background:#ffec9e;} .さいころ結果欄{width:126px;height:210px;display:inline-block;vertical-align:top;padding-left:6px;font-size:11px;overflow:hidden;} .さいころ結果見出し{height:18px;color:#36505d;font-size:11px;font-weight:bold;line-height:18px;} #出目{height:44px;color:#263c4c;font-size:24px;font-weight:bold;line-height:44px;text-align:center;white-space:nowrap;overflow:hidden;} #合計{height:22px;color:#ad3a24;font-size:12px;font-weight:bold;line-height:22px;text-align:center;white-space:nowrap;overflow:hidden;} .さいころ回数表示{height:18px;color:#58707a;font-size:10px;line-height:18px;text-align:center;} #記録{width:116px;height:98px;margin:3px auto 0;overflow-y:auto;border:1px solid #9cb8c2;background:#f5fbfc;color:#49626c;font-size:9px;line-height:14px;text-align:left;padding:2px;}
+/* 10: 記憶 */
+#記憶箱{padding-top:17px;}#記憶情報{height:28px;color:#4a626b;font-size:12px;font-weight:bold;line-height:28px;}#色盤{width:154px;height:154px;margin:0 auto;font-size:0;}.色{width:72px;height:72px;margin:2px;display:inline-block;border:3px solid rgba(0,0,0,.22);border-radius:9px;opacity:.72;}.光{opacity:1!important;border-color:#fff!important;box-shadow:0 0 12px 5px #fff;}#赤{background:#e84b46;}#青{background:#4398df;}#黄{background:#f2ce37;}#緑{background:#4aaf69;}
+/* 11〜50の共通予定画面 */
+#予定箱{padding-top:55px;background:#f5fafb;}#予定番号{color:#26708a;font-size:27px;font-weight:bold;}#予定文{margin-top:16px;color:#6a828d;font-size:17px;font-weight:bold;}
+/* 54〜59: 追加ミニゲーム */
+#追加箱{padding-top:10px;text-align:center;}#追加表示{height:48px;color:#36505d;font-size:23px;font-weight:bold;line-height:48px;}#追加説明{height:30px;color:#58707a;font-size:11px;line-height:15px;overflow:hidden;} .追加大ボタン{width:92px;height:54px;margin:3px;border:2px solid #397c94;border-radius:7px;background:#e5f5fa;color:#174e65;font-size:13px;font-weight:bold;} .追加大ボタン:active{background:#ffec9e;}
+#色あて盤{width:180px;height:100px;margin:8px auto 0;} .色あて色{width:78px;height:42px;margin:3px;display:inline-block;border:2px solid #487d8d;border-radius:6px;}
+#神経盤 .小ボタン{display:inline-block;vertical-align:top;width:48px !important;height:48px !important;margin:0 2px 4px 0;padding:0;line-height:44px;}
+#もぐら盤 .小ボタン,#花盤 .小ボタン,#宝盤 .小ボタン{display:inline-block;vertical-align:top;width:60px !important;height:50px !important;margin:0 5px 6px 0;padding:0;}
+#キャッチ盤{display:block;width:192px;height:168px;margin:0 auto;padding:0;position:relative;font-size:0;line-height:0;text-align:left;}
+#キャッチ盤 .小ボタン{position:absolute;display:block;width:60px !important;height:50px !important;margin:0;padding:0;font-size:0;line-height:0;}
+#キャッチ穴0{left:0;top:0;}#キャッチ穴1{left:66px;top:0;}#キャッチ穴2{left:132px;top:0;}
+#キャッチ穴3{left:0;top:56px;}#キャッチ穴4{left:66px;top:56px;}#キャッチ穴5{left:132px;top:56px;}
+#キャッチ穴6{left:0;top:112px;}#キャッチ穴7{left:66px;top:112px;}#キャッチ穴8{left:132px;top:112px;}
+.キャッチ風船{position:absolute;width:24px;height:30px;left:18px;top:8px;border-radius:50% 50% 45% 45%;background:#e84b46;border:1px solid #9f2f2a;}
+.キャッチ風船:after{content:'';position:absolute;left:11px;top:25px;width:1px;height:12px;background:#397c94;}
+#迷路盤>div{display:inline-block !important;vertical-align:top;width:40px;height:40px;margin:0 2px 2px 0;line-height:38px;text-align:center;font-size:20px;}
+#パズル盤 .小ボタン{display:inline-block;vertical-align:top;width:60px !important;height:60px !important;margin:0 4px 4px 0;padding:0;line-height:54px;}
+#ドット盤>div{display:inline-block;vertical-align:top;width:20px;height:20px;margin:0 1px 1px 0;line-height:18px;}
+#風船盤 .追加大ボタン{display:inline-block;vertical-align:top;margin:0 4px 4px 0;}
+#方向盤{width:180px;height:120px;margin:7px auto 0;} .方向ボタン{width:52px;height:36px;margin:2px;border:1px solid #397c94;border-radius:5px;background:#e5f5fa;font-size:18px;font-weight:bold;color:#174e65;}
+
+/* 53. 曲タップ演奏シミュレーター */
+#曲箱{padding-top:6px;background:#f7fbfc;text-align:center;}
+#曲選択{width:202px;height:28px;margin:0 auto 5px;font-size:11px;border:1px solid #78a8b7;border-radius:4px;background:#fff;color:#264e5f;}
+#曲情報{width:202px;height:30px;margin:0 auto 4px;overflow:hidden;color:#36505d;font-size:10px;line-height:14px;}
+#鍵盤{width:204px;height:110px;margin:0 auto;font-size:0;overflow:hidden;text-align:center;}
+.音鍵{width:46px;height:50px;margin:2px;display:inline-block;vertical-align:top;border:1px solid #4f8aa0;border-radius:5px;background:#fff;color:#234f60;font-size:11px;font-weight:bold;line-height:48px;}
+.音鍵:active,.音鍵.正解鍵{background:#ffec9e;}
+#曲進捗{width:202px;height:20px;margin:0 auto;color:#a13b2b;font-size:10px;font-weight:bold;line-height:20px;}
+
+/* 37〜50: 追加ミニゲーム共通 */
+.小ゲーム面{width:216px;height:216px;margin:0 auto;position:relative;overflow:hidden;background:#fafdff;border:1px solid #9cb8c2;border-radius:5px;}
+.小ゲーム情報{height:24px;line-height:24px;color:#36505d;font-size:11px;font-weight:bold;overflow:hidden;}
+.ゲーム大ボタン{width:88px;height:44px;margin:3px;border:2px solid #397c94;border-radius:7px;background:#e5f5fa;color:#174e65;font-size:12px;font-weight:bold;}
+.ゲーム大ボタン:active{background:#ffec9e;}
+#かけっこ盤{position:relative;width:210px;height:165px;margin:4px auto;background:#eef7ea;border:1px solid #95b58f;overflow:hidden;}
+#お店盤{width:204px;height:175px;margin:3px auto;display:block;font-size:0;line-height:0;text-align:center;overflow:hidden;}#お店盤 .ゲーム大ボタン{display:inline-block;vertical-align:top;}
+#島盤{width:204px;height:176px;margin:3px auto;display:block;font-size:0;line-height:0;text-align:center;overflow:hidden;}#島盤 .島マス{display:inline-block;vertical-align:top;margin:0 4px 4px 0;}
+.島マス{width:30px;height:30px;border:1px solid #6d9b78;border-radius:4px;background:#eaf5e9;font-size:18px;line-height:28px;text-align:center;}
+#写真枠{width:205px;height:176px;margin:3px auto;border:1px solid #9cb8c2;background:#fff;overflow:hidden;}
+#写真キャンバス{width:200px;height:170px;margin:2px;background:#eef7ff;}
+#おたのしみ面{padding-top:22px;text-align:center;}
+#星座盤{width:205px;height:175px;margin:3px auto;background:#10284d;position:relative;overflow:hidden;}
+.星ボタン{position:absolute;width:22px;height:22px;padding:0;border:0;background:transparent;color:#ffe58a;font-size:17px;}
+#天気絵{height:62px;font-size:44px;line-height:62px;}
+#虫盤{width:204px;height:176px;margin:3px auto;display:block;font-size:0;line-height:0;text-align:center;overflow:hidden;}#虫盤 button{display:inline-block;vertical-align:top;margin:0 3px 4px 0;}
+#虫盤 button{width:48px;height:48px;padding:0;border:1px solid #7da085;border-radius:6px;background:#eaf7e8;font-size:22px;}
+#ボウリング盤{width:204px;height:168px;margin:3px auto;position:relative;background:#edf5fb;border:1px solid #91adbd;overflow:hidden;}
+#カーレース盤{width:210px;height:176px;margin:3px auto;position:relative;background:#4d5560;overflow:hidden;border-left:14px solid #6e757c;border-right:14px solid #6e757c;}
+#リズム盤{width:204px;height:168px;margin:3px auto;position:relative;background:#f4f7fb;border:1px solid #9cb8c2;overflow:hidden;}
+.リズムレーン{position:absolute;top:0;width:48px;height:168px;border-right:1px solid #d4dfe4;}
+.リズムノート{position:absolute;width:42px;height:22px;border-radius:5px;background:#77b6ce;border:1px solid #397c94;}
+#リズム判定{position:absolute;bottom:3px;left:0;width:204px;text-align:center;font-size:11px;font-weight:bold;color:#a13b2b;}
+
+/* 追加テーマ: 端末でもPCでも読みやすい、図形ベースのUI */
+#ヘッダー{background:#183b4a;border-bottom:2px solid #0e2630;box-shadow:0 1px 0 rgba(0,0,0,.15);}
+#アプリ{background:#f4f8fa;}
+.ゲーム選択{border-color:#9ab8c3;border-radius:8px;background:#ffffff;box-shadow:0 1px 2px rgba(20,50,60,.10);}
+.ゲーム選択.実装済{background:#e9f5f7;border-color:#4c91a5;}
+.ゲーム選択:active,.小ボタン:active,.数ボタン:active,.ゲーム大ボタン:active,.音鍵:active{background:#d9eef2;}
+.遊び場{border-color:#9ab5bf;border-radius:8px;box-shadow:0 1px 3px rgba(30,60,70,.10);}
+.小ボタン,.ゲーム大ボタン{border-color:#6b9aaa;border-radius:7px;box-shadow:0 1px 1px rgba(0,0,0,.08);}
+.小ボタン:disabled,.ゲーム大ボタン:disabled{opacity:.45;}
+.絵文字{font-family:Arial,sans-serif;font-weight:bold;color:#234f60;}
+/* 本格将棋 */
+#本格将棋横並び{width:216px;height:195px;margin:0 auto;position:relative;font-size:0;line-height:0;}
+#本格将棋盤{width:195px;height:195px;margin:0;display:inline-block;vertical-align:top;position:relative;z-index:31;background:#d8a45f;border:3px solid #70431f;box-shadow:0 2px 5px rgba(0,0,0,.22);font-size:0;line-height:0;overflow:hidden;}
+.本格将棋場{height:220px!important;min-height:220px;overflow:hidden!important;position:relative;z-index:30;background:#f7fbfc;}
+.本格将棋マス{width:21px;height:21px;display:block;position:absolute;box-sizing:border-box;border-right:1px solid #815a2d;border-bottom:1px solid #815a2d;background:#e9bd76;text-align:center;cursor:pointer;z-index:1;}
+.本格将棋マス.選択{background:#ffe47d;}
+.本格将棋マス.合法{background:#b9df9e;}
+.本格将棋駒{width:17px;height:19px;margin:1px auto 0;display:block;border:1px solid #6a4528;border-radius:2px 2px 5px 5px;background:#fff0bd;color:#211c17;font-family:serif;font-size:12px;font-weight:bold;line-height:17px;text-align:center;}
+.本格将棋駒.後手{transform:rotate(180deg);color:#8a2e35;}
+#本格将棋手番縦{width:21px;height:195px;display:inline-block;vertical-align:top;padding-top:30px;background:#e5f2f5;border:1px solid #78a8b7;border-left:0;color:#58707a;font-size:10px;font-weight:bold;line-height:17px;text-align:center;}
+#本格将棋手番縦 .手番中{display:block;background:#ffe47d;color:#6a3d14;}
+#本格将棋案内{height:19px;line-height:19px;color:#9a382a;font-size:10px;font-weight:bold;}
+#本格将棋案内{height:18px;line-height:18px;color:#9a382a;font-size:10px;font-weight:bold;}
+.昇格選択{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:100;width:140px;padding:7px;background:#fff;border:2px solid #496d7a;border-radius:8px;box-shadow:0 3px 12px rgba(0,0,0,.25);font-size:10px;text-align:center;}
+.昇格選択 button{width:58px;height:27px;margin:2px;border:1px solid #6b9aaa;border-radius:5px;background:#eef7f9;font-size:10px;}
+/* 軽量アニメーション: Android 5系でも安定する opacity / transform だけを使用 */
+/* 本格将棋は各手で盤全体を描き直すため、登場演出の対象から外す */
+.ゲーム画面.表示中 .遊び場{-webkit-animation:遊び場登場 .22s ease-out;animation:遊び場登場 .22s ease-out;}
+.ゲーム画面.表示中 .本格将棋場{-webkit-animation:none;animation:none;}
+.ゲーム選択{-webkit-transition:-webkit-transform .12s ease-out,background-color .12s ease-out;transition:transform .12s ease-out,background-color .12s ease-out;}
+.ゲーム選択:active,.小ボタン:active,.ゲーム大ボタン:active,.数ボタン:active,.追加大ボタン:active,.さいころ振るボタン:active{-webkit-transform:scale(.94);transform:scale(.94);}
+.駒{-webkit-animation:駒ゆらり 2.6s ease-in-out infinite;animation:駒ゆらり 2.6s ease-in-out infinite;}
+.動ける{-webkit-animation:動ける場所 .75s ease-in-out infinite;animation:動ける場所 .75s ease-in-out infinite;}
+#スティック中心{-webkit-animation:スティック呼吸 1.5s ease-in-out infinite;animation:スティック呼吸 1.5s ease-in-out infinite;}
+#連打数,#予想数,#出目,#合計,#スロット結果,#ニム文,#さいころ回数表示,#追加表示{-webkit-transition:-webkit-transform .14s ease-out,color .14s ease-out;transition:transform .14s ease-out,color .14s ease-out;}
+#反射板.成功{-webkit-animation:緑合図 .35s ease-in-out infinite;animation:緑合図 .35s ease-in-out infinite;}
+.絵文字{-webkit-animation:リール待機 1.8s ease-in-out infinite;animation:リール待機 1.8s ease-in-out infinite;}
+.コイン{-webkit-animation:コインきらり 1.8s ease-in-out infinite;animation:コインきらり 1.8s ease-in-out infinite;}
+.弾む{-webkit-animation:数値弾み .22s ease-out;animation:数値弾み .22s ease-out;}
+.結果きらり{-webkit-animation:結果きらり .55s ease-out 2;animation:結果きらり .55s ease-out 2;}
+@-webkit-keyframes 遊び場登場{0%{opacity:0;-webkit-transform:translateY(7px);}100%{opacity:1;-webkit-transform:translateY(0);}}
+@keyframes 遊び場登場{0%{opacity:0;transform:translateY(7px);}100%{opacity:1;transform:translateY(0);}}
+@-webkit-keyframes 駒ゆらり{0%,100%{-webkit-transform:translateY(0);}50%{-webkit-transform:translateY(-1px);}}
+@keyframes 駒ゆらり{0%,100%{transform:translateY(0);}50%{transform:translateY(-1px);}}
+@-webkit-keyframes 動ける場所{0%,100%{opacity:1;}50%{opacity:.62;}}
+@keyframes 動ける場所{0%,100%{opacity:1;}50%{opacity:.62;}}
+@-webkit-keyframes スティック呼吸{0%,100%{-webkit-transform:scale(1);opacity:.8;}50%{-webkit-transform:scale(.72);opacity:1;}}
+@keyframes スティック呼吸{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(.72);opacity:1;}}
+@-webkit-keyframes 緑合図{0%,100%{opacity:1;}50%{opacity:.62;}}
+@keyframes 緑合図{0%,100%{opacity:1;}50%{opacity:.62;}}
+@-webkit-keyframes リール待機{0%,100%{-webkit-transform:translateY(0);}50%{-webkit-transform:translateY(-2px);}}
+@keyframes リール待機{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+@-webkit-keyframes コインきらり{0%,100%{opacity:1;}50%{opacity:.55;}}
+@keyframes コインきらり{0%,100%{opacity:1;}50%{opacity:.55;}}
+@-webkit-keyframes 数値弾み{0%{-webkit-transform:scale(1);}50%{-webkit-transform:scale(1.13);}100%{-webkit-transform:scale(1);}}
+@keyframes 数値弾み{0%{transform:scale(1);}50%{transform:scale(1.13);}100%{transform:scale(1);}}
+@-webkit-keyframes 結果きらり{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes 結果きらり{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+</head>
+<body>
+<div id="アプリ">
+ <div id="ヘッダー"><button id="ホームボタン" onclick="ホームへ戻る()" aria-label="メインメニュー">⌂</button><span id="見出し">ミニゲームセンター</span></div>
+ <div id="ホーム" class="画面 表示中"><p class="案内">あそびたいゲームをえらんでね</p><div id="選択一覧" class="選択一覧"></div></div>
+ <div id="ゲーム" class="画面 ゲーム画面"><div id="ゲーム本文"></div></div>
+</div>
+<script type="text/javascript">
+/* ES5だけを使った、オフラインで動くゲームポータル */
+var ゲーム名一覧=['5x5 躍動将棋 (2P)','秘密の日記帳','〇×ゲーム','10秒連打','数当てゲーム','反射神経テスト','絵文字スロット','コイン取り（ニム）','サイコロころがし','記憶力テスト','神経衰弱','もぐらたたき','迷路たんけん','ジャンプゲーム','おえかき帳','じゃんけん','計算ドリル','ことばクイズ','音まねゲーム','パズル','魚つり','お花ばたけ','ロケット発射','宝さがし','どうぶつ当て','ドット絵','ふうせん割り','おすし屋さん','電車ゲーム','恐竜ラン','宇宙たんけん','おばけ屋敷','忍者修行','お料理ゲーム','サッカー','野球','バスケット','ボウリング','カーレース','リズムゲーム','星座さがし','天気あそび','虫とり','かけっこ','クイズ王','お店やさん','島づくり','ペットお世話','写真アルバム','おたのしみ箱','スクロールすごろく（1人用）','12x12 みんなのさいころゲーム（1〜4人）','曲タップ演奏シミュレーター','色あてチャレンジ','風船キャッチ','数字早押し','じゃんけん連勝','方向記憶ゲーム','10秒タイムストップ','本格将棋 (9x9・2P)'];
+var 時間一覧=[];
+function 要素(名前){return document.getElementById(名前);}
+function 画面倍率を合わせる(){var app=要素('アプリ'),w=window.innerWidth||240,h=window.innerHeight||320,s=Math.min(w/240,h/320);if(s>1.6){s=1.6;}app.style.marginLeft='-120px';app.style.marginTop='-160px';app.style.transform='scale('+s+')';}
+function 余計な時間を止める(){var 番号;for(番号=0;番号<時間一覧.length;番号++){clearTimeout(時間一覧[番号]);clearInterval(時間一覧[番号]);}時間一覧=[];}
+function 時間を予約(処理,待ち時間){var 番号=setTimeout(処理,待ち時間);時間一覧.push(番号);return 番号;}
+function 間隔を予約(処理,間隔){var 番号=setInterval(処理,間隔);時間一覧.push(番号);return 番号;}
+/* 数値や結果が変わった瞬間だけ、短く弾ませる */
+function 弾ませる(名前,種類){var 対象=要素(名前),名前文字;if(!対象){return;}名前文字=種類||'弾む';対象.className=対象.className.replace(new RegExp(' ?'+名前文字,'g'),'');時間を予約(function(){if(対象){対象.className+=' '+名前文字;}},0);時間を予約(function(){if(対象){対象.className=対象.className.replace(new RegExp(' ?'+名前文字,'g'),'');}},700);}
+function エスケープ(文字){return String(文字).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function 選択一覧を作る(){var 入れ物=要素('選択一覧'),番号,文字='';for(番号=1;番号<=60;番号++){文字+='<button class="ゲーム選択'+((番号<=36||番号>=51)?' 実装済':'')+'" onclick="ゲームを開く('+番号+')">'+番号+'. '+エスケープ(ゲーム名一覧[番号-1])+'</button>';}入れ物.innerHTML=文字;}
+function ホームへ戻る(){余計な時間を止める();要素('ゲーム').className='画面 ゲーム画面';要素('ホーム').className='画面 表示中';要素('見出し').innerHTML='ミニゲームセンター';}
+function ゲームを開く(番号){余計な時間を止める();要素('ホーム').className='画面';要素('ゲーム').className='画面 ゲーム画面 表示中';要素('見出し').innerHTML=番号+'. '+エスケープ(ゲーム名一覧[番号-1]);if(番号===1){躍動将棋を始める();}else if(番号===2){日記を始める();}else if(番号===3){まるばつを始める();}else if(番号===4){連打を始める();}else if(番号===5){数当てを始める();}else if(番号===6){反射を始める();}else if(番号===7){スロットを始める();}else if(番号===8){ニムを始める();}else if(番号===9){さいころを始める();}else if(番号===10){記憶を始める();}else if(番号===11){神経衰弱を始める();}else if(番号===12){もぐらたたきを始める();}else if(番号===13){迷路たんけんを始める();}else if(番号===14){ジャンプゲームを始める();}else if(番号===15){おえかき帳を始める();}else if(番号===16){じゃんけんを始める();}else if(番号===17){計算ドリルを始める();}else if(番号===18){ことばクイズを始める();}else if(番号===19){音まねゲームを始める();}else if(番号===20){パズルを始める();}else if(番号===21){魚つりを始める();}else if(番号===22){お花ばたけを始める();}else if(番号===23){ロケット発射を始める();}else if(番号===24){宝さがしを始める();}else if(番号===25){どうぶつ当てを始める();}else if(番号===26){ドット絵を始める();}else if(番号===27){ふうせん割りを始める();}else if(番号===28){おすし屋さんを始める();}else if(番号===29){電車ゲームを始める();}else if(番号===30){恐竜ランを始める();}else if(番号===31){宇宙たんけんを始める();}else if(番号===32){おばけ屋敷を始める();}else if(番号===33){忍者修行を始める();}else if(番号===34){お料理ゲームを始める();}else if(番号===35){サッカーを始める();}else if(番号===36){野球を始める();}else if(番号===37){バスケットを始める();}else if(番号===38){ボウリングを始める();}else if(番号===39){カーレースを始める();}else if(番号===40){リズムゲームを始める();}else if(番号===41){星座さがしを始める();}else if(番号===42){天気あそびを始める();}else if(番号===43){虫とりを始める();}else if(番号===44){かけっこを始める();}else if(番号===45){クイズ王を始める();}else if(番号===46){お店やさんを始める();}else if(番号===47){島づくりを始める();}else if(番号===48){ペットお世話を始める();}else if(番号===49){写真アルバムを始める();}else if(番号===50){おたのしみ箱を始める();}else if(番号===51){一人用すごろくを始める();}else if(番号===52){冒険を始める();}else if(番号===53){曲タップ演奏を始める();}else if(番号===54){色あてチャレンジを始める();}else if(番号===55){風船キャッチを始める();}else if(番号===56){数字早押しを始める();}else if(番号===57){じゃんけん連勝を始める();}else if(番号===58){方向記憶ゲームを始める();}else if(番号===59){タイムストップ10秒を始める();}else if(番号===60){本格将棋を始める();}else{予定画面を出す(番号);}}
+function 枠(説明,中身,操作){要素('ゲーム本文').innerHTML='<div class="説明">'+説明+'</div>'+中身+'<div class="下操作">'+(操作||'')+'</div>';}
+
+/* 37〜50: 実装済みミニゲーム */
+var バスケット本数,バスケット成功,バスケット位置;
+function バスケットを始める(){バスケット本数=0;バスケット成功=0;バスケット位置=1;枠('5回シュート！ ゴールの穴をねらおう','<div class="遊び場"><div id="追加箱" style="padding-top:18px;"><div id="追加表示">●</div><div id="追加説明">コースを選んでシュート！</div><div><button class="ゲーム大ボタン" onclick="バスケットを投げる(0)">左</button><button class="ゲーム大ボタン" onclick="バスケットを投げる(1)">中央</button><button class="ゲーム大ボタン" onclick="バスケットを投げる(2)">右</button></div></div></div>','<span id="バスケ文" class="状態">0/5本　成功0</span>');}
+function バスケットを投げる(コース){if(バスケット本数>=5){return;}バスケット本数++;バスケット位置=Math.floor(Math.random()*3);if(コース===バスケット位置){バスケット成功++;要素('追加説明').innerHTML='ゴール！ ●';}else{要素('追加説明').innerHTML='はずれ！';}要素('バスケ文').innerHTML=バスケット本数+'/5本　成功'+バスケット成功;if(バスケット本数>=5){要素('追加説明').innerHTML+='　終了 '+バスケット成功+'/5';}}
+
+var ボウリング回数,ボウリング得点;
+function ボウリングを始める(){ボウリング回数=0;ボウリング得点=0;枠('ボールを転がしてピンを倒そう！','<div class="遊び場"><div id="ボウリング盤"><div style="position:absolute;top:10px;left:0;width:100%;text-align:center;font-size:18px;">● ● ●</div><div id="ボウリング玉" style="position:absolute;left:90px;bottom:12px;font-size:30px;">●</div></div></div>','<button class="ゲーム大ボタン" onclick="ボウリングを投げる()">● 投げる</button><span id="ボウリング文" class="状態">0/5回　0点</span>');}
+function ボウリングを投げる(){if(ボウリング回数>=5){return;}ボウリング回数++;var 倒=Math.floor(Math.random()*4)+3;ボウリング得点+=倒;要素('ボウリング玉').style.left=(20+Math.floor(Math.random()*150))+'px';要素('ボウリング文').innerHTML=ボウリング回数+'/5回　'+倒+'本！ 合計'+ボウリング得点;if(ボウリング回数>=5){要素('ボウリング文').innerHTML+='　ゲーム終了';}}
+
+var カーレース車X,カーレース障害一覧,カーレース点,カーレース終了;
+function カーレースを始める(){カーレース車X=85;カーレース障害一覧=[];カーレース点=0;カーレース終了=false;枠('← →で車を動かして、障害物をよけよう！','<div class="遊び場"><div id="カーレース盤"><div id="レース車" style="position:absolute;bottom:10px;font-size:28px;left:85px;">▣</div></div></div>','<button class="ゲーム大ボタン" onclick="カーレース移動(-24)">←</button><button class="ゲーム大ボタン" onclick="カーレース移動(24)">→</button><span id="レース文" class="状態">スコア 0</span>');間隔を予約(カーレース更新,90);}
+function カーレース移動(差){if(カーレース終了){return;}カーレース車X=Math.max(8,Math.min(166,カーレース車X+差));要素('レース車').style.left=カーレース車X+'px';}
+function カーレース更新(){if(カーレース終了){return;}var 盤=要素('カーレース盤'),車=要素('レース車'),i,新一覧=[],o;if(!盤||!車){return;}if(Math.random()<0.12){カーレース障害一覧.push({x:10+Math.floor(Math.random()*160),y:-28});}for(i=0;i<カーレース障害一覧.length;i++){o=カーレース障害一覧[i];o.y+=8;if(o.y>190){カーレース点++;continue;}if(o.y>142&&o.y<170&&Math.abs(o.x-カーレース車X)<25){カーレース終了=true;余計な時間を止める();要素('レース文').innerHTML='しょうとつ！ スコア '+カーレース点;return;}新一覧.push(o);}カーレース障害一覧=新一覧;var html='',j;for(j=0;j<新一覧.length;j++){html+='<span style="position:absolute;left:'+新一覧[j].x+'px;top:'+新一覧[j].y+'px;font-size:22px;">▥</span>';}盤.innerHTML=html+'<div id="レース車" style="position:absolute;bottom:10px;font-size:28px;left:'+カーレース車X+'px;">▣</div>';要素('レース文').innerHTML='スコア '+カーレース点;}
+
+var リズム列,リズム位置,リズム中;
+function リズムゲームを始める(){リズム列=[];for(var i=0;i<12;i++){リズム列.push(Math.floor(Math.random()*4));}リズム位置=0;リズム中=true;var html='<div id="リズム盤">';for(i=0;i<4;i++){html+='<div class="リズムレーン" style="left:'+(i*51)+'px;"></div>';}for(i=0;i<12;i++){html+='<button class="リズムノート" id="リズム'+i+'" style="left:'+(リズム列[i]*51+3)+'px;top:'+(i*12+2)+'px;" onclick="リズムを押す('+i+')"></button>';}html+='<div id="リズム判定">上から順番にタップ</div></div>';枠('音符を上から順番にタップ！','<div class="遊び場">'+html+'</div>','<button class="小ボタン" onclick="リズムゲームを始める()">もう一度</button>');}
+function リズムを押す(番号){if(!リズム中||番号!==リズム位置){return;}要素('リズム'+番号).style.background='#a9df95';リズム位置++;if(リズム位置>=リズム列.length){リズム中=false;要素('リズム判定').innerHTML='● コンプリート！';}else{要素('リズム判定').innerHTML='あと '+(リズム列.length-リズム位置)+' 個';}}
+
+var 星座対象,星座見つけ数;
+function 星座さがしを始める(){星座見つけ数=0;星座対象=[1,4,7,9,12];var html='<div id="星座盤">',i,x,y;for(i=0;i<18;i++){x=8+(i*37)%180;y=8+(i*53)%150;html+='<button class="星ボタン" id="星'+i+'" style="left:'+x+'px;top:'+y+'px;" onclick="星を探す('+i+')">▲</button>';}html+='</div>';枠('光っている星座の星を全部見つけよう！','<div class="遊び場">'+html+'</div>','<span id="星座文" class="状態">0 / 5</span>');for(i=0;i<星座対象.length;i++){要素('星'+星座対象[i]).innerHTML='△';}}
+function 星を探す(番号){var i;if(星座対象.indexOf(番号)>=0&&要素('星'+番号).innerHTML!=='■'){要素('星'+番号).innerHTML='■';星座見つけ数++;}要素('星座文').innerHTML=星座見つけ数+' / '+星座対象.length;if(星座見つけ数>=星座対象.length){要素('星座文').innerHTML='星座発見！';for(i=0;i<星座対象.length;i++){要素('星'+星座対象[i]).style.color='#fff';}}}
+
+var 天気番号;
+function 天気あそびを始める(){天気番号=Math.floor(Math.random()*4);var 天気=['○','◇','◇','◇'];枠('ボタンを押すと今日の天気が出るよ！','<div class="遊び場"><div id="追加箱" style="padding-top:25px;"><div id="天気絵">'+天気[天気番号]+'</div><div id="追加表示">今日の天気</div><div id="追加説明">'+['はれ','くもり','あめ','ゆき'][天気番号]+'</div></div></div>','<button class="ゲーム大ボタン" onclick="天気を変える()">天気をひらく</button>');}
+function 天気を変える(){var 天気=['○','◇','◇','◇'],名前=['はれ','くもり','あめ','ゆき'];天気番号=Math.floor(Math.random()*4);要素('天気絵').innerHTML=天気[天気番号];要素('追加説明').innerHTML=名前[天気番号];}
+
+var 虫位置,虫点;
+function 虫とりを始める(){虫点=0;虫位置=Math.floor(Math.random()*12);var html='<div id="虫盤">',i;for(i=0;i<12;i++){html+='<button id="虫'+i+'" onclick="虫をとる('+i+')">'+(i===虫位置?'◆':'')+'</button>';}html+='</div>';枠('虫が出てきたマスをタップ！','<div class="遊び場">'+html+'</div>','<span id="虫文" class="状態">スコア 0　残り10秒</span>');間隔を予約(虫を移動,650);}
+function 虫を移動(){var 残り=(虫点>=0)?0:0,i;for(i=0;i<12;i++){要素('虫'+i).innerHTML='';}if(!要素('虫文')){return;}虫位置=Math.floor(Math.random()*12);要素('虫'+虫位置).innerHTML='◆';if(虫点<15){要素('虫文').innerHTML='スコア '+虫点+'　◆を探そう';}}
+function 虫をとる(番号){if(番号===虫位置){虫点++;要素('虫'+番号).innerHTML='';要素('虫文').innerHTML='スコア '+虫点;虫位置=-1;}}
+
+var かけっこY,かけっこ開始,かけっこ中,かけっこ点;
+function かけっこを始める(){かけっこY=130;かけっこ開始=false;かけっこ中=true;かけっこ点=0;枠('画面をタップして走ろう！ 障害物に当たらないように！','<div class="遊び場"><div id="かけっこ盤"><div id="かけっこ人" style="position:absolute;left:20px;top:130px;font-size:26px;">●</div><div id="かけっこ障害" style="position:absolute;left:180px;top:128px;font-size:24px;">■</div></div></div>','<button class="ゲーム大ボタン" onclick="かけっこジャンプ()">ジャンプ！</button><span id="かけっこ文" class="状態">スコア 0</span>');間隔を予約(かけっこ更新,70);}
+function かけっこジャンプ(){if(!かけっこ中){return;}if(かけっこY===130){かけっこY=92;時間を予約(function(){かけっこY=130;},420);}}
+function かけっこ更新(){if(!かけっこ中){return;}var 障=要素('かけっこ障害');if(!障){return;}var x=parseInt(障.style.left,10)-6;障.style.left=x+'px';if(x<-20){x=190;かけっこ点++;要素('かけっこ文').innerHTML='スコア '+かけっこ点;}障.style.left=x+'px';if(x<45&&x>15&&かけっこY>105){かけっこ中=false;余計な時間を止める();要素('かけっこ文').innerHTML='ぶつかった！ スコア '+かけっこ点;}}
+
+var クイズ王一覧=[{問:'日本の首都は？',答:['東京','大阪','京都'],正:0},{問:'赤と青をまぜると？',答:['緑','紫','黄色'],正:1},{問:'3+4は？',答:['6','7','8'],正:1},{問:'魚が泳ぐ場所は？',答:['空','海','森'],正:1},{問:'冬の次は？',答:['春','夏','秋'],正:0},{問:'太陽はどっちから？',答:['東','西','北'],正:0}];
+function クイズ王を始める(){汎用クイズを始める(クイズ王一覧,'クイズ王を始める');}
+
+var 店お金,店品,店購入;
+function お店やさんを始める(){店お金=20;店品=[{名:'● りんご',値:3},{名:'▰ パン',値:5},{名:'□ ジュース',値:4},{名:'○ ドーナツ',値:6},{名:'● おにぎり',値:4},{名:'● おもちゃ',値:10}];店購入=[];var html='<div id="お店盤">',i;for(i=0;i<店品.length;i++){html+='<button class="ゲーム大ボタン" style="width:62px;height:52px;margin:0;font-size:10px;" onclick="店で買う('+i+')">'+店品[i].名+'<br>'+店品[i].値+'G</button>';}html+='</div>';枠('20Gを使って好きなものを買おう！','<div class="遊び場"><div id="追加箱"><div id="追加表示">20G</div><div id="追加説明">商品をタップ</div>'+html+'</div></div>','<button class="小ボタン" onclick="お店やさんを始める()">最初から</button>');}
+function 店で買う(番号){var 品=店品[番号];if(店お金<品.値){要素('追加説明').innerHTML='お金がたりない！';return;}店お金-=品.値;店購入.push(品.名);要素('追加表示').innerHTML=店お金+'G';要素('追加説明').innerHTML='かった！ '+品.名;}
+
+var 島状態;
+function 島づくりを始める(){島状態=[];var html='<div id="島盤">',i;for(i=0;i<30;i++){島状態[i]=0;html+='<button class="島マス" id="島'+i+'" onclick="島を作る('+i+')">≈</button>';}html+='</div>';枠('海をタップして島を大きくしよう！','<div class="遊び場"><div id="追加箱"><div id="追加説明">島 0 / 30</div>'+html+'</div></div>','<button class="小ボタン" onclick="島づくりを始める()">はじめから</button>');}
+function 島を作る(番号){if(島状態[番号]){return;}島状態[番号]=1;要素('島'+番号).innerHTML=Math.random()<0.5?'▲':'▲';var n=0,i;for(i=0;i<30;i++){if(島状態[i]){n++;}}要素('追加説明').innerHTML='島 '+n+' / 30';if(n===30){要素('追加説明').innerHTML='島が完成！';}}
+
+var ペット元気,ペットごはん;
+function ペットお世話を始める(){ペット元気=3;ペットごはん=3;ペット画面();}
+function ペット画面(){枠('ペットをタップして、お世話しよう！','<div class="遊び場"><div id="追加箱" style="padding-top:22px;"><div id="追加表示">●</div><div id="追加説明">元気 '+ペット元気+'　ごはん '+ペットごはん+'</div></div></div>','<button class="ゲーム大ボタン" onclick="ペットにごはん()">● ごはん</button><button class="ゲーム大ボタン" onclick="ペットをなでる()">◆ なでる</button><button class="小ボタン" onclick="ペットお世話を始める()">リセット</button>');}
+function ペットにごはん(){ペットごはん=Math.min(5,ペットごはん+1);ペット元気=Math.min(5,ペット元気+1);ペット画面();要素('追加説明').innerHTML+='　よろこんでる！';}
+function ペットをなでる(){ペット元気=Math.min(5,ペット元気+1);ペット画面();要素('追加説明').innerHTML+='　なでなで！';}
+
+var 写真色=0;
+function 写真アルバムを始める(){写真色=0;枠('カメラを押して、思い出の絵を作ろう！','<div class="遊び場"><div id="写真枠"><canvas id="写真キャンバス" width="200" height="170"></canvas></div></div>','<button class="ゲーム大ボタン" onclick="写真をとる()">□ とる</button><button class="小ボタン" onclick="写真アルバムを始める()">消す</button>');写真を描く();}
+function 写真を描く(){var c=要素('写真キャンバス'),x;if(!c){return;}x=c.getContext('2d');x.fillStyle=写真色%2===0?'#dff2fb':'#fff0c7';x.fillRect(0,0,200,170);x.font='42px sans-serif';x.fillText(写真色%2===0?'〰':'✦',75,80);x.font='22px sans-serif';x.fillText(写真色%2===0?'□':'●',85,135);}
+function 写真をとる(){写真色++;写真を描く();}
+
+function おたのしみ箱を引く(){var a=['□','⭐','◇','●','○','◇'];要素('追加表示').innerHTML=a[Math.floor(Math.random()*a.length)];要素('追加説明').innerHTML='あたり！ また押してね';}
+function おたのしみ箱を始める(){枠('箱をタップして、何が出るか見てみよう！','<div class="遊び場"><div id="おたのしみ面"><div id="追加表示" style="font-size:54px;height:70px;line-height:70px;">□</div><div id="追加説明" style="height:30px;">タップして開ける！</div></div></div>','<button class="ゲーム大ボタン" onclick="おたのしみ箱を引く()">□ あける</button>');}
+
+/* 1. 5x5躍動将棋。王を取った側の勝ち */
+var 将棋駒一覧,将棋手番,将棋選択,将棋終了;
+function 躍動将棋を始める(){将棋駒一覧=[{行:0,列:1,種:'金',側:2},{行:0,列:2,種:'王',側:2},{行:0,列:3,種:'銀',側:2},{行:1,列:2,種:'歩',側:2},{行:3,列:2,種:'歩',側:1},{行:4,列:1,種:'銀',側:1},{行:4,列:2,種:'王',側:1},{行:4,列:3,種:'金',側:1}];将棋手番=1;将棋選択=-1;将棋終了=false;枠('<div id="将棋情報"><span id="将棋手番"></span><span id="将棋案内">駒をタップして動かそう</span></div>','<div id="将棋盤"></div>','<button class="小ボタン" onclick="躍動将棋を始める()">もう一局</button>');将棋盤を描く();}
+function 駒番号(行,列){var 番号;for(番号=0;番号<将棋駒一覧.length;番号++){if(将棋駒一覧[番号].行===行&&将棋駒一覧[番号].列===列){return 番号;}}return -1;}
+function 盤内(行,列){return 行>=0&&行<5&&列>=0&&列<5;}
+function 動けるか(駒,行,列){var 縦=行-駒.行,横=列-駒.列,絶縦=Math.abs(縦),絶横=Math.abs(横),前=駒.側===1?-1:1,居る=駒番号(行,列);if(!盤内(行,列)||(居る>=0&&将棋駒一覧[居る].側===駒.側)){return false;}if(駒.種==='王'){return 絶縦<=1&&絶横<=1&&(絶縦+絶横>0);}if(駒.種==='金'){return(縦===前&&絶横<=1)||(縦===0&&絶横===1)||(縦===-前&&横===0);}if(駒.種==='銀'){return(縦===前&&絶横<=1)||(縦===-前&&絶横===1);}return 縦===前&&横===0;}
+function 将棋盤を描く(){var 行,列,番号,駒,文字='',動ける,選択駒=将棋選択>=0?将棋駒一覧[将棋選択]:null;for(行=0;行<5;行++){for(列=0;列<5;列++){番号=駒番号(行,列);動ける=選択駒&&動けるか(選択駒,行,列);文字+='<span class="将棋マス'+(番号===将棋選択?' 選択':'')+(動ける?' 動ける':'')+'" onclick="将棋マスを押す('+行+','+列+')">';if(番号>=0){駒=将棋駒一覧[番号];文字+='<b class="駒'+(駒.側===2?' 後手':'')+'">'+駒.種+'</b>';}文字+='</span>';}}文字+='<span id="スティック"><span id="スティック中心"></span></span><span id="カメラ表示">カメラ 45°</span>';要素('将棋盤').innerHTML=文字;要素('将棋手番').innerHTML=将棋手番===1?'先手の手番':'後手の手番';}
+function 将棋マスを押す(行,列){var 番号=駒番号(行,列),取る,動く駒;if(将棋終了){return;}if(将棋選択>=0&&動けるか(将棋駒一覧[将棋選択],行,列)){動く駒=将棋駒一覧[将棋選択];取る=駒番号(行,列);if(取る>=0&&将棋駒一覧[取る].種==='王'){将棋駒一覧.splice(取る,1);動く駒.行=行;動く駒.列=列;将棋選択=-1;将棋終了=true;将棋盤を描く();要素('将棋案内').innerHTML=(将棋手番===1?'先手':'後手')+'の勝ち！';return;}if(取る>=0){将棋駒一覧.splice(取る,1);}動く駒.行=行;動く駒.列=列;将棋選択=-1;将棋手番=将棋手番===1?2:1;将棋盤を描く();return;}if(番号>=0&&将棋駒一覧[番号].側===将棋手番){将棋選択=番号;}else{将棋選択=-1;}将棋盤を描く();}
+
+/* 60. 本格将棋（9x9・2人対戦） */
+var 本格将棋盤面,本格将棋手番,本格将棋持駒,本格将棋選択,本格将棋終了,本格将棋昇格待ち;
+var 本格将棋駒名=['','歩','香','桂','銀','金','角','飛','王','と','成香','成桂','成銀','馬','龍'];
+function 本格将棋初期配置(){
+本格将棋盤面=[];var r,c;for(r=0;r<9;r++){本格将棋盤面[r]=[];for(c=0;c<9;c++){本格将棋盤面[r][c]=null;}}
+function 置(r,c,種,側){本格将棋盤面[r][c]={種:種,側:側};}
+var 上=['香','桂','銀','金','王','金','銀','桂','香'];for(c=0;c<9;c++){置(0,c,上[c],2);}
+置(1,1,'飛',2);置(1,7,'角',2);for(c=0;c<9;c++){置(2,c,'歩',2);}
+var 下=['香','桂','銀','金','王','金','銀','桂','香'];for(c=0;c<9;c++){置(8,c,下[c],1);}
+置(7,1,'角',1);置(7,7,'飛',1);for(c=0;c<9;c++){置(6,c,'歩',1);}
+本格将棋持駒=[{歩:0,香:0,桂:0,銀:0,金:0,角:0,飛:0},{歩:0,香:0,桂:0,銀:0,金:0,角:0,飛:0}];
+}
+function 本格将棋を始める(){本格将棋初期配置();本格将棋手番=1;本格将棋選択=null;本格将棋終了=false;本格将棋昇格待ち=null;本格将棋UIを描く();}
+function 本格将棋側文字(側){return 側===1?'先手':'後手';}
+function 本格将棋升格種(種){return {'歩':'と','香':'成香','桂':'成桂','銀':'成銀','角':'馬','飛':'龍'}[種]||種;}
+function 本格将棋成り種(種){return {'と':'歩','成香':'香','成桂':'桂','成銀':'銀','馬':'角','龍':'飛'}[種]||種;}
+function 本格将棋成っている(種){return ['と','成香','成桂','成銀','馬','龍'].indexOf(種)>=0;}
+function 本格将棋敵側(側){return 側===1?2:1;}
+function 本格将棋範囲(r,c){return r>=0&&r<9&&c>=0&&c<9;}
+function 本格将棋敵陣(r,側){return 側===1?r<=2:r>=6;}
+function 本格将棋成り可能(駒,fromR,toR){if(!駒||本格将棋成っている(駒.種)||['王','金'].indexOf(駒.種)>=0)return false;return 本格将棋敵陣(fromR,駒.側)||本格将棋敵陣(toR,駒.側);}
+function 本格将棋必須成り(種,側,r){if(種==='歩'||種==='香')return 側===1?r===0:r===8;if(種==='桂')return 側===1?r<=1:r>=7;return false;}
+function 本格将棋方向(側){return 側===1?-1:1;}
+function 本格将棋一手駒(駒,dr,dc){var f=本格将棋方向(駒.側);if(駒.種==='王')return Math.abs(dr)<=1&&Math.abs(dc)<=1&&!(dr===0&&dc===0);if(駒.種==='金'||['と','成香','成桂','成銀'].indexOf(駒.種)>=0)return (dr===f&&Math.abs(dc)<=1)||(dr===0&&Math.abs(dc)===1)||(dr===-f&&dc===0);if(駒.種==='銀')return (dr===f&&Math.abs(dc)<=1)||(dr===-f&&Math.abs(dc)===1);if(駒.種==='桂')return dr===2*f&&Math.abs(dc)===1;if(駒.種==='歩')return dr===f&&dc===0;return false;}
+function 本格将棋滑走(駒,dr,dc){var f=本格将棋方向(駒.側);if(['飛','龍'].indexOf(駒.種)>=0&&(dr===0||dc===0)&&!(dr===0&&dc===0))return true;if(['角','馬'].indexOf(駒.種)>=0&&Math.abs(dr)===Math.abs(dc)&&dr!==0)return true;return false;}
+function 本格将棋移動可能(駒,fr,fc,tr,tc,自己盤面){if(!本格将棋範囲(tr,tc))return false;var dr=tr-fr,dc=tc-fc,dest=自己盤面[tr][tc];if(dest&&dest.側===駒.側)return false;if(本格将棋一手駒(駒,dr,dc))return true;if(['飛','龍','角','馬'].indexOf(駒.種)<0)return false;if(['龍','馬'].indexOf(駒.種)>=0&&Math.abs(dr)===1&&Math.abs(dc)===1){return 本格将棋一手駒({種:'王',側:駒.側},dr,dc);}
+if(!本格将棋滑走(駒,dr,dc))return false;var sr=dr===0?0:(dr>0?1:-1),sc=dc===0?0:(dc>0?1:-1),r=fr+sr,c=fc+sc;while(r!==tr||c!==tc){if(自己盤面[r][c])return false;r+=sr;c+=sc;}return true;}
+function 本格将棋王位置(盤面,側){var r,c;for(r=0;r<9;r++)for(c=0;c<9;c++)if(盤面[r][c]&&盤面[r][c].側===側&&盤面[r][c].種==='王')return {r:r,c:c};return null;}
+function 本格将棋攻撃されている(盤面,r,c,側){var er,ec,p;for(er=0;er<9;er++)for(ec=0;ec<9;ec++){p=盤面[er][ec];if(p&&p.側===側&&本格将棋移動可能(p,er,ec,r,c,盤面))return true;}return false;}
+function 本格将棋王手(盤面,側){var k=本格将棋王位置(盤面,側);return !k||本格将棋攻撃されている(盤面,k.r,k.c,本格将棋敵側(側));}
+function 本格将棋盤コピー(盤面){var a=[],r,c;for(r=0;r<9;r++){a[r]=[];for(c=0;c<9;c++){a[r][c]=盤面[r][c]?{種:盤面[r][c].種,側:盤面[r][c].側}:null;}}return a;}
+function 本格将棋指し手で安全(盤面,側,fr,fc,tr,tc,成る){var a=本格将棋盤コピー(盤面),p=a[fr][fc];a[tr][tc]=p;a[fr][fc]=null;if(成る)p.種=本格将棋升格種(p.種);return !本格将棋王手(a,側);}
+function 本格将棋合法移動一覧(側){var list=[],r,c,tr,tc,p,成り,強制;for(r=0;r<9;r++)for(c=0;c<9;c++){p=本格将棋盤面[r][c];if(!p||p.側!==側)continue;for(tr=0;tr<9;tr++)for(tc=0;tc<9;tc++){if(!本格将棋移動可能(p,r,c,tr,tc,本格将棋盤面))continue;成り=本格将棋成り可能(p,r,tr);強制=本格将棋必須成り(p.種,側,tr);if(強制){if(本格将棋指し手で安全(本格将棋盤面,側,r,c,tr,tc,true))list.push({fr:r,fc:c,tr:tr,tc:tc,成:true});}else{if(本格将棋指し手で安全(本格将棋盤面,側,r,c,tr,tc,false))list.push({fr:r,fc:c,tr:tr,tc:tc,成:false});if(成り&&本格将棋指し手で安全(本格将棋盤面,側,r,c,tr,tc,true))list.push({fr:r,fc:c,tr:tr,tc:tc,成:true});}}}return list;}
+function 本格将棋持駒名(種){return 本格将棋成っている(種)?本格将棋成り種(種):種;}
+function 本格将棋二歩禁止(側,c){var r,p;for(r=0;r<9;r++){p=本格将棋盤面[r][c];if(p&&p.側===側&&p.種==='歩')return true;}return false;}
+function 本格将棋持駒配置可能(側,種,r,c){if(本格将棋盤面[r][c])return false;if(種==='歩'||種==='香'){if(側===1&&r===0)return false;if(側===2&&r===8)return false;}if(種==='桂'){if(側===1&&r<=1)return false;if(側===2&&r>=7)return false;}if(種==='歩'&&本格将棋二歩禁止(側,c))return false;return true;}
+function 本格将棋打ち歩詰め候補(側,種,r,c){return false;}
+function 本格将棋合法持駒一覧(側){var out=[],種一覧=['歩','香','桂','銀','金','角','飛'],i,r,c,p,a,k;for(i=0;i<種一覧.length;i++){var 種=種一覧[i];if(本格将棋持駒[側-1][種]<=0)continue;for(r=0;r<9;r++)for(c=0;c<9;c++)if(本格将棋持駒配置可能(側,種,r,c)){a=本格将棋盤コピー(本格将棋盤面);a[r][c]={種:種,側:側};k=本格将棋王位置(a,側);if(k&&!本格将棋王手(a,側))out.push({種:種,r:r,c:c});}}return out;}
+function 本格将棋王手詰み(側){return 本格将棋王手(本格将棋盤面,側)&&本格将棋合法移動一覧(側).length===0&&本格将棋合法持駒一覧(側).length===0;}
+function 本格将棋持駒を描く(){var html='',側,i,種一覧=['飛','角','金','銀','桂','香','歩'];for(側=1;側<=2;側++){html+='<div>'+本格将棋側文字(側)+'持駒: ';for(i=0;i<種一覧.length;i++){var 種=種一覧[i],n=本格将棋持駒[側-1][種];if(n>0){html+='<button class="持駒ボタン" onclick="本格将棋持駒選択(\''+種+'\')">'+種+(n>1?'×'+n:'')+'</button>';}}html+='</div>';}要素('本格将棋持駒').innerHTML=html;}
+function 本格将棋UIを描く(){var html='',r,c,p,sel=本格将棋選択,合法=[],i; if(sel){var pp=本格将棋盤面[sel.r][sel.c];if(pp)合法=本格将棋合法移動一覧(本格将棋手番).filter(function(m){return m.fr===sel.r&&m.fc===sel.c;});}
+for(r=0;r<9;r++)for(c=0;c<9;c++){p=本格将棋盤面[r][c];var ok=false,j;for(j=0;j<合法.length;j++)if(合法[j].tr===r&&合法[j].tc===c)ok=true;html+='<span class="本格将棋マス'+(sel&&sel.r===r&&sel.c===c?' 選択':'')+(ok?' 合法':'')+'" style="left:'+(c*21)+'px;top:'+(r*21)+'px;" onclick="本格将棋マスを押す('+r+','+c+')">';if(p)html+='<b class="本格将棋駒'+(p.側===2?' 後手':'')+'">'+(本格将棋駒名.indexOf(p.種)>=0?p.種:'?')+'</b>';html+='</span>';}
+var popup='';if(本格将棋昇格待ち){popup='<div class="昇格選択">成りますか？<br><button onclick="本格将棋成り確定(true)">成る</button><button onclick="本格将棋成り確定(false)">成らない</button></div>';}var 手番縦=(本格将棋手番===1?'先<br>手<br><span class="手番中">●<br>手<br>番</span>':'後<br>手<br><span class="手番中">●<br>手<br>番</span>');var root='<div id="本格将棋横並び"><div id="本格将棋盤">'+html+'</div><div id="本格将棋手番縦">'+手番縦+'</div></div><div id="本格将棋案内">'+(本格将棋終了?'対局終了':'駒を選び、行き先をタップ')+'</div>'+popup;枠('9×9の本将棋。成りあり・持ち駒なしの2人対戦','<div class="遊び場 本格将棋場">'+root+'</div>','<button class="小ボタン" onclick="本格将棋を始める()">もう一局</button>');}
+function 本格将棋持駒選択(種){if(本格将棋終了||本格将棋持駒[本格将棋手番-1][種]<=0)return;本格将棋選択={持駒:種};本格将棋UIを描く();}
+function 本格将棋マスを押す(r,c){if(本格将棋終了)return;var p=本格将棋盤面[r][c],sel=本格将棋選択,i,候補;if(sel&&sel.持駒){if(!本格将棋持駒配置可能(本格将棋手番,sel.持駒,r,c))return;var a=本格将棋盤コピー(本格将棋盤面);a[r][c]={種:sel.持駒,側:本格将棋手番};var k=本格将棋王位置(a,本格将棋手番);if(!k||本格将棋王手(a,本格将棋手番))return;本格将棋盤面[r][c]={種:sel.持駒,側:本格将棋手番};本格将棋持駒[本格将棋手番-1][sel.持駒]--;本格将棋選択=null;本格将棋手番=本格将棋敵側(本格将棋手番);本格将棋手番後処理();return;}
+if(sel&&sel.r!==undefined){候補=本格将棋合法移動一覧(本格将棋手番).filter(function(m){return m.fr===sel.r&&m.fc===sel.c&&m.tr===r&&m.tc===c;});if(候補.length===1){本格将棋着手(c,r,候補[0]);return;}if(候補.length>1){本格将棋昇格待ち=候補;本格将棋UIを描く();return;}}
+if(p&&p.側===本格将棋手番){本格将棋選択={r:r,c:c};}else本格将棋選択=null;本格将棋UIを描く();}
+
+function 本格将棋成り確定(成る){if(!本格将棋昇格待ち||本格将棋昇格待ち.length===0)return;var 候補=null,i;for(i=0;i<本格将棋昇格待ち.length;i++){if(本格将棋昇格待ち[i].成===成る){候補=本格将棋昇格待ち[i];break;}}本格将棋昇格待ち=null;if(候補){本格将棋着手(候補.tc,候補.tr,候補);}}
+function 本格将棋着手(c,r,手){var p=本格将棋盤面[手.fr][手.fc],成=手.成;/* 取った駒は盤から消え、持ち駒にはしない */本格将棋盤面[r][c]=p;本格将棋盤面[手.fr][手.fc]=null;if(成)p.種=本格将棋升格種(p.種);本格将棋選択=null;本格将棋手番=本格将棋敵側(本格将棋手番);本格将棋手番後処理();}
+function 本格将棋手番後処理(){var 相手=本格将棋手番;if(本格将棋王手詰み(相手)){本格将棋終了=true;本格将棋UIを描く();要素('本格将棋案内').innerHTML=本格将棋側文字(本格将棋敵側(相手))+'の勝ち！ 王手詰み';return;}本格将棋UIを描く();}
+
+/* 2. 電源を切っても残る日記 */
+function 日記を始める(){var 内容='';try{内容=localStorage.getItem('まもりの日記')||'';}catch(例外){内容='';}枠('日記はこのケータイの中に保存されます','<div id="日記帳" class="遊び場"><textarea id="日記入力" maxlength="1000" placeholder="きょうあったことを かこう">'+エスケープ(内容)+'</textarea><div id="日記時刻">まだ保存していません</div></div>','<button class="小ボタン" onclick="日記を保存する()">ほぞん</button><button class="小ボタン" onclick="日記を消す()">けす</button>');}
+function 日記を保存する(){try{localStorage.setItem('まもりの日記',要素('日記入力').value);要素('日記時刻').innerHTML='ほぞんしました';}catch(例外){要素('日記時刻').innerHTML='保存できませんでした';}}
+function 日記を消す(){要素('日記入力').value='';try{localStorage.removeItem('まもりの日記');}catch(例外){}要素('日記時刻').innerHTML='けしました';}
+
+/* 3. ○×ゲーム */
+var まるばつ手番,まるばつ終了;
+function まるばつを始める(){まるばつ手番='○';まるばつ終了=false;枠('○と×で交代して、たて・よこ・ななめをそろえよう','<div class="遊び場"><table id="まるばつ盤"><tr><td onclick="まるばつを押す(this)"></td><td onclick="まるばつを押す(this)"></td><td onclick="まるばつを押す(this)"></td></tr><tr><td onclick="まるばつを押す(this)"></td><td onclick="まるばつを押す(this)"></td><td onclick="まるばつを押す(this)"></td></tr><tr><td onclick="まるばつを押す(this)"></td><td onclick="まるばつを押す(this)"></td><td onclick="まるばつを押す(this)"></td></tr></table></div>','<span id="まるばつ文" class="状態">○のばん</span><button class="小ボタン" onclick="まるばつを始める()">やりなおす</button>');}
+function まるばつを押す(マス){var マス一覧,組,番号,そろい=false,全部=true;if(まるばつ終了||マス.innerHTML!==''){return;}マス.innerHTML=まるばつ手番;マス一覧=要素('まるばつ盤').getElementsByTagName('td');組=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];for(番号=0;番号<組.length;番号++){if(マス一覧[組[番号][0]].innerHTML===まるばつ手番&&マス一覧[組[番号][1]].innerHTML===まるばつ手番&&マス一覧[組[番号][2]].innerHTML===まるばつ手番){そろい=true;}}for(番号=0;番号<9;番号++){if(マス一覧[番号].innerHTML===''){全部=false;}}if(そろい){要素('まるばつ文').innerHTML=まるばつ手番+'のかち！';まるばつ終了=true;}else if(全部){要素('まるばつ文').innerHTML='ひきわけ！';まるばつ終了=true;}else{まるばつ手番=まるばつ手番==='○'?'×':'○';要素('まるばつ文').innerHTML=まるばつ手番+'のばん';}}
+
+/* 4. 10秒連打 */
+var 連打回数,連打残り,連打中;
+function 連打を始める(){連打回数=0;連打残り=10;連打中=false;枠('スタート後の10秒間、できるだけたくさん押そう','<div id="連打箱" class="遊び場"><div id="連打数">0 回</div><div id="連打時間">残り 10.0 秒</div><button id="連打ボタン" onclick="連打を押す()">スタート</button></div>','');}
+function 連打を押す(){if(!連打中){連打中=true;連打回数=0;連打残り=100;要素('連打数').innerHTML='0 回';要素('連打ボタン').innerHTML='連打！';間隔を予約(function(){連打残り--;要素('連打時間').innerHTML='残り '+(連打残り/10).toFixed(1)+' 秒';if(連打残り<=0){連打中=false;余計な時間を止める();要素('連打ボタン').innerHTML='もう一度';}},100);}else{連打回数++;要素('連打数').innerHTML=連打回数+' 回';弾ませる('連打数');}}
+
+/* 5. 数当て */
+var 答え数字,予想数字,数当て回数;
+function 数当てを始める(){答え数字=Math.floor(Math.random()*99)+1;予想数字=50;数当て回数=0;枠('1〜99。ボタンで数を合わせて「こたえる」を押そう','<div id="数当て箱" class="遊び場"><div id="予想数">50</div><div class="数列"><button class="数ボタン" onclick="数字を動かす(-10)">-10</button><button class="数ボタン" onclick="数字を動かす(-1)">-1</button><button class="数ボタン" onclick="数字を動かす(1)">+1</button><button class="数ボタン" onclick="数字を動かす(10)">+10</button></div><button class="小ボタン" onclick="数字を答える()">こたえる</button><div id="数当て助言">数字をえらぼう</div></div>','<button class="小ボタン" onclick="数当てを始める()">あたらしく</button>');}
+function 数字を動かす(差){予想数字+=差;if(予想数字<1){予想数字=1;}if(予想数字>99){予想数字=99;}要素('予想数').innerHTML=予想数字;弾ませる('予想数');}
+function 数字を答える(){数当て回数++;if(予想数字<答え数字){要素('数当て助言').innerHTML='もっと大きい！';}else if(予想数字>答え数字){要素('数当て助言').innerHTML='もっと小さい！';}else{要素('数当て助言').innerHTML=数当て回数+'回でせいかい！';}}
+
+/* 6. 反射神経 */
+var 反射状態,緑になった時刻;
+function 反射を始める(){反射状態=0;枠('「はじめる」を押し、緑に変わったらすぐ板をタップ！','<div class="遊び場"><div id="反射板" class="待機" onclick="反射板を押す()">はじめる</div></div>','<span id="反射文" class="状態">準備はいい？</span>');}
+function 反射板を押す(){var 板=要素('反射板'),今=new Date().getTime();if(反射状態===0){反射状態=1;板.className='';板.innerHTML='赤… まって！';要素('反射文').innerHTML='緑になるまで待とう';時間を予約(function(){if(反射状態===1){反射状態=2;緑になった時刻=new Date().getTime();板.className='成功';板.innerHTML='緑！ タップ！';}},1000+Math.floor(Math.random()*2500));}else if(反射状態===1){余計な時間を止める();反射状態=0;板.className='待機';板.innerHTML='はじめる';要素('反射文').innerHTML='フライング！もう一度';}else if(反射状態===2){反射状態=3;板.innerHTML=(今-緑になった時刻)+' ミリ秒！';要素('反射文').innerHTML='すばやい！';}}
+
+/* 7. 絵文字スロット */
+var 絵文字一覧=['▣','●','◇'],スロット中=false;
+function スロットを始める(){スロット中=false;枠('3つ同じ絵文字ならアタリ！','<div id="スロット箱" class="遊び場"><div id="リール"><span class="絵文字">▣</span><span class="絵文字">●</span><span class="絵文字">◇</span></div><div id="スロット結果">ボタンをおしてね</div></div>','<button class="小ボタン" onclick="回す()">まわす</button>');}
+function 回す(){var 回数=0,結果=[],回す間隔;if(スロット中){return;}スロット中=true;要素('スロット結果').innerHTML='ぐるぐる…';回す間隔=間隔を予約(function(){var 番号,文字='';for(番号=0;番号<3;番号++){結果[番号]=絵文字一覧[Math.floor(Math.random()*絵文字一覧.length)];文字+='<span class="絵文字">'+結果[番号]+'</span>';}要素('リール').innerHTML=文字;回数++;if(回数>=11){clearInterval(回す間隔);スロット中=false;if(結果[0]===結果[1]&&結果[1]===結果[2]){要素('スロット結果').innerHTML='▲ アタリ！ ▲';弾ませる('スロット結果','結果きらり');}else{要素('スロット結果').innerHTML='ざんねん！';弾ませる('スロット結果');}}},90);}
+
+/* 8. 最後を取ると負けのニム */
+var 残りコイン,ニム終了;
+function ニムを始める(){残りコイン=13;ニム終了=false;枠('1〜3枚取る。最後のコインを取った人が負け！','<div id="ニム箱" class="遊び場"><div id="コイン数"></div><div id="コイン並び"></div><div id="ニム文">あなたの番</div></div>','<button class="小ボタン" onclick="コインを取る(1)">1枚取る</button><button class="小ボタン" onclick="コインを取る(2)">2枚取る</button><button class="小ボタン" onclick="コインを取る(3)">3枚取る</button>');ニムを描く();}
+function ニムを描く(){var 番号,文字='';for(番号=0;番号<残りコイン;番号++){文字+='<span class="コイン"></span>';}要素('コイン数').innerHTML='のこり '+残りコイン+' 枚';要素('コイン並び').innerHTML=文字;}
+function コインを取る(枚数){var 相手枚数;if(ニム終了||枚数>残りコイン){return;}残りコイン-=枚数;ニムを描く();if(残りコイン===0){要素('ニム文').innerHTML='最後を取ったので あなたの負け';ニム終了=true;return;}相手枚数=(残りコイン-1)%4;if(相手枚数===0){相手枚数=1;}if(相手枚数>残りコイン){相手枚数=残りコイン;}要素('ニム文').innerHTML='コンピュータが考え中…';時間を予約(function(){残りコイン-=相手枚数;ニムを描く();if(残りコイン===0){要素('ニム文').innerHTML='コンピュータが最後を取った！あなたの勝ち！';ニム終了=true;}else{要素('ニム文').innerHTML='コンピュータは '+相手枚数+' 枚取った。あなたの番';}},500);}
+
+/* 9. サイコロ */
+var さいころ回数;
+function さいころを始める(){さいころ回数=0;枠('左でサイコロを振って、右で結果を見よう','<div id="さいころ箱" class="遊び場"><div class="さいころレイアウト"><div class="さいころ操作欄"><div class="さいころ操作見出し">サイコロを<br>ふる</div><button class="さいころ振るボタン" onclick="さいころを振る(2)">2個<br>ふる</button><button class="さいころ振るボタン" onclick="さいころを振る(3)">3個<br>ふる</button></div><div class="さいころ結果欄"><div class="さいころ結果見出し">さいころの結果</div><div id="出目">● ●</div><div id="合計">合計は？</div><div class="さいころ回数表示" id="さいころ回数表示">0回</div><div id="記録">記録はここに出ます</div></div></div></div>','');}
+function さいころを振る(個数){var 番号,数,合計=0,一覧=[],文字,記録;for(番号=0;番号<個数;番号++){数=Math.floor(Math.random()*6)+1;一覧.push(数);合計+=数;}さいころ回数++;文字=一覧.join(' ・ ');要素('出目').innerHTML=文字;要素('合計').innerHTML='合計 '+合計+(一覧.length>1&&一覧[0]===一覧[1]?'　ぞろ目！':'');要素('さいころ回数表示').innerHTML=さいころ回数+'回目';弾ませる('出目');弾ませる('合計');記録=要素('記録');記録.innerHTML=さいころ回数+'回目：'+文字+'（合計 '+合計+'）<br>'+記録.innerHTML;}
+
+/* 10. 光った色を順に押す記憶ゲーム */
+var 記憶列,記憶入力,記憶中,記憶世代;
+function 記憶を始める(){記憶列=[];記憶入力=0;記憶中=false;記憶世代=0;枠('光る順番を覚えて、同じ順番で色をタップしよう','<div id="記憶箱" class="遊び場"><div id="記憶情報">「はじめる」でスタート</div><div id="色盤"><span id="赤" class="色" onclick="色を押す(0)"></span><span id="青" class="色" onclick="色を押す(1)"></span><span id="黄" class="色" onclick="色を押す(2)"></span><span id="緑" class="色" onclick="色を押す(3)"></span></div></div>','<button class="小ボタン" onclick="記憶を開始する()">はじめる</button>');}
+function 色の名前(番号){return['赤','青','黄','緑'][番号];}
+function 記憶を開始する(){if(記憶中){return;}記憶列.push(Math.floor(Math.random()*4));記憶入力=0;記憶中=true;記憶世代++;要素('記憶情報').innerHTML='よく見てね… '+記憶列.length+'個';記憶を光らせる(0,記憶世代);}
+function 記憶を光らせる(番号,世代){if(世代!==記憶世代){return;}if(番号>=記憶列.length){時間を予約(function(){if(世代===記憶世代){記憶中=false;要素('記憶情報').innerHTML='同じ順番で押してね';}},350);return;}時間を予約(function(){var 色名;if(世代!==記憶世代){return;}色名=色の名前(記憶列[番号]);要素(色名).className='色 光';時間を予約(function(){if(世代!==記憶世代){return;}要素(色名).className='色';記憶を光らせる(番号+1,世代);},430);},260);}
+function 色を押す(番号){if(記憶中||記憶列.length===0){return;}if(番号!==記憶列[記憶入力]){要素('記憶情報').innerHTML='おしい！ 記録は '+記憶列.length+'個';記憶列=[];記憶入力=0;return;}記憶入力++;if(記憶入力===記憶列.length){要素('記憶情報').innerHTML='せいかい！ 次は '+(記憶列.length+1)+'個';時間を予約(function(){記憶を開始する();},600);}}
+
+/* 11. 神経衰弱（絵合わせ） */
+var 神経cards,神経公開,神経一致数,神経待機;
+function 神経衰弱を始める(){var 絵=['●','▬','●','●'],一覧=絵.concat(絵),i,j,一時;for(i=一覧.length-1;i>0;i--){j=Math.floor(Math.random()*(i+1));一時=一覧[i];一覧[i]=一覧[j];一覧[j]=一時;}神経cards=一覧;神経公開=[];神経一致数=0;神経待機=false;var 文字='<div id="神経盤" style="display:block;width:204px;margin:0 auto;padding-top:8px;font-size:0;line-height:0;text-align:center;">',i2;for(i2=0;i2<8;i2++){文字+='<div class="小ボタン" style="width:48px;height:48px;font-size:22px;line-height:44px;" onclick="神経を押す('+i2+')" id="神経'+i2+'">?</div>';}文字+='</div>';枠('同じ絵のペアを2枚めくって見つけよう','<div class="遊び場">'+文字+'</div>','<span id="神経文" class="状態">0/4 組</span>');}
+function 神経を押す(番号){if(神経待機||神経公開.indexOf(番号)>=0||要素('神経'+番号).innerHTML!=='?'){return;}要素('神経'+番号).innerHTML=神経cards[番号];神経公開.push(番号);if(神経公開.length===2){神経待機=true;時間を予約(function(){var a=神経公開[0],b=神経公開[1];if(神経cards[a]===神経cards[b]){神経一致数++;要素('神経文').innerHTML=神経一致数+'/4 組';if(神経一致数===4){要素('神経文').innerHTML='クリア！';}}else{要素('神経'+a).innerHTML='?';要素('神経'+b).innerHTML='?';}神経公開=[];神経待機=false;},600);}}
+
+/* 12. もぐらたたき */
+var もぐら位置,もぐらスコア,もぐら終了時刻;
+function もぐらたたきを始める(){もぐらスコア=0;もぐら位置=-1;var 文字='<div id="もぐら盤" style="display:block;width:200px;margin:0 auto;padding-top:10px;font-size:0;line-height:0;text-align:center;">',i;for(i=0;i<9;i++){文字+='<div class="小ボタン" style="width:60px;height:50px;font-size:26px;" onclick="もぐらを叩く('+i+')" id="穴'+i+'"></div>';}文字+='</div>';枠('穴から出てきたもぐらをタップ！','<div class="遊び場">'+文字+'</div>','<span id="もぐら文" class="状態">スコア 0（残り15秒）</span>');もぐら終了時刻=new Date().getTime()+15000;もぐらを移動();間隔を予約(もぐらを移動,900);}
+function もぐらを移動(){var 残り=Math.max(0,Math.ceil((もぐら終了時刻-new Date().getTime())/1000));if(残り<=0){余計な時間を止める();if(もぐら位置>=0){要素('穴'+もぐら位置).innerHTML='';}要素('もぐら文').innerHTML='終了！ スコア '+もぐらスコア;return;}if(もぐら位置>=0){要素('穴'+もぐら位置).innerHTML='';}もぐら位置=Math.floor(Math.random()*9);要素('穴'+もぐら位置).innerHTML='●';要素('もぐら文').innerHTML='スコア '+もぐらスコア+'（残り'+残り+'秒）';}
+function もぐらを叩く(番号){if(番号===もぐら位置){もぐらスコア++;要素('穴'+番号).innerHTML='';もぐら位置=-1;要素('もぐら文').innerHTML='スコア '+もぐらスコア;}}
+
+/* 13. 迷路たんけん */
+var 迷路プレイヤー,迷路ゴール={行:4,列:4},迷路壁=[[1,1],[1,2],[1,3],[3,0],[3,1],[3,3],[3,4]];
+function 迷路たんけんを始める(){迷路プレイヤー={行:0,列:0};枠('矢印ボタンでゴール(▲)を目指そう','<div class="遊び場"><div id="迷路盤" style="display:block;width:210px;margin:0 auto;padding-top:10px;font-size:0;line-height:0;text-align:center;"></div></div>','<button class="小ボタン" onclick="迷路移動(-1,0)">↑</button><button class="小ボタン" onclick="迷路移動(0,-1)">←</button><button class="小ボタン" onclick="迷路移動(0,1)">→</button><button class="小ボタン" onclick="迷路移動(1,0)">↓</button><span id="迷路文" class="状態"></span>');迷路を描く();}
+function 迷路は壁か(行,列){var i;for(i=0;i<迷路壁.length;i++){if(迷路壁[i][0]===行&&迷路壁[i][1]===列){return true;}}return false;}
+function 迷路を描く(){var 行,列,文字='';for(行=0;行<5;行++){for(列=0;列<5;列++){var 背景色='#fff';if(迷路は壁か(行,列)){背景色='#555';}var 内容='';if(行===迷路プレイヤー.行&&列===迷路プレイヤー.列){内容='●';}else if(行===迷路ゴール.行&&列===迷路ゴール.列){内容='▲';}文字+='<div style="width:40px;height:40px;background:'+背景色+';border:1px solid #ccc;display:inline-block;vertical-align:top;line-height:38px;text-align:center;font-size:20px;">'+内容+'</div>';}}要素('迷路盤').innerHTML=文字;}
+function 迷路移動(行差,列差){var 新行=迷路プレイヤー.行+行差,新列=迷路プレイヤー.列+列差;if(新行<0||新行>4||新列<0||新列>4||迷路は壁か(新行,新列)){return;}迷路プレイヤー.行=新行;迷路プレイヤー.列=新列;迷路を描く();if(新行===迷路ゴール.行&&新列===迷路ゴール.列){要素('迷路文').innerHTML='ゴール！';}}
+
+/* 14. ジャンプゲーム */
+var ジャンプ中,ジャンプY,ジャンプ速度,ジャンプ障害物X,ジャンプスコア,ジャンプ終了;
+function ジャンプゲームを始める(){ジャンプ中=false;ジャンプY=0;ジャンプ速度=0;ジャンプ障害物X=220;ジャンプスコア=0;ジャンプ終了=false;枠('画面をタップしてジャンプ！ 障害物を飛び越えよう','<div class="遊び場"><canvas id="ジャンプC" width="220" height="180" style="background:#dff2fb;" onclick="ジャンプする()"></canvas></div>','<span id="ジャンプ文" class="状態">スコア 0</span>');間隔を予約(ジャンプ更新,30);}
+function ジャンプする(){if(!ジャンプ中&&!ジャンプ終了){ジャンプ中=true;ジャンプ速度=-8;}}
+function ジャンプ更新(){if(ジャンプ終了){return;}var c=要素('ジャンプC');if(!c){return;}var x=c.getContext('2d');if(ジャンプ中){ジャンプY+=ジャンプ速度;ジャンプ速度+=0.6;if(ジャンプY>=0){ジャンプY=0;ジャンプ中=false;ジャンプ速度=0;}}ジャンプ障害物X-=4;if(ジャンプ障害物X<-20){ジャンプ障害物X=220;ジャンプスコア++;要素('ジャンプ文').innerHTML='スコア '+ジャンプスコア;}x.clearRect(0,0,220,180);x.fillStyle='#8b5e34';x.fillRect(0,150,220,30);x.fillStyle='#4398df';x.fillRect(30,120+ジャンプY,24,30);x.fillStyle='#3a7d3a';x.fillRect(ジャンプ障害物X,130,16,20);if(ジャンプ障害物X<54&&ジャンプ障害物X>6&&ジャンプY>-20){ジャンプ終了=true;余計な時間を止める();要素('ジャンプ文').innerHTML='ゲームオーバー！ スコア '+ジャンプスコア;}}
+
+/* 15. おえかき帳 */
+var おえかき描画中=false,おえかき色='#333';
+function おえかき帳を始める(){枠('ゆびで自由に絵をかこう','<div class="遊び場"><canvas id="おえかきC" width="220" height="180" style="background:#fff;-ms-touch-action:none;touch-action:none;"></canvas></div>','<button class="小ボタン" onclick="おえかき色設定(\'#e84b46\')">赤</button><button class="小ボタン" onclick="おえかき色設定(\'#4398df\')">青</button><button class="小ボタン" onclick="おえかき色設定(\'#333\')">黒</button><button class="小ボタン" onclick="おえかき消す()">消す</button>');おえかき初期化();}
+function おえかき色設定(色){おえかき色=色;}
+function おえかき初期化(){var c=要素('おえかきC'),x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,220,180);function 位置取得(e){var 矩形=c.getBoundingClientRect(),点=e.touches?e.touches[0]:e;return{x:点.clientX-矩形.left,y:点.clientY-矩形.top};}function 開始(e){おえかき描画中=true;var 位置=位置取得(e);x.beginPath();x.moveTo(位置.x,位置.y);e.preventDefault();}function 移動(e){if(!おえかき描画中){return;}var 位置=位置取得(e);x.strokeStyle=おえかき色;x.lineWidth=3;x.lineCap='round';x.lineTo(位置.x,位置.y);x.stroke();e.preventDefault();}function 終了(){おえかき描画中=false;}c.onmousedown=開始;c.onmousemove=移動;c.onmouseup=終了;c.onmouseleave=終了;c.ontouchstart=開始;c.ontouchmove=移動;c.ontouchend=終了;}
+function おえかき消す(){var c=要素('おえかきC');if(c){c.getContext('2d').fillStyle='#fff';c.getContext('2d').fillRect(0,0,220,180);}}
+
+/* 16. じゃんけん */
+var じゃんけん勝ち数,じゃんけん負け数;
+function じゃんけんを始める(){じゃんけん勝ち数=0;じゃんけん負け数=0;枠('グー・チョキ・パーで勝負！','<div class="遊び場" style="padding-top:50px;text-align:center;"><div id="じゃんけん結果" style="font-size:14px;font-weight:bold;color:#36505d;">てを えらんでね</div></div>','<button class="小ボタン" onclick="じゃんけんする(0)">●グー</button><button class="小ボタン" onclick="じゃんけんする(1)">▽チョキ</button><button class="小ボタン" onclick="じゃんけんする(2)">□パー</button><span id="じゃんけん戦績" class="状態">0勝0敗</span>');}
+function じゃんけんする(手){var 手名=['●グー','▽チョキ','□パー'],相手=Math.floor(Math.random()*3),結果;if(手===相手){結果='あいこ！';}else if((手===0&&相手===1)||(手===1&&相手===2)||(手===2&&相手===0)){結果='あなたの勝ち！';じゃんけん勝ち数++;}else{結果='あなたの負け…';じゃんけん負け数++;}要素('じゃんけん結果').innerHTML='あなた:'+手名[手]+'　あいて:'+手名[相手]+'<br>'+結果;要素('じゃんけん戦績').innerHTML=じゃんけん勝ち数+'勝'+じゃんけん負け数+'敗';}
+
+/* 17. 計算ドリル */
+var 計算問題数,計算正解数,計算答え;
+function 計算ドリルを始める(){計算問題数=0;計算正解数=0;計算問題を出す();}
+function 計算問題を出す(){計算問題数++;if(計算問題数>10){枠('けいさんドリル 終了！','<div class="遊び場" style="padding-top:70px;text-align:center;font-size:20px;font-weight:bold;">'+計算正解数+' / 10 もんせいかい！</div>','<button class="小ボタン" onclick="計算ドリルを始める()">もう一度</button>');return;}var a=Math.floor(Math.random()*20)+1,b=Math.floor(Math.random()*20)+1,記号=Math.random()<0.5?'+':'-',答え,t;if(記号==='-'&&a<b){t=a;a=b;b=t;}答え=記号==='+'?a+b:a-b;計算答え=答え;枠(計算問題数+'問目 / 10問','<div class="遊び場" style="padding-top:40px;text-align:center;"><div style="font-size:30px;font-weight:bold;">'+a+' '+記号+' '+b+' = ?</div><input id="計算入力" type="number" style="width:80px;height:36px;font-size:20px;margin-top:20px;border:1px solid #397c94;border-radius:4px;text-align:center;"></div>','<button class="小ボタン" onclick="計算答え合わせ()">こたえる</button><span id="計算文" class="状態"></span>');}
+function 計算答え合わせ(){var 入力=parseInt(要素('計算入力').value,10);if(入力===計算答え){計算正解数++;要素('計算文').innerHTML='せいかい！';}else{要素('計算文').innerHTML='ざんねん… こたえは'+計算答え;}時間を予約(計算問題を出す,700);}
+
+/* 18. ことばクイズ */
+var ことば問題一覧=[{問:'りんごの色は？',答:['あか','あお','きいろ'],正:0},{問:'1週間は何日？',答:['5日','6日','7日'],正:2},{問:'太陽が昇る方角は？',答:['東','西','北'],正:0},{問:'カエルの子どもは？',答:['おたまじゃくし','こねこ','ひよこ'],正:0},{問:'1年は何ヶ月？',答:['10ヶ月','12ヶ月','14ヶ月'],正:1}];
+var ことば問題番号,ことば正解数;
+function ことばクイズを始める(){ことば問題番号=0;ことば正解数=0;ことばクイズ出題();}
+function ことばクイズ出題(){if(ことば問題番号>=ことば問題一覧.length){枠('クイズ終了！','<div class="遊び場" style="padding-top:70px;text-align:center;font-size:20px;font-weight:bold;">'+ことば正解数+' / '+ことば問題一覧.length+' もんせいかい！</div>','<button class="小ボタン" onclick="ことばクイズを始める()">もう一度</button>');return;}var 問題=ことば問題一覧[ことば問題番号],ボタン='',i;for(i=0;i<問題.答.length;i++){ボタン+='<button class="小ボタン" onclick="ことば答える('+i+')">'+問題.答[i]+'</button>';}枠((ことば問題番号+1)+'問目 / '+ことば問題一覧.length+'問','<div class="遊び場" style="padding-top:60px;text-align:center;font-size:18px;font-weight:bold;">'+問題.問+'</div>',ボタン+'<span id="ことば文" class="状態"></span>');}
+function ことば答える(番号){var 問題=ことば問題一覧[ことば問題番号];if(番号===問題.正){ことば正解数++;要素('ことば文').innerHTML='せいかい！';}else{要素('ことば文').innerHTML='ざんねん…';}ことば問題番号++;時間を予約(ことばクイズ出題,700);}
+
+/* 19. 音まねゲーム */
+var 音まね一覧=[440,554,659,330],音列,音入力,音中,音世代;
+function 音まねゲームを始める(){音列=[];音入力=0;音中=false;音世代=0;枠('音の順番を聞いて、同じボタンを順番に押そう','<div class="遊び場"><div id="音情報" style="margin-top:14px;">「はじめる」でスタート</div><div style="padding-top:6px;"><span class="小ボタン" style="width:70px;height:70px;font-size:15px;" onclick="音を押す(0)">ド</span><span class="小ボタン" style="width:70px;height:70px;font-size:15px;" onclick="音を押す(1)">レ</span><span class="小ボタン" style="width:70px;height:70px;font-size:15px;" onclick="音を押す(2)">ミ</span><span class="小ボタン" style="width:70px;height:70px;font-size:15px;" onclick="音を押す(3)">ファ</span></div></div>','<button class="小ボタン" onclick="音を開始する()">はじめる</button>');}
+function 音を鳴らす(番号){try{var Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx){return;}var 文脈=new Ctx(),発振=文脈.createOscillator(),音量=文脈.createGain();発振.frequency.value=音まね一覧[番号];発振.connect(音量);音量.connect(文脈.destination);音量.gain.setValueAtTime(0.2,文脈.currentTime);発振.start();発振.stop(文脈.currentTime+0.3);}catch(例外){}}
+function 音を開始する(){if(音中){return;}音列.push(Math.floor(Math.random()*4));音入力=0;音中=true;音世代++;要素('音情報').innerHTML='よく聞いてね… '+音列.length+'個';音を再生(0,音世代);}
+function 音を再生(番号,世代){if(世代!==音世代){return;}if(番号>=音列.length){時間を予約(function(){if(世代===音世代){音中=false;要素('音情報').innerHTML='同じ順番で押してね';}},350);return;}時間を予約(function(){if(世代!==音世代){return;}音を鳴らす(音列[番号]);時間を予約(function(){音を再生(番号+1,世代);},430);},260);}
+function 音を押す(番号){if(音中||音列.length===0){return;}音を鳴らす(番号);if(番号!==音列[音入力]){要素('音情報').innerHTML='おしい！ 記録は '+音列.length+'個';音列=[];音入力=0;return;}音入力++;if(音入力===音列.length){要素('音情報').innerHTML='せいかい！ 次は '+(音列.length+1)+'個';時間を予約(function(){音を開始する();},600);}}
+
+/* 20. パズル（8パズル） */
+var パズル配列,パズル空き;
+function パズルを始める(){パズル配列=[1,2,3,4,5,6,7,8,0];パズル空き=8;for(var i=0;i<80;i++){var 動ける一覧=パズル動ける一覧(),選ぶ=動ける一覧[Math.floor(Math.random()*動ける一覧.length)];パズル交換(選ぶ);}枠('タイルをタップして1〜8の順にそろえよう','<div class="遊び場"><div id="パズル盤" style="display:block;width:200px;margin:0 auto;padding-top:14px;font-size:0;line-height:0;text-align:center;"></div></div>','<span id="パズル文" class="状態"></span>');パズルを描く();}
+function パズル動ける一覧(){var 隣接=[],行=Math.floor(パズル空き/3),列=パズル空き%3;if(行>0){隣接.push(パズル空き-3);}if(行<2){隣接.push(パズル空き+3);}if(列>0){隣接.push(パズル空き-1);}if(列<2){隣接.push(パズル空き+1);}return 隣接;}
+function パズル交換(位置){パズル配列[パズル空き]=パズル配列[位置];パズル配列[位置]=0;パズル空き=位置;}
+function パズルを描く(){var 文字='',i,クリア;for(i=0;i<9;i++){if(パズル配列[i]===0){文字+='<div style="width:60px;height:60px;"></div>';}else{文字+='<div class="小ボタン" style="width:60px;height:60px;font-size:22px;" onclick="パズルを押す('+i+')">'+パズル配列[i]+'</div>';}}要素('パズル盤').innerHTML=文字;クリア=true;for(i=0;i<8;i++){if(パズル配列[i]!==i+1){クリア=false;}}if(クリア){要素('パズル文').innerHTML='クリア！';}}
+function パズルを押す(位置){var 動ける一覧=パズル動ける一覧();if(動ける一覧.indexOf(位置)<0){return;}パズル交換(位置);パズルを描く();}
+
+/* 汎用エンジンA: 穴からでてくる的をタップするキャッチ系ゲーム（21,27,32で使用） */
+var キャッチ位置,キャッチスコア,キャッチ終了時刻,キャッチ絵文字;
+function キャッチゲームを始める(絵文字,案内文){キャッチスコア=0;キャッチ位置=-1;キャッチ絵文字=絵文字;var 文字='<div id="キャッチ盤">',i;for(i=0;i<9;i++){文字+='<div class="小ボタン" onclick="キャッチ押す('+i+')" id="キャッチ穴'+i+'"></div>';}文字+='</div>';枠(案内文,'<div class="遊び場">'+文字+'</div>','<span id="キャッチ文" class="状態">スコア 0（残り15秒）</span>');キャッチ終了時刻=new Date().getTime()+15000;キャッチ移動();間隔を予約(キャッチ移動,900);}
+function キャッチ移動(){var 残り=Math.max(0,Math.ceil((キャッチ終了時刻-new Date().getTime())/1000));if(残り<=0){余計な時間を止める();if(キャッチ位置>=0){要素('キャッチ穴'+キャッチ位置).innerHTML='';}要素('キャッチ文').innerHTML='終了！ スコア '+キャッチスコア;return;}if(キャッチ位置>=0){要素('キャッチ穴'+キャッチ位置).innerHTML='';}キャッチ位置=Math.floor(Math.random()*9);if(キャッチ絵文字==='○'){要素('キャッチ穴'+キャッチ位置).innerHTML='<span class="キャッチ風船"></span>';}else{要素('キャッチ穴'+キャッチ位置).innerHTML=キャッチ絵文字;}要素('キャッチ文').innerHTML='スコア '+キャッチスコア+'（残り'+残り+'秒）';}
+function キャッチ押す(番号){if(番号===キャッチ位置){キャッチスコア++;要素('キャッチ穴'+番号).innerHTML='';キャッチ位置=-1;要素('キャッチ文').innerHTML='スコア '+キャッチスコア;}}
+function 魚つりを始める(){キャッチゲームを始める('◆','でてきた魚をタップしてつろう！');}
+function ふうせん割りを始める(){キャッチゲームを始める('○','でてきたふうせんをタップして割ろう！');}
+function おばけ屋敷を始める(){キャッチゲームを始める('○','出てきたおばけをタップしてつかまえよう！');}
+
+/* 汎用エンジンB: タイミングよくストップする系ゲーム（23,33,36で使用） */
+var タイミング位置,タイミング方向,タイミング動作中,タイミング得点,タイミング回数,タイミング成功文,タイミング失敗文;
+function タイミングゲームを始める(絵文字,案内文,成功文,失敗文){タイミング位置=0;タイミング方向=2;タイミング動作中=true;タイミング得点=0;タイミング回数=0;タイミング成功文=成功文;タイミング失敗文=失敗文;枠(案内文,'<div class="遊び場" style="padding-top:60px;"><div style="width:200px;height:20px;margin:0 auto;position:relative;background:#e5f5fa;border:1px solid #397c94;border-radius:10px;"><div style="position:absolute;left:80px;width:40px;height:20px;background:#a9df95;"></div><div id="タイミング玉" style="position:absolute;top:-6px;left:0;width:20px;height:32px;text-align:center;font-size:20px;line-height:32px;">'+絵文字+'</div></div><div id="タイミング文" style="margin-top:20px;font-size:16px;font-weight:bold;color:#36505d;">0/5</div></div>','<button class="小ボタン" onclick="タイミング止める()">ストップ！</button>');間隔を予約(タイミング動く,20);}
+function タイミング動く(){if(!タイミング動作中){return;}タイミング位置+=タイミング方向;if(タイミング位置>=180){タイミング方向=-2;}if(タイミング位置<=0){タイミング方向=2;}var 玉=要素('タイミング玉');if(玉){玉.style.left=タイミング位置+'px';}}
+function タイミング止める(){if(!タイミング動作中){return;}タイミング回数++;if(タイミング位置>=76&&タイミング位置<=126){タイミング得点++;要素('タイミング文').innerHTML=タイミング成功文+'！ '+タイミング得点+'/'+タイミング回数;}else{要素('タイミング文').innerHTML=タイミング失敗文+'… '+タイミング得点+'/'+タイミング回数;}if(タイミング回数>=5){タイミング動作中=false;余計な時間を止める();要素('タイミング文').innerHTML='終了！ '+タイミング得点+'/5 せいこう';}}
+function ロケット発射を始める(){タイミングゲームを始める('▲','ちょうどいいタイミングで「ストップ」を押して発射しよう！','だいせいこう','しっぱい');}
+function 忍者修行を始める(){タイミングゲームを始める('●','まとの真ん中でストップして手裏剣を当てよう！','めいちゅう','はずれ');}
+function 野球を始める(){タイミングゲームを始める('●','ボールがまんなかに来たらストップしてスイング！','ヒット','空振り');}
+
+/* 汎用エンジンC: 左右によけるレーンゲーム（29,31で使用） */
+var レーン自機レーン,レーン障害物一覧,レーンスコア,レーン終了,レーンフレーム,レーン自機絵,レーン障害物絵;
+function レーンゲームを始める(背景色,自機絵,障害物絵,案内文){レーン自機レーン=1;レーン障害物一覧=[];レーンスコア=0;レーン終了=false;レーンフレーム=0;レーン自機絵=自機絵;レーン障害物絵=障害物絵;枠(案内文,'<div class="遊び場"><canvas id="レーンC" width="220" height="220" style="background:'+背景色+';"></canvas></div>','<button class="小ボタン" onclick="レーン移動(-1)">←</button><button class="小ボタン" onclick="レーン移動(1)">→</button><span id="レーン文" class="状態">スコア 0</span>');間隔を予約(レーン更新,80);}
+function レーン移動(差){if(レーン終了){return;}レーン自機レーン=Math.max(0,Math.min(2,レーン自機レーン+差));}
+function レーン更新(){if(レーン終了){return;}var c=要素('レーンC');if(!c){return;}var x=c.getContext('2d'),新一覧=[],i,障;レーンフレーム++;if(レーンフレーム%12===0){レーン障害物一覧.push({レーン:Math.floor(Math.random()*3),y:-20});}for(i=0;i<レーン障害物一覧.length;i++){障=レーン障害物一覧[i];障.y+=14;if(障.y>240){レーンスコア++;continue;}if(障.y>170&&障.y<210&&障.レーン===レーン自機レーン){レーン終了=true;余計な時間を止める();要素('レーン文').innerHTML='しょうとつ！ スコア '+レーンスコア;return;}新一覧.push(障);}レーン障害物一覧=新一覧;x.clearRect(0,0,220,220);x.fillStyle='rgba(0,0,0,0.08)';x.fillRect(73,0,3,220);x.fillRect(146,0,3,220);x.font='28px sans-serif';x.textAlign='center';for(i=0;i<レーン障害物一覧.length;i++){障=レーン障害物一覧[i];x.fillText(レーン障害物絵,36+障.レーン*74,障.y);}x.fillText(レーン自機絵,36+レーン自機レーン*74,195);要素('レーン文').innerHTML='スコア '+レーンスコア;}
+function 電車ゲームを始める(){レーンゲームを始める('#eef6ee','▤','▲','←→で線路をかえて、木にぶつからないように進もう！');}
+function 宇宙たんけんを始める(){レーンゲームを始める('#0b1230','▲','◆','←→でよけて、ふってくる隕石を避けよう！');}
+
+/* 30. 恐竜ラン（ジャンプでサボテンをよけて走る） */
+var 恐竜中,恐竜Y,恐竜速度,恐竜障害物X,恐竜スコア,恐竜終了;
+function 恐竜ランを始める(){恐竜中=false;恐竜Y=0;恐竜速度=0;恐竜障害物X=220;恐竜スコア=0;恐竜終了=false;枠('画面をタップしてジャンプ！ サボテンをよけて走ろう','<div class="遊び場"><canvas id="恐竜C" width="220" height="180" style="background:#fdf1d8;" onclick="恐竜ジャンプする()"></canvas></div>','<span id="恐竜文" class="状態">スコア 0</span>');間隔を予約(恐竜更新,30);}
+function 恐竜ジャンプする(){if(!恐竜中&&!恐竜終了){恐竜中=true;恐竜速度=-8;}}
+function 恐竜更新(){if(恐竜終了){return;}var c=要素('恐竜C');if(!c){return;}var x=c.getContext('2d');if(恐竜中){恐竜Y+=恐竜速度;恐竜速度+=0.6;if(恐竜Y>=0){恐竜Y=0;恐竜中=false;恐竜速度=0;}}恐竜障害物X-=5;if(恐竜障害物X<-20){恐竜障害物X=220;恐竜スコア++;要素('恐竜文').innerHTML='スコア '+恐竜スコア;}x.clearRect(0,0,220,180);x.fillStyle='#c9a15a';x.fillRect(0,150,220,30);x.font='30px sans-serif';x.textAlign='left';x.fillText('●',20,145+恐竜Y);x.font='24px sans-serif';x.fillText('▲',恐竜障害物X,150);if(恐竜障害物X<58&&恐竜障害物X>18&&恐竜Y>-20){恐竜終了=true;余計な時間を止める();要素('恐竜文').innerHTML='ゲームオーバー！ スコア '+恐竜スコア;}}
+
+/* 22. お花ばたけ */
+var 花状態;
+function お花ばたけを始める(){花状態=[0,0,0,0,0,0,0,0,0];var 文字='<div id="花盤" style="display:block;width:200px;margin:0 auto;padding-top:10px;font-size:0;line-height:0;text-align:center;">',i;for(i=0;i<9;i++){文字+='<div class="小ボタン" style="width:60px;height:50px;font-size:24px;" onclick="花を植える('+i+')" id="花'+i+'"></div>';}文字+='</div>';枠('タップして種をまき、お花畑をいっぱいにしよう','<div class="遊び場">'+文字+'</div>','<span id="花文" class="状態">さいた花: 0/9</span>');}
+function 花を植える(番号){if(花状態[番号]!==0){return;}花状態[番号]=1;要素('花'+番号).innerHTML='▲';時間を予約(function(){花状態[番号]=2;要素('花'+番号).innerHTML='✦';花を数える();},1500);}
+function 花を数える(){var 数=0,i;for(i=0;i<9;i++){if(花状態[i]===2){数++;}}要素('花文').innerHTML='さいた花: '+数+'/9';if(数===9){要素('花文').innerHTML='満開！ お花ばたけの完成！';}}
+
+/* 24. 宝さがし */
+var 宝位置,宝残り試行;
+function 宝さがしを始める(){宝位置=Math.floor(Math.random()*9);宝残り試行=3;var 文字='<div id="宝盤" style="display:block;width:200px;margin:0 auto;padding-top:10px;font-size:0;line-height:0;text-align:center;">',i;for(i=0;i<9;i++){文字+='<div class="小ボタン" style="width:60px;height:50px;font-size:22px;" onclick="宝を開ける('+i+')" id="宝'+i+'">?</div>';}文字+='</div>';枠('3回まで開けられる。宝箱(◇)を見つけよう！','<div class="遊び場">'+文字+'</div>','<span id="宝文" class="状態">のこり3回</span>');}
+function 宝を開ける(番号){if(要素('宝'+番号).innerHTML!=='?'||宝残り試行<=0){return;}宝残り試行--;if(番号===宝位置){要素('宝'+番号).innerHTML='◇';要素('宝文').innerHTML='あたり！ おたからGET！';}else{要素('宝'+番号).innerHTML=';';要素('宝文').innerHTML='はずれ… のこり'+宝残り試行+'回';if(宝残り試行<=0){要素('宝'+宝位置).innerHTML='◇';要素('宝文').innerHTML='ざんねん… 宝箱はここだった';}}}
+
+/* 汎用エンジンD: 三択クイズ（25,28で使用） */
+var 汎用クイズ一覧,汎用クイズ番号,汎用クイズ正解数,汎用クイズ再開関数;
+function 汎用クイズを始める(問題一覧,再開関数名){汎用クイズ一覧=問題一覧;汎用クイズ番号=0;汎用クイズ正解数=0;汎用クイズ再開関数=再開関数名;汎用クイズ出題();}
+function 汎用クイズ出題(){if(汎用クイズ番号>=汎用クイズ一覧.length){枠('クイズ終了！','<div class="遊び場" style="padding-top:70px;text-align:center;font-size:20px;font-weight:bold;">'+汎用クイズ正解数+' / '+汎用クイズ一覧.length+' もんせいかい！</div>','<button class="小ボタン" onclick="'+汎用クイズ再開関数+'()">もう一度</button>');return;}var 問題=汎用クイズ一覧[汎用クイズ番号],ボタン='',i;for(i=0;i<問題.答.length;i++){ボタン+='<button class="小ボタン" onclick="汎用クイズ答える('+i+')">'+問題.答[i]+'</button>';}枠((汎用クイズ番号+1)+'問目 / '+汎用クイズ一覧.length+'問','<div class="遊び場" style="padding-top:50px;text-align:center;font-size:30px;">'+問題.問+'</div>',ボタン+'<span id="汎用クイズ文" class="状態"></span>');}
+function 汎用クイズ答える(番号){var 問題=汎用クイズ一覧[汎用クイズ番号];if(番号===問題.正){汎用クイズ正解数++;要素('汎用クイズ文').innerHTML='せいかい！';}else{要素('汎用クイズ文').innerHTML='ざんねん…';}汎用クイズ番号++;時間を予約(汎用クイズ出題,700);}
+var どうぶつ問題一覧=[{種:'ぞう',答:['ぞう','きりん','うま'],正:0},{種:'きりん',答:['しまうま','きりん','らくだ'],正:1},{種:'ペンギン',答:['ペンギン','あひる','かも'],正:0},{種:'ライオン',答:['とら','ライオン','ひょう'],正:1},{種:'かめ',答:['かめ','かえる','とかげ'],正:0}];
+var どうぶつ問題番号,どうぶつ正解数;
+function どうぶつ当てを始める(){どうぶつ問題番号=0;どうぶつ正解数=0;どうぶつ問題を出す();}
+function どうぶつ問題を出す(){
+    if(どうぶつ問題番号>=どうぶつ問題一覧.length){
+        枠('クイズ終了！','<div class=\"遊び場\" style=\"padding-top:55px;text-align:center;font-size:19px;font-weight:bold;\">'+どうぶつ正解数+' / '+どうぶつ問題一覧.length+' もんせいかい！</div>','<button class=\"小ボタン\" onclick=\"どうぶつ当てを始める()\">もう一度</button>');
+        return;
+    }
+    var 問題=どうぶつ問題一覧[どうぶつ問題番号],ボタン='',i;
+    for(i=0;i<問題.答.length;i++){ボタン+='<button class=\"小ボタン\" onclick=\"どうぶつ答える('+i+')\">'+問題.答[i]+'</button>';}
+    枠((どうぶつ問題番号+1)+'問目 / '+どうぶつ問題一覧.length+'問','<div class=\"遊び場\" style=\"padding-top:6px;text-align:center;\"><canvas id=\"どうぶつC\" width=210 height=170 style=\"background:#fff;\"></canvas></div>',ボタン+'<span id=\"どうぶつ文\" class=\"状態\">このどうぶつは なにかな？</span>');
+    どうぶつを描く(問題.種);
+}
+function どうぶつを描く(種){
+    var c=要素('どうぶつC');if(!c){return;}var x=c.getContext('2d');x.clearRect(0,0,210,170);x.lineWidth=3;x.lineJoin='round';x.lineCap='round';
+    x.fillStyle='#f4f4f4';x.strokeStyle='#555';
+    if(種==='ぞう'){
+        x.fillStyle='#b9c0c7';x.beginPath();x.ellipse(92,84,48,36,0,0,Math.PI*2);x.fill();x.stroke();
+        x.beginPath();x.arc(48,75,25,0,Math.PI*2);x.fill();x.stroke();
+        x.beginPath();x.moveTo(33,58);x.lineTo(20,42);x.lineTo(40,52);x.closePath();x.fill();x.stroke();
+        x.beginPath();x.moveTo(31,83);x.bezierCurveTo(8,92,10,120,32,120);x.bezierCurveTo(45,120,48,106,40,98);x.stroke();
+        x.fillStyle='#333';x.beginPath();x.arc(51,69,3,0,Math.PI*2);x.fill();
+        x.fillStyle='#9da5ad';x.fillRect(61,111,10,28);x.fillRect(109,111,10,28);x.fillRect(135,108,10,31);
+    }else if(種==='きりん'){
+        x.fillStyle='#f4c542';x.fillRect(105,45,18,78);x.beginPath();x.ellipse(83,85,45,32,0,0,Math.PI*2);x.fill();x.stroke();
+        x.beginPath();x.arc(116,33,20,0,Math.PI*2);x.fill();x.stroke();x.lineWidth=2;x.beginPath();x.moveTo(108,17);x.lineTo(105,5);x.moveTo(123,17);x.lineTo(129,5);x.stroke();
+        x.fillStyle='#8a5b22';x.beginPath();x.arc(72,72,6,0,Math.PI*2);x.arc(95,100,7,0,Math.PI*2);x.arc(77,107,5,0,Math.PI*2);x.fill();
+        x.fillStyle='#333';x.beginPath();x.arc(122,29,2.5,0,Math.PI*2);x.fill();x.strokeStyle='#8a5b22';x.lineWidth=2;x.beginPath();x.moveTo(83,112);x.lineTo(83,142);x.moveTo(105,112);x.lineTo(105,142);x.stroke();
+    }else if(種==='ペンギン'){
+        x.fillStyle='#333';x.beginPath();x.ellipse(105,86,52,62,0,0,Math.PI*2);x.fill();x.stroke();
+        x.fillStyle='#fff';x.beginPath();x.ellipse(105,98,34,47,0,0,Math.PI*2);x.fill();
+        x.fillStyle='#f2a900';x.beginPath();x.moveTo(105,54);x.lineTo(133,66);x.lineTo(105,78);x.closePath();x.fill();x.stroke();
+        x.fillStyle='#fff';x.beginPath();x.arc(92,63,7,0,Math.PI*2);x.arc(118,63,7,0,Math.PI*2);x.fill();x.fillStyle='#333';x.beginPath();x.arc(92,64,2.5,0,Math.PI*2);x.arc(118,64,2.5,0,Math.PI*2);x.fill();
+        x.fillStyle='#888';x.beginPath();x.moveTo(61,80);x.lineTo(35,96);x.lineTo(65,103);x.closePath();x.fill();x.stroke();x.beginPath();x.moveTo(149,80);x.lineTo(175,96);x.lineTo(145,103);x.closePath();x.fill();x.stroke();
+        x.fillStyle='#f2a900';x.fillRect(84,142,14,8);x.fillRect(112,142,14,8);
+    }else if(種==='ライオン'){
+        x.fillStyle='#d49a4c';x.beginPath();x.arc(105,84,60,0,Math.PI*2);x.fill();x.stroke();
+        x.fillStyle='#d9b37b';x.beginPath();x.arc(105,88,38,0,Math.PI*2);x.fill();x.stroke();
+        x.fillStyle='#b7792f';x.beginPath();x.arc(105,88,16,0,Math.PI*2);x.fill();
+        x.fillStyle='#333';x.beginPath();x.arc(93,78,3,0,Math.PI*2);x.arc(117,78,3,0,Math.PI*2);x.fill();
+        x.strokeStyle='#333';x.lineWidth=2;x.beginPath();x.moveTo(105,88);x.lineTo(105,97);x.moveTo(105,97);x.lineTo(97,101);x.moveTo(105,97);x.lineTo(113,101);x.stroke();
+        x.fillStyle='#b7792f';x.fillRect(68,129,12,24);x.fillRect(130,129,12,24);
+    }else{
+        x.fillStyle='#6aa84f';x.beginPath();x.ellipse(105,88,62,42,0,0,Math.PI*2);x.fill();x.stroke();
+        x.fillStyle='#7fbf5a';x.beginPath();x.arc(54,88,25,0,Math.PI*2);x.fill();x.stroke();
+        x.fillStyle='#4d7c36';x.beginPath();x.arc(54,82,5,0,Math.PI*2);x.arc(54,100,5,0,Math.PI*2);x.fill();
+        x.fillStyle='#333';x.beginPath();x.arc(48,82,2.5,0,Math.PI*2);x.arc(61,82,2.5,0,Math.PI*2);x.fill();
+        x.strokeStyle='#4d7c36';x.lineWidth=5;x.beginPath();x.moveTo(78,117);x.lineTo(70,145);x.moveTo(98,120);x.lineTo(94,147);x.moveTo(122,120);x.lineTo(126,147);x.moveTo(142,116);x.lineTo(152,143);x.stroke();
+    }
+    x.font='bold 12px sans-serif';x.fillStyle='#6b7a80';x.textAlign='center';x.fillText('このどうぶつは なんだろう？',105,165);
+}
+function どうぶつ答える(番号){var 問題=どうぶつ問題一覧[どうぶつ問題番号];if(番号===問題.正){どうぶつ正解数++;要素('どうぶつ文').innerHTML='せいかい！';}else{要素('どうぶつ文').innerHTML='ざんねん…';}どうぶつ問題番号++;時間を予約(どうぶつ問題を出す,700);}
+var おすし問題一覧=[{問:'● まぐろ は どれ？',答:['◆','◆','○'],正:0},{問:'◆ えび は どれ？',答:['●','◆','◆'],正:1},{問:'○ たまご は どれ？',答:['○','●','◆'],正:0},{問:'● たこ は どれ？',答:['◆','○','●'],正:2}];
+function おすし屋さんを始める(){汎用クイズを始める(おすし問題一覧,'おすし屋さんを始める');}
+
+/* 26. ドット絵 */
+var ドット絵色一覧=['#fff','#e84b46','#4398df','#f2ce37','#4aaf69','#333'],ドット絵状態;
+function ドット絵を始める(){ドット絵状態=[];var i,文字;for(i=0;i<64;i++){ドット絵状態[i]=0;}文字='<div id="ドット盤" style="display:block;width:180px;margin:0 auto;padding-top:10px;font-size:0;line-height:0;text-align:center;">';for(i=0;i<64;i++){文字+='<div style="width:20px;height:20px;background:#fff;border:1px solid #ddd;" onclick="ドットを塗る('+i+')" id="ドット'+i+'"></div>';}文字+='</div>';枠('マスをタップして色をぬろう','<div class="遊び場">'+文字+'</div>','<button class="小ボタン" onclick="ドット絵を始める()">クリア</button>');}
+function ドットを塗る(番号){ドット絵状態[番号]=(ドット絵状態[番号]+1)%ドット絵色一覧.length;要素('ドット'+番号).style.background=ドット絵色一覧[ドット絵状態[番号]];}
+
+/* 34. お料理ゲーム（手順を覚えて再現） */
+var 料理列,料理入力,料理中,料理世代;
+function お料理ゲームを始める(){料理列=[];料理入力=0;料理中=false;料理世代=0;枠('調理の順番を覚えて、同じ順にタップしよう','<div class="遊び場"><div id="料理情報" style="margin-top:14px;">「はじめる」でスタート</div><div style="padding-top:6px;"><span class="小ボタン" style="width:70px;height:70px;font-size:26px;" onclick="料理を押す(0)" id="料理0">╱</span><span class="小ボタン" style="width:70px;height:70px;font-size:26px;" onclick="料理を押す(1)" id="料理1">○</span><span class="小ボタン" style="width:70px;height:70px;font-size:26px;" onclick="料理を押す(2)" id="料理2">●</span><span class="小ボタン" style="width:70px;height:70px;font-size:26px;" onclick="料理を押す(3)" id="料理3">□</span></div></div>','<button class="小ボタン" onclick="料理を開始する()">はじめる</button>');}
+function 料理を開始する(){if(料理中){return;}料理列.push(Math.floor(Math.random()*4));料理入力=0;料理中=true;料理世代++;要素('料理情報').innerHTML='よく見てね… '+料理列.length+'個';料理を再生(0,料理世代);}
+function 料理を再生(番号,世代){if(世代!==料理世代){return;}if(番号>=料理列.length){時間を予約(function(){if(世代===料理世代){料理中=false;要素('料理情報').innerHTML='同じ順番で押してね';}},350);return;}時間を予約(function(){var 要;if(世代!==料理世代){return;}要=要素('料理'+料理列[番号]);if(要){要.style.background='#ffec9e';}時間を予約(function(){if(要){要.style.background='';}料理を再生(番号+1,世代);},430);},260);}
+function 料理を押す(番号){if(料理中||料理列.length===0){return;}if(番号!==料理列[料理入力]){要素('料理情報').innerHTML='おしい！ 記録は '+料理列.length+'個';料理列=[];料理入力=0;return;}料理入力++;if(料理入力===料理列.length){要素('料理情報').innerHTML='せいかい！ 次は '+(料理列.length+1)+'個';時間を予約(function(){料理を開始する();},600);}}
+
+/* 35. サッカーPK */
+var サッカー本数,サッカー成功数;
+function サッカーを始める(){サッカー本数=0;サッカー成功数=0;枠('キーパーをかわしてシュートを決めよう！(PK 5本)','<div class="遊び場" style="padding-top:50px;text-align:center;"><div id="サッカー結果" style="font-size:15px;font-weight:bold;color:#36505d;">コースをえらぼう</div></div>','<button class="小ボタン" onclick="サッカーを蹴る(0)">左</button><button class="小ボタン" onclick="サッカーを蹴る(1)">まんなか</button><button class="小ボタン" onclick="サッカーを蹴る(2)">右</button><span id="サッカー戦績" class="状態">0/5本</span>');}
+function サッカーを蹴る(コース){if(サッカー本数>=5){return;}サッカー本数++;var キーパー=Math.floor(Math.random()*3),結果;if(コース!==キーパー){結果='ゴール！●';サッカー成功数++;}else{結果='セーブされた…';}要素('サッカー結果').innerHTML=結果;要素('サッカー戦績').innerHTML=サッカー成功数+'/'+サッカー本数+'本';if(サッカー本数>=5){要素('サッカー結果').innerHTML+='<br>結果: '+サッカー成功数+'/5 ゴール！';}}
+
+/* 54. 色あてチャレンジ */
+var 色あて正解色,色あて回数,色あて正解数;
+function 色あてチャレンジを始める(){色あて回数=0;色あて正解数=0;色あて問題();}
+function 色あて問題(){var 色名=['赤','青','黄','緑'],背景=['#e84b46','#4398df','#f2ce37','#4aaf69'],正=Math.floor(Math.random()*4),文字='',i;色あて正解色=正;for(i=0;i<4;i++){文字+='<span class="色あて色" style="background:'+背景[i]+'" onclick="色あてを押す('+i+')"></span>';}枠('お題の色と同じ色をすばやくタップ！','<div class="遊び場"><div id="追加箱"><div id="追加表示">'+色名[正]+'</div><div id="追加説明">正しい色をタップ</div><div id="色あて盤">'+文字+'</div></div></div>','<span id="追加文" class="状態">0 / 10</span>');}
+function 色あてを押す(番号){if(色あて回数>=10){return;}色あて回数++;if(番号===色あて正解色){色あて正解数++;要素('追加文').innerHTML='せいかい！ '+色あて正解数+' / '+色あて回数;}else{要素('追加文').innerHTML='ちがうよ '+色あて正解数+' / '+色あて回数;}if(色あて回数>=10){要素('追加説明').innerHTML='終了！ '+色あて正解数+' / 10';}else{時間を予約(色あて問題,250);}}
+
+/* 55. 風船キャッチ */
+var 風船得点,風船時間,風船位置;
+function 風船キャッチを始める(){風船得点=0;風船位置=-1;風船時間=new Date().getTime()+10000;var 文字='<div id="風船盤" style="display:block;width:180px;margin:0 auto;padding-top:5px;font-size:0;line-height:0;text-align:center;">',i;for(i=0;i<16;i++){文字+='<button class="追加大ボタン" style="width:42px;height:42px;margin:0;font-size:20px;padding:0;" id="風船'+i+'" onclick="風船を押す('+i+')"></button>';}文字+='</div>';枠('出てきた風船をタップ！10秒チャレンジ','<div class="遊び場">'+文字+'</div>','<span id="風船文" class="状態">0点 / 10秒</span>');風船移動();間隔を予約(風船移動,500);}
+function 風船移動(){var 残り=Math.max(0,Math.ceil((風船時間-new Date().getTime())/1000)),i;if(残り<=0){余計な時間を止める();if(風船位置>=0){要素('風船'+風船位置).innerHTML='';}要素('風船文').innerHTML='終了！ '+風船得点+'点';return;}for(i=0;i<16;i++){要素('風船'+i).innerHTML='';}風船位置=Math.floor(Math.random()*16);要素('風船'+風船位置).innerHTML='○';要素('風船文').innerHTML=風船得点+'点 / 残り'+残り+'秒';}
+function 風船を押す(番号){if(番号===風船位置){風船得点++;要素('風船'+番号).innerHTML='';風船位置=-1;要素('風船文').innerHTML=風船得点+'点';}}
+
+/* 56. 数字早押し */
+var 数字早押し次,数字早押し開始,数字早押し正;
+function 数字早押しを始める(){数字早押し次=1;数字早押し正=0;数字早押し開始=new Date().getTime();var 文字='',一覧=[],i,j,t;for(i=1;i<=12;i++){一覧.push(i);}for(i=一覧.length-1;i>0;i--){j=Math.floor(Math.random()*(i+1));t=一覧[i];一覧[i]=一覧[j];一覧[j]=t;}for(i=0;i<12;i++){文字+='<button class="追加大ボタン" style="width:58px;height:42px;margin:2px;font-size:16px;" onclick="数字早押しを押す('+一覧[i]+')">'+一覧[i]+'</button>';}枠('1から12まで順番にタップ！','<div class="遊び場"><div id="追加箱"><div id="追加表示">'+数字早押し次+'</div><div id="追加説明">次は '+数字早押し次+' を押してね</div><div>'+文字+'</div></div></div>','<span id="追加文" class="状態">0 / 12</span>');}
+function 数字早押しを押す(番号){if(番号!==数字早押し次||数字早押し次>12){return;}数字早押し正++;数字早押し次++;if(数字早押し次>12){var 秒=((new Date().getTime()-数字早押し開始)/1000).toFixed(1);要素('追加表示').innerHTML='クリア！';要素('追加説明').innerHTML=秒+'秒で完成';要素('追加文').innerHTML='すごい！';return;}要素('追加表示').innerHTML=数字早押し次;要素('追加説明').innerHTML='次は '+数字早押し次+'！';要素('追加文').innerHTML=数字早押し正+' / 12';}
+
+/* 57. じゃんけん連勝 */
+var 連勝数,連勝最高;
+function じゃんけん連勝を始める(){連勝数=0;連勝最高=0;枠('コンピュータに勝ち続けて連勝を伸ばそう！','<div class="遊び場" style="padding-top:55px;text-align:center;"><div id="追加箱"><div id="追加表示">0連勝</div><div id="追加説明">手をえらんでね</div></div></div>','<button class="追加大ボタン" onclick="連勝じゃんけん(0)">●</button><button class="追加大ボタン" onclick="連勝じゃんけん(1)">▽</button><button class="追加大ボタン" onclick="連勝じゃんけん(2)">□</button>');}
+function 連勝じゃんけん(手){var 相手=Math.floor(Math.random()*3),勝=(手===0&&相手===1)||(手===1&&相手===2)||(手===2&&相手===0),手名=['●','▽','□'];if(手===相手){要素('追加説明').innerHTML='あいこ！ '+手名[手]+' vs '+手名[相手];}else if(勝){連勝数++;if(連勝数>連勝最高){連勝最高=連勝数;}要素('追加表示').innerHTML=連勝数+'連勝';要素('追加説明').innerHTML='かった！ '+手名[手]+' vs '+手名[相手];}else{要素('追加説明').innerHTML='まけ… '+手名[手]+' vs '+手名[相手]+'（最高 '+連勝最高+'）';連勝数=0;要素('追加表示').innerHTML='0連勝';}}
+
+/* 58. 方向記憶ゲーム */
+var 方向列,方向入力,方向中,方向世代;
+function 方向記憶ゲームを始める(){方向列=[];方向入力=0;方向中=false;方向世代=0;方向問題();}
+function 方向問題(){if(方向中){return;}方向列.push(Math.floor(Math.random()*4));方向入力=0;方向中=true;方向世代++;要素('ゲーム本文').innerHTML='<div class="説明">光った方向を同じ順番でタップ！ '+方向列.length+'個</div><div class="遊び場"><div id="方向盤"><button class="方向ボタン" onclick="方向を押す(0)">↑</button><br><button class="方向ボタン" onclick="方向を押す(1)">←</button><button class="方向ボタン" onclick="方向を押す(2)">→</button><br><button class="方向ボタン" onclick="方向を押す(3)">↓</button><div id="追加説明">よく見てね…</div></div></div><div class="下操作"><button class="小ボタン" onclick="方向記憶ゲームを始める()">リセット</button></div>';方向を再生(0,方向世代);}
+function 方向を再生(番号,世代){if(世代!==方向世代){return;}if(番号>=方向列.length){時間を予約(function(){if(世代===方向世代){方向中=false;要素('追加説明').innerHTML='同じ順番で押そう';}},350);return;}var ボタン名=['↑','←','→','↓'],id=['方向↑','方向←','方向→','方向↓'];時間を予約(function(){if(世代!==方向世代){return;}要素('追加説明').innerHTML='お手本: '+ボタン名[方向列[番号]];時間を予約(function(){方向を再生(番号+1,世代);},400);},250);}
+function 方向を押す(番号){if(方向中||方向列.length===0){return;}var 名=['↑','←','→','↓'];if(番号!==方向列[方向入力]){要素('追加説明').innerHTML='おしい！ '+方向列.length+'個';方向列=[];方向入力=0;return;}方向入力++;要素('追加説明').innerHTML='せいかい '+方向入力+'/'+方向列.length;if(方向入力===方向列.length){時間を予約(方向問題,500);}}
+
+/* 59. 10秒タイムストップ */
+var タイム開始,タイム中;
+function タイムストップ10秒を始める(){タイム開始=0;タイム中=false;枠('ボタンを押してから、ちょうど10.0秒で止めよう！','<div class="遊び場" style="padding-top:55px;text-align:center;"><div id="追加箱"><div id="追加表示">10.0</div><div id="追加説明">スタートを押してね</div></div></div>','<button class="追加大ボタン" onclick="タイムストップ()">スタート / ストップ</button>');}
+function タイムストップ(){var 今=new Date().getTime(),秒;if(!タイム中){タイム開始=今;タイム中=true;要素('追加表示').innerHTML='0.0';要素('追加説明').innerHTML='10.0秒をねらおう！';return;}秒=((今-タイム開始)/1000);タイム中=false;要素('追加表示').innerHTML=秒.toFixed(1)+'秒';要素('追加説明').innerHTML='10.0秒との差 '+Math.abs(10-se秒).toFixed(1)+'秒';}
+
+/* 51,52. スクロールすごろく（共通の盤づくり） */
+function すごろく盤生成(){var マス=[],i,乱;for(i=0;i<20;i++){if(i===19){マス.push({種:'ゴール'});}else{乱=Math.random();if(乱<0.15){マス.push({種:'コイン',値:Math.floor(Math.random()*5)+1});}else if(乱<0.25){マス.push({種:'お休み'});}else if(乱<0.32){マス.push({種:'もどる',値:Math.floor(Math.random()*3)+1});}else{マス.push({種:'ふつう'});}}}return マス;}
+function すごろくマス絵文字(マス){if(マス.種==='ゴール'){return'▥';}if(マス.種==='コイン'){return'●';}if(マス.種==='お休み'){return'Z';}if(マス.種==='もどる'){return'⬅';}return'・';}
+
+/* 51. 1人用スクロールすごろく */
+var すごろくマス一覧,すごろく位置,すごろくコイン,すごろく休み,すごろく終了;
+function 一人用すごろくを始める(){すごろくマス一覧=すごろく盤生成();すごろく位置=0;すごろくコイン=0;すごろく休み=false;すごろく終了=false;枠('サイコロをふって、ゴールを目指そう！','<div class="遊び場"><div class="小ゲーム面" style="height:214px;"><div class="小ゲーム情報" id="すごろく状況">コイン 0　スタート！</div><div id="すごろく列" style="width:210px;height:82px;overflow:hidden;white-space:nowrap;padding-top:4px;"></div><div style="font-size:24px;color:#36505d;padding-top:6px;" id="すごろく結果">◆</div><div style="font-size:10px;color:#58707a;">マスを進もう</div></div></div>','<button class="小ボタン" id="すごろくボタン" onclick="すごろくを振る()">サイコロをふる</button><button class="小ボタン" onclick="一人用すごろくを始める()">やりなおす</button><span id="すごろく文" class="状態"></span>');すごろくを描く();}
+function すごろくを描く(){var 文字='',i;for(i=0;i<すごろくマス一覧.length;i++){文字+='<span style="display:inline-block;width:30px;height:30px;margin:1px;border:2px solid '+(i===すごろく位置?'#e84b46':'#397c94')+';border-radius:5px;background:'+(i===すごろく位置?'#ffec9e':'#e5f5fa')+';text-align:center;line-height:26px;font-size:14px;">'+(i===すごろく位置?'●':すごろくマス絵文字(すごろくマス一覧[i]))+'</span>';}要素('すごろく列').innerHTML=文字;}
+function すごろくを振る(){if(すごろく終了){return;}if(すごろく休み){すごろく休み=false;要素('すごろく文').innerHTML='お休み明け！';return;}var 目=Math.floor(Math.random()*6)+1;要素('すごろく結果').innerHTML='◆ '+目;すごろく位置=Math.min(すごろくマス一覧.length-1,すごろく位置+目);すごろくを描く();すごろくマスを判定();}
+function すごろくマスを判定(){var マス=すごろくマス一覧[すごろく位置];if(マス.種==='ゴール'){すごろく終了=true;要素('すごろく状況').innerHTML='ゴール！ コイン '+すごろくコイン;要素('すごろく文').innerHTML='クリア！';要素('すごろくボタン').disabled=true;return;}if(マス.種==='コイン'){すごろくコイン+=マス.値;要素('すごろく状況').innerHTML='コイン '+すごろくコイン+'（+'+マス.値+'）';}else if(マス.種==='お休み'){すごろく休み=true;要素('すごろく状況').innerHTML='コイン '+すごろくコイン+'　次はお休み';}else if(マス.種==='もどる'){すごろく位置=Math.max(0,すごろく位置-マス.値);要素('すごろく状況').innerHTML='コイン '+すごろくコイン+'　'+マス.値+'マス戻る';すごろくを描く();}else{要素('すごろく状況').innerHTML='コイン '+すごろくコイン;}}
+
+/* 52. 12x12 みんなのさいころゲーム（1〜4人・歩くモーション・スクロールなし） */
+var 冒険人数,冒険マップ番号,冒険マス一覧,冒険位置一覧,冒険コイン一覧,冒険休み一覧,冒険手番,冒険終了,冒険勝者,冒険サイコロ中,冒険サイコロオフセット,冒険サイコロ値,冒険歩行番号,冒険歩行中,冒険歩行対象;
+var 冒険マップ一覧=[{名:'森',背景:'#e8f5e9',ふつう:'#f1f8f2'},{名:'海',背景:'#e0f7fa',ふつう:'#eefcfd'},{名:'山',背景:'#efebe9',ふつう:'#f7f4f2'},{名:'街',背景:'#ede7f6',ふつう:'#f8f5fc'}];
+var 冒険駒色一覧=['#e84b46','#4398df','#4aaf69','#f2ce37'];
+var 冒険マス幅=12,冒険表示列=12,冒険表示行=12,冒険セル=15;
+function 冒険を始める(){枠('人数を選んで、12×12の盤を進もう！','<div class="遊び場"><div id="冒険開始面" class="小ゲーム面" style="height:214px;text-align:center;padding-top:22px;"><div style="font-size:13px;font-weight:bold;color:#36505d;">何人であそぶ？</div><button class="ゲーム大ボタン" onclick="冒険人数決定(1)">1人</button><button class="ゲーム大ボタン" onclick="冒険人数決定(2)">2人</button><button class="ゲーム大ボタン" onclick="冒険人数決定(3)">3人</button><button class="ゲーム大ボタン" onclick="冒険人数決定(4)">4人</button></div></div>','');}
+function 冒険人数決定(人数){冒険人数=人数;var 文字='<div style="font-size:12px;font-weight:bold;color:#36505d;margin-bottom:8px;">'+人数+'人　マップを選ぼう</div>',i;for(i=0;i<冒険マップ一覧.length;i++){文字+='<button class="ゲーム大ボタン" style="background:'+冒険マップ一覧[i].背景+';" onclick="冒険マップ決定('+i+')">'+冒険マップ一覧[i].名+'</button>';}要素('冒険開始面').innerHTML=文字;}
+function 冒険マップ決定(番号){冒険マップ番号=番号;冒険マス一覧=冒険マップ生成();冒険位置一覧=[];冒険コイン一覧=[];冒険休み一覧=[];var i;for(i=0;i<冒険人数;i++){冒険位置一覧.push(0);冒険コイン一覧.push(0);冒険休み一覧.push(false);}冒険手番=0;冒険終了=false;冒険勝者=-1;冒険サイコロ中=false;冒険サイコロオフセット=0;冒険サイコロ値=1;冒険歩行番号=0;冒険歩行中=false;冒険歩行対象=-1;枠('12×12の盤。サイコロを振って進もう！','<div class="遊び場"><div class="小ゲーム面" style="height:214px;background:'+冒険マップ一覧[番号].背景+';"><div class="小ゲーム情報" id="冒険情報"></div><canvas id="冒険盤" width="180" height="180" style="display:block;width:180px;height:180px;margin:0 auto;background:'+冒険マップ一覧[番号].背景+';"></canvas><div id="冒険効果文" style="position:absolute;left:4px;right:4px;bottom:2px;height:13px;line-height:13px;font-size:9px;color:#a52d20;font-weight:bold;text-align:center;overflow:hidden;"></div></div></div>','<button class="ゲーム大ボタン" id="冒険操作ボタン" style="width:112px;height:32px;margin:0;" onclick="冒険サイコロ操作()">◆ サイコロを振る</button><button class="小ボタン" onclick="冒険マップ決定(冒険マップ番号)">もう一度</button>');冒険を描く();}
+function 冒険マップ生成(){var マス=[],i,乱;for(i=0;i<冒険マス幅*冒険マス幅;i++){if(i===0){マス.push({種:'スタート'});continue;}if(i===冒険マス幅*冒険マス幅-1){マス.push({種:'ゴール'});continue;}乱=Math.random();if(乱<0.12){マス.push({種:'コイン',値:Math.floor(Math.random()*5)+1});}else if(乱<0.18){マス.push({種:'もどる',値:Math.floor(Math.random()*3)+1});}else if(乱<0.24){マス.push({種:'休み'});}else if(乱<0.30){マス.push({種:'ワープ',値:Math.floor(Math.random()*6)+2});}else{マス.push({種:'ふつう'});}}return マス;}
+var 冒険ピップ位置一覧=[[[6,6]],[[3,3],[9,9]],[[3,3],[6,6],[9,9]],[[3,3],[9,3],[3,9],[9,9]],[[3,3],[9,3],[6,6],[3,9],[9,9]],[[3,3],[9,3],[3,6],[9,6],[3,9],[9,9]]];
+function 冒険マス図形を描く(x,列px,行px,種,値){var 中心x=列px+冒険セル/2,中心y=行px+冒険セル/2;if(種==='スタート'){x.fillStyle='#2e7d32';x.fillRect(中心x-4,中心y-4,8,8);}else if(種==='コイン'){x.fillStyle='#f2c94c';x.beginPath();x.arc(中心x,中心y,4,0,Math.PI*2);x.fill();}else if(種==='もどる'){x.fillStyle='#e8734a';x.beginPath();x.moveTo(中心x+4,中心y-4);x.lineTo(中心x-4,中心y);x.lineTo(中心x+4,中心y+4);x.closePath();x.fill();}else if(種==='休み'){x.fillStyle='#5b9bd5';x.fillRect(中心x-4,中心y-4,8,8);}else if(種==='ワープ'){x.fillStyle='#9b59b6';x.beginPath();x.moveTo(中心x,中心y-4);x.lineTo(中心x+4,中心y);x.lineTo(中心x,中心y+4);x.lineTo(中心x-4,中心y);x.closePath();x.fill();}else if(種==='ゴール'){x.fillStyle='#222';x.fillRect(中心x-5,中心y-5,10,10);x.fillStyle='#fff';x.fillRect(中心x-3,中心y-5,3,3);x.fillRect(中心x,中心y-2,3,3);x.fillRect(中心x-3,中心y+1,3,3);x.fillRect(中心x,中心y+4,3,1);}}
+function 冒険タイルを描く(x,列px,行px,座標,マス){var 種=マス.種,行=Math.floor(座標/冒険マス幅),基本=種==='スタート'?'#c8e6c9':種==='ゴール'?'#ffe082':種==='ふつう'?((行%2===0)?'#e8dcb8':'#ddcfa0'):'#fff3d0';x.fillStyle=基本;x.fillRect(列px,行px,冒険セル,冒険セル);x.strokeStyle='rgba(0,0,0,.14)';x.lineWidth=1;x.strokeRect(列px+.5,行px+.5,冒険セル-1,冒険セル-1);冒険マス図形を描く(x,列px,行px,種,マス.値);}
+function 冒険駒を描く(x,画面x,画面y,番号,歩き){var 色=冒険駒色一覧[番号],足=(歩き&&歩き%2===1?2:-2);x.lineWidth=1;x.strokeStyle='#333';x.fillStyle=色;x.beginPath();x.arc(画面x,画面y-1,4,0,Math.PI*2);x.fill();x.stroke();x.beginPath();x.moveTo(画面x-2,画面y+2);x.lineTo(画面x-3*足,画面y+6);x.moveTo(画面x+2,画面y+2);x.lineTo(画面x+3+足,画面y+6);x.stroke();}
+function 冒険座標(位置){var 行=Math.floor(位置/冒険マス幅),列内=位置%冒険マス幅,列=(行%2===0)?列内:冒険マス幅-1-列内;return{行:行,列:列};}
+function 冒険サイコロ操作(){if(冒険終了||冒険歩行中){return;}if(!冒険サイコロ中){冒険サイコロ中=true;要素('冒険操作ボタン').innerHTML='◆ ストップ！';間隔を予約(冒険サイコロ更新,70);}else{冒険サイコロ中=false;余計な時間を止める();冒険サイコロ値=Math.floor(Math.random()*6)+1;要素('冒険操作ボタン').innerHTML='◆ '+冒険サイコロ値+'マス進む';時間を予約(function(){冒険を進める(冒険サイコロ値);},220);}}
+function 冒険サイコロ更新(){var 面=['1','2','3','4','5','6'];var n=Math.floor(Math.random()*6);要素('冒険操作ボタン').innerHTML='◆ '+面[n]+' ストップ！';}
+function 冒険を進める(目){if(冒険終了){return;}var 手番=冒険手番;if(冒険休み一覧[手番]){冒険休み一覧[手番]=false;要素('冒険効果文').innerHTML=(手番+1)+'人目: お休みでした';冒険次の番();冒険を描く();return;}冒険歩行対象=手番;冒険歩行中=true;冒険歩行番号=0;冒険歩行アニメ(手番,目,0);}
+function 冒険歩行アニメ(手番,残り,歩数){if(冒険終了){冒険歩行中=false;return;}if(残り<=0){冒険歩行中=false;冒険歩行対象=-1;冒険マスを判定(手番);return;}冒険歩行番号=歩数;冒険位置一覧[手番]=Math.min(冒険マス一覧.length-1,冒険位置一覧[手番]+1);冒険を描く();時間を予約(function(){冒険歩行アニメ(手番,残り-1,歩数+1);},150);}
+function 冒険マスを判定(手番){var マス=冒険マス一覧[冒険位置一覧[手番]],メッセージ=(手番+1)+'人目: ';if(マス.種==='ゴール'){冒険終了=true;冒険勝者=手番;要素('冒険操作ボタン').disabled=true;要素('冒険効果文').innerHTML=メッセージ+'ゴール！';冒険を描く();return;}if(マス.種==='コイン'){冒険コイン一覧[手番]+=マス.値;メッセージ+='コイン'+マス.値+'枚！';}else if(マス.種==='もどる'){冒険位置一覧[手番]=Math.max(0,冒険位置一覧[手番]-マス.値);メッセージ+=マス.値+'マス戻る';}else if(マス.種==='休み'){冒険休み一覧[手番]=true;メッセージ+='つぎはお休み';}else if(マス.種==='ワープ'){冒険位置一覧[手番]=Math.min(冒険マス一覧.length-1,冒険位置一覧[手番]+マス.値);メッセージ+=マス.値+'マスワープ';}else{メッセージ+='すすんだ';}要素('冒険効果文').innerHTML=メッセージ;冒険次の番();冒険を描く();}
+function 冒険次の番(){冒険手番=(冒険手番+1)%冒険人数;}
+function 冒険を描く(){var c=要素('冒険盤');if(!c){return;}var x=c.getContext('2d'),行,列,座標,マス;x.clearRect(0,0,180,180);for(行=0;行<冒険表示行;行++){for(列=0;列<冒険表示列;列++){座標=行*冒険マス幅+(行%2===0?列:冒険マス幅-1-列);マス=冒険マス一覧[座標];冒険タイルを描く(x,列*冒険セル,行*冒険セル,座標,マス);}}var i,pos,rc,px,py;if(冒険歩行対象>=0&&冒険歩行中){for(i=0;i<冒険人数;i++){if(i===冒険歩行対象&&冒険位置一覧[i]>0){var prev=冒険座標(冒険位置一覧[i]-1),cur=冒険座標(冒険位置一覧[i]),t=0.55;px=(prev.列+(cur.列-prev.列)*t)*冒険セル+冒険セル/2;py=(prev.行+(cur.行-prev.行)*t)*冒険セル+冒険セル/2;冒険駒を描く(x,px,py,i,冒険歩行番号); }else{rc=冒険座標(冒険位置一覧[i]);px=rc.列*冒険セル+冒険セル/2;py=rc.行*冒険セル+冒険セル/2+(i%2===0?-2:2);冒険駒を描く(x,px,py,i,0);}}}else{for(i=0;i<冒険人数;i++){rc=冒険座標(冒険位置一覧[i]);px=rc.列*冒険セル+冒険セル/2;py=rc.行*冒険セル+冒険セル/2+(i%2===0?-2:2);冒険駒を描く(x,px,py,i,0);}}var 情報=要素('冒険情報');if(情報){情報.innerHTML='<b>P'+(冒険手番+1)+'の番</b>　ゴールまで'+(冒険マス一覧.length-1-冒険位置一覧[冒険手番])+'マス　コイン ';for(i=0;i<冒険人数;i++){情報.innerHTML+='P'+(i+1)+':'+冒険コイン一覧[i]+' ';}}}
+
+/* 53. 曲タップ演奏シミュレーター。外部音源なし、Web Audio＋HTMLAudioフォールバック */
+var 曲音=[261.63,293.66,329.63,349.23,392.00,440.00,493.88],曲名一覧=['きらきら星','かえるのうた','ちょうちょう','チューリップ','ぶんぶんぶん','むすんでひらいて','どんぐりころころ','ハッピーバースデー','メリーさんのひつじ','ロンドンばし'],曲譜一覧=[
+ [0,0,4,4,5,5,4,3,3,2,2,1,1,0],
+ [0,1,2,3,2,1,0,0,0,0,1,1,1,1,0,4,4,0],
+ [4,2,0,2,4,4,4,2,2,2,4,6,6,6,4,2,0],
+ [0,1,2,0,0,1,2,0,2,2,1,1,0,0,1,2,0],
+ [2,1,0,1,2,2,2,1,1,1,2,4,4,4,2,1,0],
+ [0,2,4,3,2,0,0,2,4,3,2,0,4,5,4,3,2,0],
+ [2,2,1,0,1,2,4,4,2,2,1,0,1,2,2,0],
+ [0,0,2,0,0,0,3,2,0,4,4,4,2,2,0,1,0],
+ [2,1,0,1,2,2,2,2,1,1,1,1,0,1,2,3,2,1,0],
+ [0,0,1,2,0,2,1,2,0,4,4,2,0,1,2,0]
+],曲選択番号=0,曲入力番号=0,曲音中=false,曲AudioContext=null,曲AudioFallback=null,曲WavCache=[];
+function 曲タップ演奏を始める(){曲選択番号=0;曲入力番号=0;曲音中=false;曲UIを描く();}
+function 曲UIを描く(){var 選択='',番号,鍵盤='';for(番号=0;番号<曲名一覧.length;番号++){選択+='<option value="'+番号+'">'+曲名一覧[番号]+'</option>';}for(番号=0;番号<7;番号++){鍵盤+='<button class="音鍵" id="音鍵'+番号+'" onclick="曲の音を押す('+番号+')">'+['ド','レ','ミ','ファ','ソ','ラ','シ'][番号]+'</button>';}枠('曲をえらんで、光る順番に音をタップしよう','<div id="曲箱" class="遊び場"><select id="曲選択" onchange="曲を選ぶ(this.value)">'+選択+'</select><div id="曲情報">お手本を聞くか、音をタップして演奏しよう</div><div id="鍵盤">'+鍵盤+'</div><div id="曲進捗">0 / '+曲譜一覧[曲選択番号].length+' こ</div></div>','<button class="小ボタン" onclick="曲を最初から()">さいしょから</button><button class="小ボタン" onclick="曲自動再生()">お手本を聞く</button>');要素('曲選択').value=曲選択番号;曲の手番表示();}
+function 曲Audio(){try{var Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx){return null;}if(!曲AudioContext){曲AudioContext=new Ctx();}if(曲AudioContext.state==='suspended'&&曲AudioContext.resume){try{曲AudioContext.resume();}catch(例外1){}}return 曲AudioContext;}catch(例外){return null;}}
+function 曲音声を起動する(){var 文脈=曲Audio();if(文脈){try{var 発振=文脈.createOscillator(),音量=文脈.createGain?文脈.createGain():文脈.createGainNode();発振.frequency.value=曲音[0];音量.gain.value=0.0001;発振.connect(音量);音量.connect(文脈.destination);try{発振.start();発振.stop(文脈.currentTime+0.03);}catch(例外2){発振.start(0);発振.stop(文脈.currentTime+0.03);}return true;}catch(例外3){}}return false;}
+function 曲Wavデータ(番号,長さ){var key=番号+'_'+長さ;if(曲WavCache[key]){return 曲WavCache[key];}var rate=8000,frames=Math.max(1,Math.floor(rate*長さ)),bytes=new Uint8Array(44+frames*2),view=new DataView(bytes.buffer),i,t,env,sample,offset=44;function 文字列(pos,文字){var j;for(j=0;j<文字.length;j++){bytes[pos+j]=文字.charCodeAt(j);}}function u16(pos,val){view.setUint16(pos,val,true);}function u32(pos,val){view.setUint32(pos,val,true);}文字列(0,'RIFF');u32(4,36+frames*2);文字列(8,'WAVE');文字列(12,'fmt ');u32(16,16);u16(20,1);u16(22,1);u32(24,rate);u32(28,rate*2);u16(32,2);u16(34,16);文字列(36,'data');u32(40,frames*2);for(i=0;i<frames;i++){t=i/rate;env=Math.min(1,t/0.015,Math.max(0,(長さ-t)/0.05));sample=Math.sin(2*Math.PI*曲音[番号]*t)*0.25*env;view.setInt16(offset,sample*32767,true);offset+=2;}var b64='',chunk=0x8000;for(i=0;i<bytes.length;i+=chunk){b64+=btoa(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length))));}曲WavCache[key]='data:audio/wav;base64,'+b64;return 曲WavCache[key];}
+function 曲全体Wavデータ(譜){var key='song_'+曲選択番号;if(曲WavCache[key]){return 曲WavCache[key];}var note=0.30,rate=8000,frames=Math.floor(rate*譜.length*note),bytes=new Uint8Array(44+frames*2),view=new DataView(bytes.buffer),i,n,t,env,sample,offset=44,番号;function 文字列(pos,文字){var j;for(j=0;j<文字.length;j++){bytes[pos+j]=文字.charCodeAt(j);}}function u16(pos,val){view.setUint16(pos,val,true);}function u32(pos,val){view.setUint32(pos,val,true);}文字列(0,'RIFF');u32(4,36+frames*2);文字列(8,'WAVE');文字列(12,'fmt ');u32(16,16);u16(20,1);u16(22,1);u32(24,rate);u32(28,rate*2);u16(32,2);u16(34,16);文字列(36,'data');u32(40,frames*2);for(i=0;i<frames;i++){n=Math.min(譜.length-1,Math.floor(i/(rate*note)));番号=譜[n];t=(i%(rate*note))/rate;env=Math.min(1,t/0.02,Math.max(0,(note-t)/0.06));sample=Math.sin(2*Math.PI*曲音[番号]*t)*0.23*env;view.setInt16(offset,sample*32767,true);offset+=2;}var b64='',chunk=0x8000;for(i=0;i<bytes.length;i+=chunk){b64+=btoa(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length))));}曲WavCache[key]='data:audio/wav;base64,'+b64;return 曲WavCache[key];}
+function 曲音を鳴らす(番号,長さ){var 文脈=曲Audio(),発振,音量,長さ2=長さ||0.25;if(文脈){try{発振=文脈.createOscillator();音量=文脈.createGain?文脈.createGain():文脈.createGainNode();発振.type='sine';発振.frequency.value=曲音[番号];発振.connect(音量);音量.connect(文脈.destination);音量.gain.setValueAtTime(0.0001,文脈.currentTime);音量.gain.linearRampToValueAtTime(0.22,文脈.currentTime+0.02);音量.gain.exponentialRampToValueAtTime(0.0001,文脈.currentTime+長さ2);try{発振.start();発振.stop(文脈.currentTime+長さ2+0.03);}catch(例外1){発振.start(0);発振.stop(文脈.currentTime+長さ2+0.03);}return true;}catch(例外2){}}try{if(!曲AudioFallback){曲AudioFallback=new Audio();}曲AudioFallback.src=曲Wavデータ(番号,長さ2);曲AudioFallback.volume=0.6;曲AudioFallback.play();return true;}catch(例外3){return false;}}
+function 曲を選ぶ(値){曲選択番号=parseInt(値,10);曲入力番号=0;曲音中=false;曲の手番表示();}
+function 曲を最初から(){曲音中=false;曲入力番号=0;曲の手番表示();曲音声を起動する();}
+function 曲の手番表示(){var 譜=曲譜一覧[曲選択番号];要素('曲進捗').innerHTML=曲入力番号+' / '+譜.length+' こ';要素('曲情報').innerHTML=曲入力番号>=譜.length?'● クリア！ さいしょからでもう一度':'光った音と同じ鍵盤を押そう';}
+function 曲の音を押す(番号){if(曲音中){return;}曲音を鳴らす(番号,0.22);var 譜=曲譜一覧[曲選択番号];if(曲入力番号>=譜.length){return;}if(番号===譜[曲入力番号]){要素('音鍵'+番号).className='音鍵 正解鍵';時間を予約(function(){var 要=要素('音鍵'+番号);if(要){要.className='音鍵';}},120);曲入力番号++;曲の手番表示();if(曲入力番号>=譜.length){要素('曲情報').innerHTML='● えんそうできた！';}}else{要素('曲情報').innerHTML='ちがう音。光る順番をみてね';}}
+function 曲自動再生(){if(曲音中){return;}曲入力番号=0;曲音声を起動する();曲音中=true;要素('曲情報').innerHTML='お手本を聞いてね…';var 譜=曲譜一覧[曲選択番号],文脈=曲Audio();if(!文脈){try{if(曲AudioFallback){曲AudioFallback.pause();}曲AudioFallback=new Audio();曲AudioFallback.src=曲全体Wavデータ(譜);曲AudioFallback.volume=0.65;曲AudioFallback.play();}catch(例外){曲音中=false;要素('曲情報').innerHTML='この端末では音が出せません';return;}}曲自動再生ハイライト(0);}
+function 曲自動再生ハイライト(番号){if(!曲音中){return;}var 譜=曲譜一覧[曲選択番号];if(番号>=譜.length){曲音中=false;曲入力番号=0;曲の手番表示();return;}var 音番号=譜[番号];要素('音鍵'+音番号).className='音鍵 正解鍵';時間を予約(function(){var 要=要素('音鍵'+音番号);if(要){要.className='音鍵';}if(曲音中){曲自動再生ハイライト(番号+1);}},300);}
+/* 37〜50は同じ軽い予定画面 */
+function 予定画面を出す(番号){枠('このゲームは順番に追加していきます','<div id="予定箱" class="遊び場"><div id="予定番号">'+番号+'. '+エスケープ(ゲーム名一覧[番号-1])+'</div><div id="予定文">今後追加予定！</div></div>','<button class="小ボタン" onclick="ホームへ戻る()">メニューへ</button>');}
+選択一覧を作る();画面倍率を合わせる();window.onresize=画面倍率を合わせる;
+</script>
+</body>
+</html>

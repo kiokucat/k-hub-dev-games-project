@@ -1,0 +1,342 @@
+[
+  {
+    "id": "!!!カオスタイム!!!.zip",
+    "title": "!!!カオスタイム!!!",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 2248,
+    "price": 2800,
+    "path": "medalshop/!!!カオスタイム!!!.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "23時54分、陽の旅路へのプレリュード（ピアノカバー）.zip",
+    "title": "23時54分、陽の旅路へのプレリュード（ピアノカバー）",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 3849,
+    "price": 4100,
+    "path": "medalshop/23時54分、陽の旅路へのプレリュード（ピアノカバー）.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "Bad Apple!! feat.nomico.zip",
+    "title": "Bad Apple!! feat.nomico",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1424,
+    "price": 1950,
+    "path": "medalshop/Bad Apple!! feat.nomico.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "いますぐ輪廻.zip",
+    "title": "いますぐ輪廻",
+    "genre": "ボーカロイド",
+    "difficulty": 9,
+    "notes": 1775,
+    "price": 2800,
+    "path": "medalshop/いますぐ輪廻.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "さよならワーリャ.zip",
+    "title": "さよならワーリャ",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1987,
+    "price": 2500,
+    "path": "medalshop/さよならワーリャ.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "だんだん早くなる.zip",
+    "title": "だんだん早くなる",
+    "genre": "ポップス",
+    "difficulty": 10,
+    "notes": 2006,
+    "price": 3100,
+    "path": "medalshop/だんだん早くなる.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "はやさいたま2000.zip",
+    "title": "はやさいたま2000",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 1694,
+    "price": 2350,
+    "path": "medalshop/はやさいたま2000.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "もぺもぺ.zip",
+    "title": "もぺもぺ",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1141,
+    "price": 1800,
+    "path": "medalshop/もぺもぺ.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "よーいドン！.zip",
+    "title": "よーいドン！",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1715,
+    "price": 2250,
+    "path": "medalshop/よーいドン！.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "らんぶる乱舞.zip",
+    "title": "らんぶる乱舞",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1683,
+    "price": 2250,
+    "path": "medalshop/らんぶる乱舞.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "ウィリアム・テル序曲.zip",
+    "title": "ウィリアム・テル序曲",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1985,
+    "price": 2400,
+    "path": "medalshop/ウィリアム・テル序曲.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "クラシックメドレー(ロック編).zip",
+    "title": "クラシックメドレー(ロック編)",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1362,
+    "price": 2000,
+    "path": "medalshop/クラシックメドレー(ロック編).zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "チルノのパーフェクトさんすう教室.zip",
+    "title": "チルノのパーフェクトさんすう教室",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 2476,
+    "price": 2900,
+    "path": "medalshop/チルノのパーフェクトさんすう教室.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "ハッピーシンセサイザ.zip",
+    "title": "ハッピーシンセサイザ",
+    "genre": "ポップス",
+    "difficulty": 2,
+    "notes": 2536,
+    "price": 2750,
+    "path": "medalshop/ハッピーシンセサイザ.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "マトリョシカ.zip",
+    "title": "マトリョシカ",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 2786,
+    "price": 3150,
+    "path": "medalshop/マトリョシカ.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "ミックスナッツ.zip",
+    "title": "ミックスナッツ",
+    "genre": "ポップス",
+    "difficulty": 2,
+    "notes": 853,
+    "price": 1400,
+    "path": "medalshop/ミックスナッツ.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "メヌエット.zip",
+    "title": "メヌエット(Minuet)",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1209,
+    "price": 1850,
+    "path": "medalshop/メヌエット.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "メルト.zip",
+    "title": "メルト",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1115,
+    "price": 1700,
+    "path": "medalshop/メルト.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "初音ミクの消失 -劇場版-.zip",
+    "title": "初音ミクの消失 -劇場版-",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 2841,
+    "price": 3250,
+    "path": "medalshop/初音ミクの消失 -劇場版-.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "初音ミクの消失.zip",
+    "title": "初音ミクの消失",
+    "genre": "ボーカロイド™曲",
+    "difficulty": 9,
+    "notes": 2194,
+    "price": 3150,
+    "path": "medalshop/初音ミクの消失.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "千本桜.zip",
+    "title": "千本桜",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 3054,
+    "price": 3250,
+    "path": "medalshop/千本桜.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "夏祭り.zip",
+    "title": "Natsu Matsuri -New Audio-",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 3294,
+    "price": 3450,
+    "path": "medalshop/夏祭り.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "幻想に咲いた花.zip",
+    "title": "幻想に咲いた花",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1615,
+    "price": 2100,
+    "path": "medalshop/幻想に咲いた花.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "幻想のサテライト.zip",
+    "title": "幻想のサテライト",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1321,
+    "price": 1950,
+    "path": "medalshop/幻想のサテライト.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "彁.zip",
+    "title": "彁",
+    "genre": "ポップス",
+    "difficulty": 5,
+    "notes": 2727,
+    "price": 3200,
+    "path": "medalshop/彁.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "新時代.zip",
+    "title": "新時代",
+    "genre": "ポップス",
+    "difficulty": 2,
+    "notes": 1224,
+    "price": 1700,
+    "path": "medalshop/新時代.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "明星ロケット.zip",
+    "title": "明星ロケット",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 1261,
+    "price": 1800,
+    "path": "medalshop/明星ロケット.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "激突！グルメレース.zip",
+    "title": "激突！グルメレース",
+    "genre": "ポップス",
+    "difficulty": 1,
+    "notes": 2888,
+    "price": 2900,
+    "path": "medalshop/激突！グルメレース.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "白鳥の湖.zip",
+    "title": "白鳥の湖",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 2288,
+    "price": 2750,
+    "path": "medalshop/白鳥の湖.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "神っぽいな.zip",
+    "title": "神っぽいな",
+    "genre": "ポップス",
+    "difficulty": 2,
+    "notes": 1059,
+    "price": 1550,
+    "path": "medalshop/神っぽいな.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "終点.zip",
+    "title": "終点",
+    "genre": "ポップス",
+    "difficulty": 9,
+    "notes": 3220,
+    "price": 4000,
+    "path": "medalshop/終点.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "練習曲Op.10-4.zip",
+    "title": "練習曲Op.10-4",
+    "genre": "ポップス",
+    "difficulty": 3,
+    "notes": 2703,
+    "price": 2950,
+    "path": "medalshop/練習曲Op.10-4.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "願いはエスペラント.zip",
+    "title": "願いはエスペラント",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 1366,
+    "price": 2000,
+    "path": "medalshop/願いはエスペラント.zip",
+    "is_unlocked": false
+  },
+  {
+    "id": "風魔モジュール6768.zip",
+    "title": "風魔モジュール6768",
+    "genre": "ポップス",
+    "difficulty": 4,
+    "notes": 2684,
+    "price": 3050,
+    "path": "medalshop/風魔モジュール6768.zip",
+    "is_unlocked": false
+  }
+]

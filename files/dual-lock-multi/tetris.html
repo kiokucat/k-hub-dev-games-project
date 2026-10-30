@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テトリス マルチプレイヤー</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);min-height:100vh;color:white;overflow-x:auto}
+#titleScreen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%)}
+#titleScreen.hidden{display:none}
+.title-logo{font-size:72px;font-weight:900;text-shadow:0 0 30px rgba(0,212,255,0.8),0 0 60px rgba(0,212,255,0.4);margin-bottom:10px;letter-spacing:10px;background:linear-gradient(90deg,#00d4ff,#ff00ff,#ffff00,#00ff00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.title-sub{font-size:22px;color:#aaa;margin-bottom:50px;letter-spacing:6px}
+.player-join-status{display:flex;gap:25px;margin-bottom:40px}
+.join-slot{width:130px;height:150px;border:3px solid #333;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .3s ease;background:rgba(0,0,0,0.3)}
+.join-slot.joined{border-color:#00ff00;background:rgba(0,255,0,0.1);box-shadow:0 0 20px rgba(0,255,0,0.3)}
+.join-slot .join-icon{font-size:40px;margin-bottom:8px}
+.join-slot .join-label{font-size:16px;font-weight:bold}
+.join-slot .join-device{font-size:10px;color:#888;margin-top:6px;max-width:110px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+.title-prompt{font-size:20px;color:#00d4ff;margin-bottom:30px;animation:pulse 1.5s infinite;font-weight:bold}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.title-btn{padding:16px 60px;font-size:22px;font-weight:bold;border:none;border-radius:10px;cursor:pointer;background:linear-gradient(90deg,#00d4ff,#0099cc);color:white;transition:all .3s ease;letter-spacing:3px}
+.title-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,212,255,0.5)}
+.title-btn:disabled{opacity:.3;cursor:not-allowed;background:#444}
+.title-hint{margin-top:35px;font-size:13px;color:#666;line-height:2.2;text-align:center}
+#gameScreen{display:none;padding:15px;min-height:100vh}
+#gameScreen.active{display:flex;flex-direction:column;align-items:center}
+.game-header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:1600px;margin-bottom:12px;padding:0 10px}
+.game-header h2{font-size:22px;text-shadow:0 0 10px rgba(0,212,255,0.5)}
+.game-header .hint{font-size:12px;color:#888}
+.players-container{display:flex;gap:15px;justify-content:center;align-items:flex-start;flex-wrap:wrap;width:100%;max-width:1600px}
+.player-box{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px;background:rgba(0,0,0,0.4);border:2px solid #333;border-radius:12px;transition:all .3s}
+.player-box.game-over-box{border-color:#ff3333;opacity:.5}
+.player-box.winner-box{border-color:#ffd700;box-shadow:0 0 30px rgba(255,215,0,0.5);animation:winnerPulse 1s infinite}
+@keyframes winnerPulse{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.5)}50%{box-shadow:0 0 50px rgba(255,215,0,0.8)}}
+.player-name{font-size:15px;font-weight:bold;display:flex;align-items:center;gap:8px}
+.player-name .p-indicator{width:12px;height:12px;border-radius:50%;display:inline-block}
+.game-canvas-wrap{position:relative}
+.game-canvas-wrap canvas{border:3px solid #00d4ff;background:#0a0e27;display:block;border-radius:4px}
+.player-info{display:flex;gap:12px;font-size:12px}
+.info-item{text-align:center;min-width:50px}
+.info-item .label{font-size:9px;color:#00d4ff;text-transform:uppercase;font-weight:bold}
+.info-item .value{font-size:16px;font-weight:bold}
+.next-piece-box{display:flex;flex-direction:column;align-items:center;gap:4px}
+.next-piece-box .label{font-size:10px;color:#00d4ff;font-weight:bold}
+.next-piece-box canvas{border:2px solid #00d4ff;background:#0a0e27;border-radius:4px}
+#menuOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(5px)}
+#menuOverlay.active{display:flex}
+.menu-panel{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);border:2px solid #00d4ff;border-radius:16px;padding:40px 60px;text-align:center;box-shadow:0 0 40px rgba(0,212,255,0.3)}
+.menu-panel h2{font-size:32px;margin-bottom:30px;color:#00d4ff;text-shadow:0 0 15px rgba(0,212,255,0.5)}
+.menu-btn{display:block;width:280px;margin:10px auto;padding:14px;font-size:16px;font-weight:bold;border:2px solid #00d4ff;border-radius:8px;background:transparent;color:#00d4ff;cursor:pointer;transition:all .15s ease;position:relative}
+.menu-btn:hover{background:#00d4ff;color:#0a0e27;transform:translateX(5px)}
+.menu-btn.selected{background:#00d4ff;color:#0a0e27;transform:translateX(8px);box-shadow:0 0 15px rgba(0,212,255,0.5)}
+.menu-btn .btn-hint{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.6}
+.garbage-warning{position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#ff3333;color:white;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:bold;animation:shake .5s ease;white-space:nowrap;z-index:10;pointer-events:none}
+@keyframes shake{0%,100%{transform:translateX(-50%) translateY(0)}25%{transform:translateX(-50%) translateY(-3px)}75%{transform:translateX(-50%) translateY(3px)}}
+#debugPanel{position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.95);border:2px solid #00ff00;color:#00ff00;padding:10px;font-family:monospace;font-size:11px;max-width:400px;max-height:80vh;overflow-y:auto;display:none;z-index:9999;border-radius:8px}
+#debugPanel.active{display:block}
+.winner-announce{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.92);border:3px solid #ffd700;border-radius:20px;padding:50px 100px;text-align:center;z-index:150;display:none;box-shadow:0 0 60px rgba(255,215,0,0.5)}
+.winner-announce.active{display:block;animation:popIn .5s ease}
+@keyframes popIn{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.winner-announce h1{font-size:56px;color:#ffd700;text-shadow:0 0 25px rgba(255,215,0,0.9);margin-bottom:20px}
+.winner-announce p{font-size:18px;color:#ccc}
+.winner-announce .close-hint{margin-top:25px;font-size:14px;color:#888}
+.controls-overlay{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);border:1px solid #333;border-radius:8px;padding:10px 20px;font-size:12px;color:#888;z-index:50;display:none}
+</style>
+</head>
+<body>
+
+<div id="titleScreen">
+<div class="title-logo">TETRIS</div>
+<div class="title-sub">マルチプレイヤーバトル</div>
+<div class="player-join-status" id="joinStatus">
+<div class="join-slot" id="joinSlot1"><div class="join-icon">🎮</div><div class="join-label">P1</div><div class="join-device" id="joinDevice1"></div></div>
+<div class="join-slot" id="joinSlot2"><div class="join-icon">🎮</div><div class="join-label">P2</div><div class="join-device" id="joinDevice2"></div></div>
+<div class="join-slot" id="joinSlot3"><div class="join-icon">🎮</div><div class="join-label">P3</div><div class="join-device" id="joinDevice3"></div></div>
+<div class="join-slot" id="joinSlot4"><div class="join-icon">🎮</div><div class="join-label">P4</div><div class="join-device" id="joinDevice4"></div></div>
+</div>
+<div class="title-prompt" id="titlePrompt">コントローラーのAボタンで参加</div>
+<button class="title-btn" id="startBtn" disabled>ゲーム開始</button>
+<div class="title-hint">
+キーボード1P: ←→移動 / ↓ソフトドロップ / Space回転 / Escメニュー<br>
+コントローラー: 左スティック/十字キー移動 / A回転 / ZLソフトドロップ / START(+) メニュー<br>
+Deleteキー: DEBUGモード
+</div>
+</div>
+
+<div id="gameScreen">
+<div class="game-header"><h2>🎮 テトリス バトル</h2><div class="hint">Esc / START(+) / SELECT(-) でメニュー</div></div>
+<div class="players-container" id="playersContainer"></div>
+</div>
+
+<div class="controls-overlay" id="controlsOverlay">←→移動 | ↓ソフトドロップ | Space回転 | Escメニュー</div>
+
+<div id="menuOverlay">
+<div class="menu-panel">
+<h2>⏸ PAUSE</h2>
+<button class="menu-btn" id="resumeBtn" data-action="resume">▶ ゲームに戻る <span class="btn-hint">A</span></button>
+<button class="menu-btn" id="restartBtn" data-action="restart">↺ リセット <span class="btn-hint">A</span></button>
+<button class="menu-btn" id="titleBtn" data-action="title">🏠 タイトルに戻る <span class="btn-hint">A</span></button>
+</div>
+</div>
+
+<div class="winner-announce" id="winnerAnnounce">
+<h1 id="winnerText">P1 WIN!</h1>
+<p>他のプレイヤーは全滅しました</p>
+<div class="close-hint">Enter / A / START / SELECT でタイトルに戻る</div>
+</div>
+
+<div id="debugPanel"><div id="debugContent"></div></div>
+
+<script type="module">
+import { GamepadManager } from './multipad.js';
+
+const COLS=10,ROWS=20;
+const COLORS={I:'#00f0f0',O:'#f0f000',T:'#a000f0',S:'#00f000',Z:'#f00000',J:'#0000f0',L:'#f0a000'};
+const GARBAGE_COLOR='#888888';
+const PLAYER_COLORS=['#ff6b6b','#feca57','#48dbfb','#ff9ff3'];
+const TETRIMINOS={
+I:{blocks:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]]},
+O:{blocks:[[1,1],[1,1]]},
+T:{blocks:[[0,1,0],[1,1,1],[0,0,0]]},
+S:{blocks:[[0,1,1],[1,1,0],[0,0,0]]},
+Z:{blocks:[[1,1,0],[0,1,1],[0,0,0]]},
+J:{blocks:[[1,0,0],[1,1,1],[0,0,0]]},
+L:{blocks:[[0,0,1],[1,1,1],[0,0,0]]}
+};
+const KEYS=Object.keys(TETRIMINOS);
+
+function getAnyGamepadInput(gm){
+const r={up:false,down:false,left:false,right:false,A:false,B:false,X:false,Y:false,START:false,SELECT:false,leftStickX:0,leftStickY:0,ZL:0,ZR:0};
+const gps=navigator.getGamepads?.()||[];
+for(const idx of gm.connectedGamepads){
+const gp=gps[idx];if(!gp)continue;
+const i=gm.getStandardInput(gp);
+if(i.dpadUp||i.leftStickY<-0.5)r.up=true;
+if(i.dpadDown||i.leftStickY>0.5)r.down=true;
+if(i.dpadLeft||i.leftStickX<-0.5)r.left=true;
+if(i.dpadRight||i.leftStickX>0.5)r.right=true;
+if(i.A)r.A=true;if(i.B)r.B=true;if(i.X)r.X=true;if(i.Y)r.Y=true;
+if(i.START)r.START=true;if(i.SELECT)r.SELECT=true;
+if(Math.abs(i.leftStickX)>Math.abs(r.leftStickX))r.leftStickX=i.leftStickX;
+if(Math.abs(i.leftStickY)>Math.abs(r.leftStickY))r.leftStickY=i.leftStickY;
+if(i.ZL>r.ZL)r.ZL=i.ZL;if(i.ZR>r.ZR)r.ZR=i.ZR;
+}
+return r;
+}
+
+class TetrisPlayer{
+constructor(pn,bs,onG,onGO){
+this.playerNum=pn;this.blockSize=bs;this.onGarbageSend=onG;this.onGameOver=onGO;
+this.cols=COLS;this.rows=ROWS;this.board=this.createBoard();
+this.currentPiece=this.spawnPiece();this.nextPiece=this.spawnPiece();
+this.score=0;this.lines=0;this.level=1;this.gameOver=false;this.winner=false;
+this.fallTime=0;this.baseFallSpeed=0.8;this.dasTimer=0;this.dasDelay=0.17;this.dasRepeat=0.03;
+this.prevRotate=false;this.prevLeft=false;this.prevRight=false;
+this.keysPressed={};this.pendingGarbage=0;
+this.canvas=null;this.ctx=null;this.nextCanvas=null;this.nextCtx=null;this.domElements={};
+}
+createBoard(){return Array(this.rows).fill(null).map(()=>Array(this.cols).fill(0))}
+spawnPiece(){
+const k=KEYS[Math.floor(Math.random()*KEYS.length)];
+const t=TETRIMINOS[k],b=t.blocks.map(r=>[...r]);
+return{type:k,blocks:b,color:COLORS[k],x:Math.floor((this.cols-b[0].length)/2),y:0};
+}
+setupCanvas(cid){
+const c=document.getElementById(cid);c.innerHTML='';
+const nd=document.createElement('div');nd.className='player-name';
+nd.innerHTML=`<span class="p-indicator" style="background:${PLAYER_COLORS[this.playerNum-1]}"></span> P${this.playerNum}`;c.appendChild(nd);
+const w=document.createElement('div');w.className='game-canvas-wrap';w.id=`wrap${this.playerNum}`;
+this.canvas=document.createElement('canvas');this.canvas.width=this.cols*this.blockSize;this.canvas.height=this.rows*this.blockSize;this.ctx=this.canvas.getContext('2d');w.appendChild(this.canvas);c.appendChild(w);
+const id=document.createElement('div');id.className='player-info';
+id.innerHTML=`<div class="info-item"><div class="label">SCORE</div><div class="value" id="score${this.playerNum}">0</div></div><div class="info-item"><div class="label">LINES</div><div class="value" id="lines${this.playerNum}">0</div></div><div class="info-item"><div class="label">LEVEL</div><div class="value" id="level${this.playerNum}">1</div></div>`;
+c.appendChild(id);
+const np=document.createElement('div');np.className='next-piece-box';np.innerHTML='<div class="label">NEXT</div>';
+this.nextCanvas=document.createElement('canvas');this.nextCanvas.width=4*this.blockSize;this.nextCanvas.height=4*this.blockSize;this.nextCtx=this.nextCanvas.getContext('2d');np.appendChild(this.nextCanvas);c.appendChild(np);
+this.domElements={container:c,wrap:w,score:document.getElementById(`score${this.playerNum}`),lines:document.getElementById(`lines${this.playerNum}`),level:document.getElementById(`level${this.playerNum}`)};
+}
+update(dt,input,k){
+if(this.gameOver)return;
+k=k||{};
+const left=!!k['arrowleft']||(input&&(input.dpadLeft||input.leftStickX<-0.5));
+const right=!!k['arrowright']||(input&&(input.dpadRight||input.leftStickX>0.5));
+const down=!!k['arrowdown']||(input&&(input.ZL>0.5||input.leftStickY>0.5));
+const rotate=!!k[' ']||(input&&input.A);
+if(left||right){
+const dir=left?-1:1;
+if((left&&!this.prevLeft)||(right&&!this.prevRight)){this.currentPiece.x+=dir;if(!this.isValid(this.currentPiece))this.currentPiece.x-=dir;this.dasTimer=0;}
+else{this.dasTimer+=dt;if(this.dasTimer>=this.dasDelay){this.dasTimer-=this.dasRepeat;this.currentPiece.x+=dir;if(!this.isValid(this.currentPiece))this.currentPiece.x-=dir;}}
+}else{this.dasTimer=0;}
+this.prevLeft=left;this.prevRight=right;
+if(rotate&&!this.prevRotate)this.rotatePiece();
+this.prevRotate=rotate;
+let speed=this.baseFallSpeed-(this.level-1)*0.045;speed=Math.max(speed,0.08);if(down)speed*=0.12;
+this.fallTime+=dt;
+if(this.fallTime>=speed){
+this.currentPiece.y+=1;
+if(!this.isValid(this.currentPiece)){
+this.currentPiece.y-=1;this.lockPiece();
+const cl=this.checkLines();if(cl>=2)this.onGarbageSend(this.playerNum,cl);
+this.applyGarbage();
+this.currentPiece=this.nextPiece;this.nextPiece=this.spawnPiece();
+if(!this.isValid(this.currentPiece)){this.gameOver=true;this.onGameOver(this.playerNum);}
+}this.fallTime=0;
+}
+}
+rotatePiece(){
+const orig=this.currentPiece.blocks;this.currentPiece.blocks=this.rotateMatrix(orig);
+if(!this.isValid(this.currentPiece)){for(const o of[0,-1,1,-2,2]){this.currentPiece.x+=o;if(this.isValid(this.currentPiece))return;this.currentPiece.x-=o;}this.currentPiece.blocks=orig;}
+}
+rotateMatrix(m){return m[0].map((_,i)=>m.map(r=>r[i]).reverse())}
+isValid(p){
+for(let y=0;y<p.blocks.length;y++)for(let x=0;x<p.blocks[y].length;x++)if(p.blocks[y][x]){const bx=p.x+x,by=p.y+y;if(bx<0||bx>=this.cols||by>=this.rows)return false;if(by>=0&&this.board[by][bx])return false;}
+return true;
+}
+lockPiece(){
+for(let y=0;y<this.currentPiece.blocks.length;y++)for(let x=0;x<this.currentPiece.blocks[y].length;x++)if(this.currentPiece.blocks[y][x]){const by=this.currentPiece.y+y,bx=this.currentPiece.x+x;if(by>=0)this.board[by][bx]=this.currentPiece.color;}
+}
+checkLines(){
+let cleared=0;
+for(let y=this.rows-1;y>=0;y--){
+const isNormalFull=this.board[y].every(c=>c!==0&&c!==GARBAGE_COLOR);
+if(isNormalFull){
+this.board.splice(y,1);this.board.unshift(Array(this.cols).fill(0));cleared++;y++;
+}
+}
+if(cleared>0){const pts=[0,100,300,500,800];this.score+=(pts[cleared]||800)*this.level;this.lines+=cleared;this.level=Math.floor(this.lines/10)+1;this.updateInfo();}
+return cleared;
+}
+receiveGarbage(lines){
+this.pendingGarbage+=lines;
+const w=document.createElement('div');w.className='garbage-warning';w.textContent=`⚠ +${lines}段`;this.domElements.wrap.appendChild(w);setTimeout(()=>w.remove(),1500);
+}
+applyGarbage(){
+for(let i=0;i<this.pendingGarbage;i++){
+const hole=Math.floor(Math.random()*this.cols);
+const row=Array(this.cols).fill(GARBAGE_COLOR);row[hole]=0;
+for(let y=0;y<this.rows-1;y++)this.board[y]=[...this.board[y+1]];
+this.board[this.rows-1]=row;
+}
+this.pendingGarbage=0;
+}
+updateInfo(){
+if(this.domElements.score)this.domElements.score.textContent=this.score;
+if(this.domElements.lines)this.domElements.lines.textContent=this.lines;
+if(this.domElements.level)this.domElements.level.textContent=this.level;
+}
+draw(){
+const ctx=this.ctx,bs=this.blockSize;
+ctx.fillStyle='#0a0e27';ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+ctx.strokeStyle='rgba(0,212,255,0.06)';ctx.lineWidth=.5;
+for(let i=0;i<=this.cols;i++){ctx.beginPath();ctx.moveTo(i*bs,0);ctx.lineTo(i*bs,this.canvas.height);ctx.stroke();}
+for(let i=0;i<=this.rows;i++){ctx.beginPath();ctx.moveTo(0,i*bs);ctx.lineTo(this.canvas.width,i*bs);ctx.stroke();}
+for(let y=0;y<this.rows;y++)for(let x=0;x<this.cols;x++)if(this.board[y][x])this.drawBlock(ctx,x,y,this.board[y][x],bs);
+if(!this.gameOver){
+for(let y=0;y<this.currentPiece.blocks.length;y++)for(let x=0;x<this.currentPiece.blocks[y].length;x++)if(this.currentPiece.blocks[y][x])this.drawBlock(ctx,this.currentPiece.x+x,this.currentPiece.y+y,this.currentPiece.color,bs);
+let gy=this.currentPiece.y;while(true){gy++;const g={...this.currentPiece,y:gy};if(!this.isValid(g)){gy--;break;}}
+ctx.globalAlpha=.2;
+for(let y=0;y<this.currentPiece.blocks.length;y++)for(let x=0;x<this.currentPiece.blocks[y].length;x++)if(this.currentPiece.blocks[y][x])this.drawBlock(ctx,this.currentPiece.x+x,gy+y,this.currentPiece.color,bs);
+ctx.globalAlpha=1;
+}
+this.nextCtx.fillStyle='#0a0e27';this.nextCtx.fillRect(0,0,this.nextCanvas.width,this.nextCanvas.height);
+const ox=(4-this.nextPiece.blocks[0].length)*bs/2,oy=(4-this.nextPiece.blocks.length)*bs/2;
+for(let y=0;y<this.nextPiece.blocks.length;y++)for(let x=0;x<this.nextPiece.blocks[y].length;x++)if(this.nextPiece.blocks[y][x])this.drawBlock(this.nextCtx,(ox/bs)+x,(oy/bs)+y,this.nextPiece.color,bs);
+if(this.gameOver&&!this.winner){
+ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+ctx.fillStyle='#ff3333';ctx.font=`bold ${bs*1.2}px Arial`;ctx.textAlign='center';ctx.fillText('GAME OVER',this.canvas.width/2,this.canvas.height/2);
+ctx.font=`${bs*.5}px Arial`;ctx.fillStyle='#aaa';ctx.fillText('他プレイヤーの勝利',this.canvas.width/2,this.canvas.height/2+bs*1.3);
+}
+if(this.winner){
+ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+ctx.fillStyle='#ffd700';ctx.font=`bold ${bs*1.3}px Arial`;ctx.textAlign='center';ctx.fillText('WINNER!',this.canvas.width/2,this.canvas.height/2);
+}
+}
+drawBlock(ctx,x,y,color,bs){
+const px=x*bs,py=y*bs;
+ctx.fillStyle=color;ctx.fillRect(px+1,py+1,bs-2,bs-2);
+ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillRect(px+1,py+1,bs-2,3);ctx.fillRect(px+1,py+1,3,bs-2);
+ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fillRect(px+bs-4,py+1,3,bs-2);ctx.fillRect(px+1,py+bs-4,bs-2,3);
+}
+reset(){
+this.board=this.createBoard();this.currentPiece=this.spawnPiece();this.nextPiece=this.spawnPiece();
+this.score=0;this.lines=0;this.level=1;this.gameOver=false;this.winner=false;this.fallTime=0;this.pendingGarbage=0;
+this.dasTimer=0;this.prevRotate=false;this.prevLeft=false;this.prevRight=false;this.updateInfo();
+}
+}
+
+class GameManager{
+constructor(){
+this.gamepadManager=new GamepadManager();this.players=[];this.state='title';this.paused=false;this.lastTime=null;this.keysPressed={};
+this.menuIndex=0;this.menuButtons=[];
+this.prevMenuUp=false;this.prevMenuDown=false;this.prevMenuConfirm=false;this.prevMenuCancel=false;this.prevMenuToggle=false;this.prevEndConfirm=false;
+this.setupUI();this.setupInputs();this.loop();
+}
+setupUI(){
+this.titleScreen=document.getElementById('titleScreen');this.gameScreen=document.getElementById('gameScreen');this.menuOverlay=document.getElementById('menuOverlay');
+this.playersContainer=document.getElementById('playersContainer');this.winnerAnnounce=document.getElementById('winnerAnnounce');
+this.winnerText=document.getElementById('winnerText');this.startBtn=document.getElementById('startBtn');
+this.titlePrompt=document.getElementById('titlePrompt');this.controlsOverlay=document.getElementById('controlsOverlay');
+this.menuButtons=[document.getElementById('resumeBtn'),document.getElementById('restartBtn'),document.getElementById('titleBtn')];
+document.getElementById('startBtn').addEventListener('click',()=>this.startGame());
+document.getElementById('resumeBtn').addEventListener('click',()=>this.resumeGame());
+document.getElementById('restartBtn').addEventListener('click',()=>{this.resumeGame();this.resetGame();});
+document.getElementById('titleBtn').addEventListener('click',()=>this.backToTitle());
+}
+setupInputs(){
+window.addEventListener('keydown',(e)=>{this.keysPressed[e.key.toLowerCase()]=true;if(e.key===' ')e.preventDefault();if(e.key==='Enter'&&this.state==='ended')this.backToTitle();});
+window.addEventListener('keyup',(e)=>{this.keysPressed[e.key.toLowerCase()]=false;});
+}
+getBlockSize(c){if(c===1)return 32;if(c===2)return 26;if(c===3)return 22;return 18;}
+startGame(){
+const a=this.gamepadManager.playerAssignments,c=a.size;if(c===0)return;
+this.players=[];this.playersContainer.innerHTML='';const bs=this.getBlockSize(c);
+const s=Array.from(a.entries()).sort((x,y)=>x[0]-y[0]);
+for(const[pn,gi]of s){
+const b=document.createElement('div');b.className='player-box';b.id=`playerBox${pn}`;this.playersContainer.appendChild(b);
+const p=new TetrisPlayer(pn,bs,(sn,l)=>this.sendGarbage(sn,l),(pn)=>this.handleGameOver(pn));
+p.setupCanvas(`playerBox${pn}`);this.players.push(p);
+}
+this.gamepadManager.registrationMode=false;this.state='playing';this.paused=false;this.menuIndex=0;
+this.titleScreen.classList.add('hidden');this.gameScreen.classList.add('active');
+this.menuOverlay.classList.remove('active');this.winnerAnnounce.classList.remove('active');this.controlsOverlay.style.display='block';
+}
+sendGarbage(sender,lines){
+let gl=0;if(lines===2)gl=1;else if(lines===3)gl=2;else if(lines>=4)gl=4;if(gl===0)return;
+const op=this.players.filter(p=>p.playerNum!==sender&&!p.gameOver);if(op.length===0)return;
+op[Math.floor(Math.random()*op.length)].receiveGarbage(gl);
+}
+handleGameOver(pn){
+const al=this.players.filter(p=>!p.gameOver);
+if(al.length===1){al[0].winner=true;this.state='ended';this.winnerText.textContent=`P${al[0].playerNum} WIN!`;this.winnerAnnounce.classList.add('active');}
+else if(al.length===0){this.state='ended';this.winnerText.textContent='DRAW!';this.winnerAnnounce.classList.add('active');}
+this.players.forEach(p=>{const b=document.getElementById(`playerBox${p.playerNum}`);if(p.gameOver)b.classList.add('game-over-box');if(p.winner)b.classList.add('winner-box');});
+}
+toggleMenu(){
+if(this.state!=='playing'&&this.state!=='paused')return;
+this.paused=!this.paused;
+if(this.paused){this.state='paused';this.menuIndex=0;this.updateMenuHighlight();this.menuOverlay.classList.add('active');}
+else{this.state='playing';this.menuOverlay.classList.remove('active');}
+}
+resumeGame(){this.paused=false;this.state='playing';this.menuOverlay.classList.remove('active');}
+resetGame(){
+this.players.forEach(p=>{p.reset();const b=document.getElementById(`playerBox${p.playerNum}`);b.classList.remove('game-over-box','winner-box');});
+this.state='playing';this.winnerAnnounce.classList.remove('active');
+}
+backToTitle(){
+this.state='title';this.paused=false;this.titleScreen.classList.remove('hidden');this.gameScreen.classList.remove('active');
+this.menuOverlay.classList.remove('active');this.winnerAnnounce.classList.remove('active');this.controlsOverlay.style.display='none';this.players=[];this.gamepadManager.reset();
+}
+updateMenuHighlight(){
+this.menuButtons.forEach((b,i)=>{if(i===this.menuIndex)b.classList.add('selected');else b.classList.remove('selected');});
+}
+checkMenuToggle(){
+const a=getAnyGamepadInput(this.gamepadManager);
+const mp=this.keysPressed['escape']||a.START||a.SELECT;
+if(mp&&!this.prevMenuToggle)this.toggleMenu();this.prevMenuToggle=mp;
+}
+updateMenu(){
+if(!this.paused)return;
+const a=getAnyGamepadInput(this.gamepadManager);
+const up=this.keysPressed['arrowup']||this.keysPressed['w']||a.up;
+const down=this.keysPressed['arrowdown']||this.keysPressed['s']||a.down;
+const cf=this.keysPressed['enter']||this.keysPressed[' ']||a.A;
+const cc=this.keysPressed['escape']||this.keysPressed['backspace']||a.B||a.SELECT;
+if(up&&!this.prevMenuUp){this.menuIndex=(this.menuIndex-1+this.menuButtons.length)%this.menuButtons.length;this.updateMenuHighlight();}
+if(down&&!this.prevMenuDown){this.menuIndex=(this.menuIndex+1)%this.menuButtons.length;this.updateMenuHighlight();}
+if(cf&&!this.prevMenuConfirm)this.menuButtons[this.menuIndex].click();
+if(cc&&!this.prevMenuCancel)this.resumeGame();
+this.prevMenuUp=up;this.prevMenuDown=down;this.prevMenuConfirm=cf;this.prevMenuCancel=cc;
+}
+updateTitle(){
+const a=this.gamepadManager.playerAssignments,c=a.size;
+for(let p=1;p<=4;p++){
+const s=document.getElementById(`joinSlot${p}`),d=document.getElementById(`joinDevice${p}`);
+if(a.has(p)){s.classList.add('joined');const gp=this.gamepadManager.getGamepad(a.get(p));d.textContent=gp?(gp.id||'Gamepad'):'';}
+else{s.classList.remove('joined');d.textContent='';}
+}
+if(c>0){this.startBtn.disabled=false;this.titlePrompt.textContent=`参加中: ${c}人 — Enter / START(+) で開始`;}
+else{this.startBtn.disabled=true;this.titlePrompt.textContent='コントローラーのAボタンで参加';}
+const ai=getAnyGamepadInput(this.gamepadManager);
+const sp=this.keysPressed['enter']||ai.START||ai.SELECT;
+if(sp&&!this.prevMenuToggle&&c>0)this.startGame();this.prevMenuToggle=sp;
+}
+updateGame(dt){
+if(this.state==='ended'){
+const a=getAnyGamepadInput(this.gamepadManager);
+const b=this.keysPressed['enter']||a.A||a.START||a.SELECT;
+if(b&&!this.prevEndConfirm)this.backToTitle();this.prevEndConfirm=b;return;
+}
+if(this.paused){this.updateMenu();return;}
+this.checkMenuToggle();
+this.players.forEach(p=>{const i=this.gamepadManager.getPlayerInput(p.playerNum);p.update(dt,i,p.playerNum===1?this.keysPressed:null);});
+}
+draw(){if(this.state==='playing'||this.state==='paused'||this.state==='ended')this.players.forEach(p=>p.draw());}
+loop(){
+const n=performance.now();if(!this.lastTime)this.lastTime=n;
+const dt=Math.min((n-this.lastTime)/1000,0.05);this.lastTime=n;
+if(this.state==='title')this.updateTitle();else{this.updateGame(dt);this.draw();}
+requestAnimationFrame(()=>this.loop());
+}
+}
+
+window.addEventListener('DOMContentLoaded',()=>{new GameManager();});
+</script>
+</body>
+</html>

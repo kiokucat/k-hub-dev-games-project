@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>4Pランダムステージ・プラットフォーマー (6桁ルームID版)</title>
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<style>
+  :root{
+    --sky-top:#5c94fc; --sky-bottom:#a6d8ff; --ground:#8a5a2a; --brick:#c9773a;
+    --panel: rgba(15, 17, 26, 0.85); --panel-light: rgba(42, 47, 66, 0.9);
+    --accent:#ffd23f; --accent-hover:#e6b822;
+    --p1:#e6402c; --p2:#2fae4e; --p3:#3a8ef0; --p4:#c46bf0; --text:#f4f1ea;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100vw; height: 100vh; background: #000; color: var(--text); font-family: sans-serif; overflow: hidden; user-select: none; }
+  #game { display: block; width: 100vw; height: 100vh; background: var(--sky-top); }
+  #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: none; gap: 15px; justify-content: center; flex-wrap: wrap; pointer-events: none; z-index: 10; }
+  .hud-p { display: flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.1); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .esc-hint { position: absolute; top: 15px; right: 20px; font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 6px 12px; border-radius: 4px; }
+  #titleScreen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 12, 20, 0.7); backdrop-filter: blur(12px); z-index: 20; padding: 20px; overflow-y: auto; }
+  .title-card { background: var(--panel-light); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 40px; max-width: 800px; width: 100%; text-align: center; }
+  .title-card h1 { font-size: 28px; color: var(--accent); margin-bottom: 30px; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; text-align: left; margin-bottom: 30px; }
+  @media(max-width: 768px){ .settings-grid { grid-template-columns: 1fr; } }
+  .setting-section { background: rgba(0, 0, 0, 0.3); padding: 20px; border-radius: 12px; }
+  .setting-section h3 { font-size: 16px; color: var(--accent); margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+  .player-setup-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+  .player-setup-row span { font-size: 14px; font-weight: bold; width: 70px; }
+  .name-input { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 12px; border-radius: 6px; }
+  .name-input:disabled { opacity: 0.3; }
+  .count-selector { display: flex; gap: 8px; margin-bottom: 20px; }
+  .count-btn { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+  .count-btn.active { background: var(--accent); color: #000; }
+  .seed-row { display: flex; gap: 10px; }
+  .seed-input { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px; border-radius: 6px; }
+  .controls-info { font-size: 13px; line-height: 1.8; color: #ccc; }
+  .controls-info kbd { background: #333; padding: 2px 6px; border-radius: 4px; color: #fff; font-size: 12px; }
+  .btn-container { display: flex; gap: 15px; justify-content: center; width: 100%; margin-top: 10px; flex-wrap: wrap; }
+  .start-btn { background: var(--accent); color: #1a1500; border: none; padding: 16px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 6px 0 var(--accent-hover); }
+  .start-btn:active { transform: translateY(2px); }
+  #onlinePanel { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); width: 100%; display: none; }
+  #onlineStatus { font-size: 14px; margin-bottom: 12px; color: var(--accent); font-weight: bold; }
+  .join-form { display: flex; gap: 10px; align-items: center; }
+  #gameOverlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 15; text-align: center; }
+  #gameOverlay h2 { font-size: 40px; color: var(--accent); }
+  .action-btn { background: var(--accent); color: #000; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+<div id="hud"></div>
+<div id="hud-esc" class="esc-hint" style="display:none;">[Esc] タイトルへ戻る</div>
+
+<div id="gameOverlay">
+  <h2 id="overlayTitle"></h2>
+  <p id="overlayText"></p>
+  <button class="action-btn" id="overlayBtn">続ける</button>
+</div>
+
+<div id="titleScreen">
+  <div class="title-card">
+    <h1>🍄 RANDOM STAGE PLATFORMER 🍄</h1>
+    <div class="settings-grid">
+      <div class="setting-section">
+        <h3>プレイヤー設定 (ローカル用)</h3>
+        <div class="count-selector">
+          <button class="count-btn" data-count="1">1人</button>
+          <button class="count-btn active" data-count="2">2人</button>
+          <button class="count-btn" data-count="3">3人</button>
+          <button class="count-btn" data-count="4">4人</button>
+        </div>
+        <div class="player-setup-row"><span>P1 (赤)</span><input type="text" id="nameP1" class="name-input" value="Player 1" maxlength="10"></div>
+        <div class="player-setup-row"><span>P2 (緑)</span><input type="text" id="nameP2" class="name-input" value="Player 2" maxlength="10"></div>
+        <div class="player-setup-row"><span>P3 (青)</span><input type="text" id="nameP3" class="name-input" value="Player 3" maxlength="10" disabled></div>
+        <div class="player-setup-row"><span>P4 (紫)</span><input type="text" id="nameP4" class="name-input" value="Player 4" maxlength="10" disabled></div>
+      </div>
+      <div class="setting-section">
+        <h3>ゲームルール設定</h3>
+        <div class="player-setup-row" style="margin-bottom: 20px;">
+          <span>初期ライフ</span>
+          <select id="initLives" class="name-input" style="flex: none; width: 90px;">
+            <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+        <h3>ステージ設定</h3>
+        <div class="seed-row" style="margin-bottom: 20px;">
+          <input type="number" id="seedInput" class="seed-input" placeholder="ランダムシード (空欄可)">
+        </div>
+        <h3>操作方法</h3>
+        <div class="controls-info">
+          <div><strong>P1 / ネット対戦:</strong> <kbd>←</kbd><kbd>→</kbd> 移動 / <kbd>↑</kbd> ジャンプ</div>
+          <div><strong>P2 (ローカル):</strong> <kbd>A</kbd><kbd>D</kbd> 移動 / <kbd>W</kbd> ジャンプ</div>
+          <div style="color:var(--accent);">★ 敵に接触でHP減少！0でライフ消費。5コインで1UP！</div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-container">
+      <button id="startBtn" class="start-btn">GAME START</button>
+      <button id="hostInitBtn" class="start-btn" style="background: #2fae4e;">ネット対戦 (ホスト部屋作成)</button>
+    </div>
+    <div id="onlinePanel">
+      <div id="onlineStatus">ルーム作成中...</div>
+      <div id="joinForm" class="join-form">
+        <input type="text" id="joinRoomId" class="name-input" placeholder="6桁のルームIDを入力" pattern="\d*">
+        <button id="joinBtn" class="start-btn" style="padding: 10px 20px; font-size: 15px; background: #3a8ef0;">部屋に参加する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const canvas = document.getElementById('game'); const ctx = canvas.getContext('2d');
+const TILE = 32; const ROWS = 13; const GROUND_ROW = 9; const TARGET_LOGICAL_HEIGHT = 600;
+
+let level, levelWidthTiles, coins, enemies, players, stageSeed, particles = [];
+let gameState = 'title'; let selectedPlayerCount = 2;
+let lastInputTime = Date.now(); const TIMEOUT_DURATION = 15000;
+
+// オンライン用
+let isOnline = false, isHost = false, myPlayerIdx = 0, peer = null;
+let hostConnections = [], guestConnection = null, onlinePlayerNames = [];
+
+const PLAYER_COLORS = ['--p1','--p2','--p3','--p4'];
+const PLAYER_KEYS = [
+  {left:'ArrowLeft', right:'ArrowRight', jump:'ArrowUp'},
+  {left:'KeyA', right:'KeyD', jump:'KeyW'},
+  {left:'KeyJ', right:'KeyL', jump:'KeyI'},
+  {left:'Comma', right:'Slash', jump:'Period'}
+];
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+let currentRNG = Math.random;
+function rnd(){ return currentRNG(); }
+function rand(a,b){ return a + rnd()*(b-a); }
+function randi(a,b){ return Math.floor(rand(a,b+1)); }
+function mulberry32(seed){
+  let s = seed >>> 0;
+  return function(){
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function generateLevel(seedValue){
+  const prevRNG = currentRNG; currentRNG = mulberry32(seedValue);
+  levelWidthTiles = randi(110, 150); const cols = levelWidthTiles;
+  const grid = Array.from({length:ROWS}, () => new Array(cols).fill(0));
+  const groundHeight = []; let x = 0;
+  for(let i=0; i<6; i++) groundHeight[i] = GROUND_ROW;
+  x = 6;
+  while(x < cols){
+    if(x > 10 && x < cols-8 && rnd() < 0.22){
+      const gapW = randi(2,3); for(let i=0;i<gapW && x<cols;i++,x++) groundHeight[x] = -1;
+    } else {
+      const runLen = randi(4,10); for(let i=0; i<runLen && x<cols;i++,x++) groundHeight[x] = GROUND_ROW;
+    }
+  }
+  for(let i=Math.max(0,cols-8); i<cols; i++) groundHeight[i] = GROUND_ROW;
+  for(let c=0;c<cols;c++){
+    if(groundHeight[c] === -1) continue;
+    for(let r=groundHeight[c]; r<ROWS; r++) grid[r][c] = 1;
+  }
+  let px = 8;
+  while(px < cols-10){
+    if(rnd() < 0.5){
+      const platRow = GROUND_ROW - randi(2,5); const platLen = randi(2,6);
+      if(platRow > 1){ for(let i=0;i<platLen && px+i<cols-4;i++) grid[platRow][px+i] = 2; }
+      px += platLen + randi(2,4);
+    } else { px += randi(2,5); }
+  }
+  for(let c=8;c<cols-8;c++){
+    if(groundHeight[c] !== -1 && rnd() < 0.15){
+      const qRow = GROUND_ROW - randi(2,3); if(qRow>0 && grid[qRow][c]===0) grid[qRow][c] = 3;
+    }
+  }
+  const coinList = [];
+  for(let c=8;c<cols-8;c++){
+    if(rnd()<0.1){
+      let r = GROUND_ROW - randi(1,3); if(r>0 && grid[r][c]===0) coinList.push({x:c*TILE+TILE/2, y:r*TILE+TILE/2, taken:false});
+    }
+  }
+  const flagCol = cols-4;
+  for(let r=1;r<ROWS-1;r++){ if(grid[r][flagCol]===0) grid[r][flagCol] = 6; }
+  const enemyList = [];
+  for(let c=10; c<cols-10; c++){
+    if(groundHeight[c]===GROUND_ROW && rnd()<0.05){
+      enemyList.push({x:c*TILE, y:(GROUND_ROW-1)*TILE, vx:rnd()<0.5?-1.5:1.5, minX:(c-2)*TILE, maxX:(c+2)*TILE, alive:true, w:28, h:28, animT:rnd()*100});
+    }
+  }
+  currentRNG = prevRNG;
+  return {grid, cols, coinList, enemyList, flagCol};
+}
+
+function tileAt(c,r){
+  if(c<0||c>=level.cols) return 1; if(r<0||r>=ROWS) return 0; return level.grid[r][c];
+}
+function setTile(c,r,v){ if(r>=0&&r<ROWS&&c>=0&&c<level.cols) level.grid[r][c]=v; }
+function isSolid(t){ return t===1||t===2||t===3||t===4||t===5; }
+
+function makePlayer(id, name, color, keys, spawnX, spawnY){
+  return {
+    id, name, color, keys, x:spawnX, y:spawnY, w:26, h:30, vx:0, vy:0,
+    onGround:false, facing:1, coins:0, totalCoins:0, lives:3, hp:100, maxHp:100,
+    invuln:0, finished:false, dead:false, respawnX:spawnX, respawnY:spawnY, animT:0, moving:false, camX:0, camY:0
+  };
+}
+
+function damagePlayer(p, amount) {
+  if (p.invuln > 0 || p.dead || p.finished) return;
+  p.hp -= amount;
+  p.invuln = 60;
+  if (p.hp <= 0) {
+    p.hp = 0; p.lives--;
+    if (p.lives <= 0) { p.lives = 0; p.dead = true; } 
+    else { p.x = p.respawnX; p.y = p.respawnY; p.vx = 0; p.vy = 0; p.hp = p.maxHp; p.invuln = 90; }
+  }
+  if (isOnline && !isHost && p.id - 1 === myPlayerIdx) {
+    sendToHost({ type: 'playerSync', pIdx: myPlayerIdx, playerState: p });
+  }
+}
+
+const KEYS = {};
+window.addEventListener('keydown', e=>{ 
+  KEYS[e.code]=true; lastInputTime = Date.now(); 
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); 
+  if(e.code === 'Escape' && gameState === 'playing') returnToTitle();
+});
+window.addEventListener('keyup', e=>{ KEYS[e.code]=false; });
+
+function addCoin(p){
+  p.coins++; p.totalCoins++;
+  if(p.coins >= 5){ p.coins = 0; p.lives++; spawn1UPText(p.x, p.y); }
+}
+
+function updatePlayer(p, dt){
+  if(p.finished || p.dead) return;
+  let left = false, right = false, jump = false;
+  if (isOnline) {
+    if (p.id - 1 === myPlayerIdx) {
+      left = KEYS[PLAYER_KEYS[0].left]; right = KEYS[PLAYER_KEYS[0].right]; jump = KEYS[PLAYER_KEYS[0].jump];
+    }
+  } else {
+    left = KEYS[p.keys.left]; right = KEYS[p.keys.right]; jump = KEYS[p.keys.jump];
+  }
+
+  const ACCEL = 0.6, MAXSPD = 4.2, FRICTION = 0.75, GRAVITY = 0.62, MAXFALL = 14, JUMPV = -12.2;
+  p.moving = false;
+  if(left && !right){ p.vx -= ACCEL * dt; p.facing=-1; p.moving=true; }
+  else if(right && !left){ p.vx += ACCEL * dt; p.facing=1; p.moving=true; }
+  else { p.vx *= Math.pow(FRICTION, dt); if(Math.abs(p.vx)<0.05) p.vx=0; }
+  p.vx = Math.max(-MAXSPD, Math.min(MAXSPD, p.vx));
+
+  if(jump && p.onGround){ p.vy = JUMPV; p.onGround = false; }
+  p.vy += GRAVITY * dt; if(p.vy>MAXFALL) p.vy = MAXFALL;
+
+  p.x += p.vx * dt; resolveCollisionsX(p);
+  p.y += p.vy * dt; p.onGround = false; resolveCollisionsY(p);
+
+  if(p.y > ROWS*TILE + 60){ damagePlayer(p, 100); }
+  if(!p.finished && Math.floor((p.x+p.w/2)/TILE) >= level.flagCol){
+    p.finished = true; p.vx = 0; spawnParticleBurst(p.x, p.y, p.color);
+  }
+  if(p.invuln>0) p.invuln = Math.max(0, p.invuln - dt);
+  p.animT += (Math.abs(p.vx)*0.4 + 0.2) * dt;
+  p.x = Math.max(0, Math.min(level.cols*TILE - p.w, p.x));
+}
+
+function resolveCollisionsX(p){
+  const dir = Math.sign(p.vx); if(dir===0) return;
+  const top = Math.floor(p.y/TILE), bottom = Math.floor((p.y+p.h-1)/TILE);
+  const edgeCol = dir>0 ? Math.floor((p.x+p.w-1)/TILE) : Math.floor(p.x/TILE);
+  for(let r=top;r<=bottom;r++){
+    if(isSolid(tileAt(edgeCol, r))){
+      p.x = dir>0 ? edgeCol*TILE - p.w - 0.01 : (edgeCol+1)*TILE + 0.01; p.vx = 0; break;
+    }
+  }
+}
+
+function resolveCollisionsY(p){
+  const dir = Math.sign(p.vy); if(dir===0) return;
+  const left = Math.floor(p.x/TILE), right = Math.floor((p.x+p.w-1)/TILE);
+  const edgeRow = dir>0 ? Math.floor((p.y+p.h-1)/TILE) : Math.floor(p.y/TILE);
+  for(let c=left;c<=right;c++){
+    const t = tileAt(c, edgeRow);
+    if(isSolid(t)){
+      if(dir>0){ p.y = edgeRow*TILE - p.h - 0.01; p.vy = 0; p.onGround = true; }
+      else {
+        p.y = (edgeRow+1)*TILE + 0.01; p.vy = 0.5;
+        if(t===3){
+          if (!isOnline || isHost) { setTile(c, edgeRow, 4); spawnCoinPop(c*TILE+TILE/2, edgeRow*TILE); addCoin(p); }
+          else if (p.id - 1 === myPlayerIdx) { sendToHost({ type: 'hitBlock', c, r: edgeRow, pIdx: myPlayerIdx, tileType: 3 }); }
+        } else if(t===2){
+          if (!isOnline || isHost) { setTile(c, edgeRow, 0); spawnParticleBurst(c*TILE+TILE/2, edgeRow*TILE+TILE/2, '#c9773a'); }
+          else if (p.id - 1 === myPlayerIdx) { sendToHost({ type: 'hitBlock', c, r: edgeRow, pIdx: myPlayerIdx, tileType: 2 }); }
+        }
+      }
+      break;
+    }
+  }
+}
+
+function spawnCoinPop(x,y){ particles.push({type:'coinpop', x, y, vy:-6, life:24}); }
+function spawnParticleBurst(x,y,color){ for(let i=0; i<12; i++){ particles.push({type:'burst', x, y, vx:rand(-4,4), vy:rand(-6,-1), life:40, color}); } }
+function spawn1UPText(x,y){ particles.push({type:'text', text:'1UP!', x:x+13, y:y, vy:-1.5, life:50, color:'#2fae4e'}); }
+
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const pt = particles[i]; pt.life -= dt;
+    if(pt.type==='coinpop'){ pt.y += pt.vy * dt; pt.vy += 0.4 * dt; }
+    else if(pt.type==='burst'){ pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 0.3 * dt; }
+    else if(pt.type==='text'){ pt.y += pt.vy * dt; }
+    if(pt.life<=0) particles.splice(i,1);
+  }
+}
+
+function updateEnemies(dt){
+  if (isOnline && !isHost) return;
+  for(let i=0; i<level.enemyList.length; i++){
+    const e = level.enemyList[i]; if(!e.alive) continue;
+    e.x += e.vx * dt;
+    if(e.x < e.minX || e.x+e.w > e.maxX+TILE){ e.vx *= -1; e.x = Math.max(e.minX, Math.min(e.maxX+TILE-e.w, e.x)); }
+    e.animT += 0.15 * dt;
+
+    for(const p of players){
+      if(p.dead||p.finished) continue;
+      if(rectsOverlap(p.x, p.y, p.w, p.h, e.x, e.y, e.w, e.h)){
+        if(p.vy>0 && (p.y+p.h) - e.y < 16){
+          p.vy = -8; e.alive = false; spawnParticleBurst(e.x+14, e.y+14, '#c9773a');
+        } else {
+          damagePlayer(p, 25);
+        }
+      }
+    }
+  }
+}
+function rectsOverlap(x1,y1,w1,h1,x2,y2,w2,h2){ return x1<x2+w2 && x1+w1>x2 && y1<y2+h2 && y1+h1>y2; }
+
+function checkCoinPickup(){
+  for(let i=0; i<level.coinList.length; i++){
+    const c = level.coinList[i]; if(c.taken) continue;
+    for(const p of players){
+      if(p.dead||p.finished) continue;
+      if(isOnline && (p.id - 1 !== myPlayerIdx)) continue;
+      if(Math.hypot((p.x+p.w/2)-c.x, (p.y+p.h/2)-c.y) < 22){
+        if (!isOnline || isHost) { c.taken = true; addCoin(p); spawnCoinPop(c.x, c.y-16); }
+        else { sendToHost({ type: 'takeCoin', coinIdx: i, pIdx: myPlayerIdx }); }
+      }
+    }
+  }
+}
+
+function updatePlayerCamera(p, vw, vh, dt){
+  const targetX = p.dead ? p.camX : (p.x + p.w/2) - vw/2;
+  p.camX += (targetX - p.camX) * (1 - Math.pow(0.85, dt));
+  p.camX = Math.max(0, Math.min(p.camX, level.cols*TILE - vw));
+  const targetY = p.dead ? p.camY : (p.y + p.h/2) - vh/2;
+  p.camY += (targetY - p.camY) * (1 - Math.pow(0.85, dt));
+  p.camY = Math.max(0, Math.min(p.camY, Math.max(0, ROWS*TILE - vh)));
+}
+
+function computeViewports(n, w, h){
+  if(n<=1) return [{x:0, y:0, w:w, h:h}]; if(n===2) return [{x:0, y:0, w:w/2, h:h}, {x:w/2, y:0, w:w/2, h:h}];
+  const hw = w/2, hh = h/2; const vps = [{x:0, y:0, w:hw, h:hh}, {x:hw, y:0, w:hw, h:hh}, {x:0, y:hh, w:hw, h:hh}];
+  if(n===4) vps.push({x:hw, y:hh, w:hw, h:hh}); return vps;
+}
+
+function drawBackground(camX, vw, vh){
+  const g = ctx.createLinearGradient(0,0,0,vh); g.addColorStop(0,'#5c94fc'); g.addColorStop(1,'#a6d8ff');
+  ctx.fillStyle = g; ctx.fillRect(0,0,vw,vh);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for(let i=0; i<6; i++){ drawCloud(((i*260) - camX*0.3) % (vw+300) - 150, 30+ (i%3)*18); }
+}
+function drawCloud(x,y){ ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2); ctx.arc(x+12,y-4,12,0,Math.PI*2); ctx.arc(x+24,y,10,0,Math.PI*2); ctx.fill(); }
+
+function drawLevel(camX, camY, vw, vh){
+  for(let r=0; r<ROWS; r++){
+    for(let c=Math.max(0, Math.floor(camX/TILE)-1); c<=Math.min(level.cols-1, Math.ceil((camX+vw)/TILE)+1); c++){
+      const t = level.grid[r][c]; if(t===0) continue;
+      drawTile(t, c*TILE - camX, r*TILE - camY);
+    }
+  }
+  ctx.fillStyle = '#ffdd55'; ctx.beginPath(); ctx.moveTo(level.flagCol*TILE - camX + 16, TILE*1.2 - camY); ctx.lineTo(level.flagCol*TILE - camX + 40, TILE*1.4 - camY); ctx.lineTo(level.flagCol*TILE - camX + 16, TILE*1.6 - camY); ctx.fill();
+}
+
+function drawTile(t, sx, sy){
+  switch(t){
+    case 1: ctx.fillStyle = '#8a5a2a'; ctx.fillRect(sx,sy,TILE,TILE); ctx.fillStyle = '#a3712f'; ctx.fillRect(sx,sy,TILE,6); break;
+    case 2: ctx.fillStyle = '#c9773a'; ctx.fillRect(sx,sy,TILE,TILE); ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.strokeRect(sx+2,sy+2,TILE-4,TILE-4); break;
+    case 3: ctx.fillStyle = '#f6b93b'; ctx.fillRect(sx,sy,TILE,TILE); ctx.fillStyle='#8a5a1e'; ctx.font='bold 16px monospace'; ctx.fillText('?', sx+11, sy+22); break;
+    case 4: ctx.fillStyle = '#9c7a4d'; ctx.fillRect(sx,sy,TILE,TILE); break;
+    case 6: ctx.fillStyle = '#cfcfcf'; ctx.fillRect(sx+14, sy, 4, TILE); break;
+  }
+}
+
+function drawPlayer(p, camX, camY){
+  if(p.dead) return; const sx = p.x - camX, sy = p.y - camY;
+  if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) return;
+  ctx.save(); ctx.translate(sx + p.w/2, sy + p.h);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-20, -48, 40, 5);
+  ctx.fillStyle = p.hp > 30 ? '#2fae4e' : '#e6402c'; ctx.fillRect(-20, -48, 40 * (p.hp / p.maxHp), 5);
+  
+  ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px sans-serif';
+  ctx.fillText(`${p.name} (L:${p.lives})`, 0, -36);
+
+  ctx.scale(p.facing, 1);
+  ctx.fillStyle = '#2a4fae'; ctx.fillRect(-p.w/2, -12, p.w, 12);  
+  ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -19, p.w, 7);     
+  ctx.fillStyle = '#f2c29a'; ctx.fillRect(-p.w/2+4, -26, p.w-8, 7); 
+  ctx.fillStyle = p.color; ctx.fillRect(-p.w/2+2, -30, p.w-4, 4);  
+  ctx.fillStyle='#000'; ctx.fillRect(4, -24, 3, 3);                
+  ctx.restore();
+}
+
+function buildHud(){
+  const hud = document.getElementById('hud'); hud.innerHTML = '';
+  players.forEach((p, i)=>{
+    const div = document.createElement('div'); div.className = 'hud-p';
+    div.innerHTML = `<span class="dot" style="background:${p.color}"></span><b>${p.name}</b> HP:${p.hp}% コイン:<span id="p${i+1}coins">0</span>/5`;
+    hud.appendChild(div);
+  });
+}
+function updateHud(){
+  players.forEach((p,i)=>{
+    const c = document.getElementById('p'+(i+1)+'coins'); if(c) c.textContent = p.coins;
+  });
+}
+
+const titleScreen = document.getElementById('titleScreen'); const gameOverlay = document.getElementById('gameOverlay');
+const overlayTitle = document.getElementById('overlayTitle'); const overlayText = document.getElementById('overlayText');
+const overlayBtn = document.getElementById('overlayBtn'); const hudContainer = document.getElementById('hud'); const hudEsc = document.getElementById('hud-esc');
+
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function newStage(keepScores, seedOverride){
+  const initLives = parseInt(document.getElementById('initLives').value, 10) || 3;
+  stageSeed = seedOverride ? parseInt(seedOverride, 10) : Math.floor(Math.random() * 999999999);
+  level = generateLevel(stageSeed);
+  const oldPlayers = players; players = [];
+  for(let i=0; i<selectedPlayerCount; i++){
+    let name = document.getElementById(`nameP${i+1}`).value || `Player ${i+1}`;
+    if (isOnline && onlinePlayerNames[i]) name = onlinePlayerNames[i];
+    const p = makePlayer(i+1, name, getCSS(PLAYER_COLORS[i]), PLAYER_KEYS[i], (2 + i*1.2)*TILE, (GROUND_ROW-2)*TILE);
+    p.lives = initLives;
+    if(keepScores && oldPlayers && oldPlayers[i]){ p.coins = oldPlayers[i].coins; p.totalCoins = oldPlayers[i].totalCoins; p.lives = oldPlayers[i].lives > 0 ? oldPlayers[i].lives : initLives; }
+    players.push(p);
+  }
+  particles = []; buildHud(); updateHud();
+}
+
+function returnToTitle() {
+  gameState = 'title'; if (peer) { peer.destroy(); peer = null; }
+  isOnline = false; isHost = false; hostConnections = []; guestConnection = null;
+  document.getElementById('onlinePanel').style.display = 'none'; titleScreen.style.display = 'flex'; gameOverlay.style.display = 'none'; hudContainer.style.display = 'none'; hudEsc.style.display = 'none';
+}
+
+function showGameOverlay(title, text, btnLabel){ overlayTitle.textContent = title; overlayText.textContent = text; overlayBtn.textContent = btnLabel; gameOverlay.style.display = 'flex'; }
+function hideGameOverlay(){ gameOverlay.style.display='none'; }
+
+const countButtons = Array.from(document.querySelectorAll('.count-btn'));
+function refreshCountButtons(){
+  countButtons.forEach(b => b.classList.toggle('active', parseInt(b.dataset.count,10) === selectedPlayerCount));
+  for(let i=1; i<=4; i++){ const input = document.getElementById(`nameP${i}`); if (input) input.disabled = (i > selectedPlayerCount); }
+}
+countButtons.forEach(b=>{ b.addEventListener('click', ()=>{ if (!isOnline) { selectedPlayerCount = parseInt(b.dataset.count,10); refreshCountButtons(); } }); });
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  const seedVal = document.getElementById('seedInput').value;
+  if (isOnline && isHost) {
+    stageSeed = seedVal ? parseInt(seedVal, 10) : Math.floor(Math.random() * 999999999);
+    hostConnections.forEach((conn, idx) => {
+      conn.send({ type: 'start', assignedIdx: idx + 1, playerCount: selectedPlayerCount, seed: stageSeed, playerNames: onlinePlayerNames });
+    });
+    newStage(false, stageSeed); startGameLoop();
+  } else {
+    isOnline = false; newStage(false, seedVal); startGameLoop();
+  }
+});
+
+function startGameLoop() {
+  gameState = 'playing'; lastInputTime = Date.now(); titleScreen.style.display = 'none'; hudContainer.style.display = 'flex'; hudEsc.style.display = 'block';
+}
+
+// 6桁のランダムな数字をルームIDとして生成して登録
+document.getElementById('hostInitBtn').addEventListener('click', () => {
+  isOnline = true; isHost = true; myPlayerIdx = 0; hostConnections = [];
+  onlinePlayerNames = [document.getElementById('nameP1').value || 'Host'];
+  document.getElementById('onlinePanel').style.display = 'block';
+  document.getElementById('onlineStatus').textContent = 'ルームIDを生成中...';
+
+  const randomRoomId = String(Math.floor(100000 + Math.random() * 900000)); // 100000〜999999
+
+  peer = new Peer(randomRoomId); // 6桁の指定IDでサーバーに接続
+  
+  peer.on('open', (id) => {
+    document.getElementById('onlineStatus').innerHTML = `ルームID: <span style="background:#222; padding:4px 10px; font-size:18px; color:var(--accent); font-family:monospace; border-radius:4px; font-weight:bold;">${id}</span><br>参加者を待っています...揃ったらGAME START！`;
+    selectedPlayerCount = 1; refreshCountButtons();
+  });
+
+  peer.on('error', (err) => {
+    if (err.type === 'unavailable-id') {
+      // 万が一IDが重複した場合は再生成を試みる
+      document.getElementById('onlineStatus').textContent = 'ID重複のため再生成中...再度ボタンを押してください';
+      returnToTitle();
+    }
+  });
+
+  peer.on('connection', (conn) => {
+    if (hostConnections.length >= 3) { conn.on('open', () => conn.send({ type: 'error', message: '満員です' })); return; }
+    
+    hostConnections.push(conn);
+    const assignedIdx = hostConnections.length;
+    selectedPlayerCount = assignedIdx + 1;
+    refreshCountButtons();
+
+    conn.on('data', (data) => {
+      if (data.type === 'join') {
+        onlinePlayerNames[assignedIdx] = data.name;
+        document.getElementById('onlineStatus').innerHTML += `<br>👤 参加: ${data.name}`;
+      } else if (data.type === 'playerSync' && players && players[data.pIdx]) {
+        Object.assign(players[data.pIdx], data.playerState);
+      } else if (data.type === 'takeCoin' && level) {
+        level.coinList[data.coinIdx].taken = true; addCoin(players[data.pIdx]);
+      } else if (data.type === 'hitBlock') {
+        setTile(data.c, data.r, data.tileType === 3 ? 4 : 0); addCoin(players[data.pIdx]);
+      }
+    });
+    conn.on('close', () => { returnToTitle(); });
+  });
+});
+
+// ゲスト参加処理
+document.getElementById('joinBtn').addEventListener('click', () => {
+  const targetId = document.getElementById('joinRoomId').value.trim();
+  if (!targetId || targetId.length !== 6) {
+    alert('6桁のルームIDを正しく入力してください。');
+    return;
+  }
+  isOnline = true; isHost = false;
+  document.getElementById('onlineStatus').textContent = '部屋を探しています...';
+
+  peer = new Peer();
+  peer.on('open', () => {
+    guestConnection = peer.connect(targetId);
+    guestConnection.on('open', () => {
+      document.getElementById('onlineStatus').textContent = 'ホストの開始を待っています...';
+      guestConnection.send({ type: 'join', name: document.getElementById('nameP1').value || 'Guest' });
+    });
+    guestConnection.on('data', (data) => {
+      if (data.type === 'start') {
+        myPlayerIdx = data.assignedIdx; selectedPlayerCount = data.playerCount; onlinePlayerNames = data.playerNames;
+        newStage(false, data.seed); startGameLoop();
+      } else if (data.type === 'gameSync' && players) {
+        data.players.forEach((pState, idx) => { if (idx !== myPlayerIdx && players[idx]) Object.assign(players[idx], pState); });
+        data.enemies.forEach((eState, idx) => { if (level.enemyList[idx]) Object.assign(level.enemyList[idx], eState); });
+        data.coins.forEach((taken, idx) => { if (level.coinList[idx]) level.coinList[idx].taken = taken; });
+        if (data.blocks) data.blocks.forEach(b => setTile(b.c, b.r, b.v));
+      }
+    });
+    guestConnection.on('close', () => { returnToTitle(); });
+  });
+});
+
+function sendToHost(data) { if (guestConnection && guestConnection.open) guestConnection.send(data); }
+
+overlayBtn.addEventListener('click', ()=>{
+  if(gameState==='cleared' && (isHost || !isOnline)){
+    const nextSeed = Math.floor(Math.random() * 999999999);
+    if (isOnline) hostConnections.forEach(c => c.send({ type: 'start', assignedIdx: hostConnections.indexOf(c)+1, playerCount: selectedPlayerCount, seed: nextSeed, playerNames: onlinePlayerNames }));
+    newStage(true, nextSeed); hideGameOverlay(); gameState='playing';
+  } else if(gameState==='gameover' || gameState==='timeout'){ returnToTitle(); }
+});
+
+let lastTime = 0;
+function loop(timestamp){
+  requestAnimationFrame(loop); if (!lastTime) lastTime = timestamp;
+  let elapsed = timestamp - lastTime; lastTime = timestamp;
+  const dt = Math.min(elapsed / 16.67, 6);
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!level || !players || !players.length) return;
+
+  const SCALE = canvas.height / TARGET_LOGICAL_HEIGHT;
+  const vw = canvas.width / SCALE; const vh = canvas.height / SCALE;
+
+  if(gameState==='playing'){
+    let keyPressed = isOnline ? (KEYS[PLAYER_KEYS[0].left] || KEYS[PLAYER_KEYS[0].right] || KEYS[PLAYER_KEYS[0].jump]) : players.some(p => KEYS[p.keys.left] || KEYS[p.keys.right] || KEYS[p.keys.jump]);
+    if(keyPressed) lastInputTime = Date.now();
+    else if(Date.now() - lastInputTime > TIMEOUT_DURATION){ gameState = 'timeout'; showGameOverlay('DISCONNECTED', '15秒間操作がなかったため切断しました', 'タイトルへ戻る'); }
+
+    if (isOnline) { updatePlayer(players[myPlayerIdx], dt); } 
+    else { players.forEach(p => updatePlayer(p, dt)); }
+
+    updateEnemies(dt); checkCoinPickup(); updateParticles(dt); updateHud();
+
+    if (isOnline) {
+      if (isHost) {
+        const blocks = []; for(let r=0; r<ROWS; r++) for(let c=0; c<level.cols; c++) if(level.grid[r][c]===4||level.grid[r][c]===0) blocks.push({c,r,v:level.grid[r][c]});
+        hostConnections.forEach(c => c.send({
+          type: 'gameSync',
+          players: players.map(p => ({ x:p.x, y:p.y, facing:p.facing, animT:p.animT, moving:p.moving, finished:p.finished, dead:p.dead, lives:p.lives, hp:p.hp })),
+          enemies: level.enemyList.map(e => ({ x:e.x, y:e.y, alive:e.alive })),
+          coins: level.coinList.map(c => c.taken),
+          blocks
+        }));
+      } else {
+        sendToHost({ type: 'playerSync', pIdx: myPlayerIdx, playerState: players[myPlayerIdx] });
+      }
+    }
+
+    if(players.every(p=>p.finished || p.dead)){
+      if (players.some(p=>p.finished)) { gameState='cleared'; showGameOverlay('STAGE CLEAR!', 'お見事！次のステージへ進もう', isHost||!isOnline?'次のステージへ':'ホストの開始を待機中...'); }
+      else { gameState='gameover'; showGameOverlay('GAME OVER', '全員力尽きてしまった…', 'タイトルへ戻る'); }
+    }
+  }
+
+  const viewports = computeViewports(players.length, vw, vh);
+  players.forEach((p, i)=>{
+    const vp = viewports[i]; if(!vp) return;
+    if(gameState==='playing') updatePlayerCamera(p, vp.w, vp.h, dt);
+    ctx.save(); ctx.scale(SCALE, SCALE); ctx.beginPath(); ctx.rect(vp.x, vp.y, vp.w, vp.h); ctx.clip(); ctx.translate(vp.x, vp.y);
+    drawBackground(p.camX, vp.w, vp.h); drawLevel(p.camX, p.camY, vp.w, vp.h);
+    
+    level.coinList.forEach(c => { if(!c.taken) { ctx.fillStyle='#ffd23f'; ctx.beginPath(); ctx.arc(c.x-p.camX, c.y-p.camY, 8, 0, Math.PI*2); ctx.fill(); } });
+    level.enemyList.forEach(e => { if(e.alive) { ctx.fillStyle='#8b4a2b'; ctx.fillRect(e.x-p.camX, e.y-p.camY+Math.sin(e.animT)*2, e.w, e.h); } });
+    
+    players.forEach(op => drawPlayer(op, p.camX, p.camY));
+    
+    particles.forEach(pt => {
+      const sx = pt.x - p.camX, sy = pt.y - p.camY;
+      if(pt.type==='coinpop'||pt.type==='burst'){ ctx.fillStyle=pt.color||'#ffd23f'; ctx.fillRect(sx-3, sy-3, 6, 6); }
+      else if(pt.type==='text'){ ctx.fillStyle=pt.color; ctx.font='bold 14px sans-serif'; ctx.fillText(pt.text, sx, sy); }
+    });
+    ctx.restore();
+  });
+}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

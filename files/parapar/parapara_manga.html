@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パラパラ漫画メーカー</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: #16213e;
+            padding: 16px 24px;
+            border-bottom: 2px solid #0f3460;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        h1 { font-size: 1.4rem; color: #e94560; }
+        .btn {
+            background: #0f3460;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background: #e94560; }
+        .btn.primary { background: #e94560; }
+        .btn.primary:hover { background: #ff6b81; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        input[type="file"] { display: none; }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .viewer-area {
+            background: #0f0f1a;
+            border-radius: 12px;
+            border: 2px solid #16213e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+        #canvas {
+            max-width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            background: #000;
+            border-radius: 8px;
+        }
+        .viewer-placeholder {
+            color: #555;
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 40px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 12px;
+            background: #16213e;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-group label { font-size: 0.85rem; color: #aaa; }
+        .control-group input[type="range"] { width: 120px; }
+        .control-group span { font-size: 0.85rem; min-width: 40px; }
+        .frame-strip {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            min-height: 120px;
+            align-items: flex-start;
+        }
+        .frame-strip:empty::before {
+            content: "ここにフレームが表示されます";
+            color: #555;
+            font-size: 0.9rem;
+            width: 100%;
+            text-align: center;
+            padding-top: 30px;
+        }
+        .frame-item {
+            position: relative;
+            flex-shrink: 0;
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #0f3460;
+            cursor: grab;
+            background: #0f0f1a;
+            transition: border-color 0.2s;
+        }
+        .frame-item.active { border-color: #e94560; }
+        .frame-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .frame-item .frame-num {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 2px;
+        }
+        .frame-item .del-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .frame-item:hover .del-btn { display: flex; }
+        .frame-item.dragging { opacity: 0.5; }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .save-dialog {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .save-dialog.show { display: flex; }
+        .dialog-box {
+            background: #16213e;
+            padding: 24px;
+            border-radius: 12px;
+            min-width: 320px;
+            max-width: 90vw;
+        }
+        .dialog-box h3 { margin-bottom: 16px; color: #e94560; }
+        .dialog-box input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #0f3460;
+            background: #0f0f1a;
+            color: #fff;
+            margin-bottom: 16px;
+            font-size: 1rem;
+        }
+        .dialog-box .dialog-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .project-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+        }
+        .project-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #0f0f1a;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .project-item:hover { background: #0f3460; }
+        .project-item .proj-name { font-weight: 500; }
+        .project-item .proj-date { font-size: 0.75rem; color: #888; }
+        .project-item .proj-del {
+            background: transparent;
+            border: none;
+            color: #e94560;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #e94560;
+            transition: width 0.1s;
+        }
+        .loop-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .loop-toggle input { cursor: pointer; }
+        @media (max-width: 600px) {
+            .viewer-area { min-height: 250px; }
+            #canvas { max-height: 300px; }
+            .frame-item { width: 70px; height: 70px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎬 パラパラ漫画メーカー</h1>
+        <div class="toolbar">
+            <button class="btn" onclick="document.getElementById('folderInput').click()">📁 フォルダ選択</button>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">🖼️ 画像選択</button>
+            <button class="btn" onclick="showSaveDialog()">💾 保存</button>
+            <button class="btn" onclick="showLoadDialog()">📂 読込</button>
+            <button class="btn" onclick="clearAll()">🗑️ クリア</button>
+        </div>
+    </header>
+
+    <input type="file" id="folderInput" webkitdirectory directory multiple onchange="handleFiles(this.files)">
+    <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFiles(this.files)">
+
+    <div class="main">
+        <div class="viewer-area" id="viewerArea">
+            <div class="viewer-placeholder" id="placeholder">
+                フォルダまたは画像を選択してください<br>
+                <small>対応形式: PNG, JPG, GIF, WebP</small>
+            </div>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <div class="progress" id="progressBar" style="width:0%"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn primary" id="playBtn" onclick="togglePlay()" disabled>▶ 再生</button>
+            <button class="btn" id="stopBtn" onclick="stop()" disabled>⏹ 停止</button>
+            <div class="control-group">
+                <label>FPS</label>
+                <input type="range" id="fpsSlider" min="1" max="60" value="12" oninput="updateFps(this.value)">
+                <span id="fpsValue">12</span>
+            </div>
+            <div class="control-group">
+                <label class="loop-toggle">
+                    <input type="checkbox" id="loopCheck" checked> ループ
+                </label>
+            </div>
+            <div class="control-group">
+                <button class="btn" onclick="prevFrame()" id="prevBtn" disabled>◀</button>
+                <span id="frameCounter">0 / 0</span>
+                <button class="btn" onclick="nextFrame()" id="nextBtn" disabled>▶</button>
+            </div>
+        </div>
+
+        <div class="frame-strip" id="frameStrip"></div>
+    </div>
+
+    <!-- Save Dialog -->
+    <div class="save-dialog" id="saveDialog">
+        <div class="dialog-box">
+            <h3>💾 プロジェクトを保存</h3>
+            <input type="text" id="saveName" placeholder="プロジェクト名を入力">
+            <div class="dialog-btns">
+                <button class="btn" onclick="hideSaveDialog()">キャンセル</button>
+                <button class="btn primary" onclick="doSave()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Dialog -->
+    <div class="save-dialog" id="loadDialog">
+        <div class="dialog-box">
+            <h3>📂 プロジェクトを読み込み</h3>
+            <div class="project-list" id="projectList"></div>
+            <div class="dialog-btns">
+                <button class="btn" onclick="hideLoadDialog()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== IndexedDB ====================
+        const DB_NAME = 'ParaparaDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'projects';
+        let db = null;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onerror = () => reject(req.error);
+                req.onsuccess = () => { db = req.result; resolve(db); };
+                req.onupgradeneeded = (e) => {
+                    const d = e.target.result;
+                    if (!d.objectStoreNames.contains(STORE_NAME)) {
+                        d.createObjectStore(STORE_NAME, { keyPath: 'name' });
+                    }
+                };
+            });
+        }
+
+        async function saveProject(name, framesData) {
+            if (!db) await openDB();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const project = {
+                name: name,
+                frames: framesData,
+                created: new Date().toISOString()
+            };
+            return new Promise((resolve, reject) => {
+                const req = store.put(project);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function loadProject(name) {
+            if (!db) await openDB();
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            return new Promise((resolve, reject) => {
+                const req = store.get(name);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function listProjects() {
+            if (!db) await openDB();
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            return new Promise((resolve, reject) => {
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function deleteProject(name) {
+            if (!db) await openDB();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            return new Promise((resolve, reject) => {
+                const req = store.delete(name);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        // ==================== App State ====================
+        let frames = []; // { id, dataUrl, name }
+        let currentFrame = 0;
+        let isPlaying = false;
+        let fps = 12;
+        let timer = null;
+        let dragSrc = null;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // ==================== File Handling ====================
+        function handleFiles(fileList) {
+            const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+            if (files.length === 0) return;
+            files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+            let loaded = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    frames.push({
+                        id: Date.now() + Math.random(),
+                        dataUrl: e.target.result,
+                        name: file.name
+                    });
+                    loaded++;
+                    if (loaded === files.length) {
+                        renderFrames();
+                        if (frames.length > 0) showFrame(0);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ==================== Rendering ====================
+        function renderFrames() {
+            const strip = document.getElementById('frameStrip');
+            strip.innerHTML = '';
+            frames.forEach((frame, idx) => {
+                const div = document.createElement('div');
+                div.className = 'frame-item' + (idx === currentFrame ? ' active' : '');
+                div.draggable = true;
+                div.dataset.index = idx;
+                div.innerHTML = `
+                    <img src="${frame.dataUrl}" alt="${frame.name}">
+                    <div class="frame-num">${idx + 1}</div>
+                    <button class="del-btn" onclick="deleteFrame(event, ${idx})">×</button>
+                `;
+                div.addEventListener('dragstart', dragStart);
+                div.addEventListener('dragover', dragOver);
+                div.addEventListener('drop', drop);
+                div.addEventListener('dragend', dragEnd);
+                div.addEventListener('click', () => { stop(); showFrame(idx); });
+                strip.appendChild(div);
+            });
+            updateControls();
+            updateCounter();
+        }
+
+        function showFrame(idx) {
+            if (frames.length === 0) return;
+            currentFrame = idx;
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = frames[idx].dataUrl;
+            document.getElementById('placeholder').style.display = 'none';
+            canvas.style.display = 'block';
+            updateProgress();
+            // Update active thumbnail
+            document.querySelectorAll('.frame-item').forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
+            });
+            updateCounter();
+            // Scroll into view
+            const thumbs = document.querySelectorAll('.frame-item');
+            if (thumbs[idx]) thumbs[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+
+        function updateProgress() {
+            const pct = frames.length > 0 ? ((currentFrame + 1) / frames.length * 100) : 0;
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        function updateCounter() {
+            document.getElementById('frameCounter').textContent = `${frames.length > 0 ? currentFrame + 1 : 0} / ${frames.length}`;
+        }
+
+        function updateControls() {
+            const has = frames.length > 0;
+            document.getElementById('playBtn').disabled = !has;
+            document.getElementById('stopBtn').disabled = !has;
+            document.getElementById('prevBtn').disabled = !has;
+            document.getElementById('nextBtn').disabled = !has;
+        }
+
+        // ==================== Playback ====================
+        function togglePlay() {
+            if (isPlaying) { pause(); }
+            else { play(); }
+        }
+
+        function play() {
+            if (frames.length === 0) return;
+            isPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸ 一時停止';
+            const interval = 1000 / fps;
+            timer = setInterval(() => {
+                let next = currentFrame + 1;
+                if (next >= frames.length) {
+                    if (document.getElementById('loopCheck').checked) {
+                        next = 0;
+                    } else {
+                        stop();
+                        return;
+                    }
+                }
+                showFrame(next);
+            }, interval);
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('playBtn').textContent = '▶ 再生';
+            clearInterval(timer);
+        }
+
+        function stop() {
+            pause();
+            currentFrame = 0;
+            if (frames.length > 0) showFrame(0);
+        }
+
+        function nextFrame() {
+            pause();
+            if (frames.length === 0) return;
+            showFrame((currentFrame + 1) % frames.length);
+        }
+
+        function prevFrame() {
+            pause();
+            if (frames.length === 0) return;
+            showFrame((currentFrame - 1 + frames.length) % frames.length);
+        }
+
+        function updateFps(val) {
+            fps = parseInt(val);
+            document.getElementById('fpsValue').textContent = fps;
+            if (isPlaying) { pause(); play(); }
+        }
+
+        // ==================== Frame Management ====================
+        function deleteFrame(e, idx) {
+            e.stopPropagation();
+            frames.splice(idx, 1);
+            if (currentFrame >= frames.length) currentFrame = Math.max(0, frames.length - 1);
+            renderFrames();
+            if (frames.length > 0) showFrame(currentFrame);
+            else {
+                canvas.style.display = 'none';
+                document.getElementById('placeholder').style.display = 'block';
+                document.getElementById('progressBar').style.width = '0%';
+            }
+        }
+
+        function clearAll() {
+            if (!confirm('すべてのフレームを削除しますか？')) return;
+            pause();
+            frames = [];
+            currentFrame = 0;
+            canvas.style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
+            document.getElementById('progressBar').style.width = '0%';
+            renderFrames();
+        }
+
+        // ==================== Drag & Drop ====================
+        function dragStart(e) {
+            dragSrc = this;
+            e.dataTransfer.effectAllowed = 'move';
+            this.classList.add('dragging');
+        }
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        function drop(e) {
+            e.stopPropagation();
+            if (dragSrc !== this) {
+                const from = parseInt(dragSrc.dataset.index);
+                const to = parseInt(this.dataset.index);
+                const item = frames.splice(from, 1)[0];
+                frames.splice(to, 0, item);
+                currentFrame = to;
+                renderFrames();
+                showFrame(currentFrame);
+            }
+            return false;
+        }
+        function dragEnd() {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.frame-item').forEach(el => el.classList.remove('dragging'));
+        }
+
+        // ==================== Save / Load ====================
+        function showSaveDialog() {
+            if (frames.length === 0) { alert('フレームがありません'); return; }
+            document.getElementById('saveDialog').classList.add('show');
+            document.getElementById('saveName').value = 'プロジェクト_' + new Date().toLocaleString('ja-JP', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}).replace(/[/\s:]/g, '');
+            document.getElementById('saveName').focus();
+        }
+        function hideSaveDialog() { document.getElementById('saveDialog').classList.remove('show'); }
+
+        async function doSave() {
+            const name = document.getElementById('saveName').value.trim();
+            if (!name) { alert('名前を入力してください'); return; }
+            try {
+                await saveProject(name, frames);
+                alert('保存しました: ' + name);
+                hideSaveDialog();
+            } catch (err) {
+                alert('保存に失敗しました: ' + err.message);
+            }
+        }
+
+        async function showLoadDialog() {
+            document.getElementById('loadDialog').classList.add('show');
+            const list = document.getElementById('projectList');
+            list.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">読み込み中...</div>';
+            try {
+                const projects = await listProjects();
+                list.innerHTML = '';
+                if (projects.length === 0) {
+                    list.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">保存されたプロジェクトがありません</div>';
+                    return;
+                }
+                projects.sort((a,b) => new Date(b.created) - new Date(a.created));
+                projects.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'project-item';
+                    const date = new Date(p.created).toLocaleString('ja-JP');
+                    div.innerHTML = `
+                        <div>
+                            <div class="proj-name">${p.name}</div>
+                            <div class="proj-date">${date} · ${p.frames.length}フレーム</div>
+                        </div>
+                        <button class="proj-del" onclick="event.stopPropagation(); delProj('${p.name}')">🗑</button>
+                    `;
+                    div.onclick = () => loadProj(p.name);
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                list.innerHTML = '<div style="color:#e94560;text-align:center;padding:20px;">読み込みに失敗しました</div>';
+            }
+        }
+        function hideLoadDialog() { document.getElementById('loadDialog').classList.remove('show'); }
+
+        async function loadProj(name) {
+            try {
+                const proj = await loadProject(name);
+                if (!proj) { alert('プロジェクトが見つかりません'); return; }
+                pause();
+                frames = proj.frames || [];
+                currentFrame = 0;
+                renderFrames();
+                if (frames.length > 0) showFrame(0);
+                hideLoadDialog();
+            } catch (err) {
+                alert('読み込みに失敗しました: ' + err.message);
+            }
+        }
+
+        async function delProj(name) {
+            if (!confirm('「' + name + '」を削除しますか？')) return;
+            try {
+                await deleteProject(name);
+                showLoadDialog();
+            } catch (err) {
+                alert('削除に失敗しました');
+            }
+        }
+
+        // ==================== Keyboard Shortcuts ====================
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            switch(e.key) {
+                case ' ': e.preventDefault(); togglePlay(); break;
+                case 'ArrowRight': nextFrame(); break;
+                case 'ArrowLeft': prevFrame(); break;
+                case 'Home': stop(); break;
+            }
+        });
+
+        // ==================== Init ====================
+        openDB().catch(() => {});
+    </script>
+</body>
+</html>

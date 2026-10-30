@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survival Battle - Local Multiplayer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a; color: #fff;
+    font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+    overflow: hidden; user-select: none;
+  }
+  #gameContainer { position: relative; width: 100vw; height: 100vh; }
+  canvas { display: block; }
+  #uiLayer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  #topBar {
+    display: flex; justify-content: center; gap: 24px; padding: 10px 16px;
+    background: rgba(0,0,0,0.7); border-bottom: 1px solid #333;
+  }
+  .timer-box { font-size: 28px; font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,0.9); font-variant-numeric: tabular-nums; }
+  .phase-label { font-size: 11px; color: #888; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
+
+  #lobbyScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: auto; z-index: 100;
+  }
+  #lobbyScreen h1 { font-size: 52px; margin-bottom: 8px; background: linear-gradient(90deg, #ff4444, #ff8800, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 8px rgba(255,100,0,0.3)); letter-spacing: 2px; }
+  #lobbyScreen .subtitle { font-size: 15px; color: #666; margin-bottom: 36px; }
+  .player-slot { width: 340px; padding: 16px; margin: 5px; border: 2px solid #333; border-radius: 12px; text-align: center; font-size: 17px; transition: all 0.3s; background: rgba(255,255,255,0.03); }
+  .player-slot.joined { border-color: currentColor; background: rgba(255,255,255,0.08); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+  .player-slot.waiting { color: #444; }
+  .start-btn { margin-top: 22px; padding: 14px 48px; font-size: 20px; font-weight: bold; color: #fff; background: linear-gradient(90deg, #444, #444); border: 2px solid #555; border-radius: 10px; cursor: not-allowed; transition: all 0.3s; pointer-events: auto; }
+  .start-btn.active { background: linear-gradient(90deg, #ff4444, #ff8800); border-color: #ff6644; cursor: pointer; box-shadow: 0 0 20px rgba(255,100,0,0.3); }
+  .start-btn.active:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,100,0,0.5); }
+  .start-hint { margin-top: 14px; font-size: 13px; color: #666; animation: pulse 2s infinite; text-align: center; line-height: 1.6; }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .pvp-toggle { margin-top: 18px; padding: 10px 24px; border: 2px solid #444; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; text-align: center; font-size: 15px; font-weight: bold; color: #888; pointer-events: auto; transition: all 0.25s; }
+  .pvp-toggle.pvp-on { border-color: #ff4444; background: rgba(255,68,68,0.1); color: #ff8888; box-shadow: 0 0 16px rgba(255,68,68,0.3); }
+  .pvp-hint { margin-top: 4px; font-size: 11px; color: #666; font-weight: normal; }
+
+  #resultScreen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.92); display: none; flex-direction: column;
+    align-items: center; justify-content: center; pointer-events: auto; z-index: 200;
+  }
+  #resultScreen h1 { font-size: 64px; margin-bottom: 10px; letter-spacing: 4px; }
+  .restart-btn { margin-top: 36px; padding: 16px 48px; font-size: 20px; background: linear-gradient(90deg, #ff4444, #ff8800); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s; }
+  .restart-btn:hover { transform: scale(1.05); }
+
+  #minimap { position: fixed; width: 160px; height: 160px; background: rgba(0,0,0,0.8); border: 2px solid #444; border-radius: 8px; z-index: 50; right: 20px; bottom: 80px; }
+  .controls-hint { position: absolute; bottom: 16px; left: 16px; font-size: 10px; color: #444; line-height: 1.8; max-width: 420px; }
+  #dayNightIcon { position: absolute; top: 70px; right: 20px; font-size: 28px; z-index: 60; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
+  #dayNightLabel { position: absolute; top: 100px; right: 20px; font-size: 11px; color: #888; z-index: 60; text-align: right; }
+
+  .load-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%); display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 400; }
+  .load-screen h2 { font-size: 42px; margin-bottom: 20px; color: #ffcc00; }
+  .load-btn { width: 320px; padding: 16px; margin: 8px; font-size: 18px; font-weight: bold; border: 2px solid #555; border-radius: 12px; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; transition: all 0.2s; }
+  .load-btn:hover { background: rgba(255,255,255,0.12); border-color: #ffcc00; transform: scale(1.03); }
+  .pause-menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 300; }
+  .pause-menu h2 { font-size: 48px; margin-bottom: 30px; color: #ffcc00; text-shadow: 0 4px 12px rgba(255,200,0,0.3); }
+  .pause-btn { width: 280px; padding: 14px; margin: 8px; font-size: 18px; font-weight: bold; border: 2px solid #555; border-radius: 10px; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; transition: all 0.2s; }
+  .pause-btn:hover { background: rgba(255,255,255,0.15); border-color: #ffcc00; transform: scale(1.03); }
+  .pause-btn.primary { background: linear-gradient(90deg, #ff4444, #ff8800); border-color: #ff6644; }
+
+  #debugPanel { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.95); border: 2px solid #00ff00; border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 11px; color: #0f0; z-index: 9999; max-height: 90vh; overflow-y: auto; display: none; }
+  #debugPanel.active { display: block; }
+
+  /* ONLINE DEBUG */
+  #onlineDebug {
+    position: fixed; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.9); border: 1px solid #444;
+    border-radius: 6px; padding: 10px 14px;
+    font-family: 'Courier New', monospace; font-size: 11px;
+    color: #0f0; z-index: 9999; min-width: 160px;
+    display: none;
+  }
+  #onlineDebug .debug-title { color: #ffcc00; font-weight: bold; margin-bottom: 6px; font-size: 12px; }
+  #onlineDebug .debug-row { display: flex; justify-content: space-between; margin: 2px 0; }
+  #onlineDebug .debug-label { color: #888; }
+  #onlineDebug .debug-val { color: #0f0; font-weight: bold; }
+
+  .log-entry { margin: 2px 0; padding: 2px 4px; border-radius: 2px; }
+  .log-entry.log-info { color: #0f0; }
+  .log-entry.log-warn { color: #ffff00; background: rgba(255,255,0,0.1); }
+  .log-entry.log-error { color: #ff4444; background: rgba(255,68,68,0.1); }
+
+  /* オプションメニュー */
+  .opt-group { margin-bottom: 18px; border: 1px solid #333; border-radius: 10px; padding: 14px; background: rgba(255,255,255,0.02); }
+  .opt-group-title { font-size: 15px; font-weight: bold; color: #ffcc00; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #333; }
+  .opt-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 6px; border-bottom: 1px solid #222; transition: background 0.15s; }
+  .opt-item:hover { background: rgba(255,255,255,0.04); border-radius: 6px; }
+  .opt-item:last-child { border-bottom: none; }
+  .opt-label { font-size: 13px; color: #ccc; flex: 1; }
+  .opt-desc { font-size: 10px; color: #666; margin-top: 2px; }
+  .opt-control { display: flex; align-items: center; gap: 8px; }
+  .opt-input-num { width: 70px; padding: 6px 8px; font-size: 13px; border: 1px solid #444; border-radius: 6px; background: rgba(255,255,255,0.05); color: #fff; text-align: center; }
+  .opt-input-text { width: 140px; padding: 6px 8px; font-size: 13px; border: 1px solid #444; border-radius: 6px; background: rgba(255,255,255,0.05); color: #fff; }
+  .opt-slider { width: 120px; accent-color: #ff8800; }
+  .opt-toggle { position: relative; width: 44px; height: 24px; background: #333; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+  .opt-toggle.active { background: #44ff44; }
+  .opt-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+  .opt-toggle.active::after { transform: translateX(20px); }
+  .opt-btn { padding: 5px 12px; font-size: 12px; border: 1px solid #555; border-radius: 6px; background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; transition: all 0.15s; }
+  .opt-btn:hover { background: rgba(255,255,255,0.12); border-color: #ffcc00; color: #fff; }
+  .opt-search-match { background: rgba(255,200,0,0.08); }
+  .opt-recipe-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #333; }
+  .opt-recipe-row:last-child { border-bottom: none; }
+  .opt-recipe-name { font-size: 13px; color: #ccc; width: 140px; }
+  .opt-recipe-ing { font-size: 11px; color: #888; flex: 1; }
+  #optionsList::-webkit-scrollbar { width: 6px; }
+  #optionsList::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+  #optionsList::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+  #minimap { display: none; }
+</style>
+</head>
+<body>
+  <div class="debug-row"><span class="debug-label">PING</span><span class="debug-val" id="dbgPing">--</span></div>
+  <div class="debug-row"><span class="debug-label">ROLE</span><span class="debug-val" id="dbgRole">--</span></div>
+  <div class="debug-row"><span class="debug-label">CONN</span><span class="debug-val" id="dbgConn">--</span></div>
+  <div class="debug-row"><span class="debug-label">PKT/s</span><span class="debug-val" id="dbgPkt">--</span></div>
+  <div class="debug-row"><span class="debug-label">BYTES/s</span><span class="debug-val" id="dbgBytes">--</span></div>
+</div>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+  <div id="uiLayer">
+    <div id="topBar">
+      <div><div class="phase-label">Phase</div><div class="timer-box" id="phaseLabel">LOBBY</div></div>
+      <div><div class="phase-label">Time</div><div class="timer-box" id="mainTimer" style="color:#ffcc00">--</div></div>
+      <div><div class="phase-label">Alive</div><div class="timer-box" id="aliveCount">0/0</div></div>
+      <div><div class="phase-label">Day</div><div class="timer-box" id="dayTimer" style="color:#88ccff">--</div></div>
+      <div><div class="phase-label">討伐数</div><div class="timer-box" id="killCount" style="color:#ffaa00">0</div></div>
+      <div><div class="phase-label">PvP</div><div class="timer-box" id="pvpStatusHud" style="color:#888">OFF</div></div>
+    </div>
+    <div id="dayNightIcon">☀️</div>
+    <div id="dayNightLabel">--</div>
+  </div>
+
+
+  <div id="lobbyScreen">
+    <h1>🔥 SURVIVAL BATTLE 🔥</h1>
+    <div class="subtitle">建築・クラフト・無限サバイバル（最大4人・洞窟・昼夜サイクル）</div>
+    <div class="player-slot waiting" id="slot1" style="color:#ff4444">P1: Xキーで参加</div>
+    <div class="player-slot waiting" id="slot2" style="color:#4488ff">P2: Xキーで参加</div>
+    <div class="player-slot waiting" id="slot3" style="color:#44ff44">P3: Xキーで参加</div>
+    <div class="player-slot waiting" id="slot4" style="color:#ffcc00">P4: Xキーで参加</div>
+    <div class="pvp-toggle" id="pvpToggle"><span>⚔ PvP: </span><span id="pvpStatus">OFF</span><div class="pvp-hint">クリック または 参加後 Vキー で切替</div></div>
+    <div style="display:flex;gap:16px;margin:12px 0;flex-wrap:wrap;justify-content:center;">
+      <label style="cursor:pointer;display:flex;align-items:center;gap:8px;color:#ccc;font-size:14px;background:rgba(255,255,255,0.05);padding:10px 16px;border-radius:8px;border:1px solid #333;pointer-events:auto;"><input type="checkbox" id="stormToggle" style="width:18px;height:18px;accent-color:#ff6644;cursor:pointer;" checked><span>🌪️ ストーム縮小有効</span></label>
+      <label style="cursor:pointer;display:flex;align-items:center;gap:8px;color:#ccc;font-size:14px;background:rgba(255,255,255,0.05);padding:10px 16px;border-radius:8px;border:1px solid #333;pointer-events:auto;"><input type="checkbox" id="infiniteMapToggle" style="width:18px;height:18px;accent-color:#ff6644;cursor:pointer;"><span>🗺️ 無限マップ</span></label>
+    </div>
+    <button id="startBtn" class="start-btn" disabled>🎮 ゲーム開始</button>
+    <div class="start-hint">参加後、Enter または 画面の「ゲーム開始」ボタン で開始<br><span style="font-size:12px">（1人でも遊べます。建築して拠点を作り、モンスターを倒そう）</span></div>
+  
+
+  <!-- オプションメニュー -->
+  <div id="optionsMenu" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(5,5,10,0.97);display:none;flex-direction:column;align-items:center;z-index:350;overflow:hidden;">
+    <div style="width:100%;max-width:900px;height:100%;display:flex;flex-direction:column;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:32px;color:#ffcc00;text-shadow:0 2px 8px rgba(255,200,0,0.3);">⚙️ オプション</h2>
+        <button id="btnCloseOptions" style="padding:8px 20px;font-size:14px;border:1px solid #555;border-radius:8px;background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;">✕ 閉じる (B)</button>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <input id="optSearch" type="text" placeholder="🔍 オプションを検索..." style="flex:1;padding:10px 14px;font-size:14px;border:1px solid #444;border-radius:8px;background:rgba(255,255,255,0.05);color:#fff;outline:none;">
+        <select id="optCategory" style="padding:10px 14px;font-size:14px;border:1px solid #444;border-radius:8px;background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;">
+          <option value="all">全て</option>
+          <option value="game">ゲーム設定</option>
+          <option value="recipe">レシピ編集</option>
+          <option value="control">コントロール</option>
+        </select>
+      </div>
+      <div id="optionsList" style="flex:1;overflow-y:auto;padding-right:8px;">
+        <!-- 動的生成 -->
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;justify-content:center;">
+        <button id="btnResetOptions" style="padding:10px 24px;font-size:14px;border:1px solid #ff4444;border-radius:8px;background:rgba(255,68,68,0.1);color:#ff8888;cursor:pointer;">🔄 デフォルトに戻す</button>
+        <button id="btnExportOptions" style="padding:10px 24px;font-size:14px;border:1px solid #44ff44;border-radius:8px;background:rgba(68,255,68,0.1);color:#88ff88;cursor:pointer;">📤 エクスポート</button>
+        <button id="btnImportOptions" style="padding:10px 24px;font-size:14px;border:1px solid #4488ff;border-radius:8px;background:rgba(68,136,255,0.1);color:#88bbff;cursor:pointer;">📥 インポート</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- レシピ編集モーダル -->
+  <div id="recipeModal" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:360;pointer-events:auto;">
+    <div style="background:rgba(15,15,25,0.98);border:2px solid #555;border-radius:16px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+      <h3 id="recipeModalTitle" style="font-size:22px;color:#ffcc00;margin-bottom:16px;text-align:center;">レシピ編集</h3>
+      <div id="recipeModalContent"></div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+        <button id="btnSaveRecipe" style="padding:10px 28px;font-size:15px;border:1px solid #44ff44;border-radius:8px;background:rgba(68,255,68,0.15);color:#88ff88;cursor:pointer;font-weight:bold;">💾 保存</button>
+        <button id="btnCancelRecipe" style="padding:10px 28px;font-size:15px;border:1px solid #ff4444;border-radius:8px;background:rgba(255,68,68,0.15);color:#ff8888;cursor:pointer;">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div id="resultScreen">
+    <h1 id="resultTitle">VICTORY</h1>
+    <div class="winner-color" id="winnerText"></div>
+    <button class="restart-btn" onclick="game.restart()">もう一度遊ぶ</button>
+  </div>
+
+  <div class="load-screen" id="loadScreen">
+    <h2>📂 ゲーム開始</h2>
+    <div id="loadButtons"></div>
+  </div>
+  <div class="pause-menu" id="pauseMenu">
+    <h2>⏸ ポーズメニュー</h2>
+    <button class="pause-btn primary" onclick="game.saveGame()">💾 セーブ</button>
+    <button class="pause-btn" onclick="game.showOptions(true)">⚙️ オプション</button>
+    <button class="pause-btn" onclick="game.resumeGame()">▶ ゲームに戻る</button>
+    <button class="pause-btn" onclick="game.quitToLobby()">🏠 ゲームをやめる</button>
+  </div>
+  <canvas id="minimap"></canvas>
+  <div class="controls-hint">
+    🎮 ゲームパッド | Lスティック:移動 Rスティック:カメラ | X:インベントリ A:クラフト B:回収 | L/R:ホットバー | ZL:使用 ZR:攻撃<br>
+    ⌨️ キーボード | WASD:移動 | Z/X/C/V: A/B/X/Y | Q:ホットバー左 E:インベントリ | Shift:ZL Ctrl:ZR Enter:START O:オプション<br>
+    🖱️ マウス | 左クリック:攻撃 | 右クリック:使用/配置 | ホイール:ホットバー | Alt+移動:カメラ<br>
+    ⚙️ オプションからキーバインドを自由に変更できます
+  </div>
+</div>
+
+<script type="module">
+import { GamepadManager } from './multipad-enhanced-local.js';
+const gamepadManager = new GamepadManager();
+window.gamepadManager = gamepadManager;
+
+const MAP_SIZE = 8800;
+const PLAYER_RADIUS = 18;
+const PLAYER_SPEED = 200;
+const DASH_SPEED = 400;
+const DASH_DURATION = 0.2;
+const DASH_COOLDOWN = 2.5;
+const ATTACK_RANGE = 55;
+const ATTACK_COOLDOWN = 0.35;
+const PREPARE_TIME = 30;
+const KNOCKBACK_FORCE = 40;
+const HOTBAR_SLOTS = 9;
+const INVENTORY_SLOTS = 27;
+const TOTAL_SLOTS = HOTBAR_SLOTS + INVENTORY_SLOTS;
+const MAX_STACK = 99;
+const ATTACK_ANGLE = Math.PI / 3;
+const RESOURCE_COUNT = 1600;
+const DAY_LENGTH = 600;
+const NIGHT_START = 300;
+const NIGHT_DAMAGE_MULT = 1.4;
+const NIGHT_SPEED_MULT = 1.25;
+const BLOCK_RADIUS = 16;
+const PLACE_COOLDOWN = 0.25;
+const TORCH_LIGHT_RADIUS = 200;
+const CAVE_COUNT = 6;
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function randRange(min, max) { return Math.random() * (max - min) + min; }
+function angleDiff(a, b) {
+  let d = a - b;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return Math.abs(d);
+}
+
+const ITEM_DEFS = {
+  wood: { name: '木材', type: 'material', icon: '🪵', stackable: true },
+  stone: { name: '石材', type: 'material', icon: '🪨', stackable: true },
+  iron_chunk: { name: '鉄塊', type: 'material', icon: '🔩', stackable: true },
+  iron: { name: '鉄', type: 'material', icon: '⛓', stackable: true },
+  copper_ore: { name: '銅鉱石', type: 'material', icon: '🟫', stackable: true },
+  copper: { name: '銅', type: 'material', icon: '🟧', stackable: true },
+  gold_ore: { name: '金鉱石', type: 'material', icon: '✨', stackable: true },
+  gold: { name: '金', type: 'material', icon: '🟨', stackable: true },
+  diamond_ore: { name: 'ダイヤ原石', type: 'material', icon: '💎', stackable: true },
+  diamond: { name: 'ダイヤモンド', type: 'material', icon: '💠', stackable: true },
+  coal: { name: '石炭', type: 'material', icon: '⚫', stackable: true },
+  leather: { name: '革', type: 'material', icon: '🟤', stackable: true },
+  arrow: { name: '矢', type: 'material', icon: '➡', stackable: true },
+  sand: { name: '砂', type: 'material', icon: '🏖', stackable: true },
+  clay: { name: '粘土', type: 'material', icon: '🟫', stackable: true },
+  obsidian: { name: '黒曜石', type: 'material', icon: '⬛', stackable: true },
+  emerald_ore: { name: 'エメラルド鉱石', type: 'material', icon: '💚', stackable: true },
+  emerald: { name: 'エメラルド', type: 'material', icon: '✳', stackable: true },
+  ruby: { name: 'ルビー', type: 'material', icon: '🔴', stackable: true },
+  sapphire: { name: 'サファイア', type: 'material', icon: '🔵', stackable: true },
+  crystal: { name: '結晶', type: 'material', icon: '🔮', stackable: true },
+  wheat: { name: '小麦', type: 'material', icon: '🌾', stackable: true },
+  stick: { name: '棒', type: 'material', icon: '🥢', stackable: true },
+  string: { name: '糸', type: 'material', icon: '🧵', stackable: true },
+  feather: { name: '羽', type: 'material', icon: '🪶', stackable: true },
+  flint: { name: '火打石', type: 'material', icon: '🔥', stackable: true },
+  sugar: { name: '砂糖', type: 'material', icon: '🍬', stackable: true },
+  milk: { name: '牛乳', type: 'material', icon: '🥛', stackable: true },
+  wood_sword: { name: '木の剣', type: 'weapon', atkBonus: 10, icon: '🗡' },
+  stone_sword: { name: '石の剣', type: 'weapon', atkBonus: 20, icon: '⚔' },
+  iron_sword: { name: '鉄の剣', type: 'weapon', atkBonus: 35, icon: '🔪' },
+  copper_sword: { name: '銅の剣', type: 'weapon', atkBonus: 25, icon: '🗡' },
+  gold_sword: { name: '金の剣', type: 'weapon', atkBonus: 15, icon: '⚔' },
+  diamond_sword: { name: 'ダイヤの剣', type: 'weapon', atkBonus: 50, icon: '💎' },
+  bow: { name: '弓', type: 'weapon', atkBonus: 30, icon: '🏹' },
+  spear: { name: '槍', type: 'weapon', atkBonus: 28, icon: '🔱' },
+  crossbow: { name: 'クロスボウ', type: 'weapon', atkBonus: 40, icon: '🔫' },
+  axe: { name: '斧', type: 'weapon', atkBonus: 22, icon: '🪓' },
+  hammer: { name: 'ハンマー', type: 'weapon', atkBonus: 32, icon: '🔨' },
+  dagger: { name: '短剣', type: 'weapon', atkBonus: 18, icon: '🗡' },
+  shield: { name: '盾', type: 'armor', defBonus: 0.4, icon: '🛡' },
+  leather_armor: { name: '革の鎧', type: 'armor', defBonus: 0.2, icon: '👕' },
+  iron_armor: { name: '鉄の鎧', type: 'armor', defBonus: 0.5, icon: '👔' },
+  gold_armor: { name: '金の鎧', type: 'armor', defBonus: 0.3, icon: '👑' },
+  diamond_armor: { name: 'ダイヤの鎧', type: 'armor', defBonus: 0.6, icon: '💎' },
+  copper_armor: { name: '銅の鎧', type: 'armor', defBonus: 0.35, icon: '🟧' },
+  chain_armor: { name: '鎖帷子', type: 'armor', defBonus: 0.45, icon: '⛓' },
+  potion: { name: '回復ポーション', type: 'consumable', heal: 50, icon: '🧪' },
+  big_potion: { name: '大回復ポーション', type: 'consumable', heal: 80, icon: '💊' },
+  stamina: { name: 'スタミナドリンク', type: 'consumable', heal: 30, icon: '🥤' },
+  antidote: { name: '毒消し', type: 'consumable', heal: 20, icon: '💉' },
+  bomb: { name: '爆弾', type: 'consumable', heal: 0, icon: '💣' },
+  bandage: { name: '包帯', type: 'consumable', heal: 15, icon: '🩹' },
+  speed_potion: { name: '速度ポーション', type: 'consumable', heal: 10, icon: '⚡' },
+  strength_potion: { name: '力のポーション', type: 'consumable', heal: 10, icon: '💪' },
+  apple: { name: 'りんご', type: 'consumable', heal: 15, icon: '🍎' },
+  meat: { name: '肉', type: 'consumable', heal: 30, icon: '🍖' },
+  bread: { name: 'パン', type: 'consumable', heal: 20, icon: '🍞' },
+  fish: { name: '魚', type: 'consumable', heal: 25, icon: '🐟' },
+  mushroom: { name: 'キノコ', type: 'consumable', heal: 10, icon: '🍄' },
+  carrot: { name: 'にんじん', type: 'consumable', heal: 12, icon: '🥕' },
+  berry: { name: 'ベリー', type: 'consumable', heal: 8, icon: '🍇' },
+  honey: { name: '蜂蜜', type: 'consumable', heal: 18, icon: '🍯' },
+  egg: { name: '卵', type: 'consumable', heal: 10, icon: '🥚' },
+  pumpkin: { name: 'カボチャ', type: 'consumable', heal: 22, icon: '🎃' },
+  watermelon: { name: 'スイカ', type: 'consumable', heal: 20, icon: '🍉' },
+  cookie: { name: 'クッキー', type: 'consumable', heal: 14, icon: '🍪' },
+  cake: { name: 'ケーキ', type: 'consumable', heal: 35, icon: '🍰' },
+  pie: { name: 'パイ', type: 'consumable', heal: 28, icon: '🥧' },
+  stew: { name: 'シチュー', type: 'consumable', heal: 40, icon: '🍲' },
+  juice: { name: 'ジュース', type: 'consumable', heal: 16, icon: '🧃' },
+  cheese: { name: 'チーズ', type: 'consumable', heal: 18, icon: '🧀' },
+  torch: { name: '松明', type: 'placeable', icon: '🔥', stackable: true, placeType: 'torch' },
+  crafting_table: { name: '作業台', type: 'placeable', icon: '🔨', stackable: true, placeType: 'crafting_table' },
+  wood_block: { name: '木材ブロック', type: 'block', icon: '🟫', stackable: true, placeType: 'wood_block' },
+  stone_block: { name: '石材ブロック', type: 'block', icon: '⬜', stackable: true, placeType: 'stone_block' },
+  dirt_block: { name: '土ブロック', type: 'block', icon: '🟨', stackable: true, placeType: 'dirt_block' },
+  obsidian_block: { name: '黒曜石ブロック', type: 'block', icon: '⬛', stackable: true, placeType: 'obsidian_block' },
+};
+
+const PLAYER_COLORS = ['#ff4444', '#4488ff', '#44ff44', '#ffcc00'];
+const PLAYER_NAMES = ['赤', '青', '緑', '黄'];
+const PLAYER_GLOWS = ['rgba(255,68,68,0.3)', 'rgba(68,136,255,0.3)', 'rgba(68,255,68,0.3)', 'rgba(255,204,0,0.3)'];
+
+const CRAFT_RECIPES = [
+  { id: 'wood_sword', name: '木の剣', req: { wood: 3, stick: 1 }, desc: '攻撃力+10', result: 'wood_sword', count: 1, category: 'weapon' },
+  { id: 'stone_sword', name: '石の剣', req: { wood: 2, stone: 3, stick: 1 }, desc: '攻撃力+20', result: 'stone_sword', count: 1, category: 'weapon' },
+  { id: 'iron_sword', name: '鉄の剣', req: { wood: 2, iron: 3, stick: 1 }, desc: '攻撃力+35', result: 'iron_sword', count: 1, category: 'weapon' },
+  { id: 'copper_sword', name: '銅の剣', req: { wood: 2, copper: 3, stick: 1 }, desc: '攻撃力+25', result: 'copper_sword', count: 1, category: 'weapon' },
+  { id: 'gold_sword', name: '金の剣', req: { wood: 2, gold: 3, stick: 1 }, desc: '攻撃力+15', result: 'gold_sword', count: 1, category: 'weapon' },
+  { id: 'diamond_sword', name: 'ダイヤの剣', req: { wood: 2, diamond: 3, stick: 1 }, desc: '攻撃力+50', result: 'diamond_sword', count: 1, category: 'weapon' },
+  { id: 'bow', name: '弓', req: { wood: 3, string: 2 }, desc: '攻撃力+30', result: 'bow', count: 1, category: 'weapon' },
+  { id: 'spear', name: '槍', req: { wood: 2, stone: 2, stick: 2 }, desc: '攻撃力+28', result: 'spear', count: 1, category: 'weapon' },
+  { id: 'crossbow', name: 'クロスボウ', req: { wood: 4, iron: 2, string: 2 }, desc: '攻撃力+40', result: 'crossbow', count: 1, category: 'weapon' },
+  { id: 'axe', name: '斧', req: { wood: 2, stone: 3, stick: 1 }, desc: '攻撃力+22', result: 'axe', count: 1, category: 'weapon' },
+  { id: 'hammer', name: 'ハンマー', req: { wood: 2, iron: 4, stick: 1 }, desc: '攻撃力+32', result: 'hammer', count: 1, category: 'weapon' },
+  { id: 'dagger', name: '短剣', req: { iron: 2, stick: 1 }, desc: '攻撃力+18', result: 'dagger', count: 1, category: 'weapon' },
+  { id: 'shield', name: '盾', req: { wood: 3, iron: 2 }, desc: 'ダメージ軽減40%', result: 'shield', count: 1, category: 'armor' },
+  { id: 'leather_armor', name: '革の鎧', req: { leather: 5 }, desc: 'ダメージ軽減20%', result: 'leather_armor', count: 1, category: 'armor' },
+  { id: 'iron_armor', name: '鉄の鎧', req: { iron: 6 }, desc: 'ダメージ軽減50%', result: 'iron_armor', count: 1, category: 'armor' },
+  { id: 'gold_armor', name: '金の鎧', req: { gold: 6 }, desc: 'ダメージ軽減30%', result: 'gold_armor', count: 1, category: 'armor' },
+  { id: 'diamond_armor', name: 'ダイヤの鎧', req: { diamond: 6 }, desc: 'ダメージ軽減60%', result: 'diamond_armor', count: 1, category: 'armor' },
+  { id: 'copper_armor', name: '銅の鎧', req: { copper: 6 }, desc: 'ダメージ軽減35%', result: 'copper_armor', count: 1, category: 'armor' },
+  { id: 'chain_armor', name: '鎖帷子', req: { iron: 4, string: 2 }, desc: 'ダメージ軽減45%', result: 'chain_armor', count: 1, category: 'armor' },
+  { id: 'potion', name: '回復ポーション', req: { mushroom: 2, apple: 1 }, desc: 'HP+50', result: 'potion', count: 1, category: 'consumable' },
+  { id: 'big_potion', name: '大回復ポーション', req: { mushroom: 3, berry: 2, honey: 1 }, desc: 'HP+80', result: 'big_potion', count: 1, category: 'consumable' },
+  { id: 'stamina', name: 'スタミナドリンク', req: { honey: 2, berry: 2 }, desc: 'HP+30', result: 'stamina', count: 1, category: 'consumable' },
+  { id: 'antidote', name: '毒消し', req: { mushroom: 2, coal: 1 }, desc: 'HP+20', result: 'antidote', count: 1, category: 'consumable' },
+  { id: 'bandage', name: '包帯', req: { string: 2 }, desc: 'HP+15', result: 'bandage', count: 2, category: 'consumable' },
+  { id: 'arrow', name: '矢', req: { wood: 1, stone: 1, feather: 1 }, desc: '弓用 10本', result: 'arrow', count: 10, category: 'consumable' },
+  { id: 'speed_potion', name: '速度ポーション', req: { sugar: 2, berry: 2 }, desc: 'HP+10 速度UP', result: 'speed_potion', count: 1, category: 'consumable' },
+  { id: 'strength_potion', name: '力のポーション', req: { meat: 1, mushroom: 2 }, desc: 'HP+10 攻撃UP', result: 'strength_potion', count: 1, category: 'consumable' },
+  { id: 'iron_smelt', name: '鉄を精錬', req: { iron_chunk: 3, coal: 1 }, desc: '鉄塊3つ→鉄1つ', result: 'iron', count: 1, category: 'material' },
+  { id: 'copper_smelt', name: '銅を精錬', req: { copper_ore: 3, coal: 1 }, desc: '銅鉱石3つ→銅1つ', result: 'copper', count: 1, category: 'material' },
+  { id: 'gold_smelt', name: '金を精錬', req: { gold_ore: 3, coal: 1 }, desc: '金鉱石3つ→金1つ', result: 'gold', count: 1, category: 'material' },
+  { id: 'diamond_smelt', name: 'ダイヤを精錬', req: { diamond_ore: 3, coal: 2 }, desc: 'ダイヤ原石3つ→ダイヤ1つ', result: 'diamond', count: 1, category: 'material' },
+  { id: 'emerald_smelt', name: 'エメラルドを精錬', req: { emerald_ore: 3, coal: 1 }, desc: 'エメラルド鉱石3つ→エメラルド1つ', result: 'emerald', count: 1, category: 'material' },
+  { id: 'obsidian_craft', name: '黒曜石加工', req: { obsidian: 2, coal: 1 }, desc: '強化素材', result: 'obsidian', count: 2, category: 'material' },
+  { id: 'crystal_craft', name: '結晶加工', req: { crystal: 2 }, desc: '魔力素材', result: 'crystal', count: 2, category: 'material' },
+  { id: 'stick_craft', name: '棒を作る', req: { wood: 1 }, desc: '棒x2', result: 'stick', count: 2, category: 'material' },
+  { id: 'string_craft', name: '糸を紡ぐ', req: { leather: 1 }, desc: '糸x2', result: 'string', count: 2, category: 'material' },
+  { id: 'flint_craft', name: '火打石', req: { stone: 2 }, desc: '火打石x1', result: 'flint', count: 1, category: 'material' },
+  { id: 'bread_craft', name: 'パンを焼く', req: { wheat: 2 }, desc: 'HP+20', result: 'bread', count: 1, category: 'food' },
+  { id: 'cookie_craft', name: 'クッキー', req: { wheat: 1, honey: 1 }, desc: 'HP+14', result: 'cookie', count: 2, category: 'food' },
+  { id: 'pumpkin_pie', name: 'カボチャパイ', req: { pumpkin: 1, wheat: 1, egg: 1 }, desc: 'HP+35', result: 'pie', count: 1, category: 'food' },
+  { id: 'fruit_salad', name: 'フルーツサラダ', req: { apple: 1, berry: 1, watermelon: 1 }, desc: 'HP+40', result: 'stew', count: 1, category: 'food' },
+  { id: 'meat_stew', name: '肉シチュー', req: { meat: 1, carrot: 1, mushroom: 1 }, desc: 'HP+45', result: 'stew', count: 1, category: 'food' },
+  { id: 'fish_grill', name: '焼き魚', req: { fish: 1, coal: 1, flint: 1 }, desc: 'HP+35', result: 'meat', count: 1, category: 'food' },
+  { id: 'cake_craft', name: 'ケーキ', req: { wheat: 2, egg: 2, honey: 1 }, desc: 'HP+35', result: 'cake', count: 1, category: 'food' },
+  { id: 'juice_craft', name: 'ジュース', req: { berry: 2, apple: 1 }, desc: 'HP+16', result: 'juice', count: 1, category: 'food' },
+  { id: 'cheese_craft', name: 'チーズ', req: { milk: 2 }, desc: 'HP+18', result: 'cheese', count: 1, category: 'food' },
+  { id: 'torch_craft', name: '松明', req: { wood: 1, coal: 1, flint: 1 }, desc: '光源を設置', result: 'torch', count: 4, category: 'building' },
+  { id: 'crafting_table_craft', name: '作業台', req: { wood: 4 }, desc: '拡張クラフト', result: 'crafting_table', count: 1, category: 'building' },
+  { id: 'wood_block_craft', name: '木材ブロック', req: { wood: 2 }, desc: '建築用', result: 'wood_block', count: 4, category: 'building' },
+  { id: 'stone_block_craft', name: '石材ブロック', req: { stone: 2 }, desc: '建築用', result: 'stone_block', count: 4, category: 'building' },
+  { id: 'dirt_block_craft', name: '土ブロック', req: { sand: 2, clay: 1 }, desc: '建築用', result: 'dirt_block', count: 4, category: 'building' },
+  { id: 'obsidian_block_craft', name: '黒曜石ブロック', req: { obsidian: 3 }, desc: '頑丈な壁', result: 'obsidian_block', count: 2, category: 'building' },
+];
+
+const TABLE_RECIPES = [
+  { id: 'diamond_sword_plus', name: 'ダイヤの剣+', req: { diamond_sword: 1, obsidian: 2, crystal: 1 }, desc: '攻撃力+65', result: 'diamond_sword', count: 1, category: 'weapon' },
+  { id: 'diamond_armor_plus', name: 'ダイヤの鎧+', req: { diamond_armor: 1, obsidian: 2 }, desc: '軽減70%', result: 'diamond_armor', count: 1, category: 'armor' },
+  { id: 'crossbow_plus', name: 'クロスボウ+', req: { crossbow: 1, iron: 2, string: 2 }, desc: '攻撃力+50', result: 'crossbow', count: 1, category: 'weapon' },
+  { id: 'obsidian_sword', name: '黒曜石の剣', req: { wood: 2, obsidian: 4, stick: 1 }, desc: '攻撃力+55', result: 'iron_sword', count: 1, category: 'weapon' },
+];
+
+const RESOURCE_DROPS = {
+  wood: { drops: ['wood', 'stick'], counts: [2, 1] },
+  stone: { drops: ['stone', 'flint'], counts: [2, 1] },
+  iron_chunk: { drops: ['iron_chunk', 'coal'], counts: [1, 1] },
+  copper_ore: { drops: ['copper_ore', 'stone'], counts: [1, 1] },
+  gold_ore: { drops: ['gold_ore', 'coal'], counts: [1, 1] },
+  diamond_ore: { drops: ['diamond_ore', 'coal'], counts: [1, 2] },
+  coal: { drops: ['coal', 'flint'], counts: [2, 1] },
+  leather: { drops: ['leather', 'string'], counts: [1, 1] },
+  apple: { drops: ['apple', 'berry'], counts: [1, 1] },
+  mushroom: { drops: ['mushroom', 'stick'], counts: [2, 1] },
+  carrot: { drops: ['carrot', 'wheat'], counts: [1, 1] },
+  sand: { drops: ['sand', 'flint'], counts: [2, 1] },
+  clay: { drops: ['clay', 'stone'], counts: [1, 1] },
+  obsidian: { drops: ['obsidian', 'coal'], counts: [1, 1] },
+  emerald_ore: { drops: ['emerald_ore', 'coal'], counts: [1, 1] },
+  ruby: { drops: ['ruby', 'stone'], counts: [1, 1] },
+  sapphire: { drops: ['sapphire', 'stone'], counts: [1, 1] },
+  crystal: { drops: ['crystal', 'obsidian'], counts: [1, 1] },
+  berry: { drops: ['berry', 'honey'], counts: [2, 1] },
+  honey: { drops: ['honey', 'stick'], counts: [1, 1] },
+  egg: { drops: ['egg', 'feather'], counts: [1, 1] },
+  pumpkin: { drops: ['pumpkin', 'wheat'], counts: [1, 1] },
+  watermelon: { drops: ['watermelon', 'berry'], counts: [1, 2] },
+  cookie: { drops: ['cookie', 'wheat'], counts: [1, 1] },
+  wheat: { drops: ['wheat', 'carrot'], counts: [2, 1] },
+  meat: { drops: ['meat', 'leather'], counts: [1, 1] },
+  fish: { drops: ['fish', 'stick'], counts: [1, 1] },
+  feather: { drops: ['feather', 'egg'], counts: [1, 1] },
+  string: { drops: ['string', 'leather'], counts: [1, 1] },
+  flint: { drops: ['flint', 'stone'], counts: [1, 1] },
+  sugar: { drops: ['sugar', 'wheat'], counts: [1, 1] },
+  milk: { drops: ['milk', 'egg'], counts: [1, 1] },
+};
+
+const MONSTER_TYPES = [
+  { id: 'slime', name: 'スライム', hp: 25, speed: 65, damage: 6, radius: 15, color: '#44dd66', detectRange: 260, attackRange: 26, attackCooldown: 1.0, drops: [{ id: 'apple', min: 1, max: 2 }] },
+  { id: 'zombie', name: 'ゾンビ', hp: 55, speed: 85, damage: 12, radius: 18, color: '#6b8e23', detectRange: 340, attackRange: 30, attackCooldown: 0.8, drops: [{ id: 'leather', min: 1, max: 2 }, { id: 'meat', min: 0, max: 1 }] },
+  { id: 'skeleton', name: 'スケルトン', hp: 40, speed: 105, damage: 10, radius: 16, color: '#e8e8d8', detectRange: 420, attackRange: 30, attackCooldown: 0.7, drops: [{ id: 'string', min: 1, max: 2 }, { id: 'flint', min: 0, max: 1 }] },
+  { id: 'brute', name: 'ブルート', hp: 110, speed: 60, damage: 22, radius: 24, color: '#a83232', detectRange: 300, attackRange: 40, attackCooldown: 1.3, drops: [{ id: 'iron_chunk', min: 1, max: 2 }, { id: 'coal', min: 0, max: 1 }] },
+];
+const MONSTER_KNOCKBACK = 55;
+const MONSTER_SPAWN_INTERVAL_BASE = 6.0;
+const MONSTER_MAX_COUNT_BASE = 10;
+const MONSTER_MIN_SPAWN_DIST_FROM_PLAYER = 380;
+
+class Particle {
+  constructor(x, y, color, speed, life, size) {
+    this.x = x; this.y = y; this.color = color;
+    const angle = Math.random() * Math.PI * 2;
+    const sp = Math.random() * speed;
+    this.vx = Math.cos(angle) * sp; this.vy = Math.sin(angle) * sp;
+    this.life = life; this.maxLife = life;
+    this.size = size || (Math.random() * 4 + 2);
+    this.gravity = 0;
+  }
+  update(dt) {
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    this.vy += this.gravity * dt;
+    this.life -= dt; this.vx *= 0.96; this.vy *= 0.96;
+  }
+  draw(ctx) {
+    const alpha = clamp(this.life / this.maxLife, 0, 1);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = this.color;
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+class TextParticle {
+  constructor(x, y, text, color) {
+    this.x = x; this.y = y; this.text = text; this.color = color;
+    this.life = 1.0; this.vy = -40;
+  }
+  update(dt) { this.y += this.vy * dt; this.vy += 60 * dt; this.life -= dt; }
+  draw(ctx) {
+    ctx.globalAlpha = clamp(this.life, 0, 1);
+    ctx.fillStyle = this.color; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(this.text, this.x, this.y); ctx.globalAlpha = 1;
+  }
+}
+
+class DroppedItem {
+  constructor(x, y, itemId, count) {
+    this.x = x; this.y = y; this.itemId = itemId; this.count = count;
+    this.radius = 10; this.life = 60; this.bobOffset = Math.random() * Math.PI * 2;
+  }
+  update(dt) { this.life -= dt; this.bobOffset += dt * 3; }
+  draw(ctx) {
+    const def = ITEM_DEFS[this.itemId];
+    const bob = Math.sin(this.bobOffset) * 3;
+    ctx.save();
+    if (this.life < 10) ctx.globalAlpha = Math.floor(this.life * 4) % 2 === 0 ? 0.5 : 1;
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(def?.icon || '?', this.x, this.y + bob);
+    if (this.count > 1) { ctx.font = '10px sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText('x' + this.count, this.x + 8, this.y + bob + 4); }
+    ctx.restore();
+  }
+}
+
+class Cave {
+  constructor(x, y, radius) { this.x = x; this.y = y; this.radius = radius; }
+  contains(x, y) { return Math.hypot(x - this.x, y - this.y) <= this.radius; }
+  draw(ctx) {
+    ctx.fillStyle = 'rgba(10, 5, 20, 0.55)';
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(80, 40, 120, 0.4)'; ctx.lineWidth = 3; ctx.stroke();
+  }
+  drawMinimap(mm, scale) {
+    mm.fillStyle = 'rgba(80, 40, 120, 0.6)';
+    mm.beginPath(); mm.arc(this.x * scale, this.y * scale, this.radius * scale, 0, Math.PI * 2); mm.fill();
+  }
+}
+
+class Torch {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 8; this.lightRadius = TORCH_LIGHT_RADIUS; this.flicker = Math.random() * Math.PI * 2; }
+  update(dt) { this.flicker += dt * 8; }
+  draw(ctx) {
+    const flick = Math.sin(this.flicker) * 2;
+    ctx.fillStyle = '#ffaa33'; ctx.beginPath(); ctx.arc(this.x, this.y - 4 + flick * 0.3, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffdd88'; ctx.beginPath(); ctx.arc(this.x, this.y - 5 + flick * 0.3, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+class Block {
+  constructor(x, y, type) {
+    this.x = x; this.y = y; this.type = type; this.radius = BLOCK_RADIUS;
+    this.hp = type === 'obsidian_block' ? 12 : (type === 'stone_block' ? 6 : 3);
+    this.maxHp = this.hp; this.shake = 0;
+  }
+  hit() { this.hp -= 1; this.shake = 0.12; return this.hp <= 0; }
+  update(dt) { if (this.shake > 0) this.shake -= dt; }
+  draw(ctx) {
+    let ox = 0, oy = 0;
+    if (this.shake > 0) { ox = (Math.random() - 0.5) * 3; oy = (Math.random() - 0.5) * 3; }
+    const colors = { wood_block: '#8B5A2B', stone_block: '#777', dirt_block: '#8B7355', obsidian_block: '#2a1a3a' };
+    const c = colors[this.type] || '#888';
+    ctx.fillStyle = c;
+    ctx.fillRect(this.x - this.radius + ox, this.y - this.radius + oy, this.radius * 2, this.radius * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - this.radius + ox, this.y - this.radius + oy, this.radius * 2, this.radius * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(this.x - this.radius + ox, this.y - this.radius + oy, this.radius * 2, this.radius * 0.6);
+  }
+}
+
+class CraftingTable {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 20; }
+  draw(ctx) {
+    ctx.fillStyle = '#8B5A2B'; ctx.fillRect(this.x - 18, this.y - 14, 36, 28);
+    ctx.fillStyle = '#6B4226'; ctx.fillRect(this.x - 16, this.y - 12, 32, 24);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(this.x - 18, this.y - 14, 36, 28);
+    ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🔨', this.x, this.y + 4);
+  }
+}
+
+class Resource {
+  constructor(x, y, type) { this.x = x; this.y = y; this.type = type; this.radius = 14; this.hp = 3; this.maxHp = 3; this.shake = 0; }
+  hit() { this.hp -= 1; this.shake = 0.15; return this.hp <= 0; }
+  update(dt) { if (this.shake > 0) this.shake -= dt; }
+  draw(ctx) {
+    let ox = 0, oy = 0;
+    if (this.shake > 0) { ox = (Math.random() - 0.5) * 4; oy = (Math.random() - 0.5) * 4; }
+    const colors = {
+      wood: '#5D3A1A', stone: '#666', iron_chunk: '#444', copper_ore: '#8B4513', gold_ore: '#B8860B',
+      diamond_ore: '#00CED1', coal: '#222', leather: '#8B4513', apple: '#ff4444', mushroom: '#D2691E',
+      carrot: '#ff8800', sand: '#C2B280', clay: '#A0522D', obsidian: '#1a1a1a', emerald_ore: '#50C878',
+      ruby: '#E0115F', sapphire: '#0F52BA', crystal: '#E0FFFF', berry: '#8B008B', honey: '#FFD700',
+      egg: '#FFF8DC', pumpkin: '#FF7518', watermelon: '#2E8B57', cookie: '#D2691E', wheat: '#F5DEB3',
+      meat: '#CD5C5C', fish: '#4682B4', feather: '#FFFACD', string: '#F0E68C', flint: '#2F4F4F',
+      sugar: '#FFF0F5', milk: '#FFFAF0',
+    };
+    const c = colors[this.type] || '#888';
+    ctx.fillStyle = c; ctx.beginPath(); ctx.arc(this.x + ox, this.y + oy, this.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(this.x + ox, this.y + oy - 2, this.radius * 0.4, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+class Monster {
+  constructor(x, y, typeId, isNight = false, isCave = false) {
+    const def = MONSTER_TYPES.find(m => m.id === typeId) || MONSTER_TYPES[0];
+    this.typeId = def.id; this.name = def.name;
+    this.x = x; this.y = y; this.renderX = x; this.renderY = y;
+    this.angle = 0;
+    const mult = (isNight || isCave) ? NIGHT_DAMAGE_MULT : 1;
+    const spdMult = (isNight || isCave) ? NIGHT_SPEED_MULT : 1;
+    this.hp = def.hp * mult; this.maxHp = this.hp;
+    this.speed = def.speed * spdMult; this.damage = def.damage * mult;
+    this.radius = def.radius; this.color = def.color;
+    this.detectRange = def.detectRange; this.attackRange = def.attackRange;
+    this.attackCooldownMax = def.attackCooldown; this.attackCooldown = 0;
+    this.drops = def.drops; this.alive = true; this.hitFlash = 0;
+    this.wanderAngle = Math.random() * Math.PI * 2;
+    this.wanderTimer = randRange(1, 3); this.attackAnim = 0;
+  }
+  takeDamage(amount, game) {
+    if (!this.alive) return 0;
+    this.hp -= amount; this.hitFlash = 0.15;
+    if (this.hp <= 0) { this.hp = 0; this.alive = false; if (game) this.onDeath(game); }
+    return amount;
+  }
+  onDeath(game) {
+    for (const drop of this.drops) {
+      if (Math.random() < 0.8) {
+        const count = Math.floor(randRange(drop.min, drop.max + 1));
+        if (count > 0) game.droppedItems.push(new DroppedItem(this.x, this.y, drop.id, count));
+      }
+    }
+    for (let i = 0; i < 10; i++) game.particles.push(new Particle(this.x, this.y, this.color, 90, 0.6));
+    game.monsterKillCount = (game.monsterKillCount || 0) + 1;
+  }
+  update(dt, game) {
+    if (!this.alive) return;
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
+    if (this.hitFlash > 0) this.hitFlash -= dt;
+    if (this.attackAnim > 0) this.attackAnim -= dt;
+    for (const b of game.blocks) {
+      const d = dist(this, b);
+      if (d < this.radius + b.radius) {
+        const angle = Math.atan2(this.y - b.y, this.x - b.x);
+        this.x += Math.cos(angle) * 2; this.y += Math.sin(angle) * 2;
+      }
+    }
+    let target = null, targetDist = Infinity;
+    for (const p of game.players) {
+      if (!p.alive) continue;
+      const d = dist(this, p);
+      if (d < targetDist) { targetDist = d; target = p; }
+    }
+    if (target && targetDist <= this.detectRange) {
+      this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+      if (targetDist > this.attackRange) {
+        this.x += Math.cos(this.angle) * this.speed * dt;
+        this.y += Math.sin(this.angle) * this.speed * dt;
+      } else if (this.attackCooldown <= 0) {
+        this.attackCooldown = this.attackCooldownMax; this.attackAnim = 0.25;
+        const dmg = target.takeDamage(this.damage, this);
+        const kAngle = Math.atan2(target.y - this.y, target.x - this.x);
+        target.x += Math.cos(kAngle) * MONSTER_KNOCKBACK;
+        target.y += Math.sin(kAngle) * MONSTER_KNOCKBACK;
+        game.textParticles.push(new TextParticle(target.x, target.y - 20, `-${Math.floor(dmg)}`, '#ff8844'));
+        for (let i = 0; i < 6; i++) game.particles.push(new Particle(target.x, target.y, '#ff8844', 70, 0.4));
+      }
+    } else {
+      this.wanderTimer -= dt;
+      if (this.wanderTimer <= 0) { this.wanderAngle = Math.random() * Math.PI * 2; this.wanderTimer = randRange(1.5, 3.5); }
+      this.angle = this.wanderAngle;
+      this.x += Math.cos(this.angle) * this.speed * 0.35 * dt;
+      this.y += Math.sin(this.angle) * this.speed * 0.35 * dt;
+    }
+    this.x = clamp(this.x, this.radius, MAP_SIZE - this.radius);
+    this.y = clamp(this.y, this.radius, MAP_SIZE - this.radius);
+  }
+  syncFrom(data) {
+    this.x = data.x; this.y = data.y; this.hp = data.hp; this.alive = data.alive;
+    this.angle = data.angle || 0;
+  }
+  interpolate(dt) {
+    this.renderX += (this.x - this.renderX) * 0.15;
+    this.renderY += (this.y - this.renderY) * 0.15;
+  }
+  draw(ctx) {
+    ctx.save(); ctx.translate(this.renderX, this.renderY);
+    ctx.beginPath(); ctx.ellipse(0, this.radius * 0.8, this.radius * 0.9, this.radius * 0.35, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fill();
+    const scale = this.attackAnim > 0 ? 1.15 : 1;
+    ctx.fillStyle = this.hitFlash > 0 ? '#ffffff' : this.color;
+    ctx.beginPath(); ctx.arc(0, 0, this.radius * scale, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#000';
+    const ex = Math.cos(this.angle) * this.radius * 0.5;
+    const ey = Math.sin(this.angle) * this.radius * 0.5;
+    ctx.beginPath(); ctx.arc(ex, ey, this.radius * 0.18, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    if (this.hp < this.maxHp) {
+      ctx.fillStyle = '#222'; ctx.fillRect(this.renderX - 18, this.renderY - this.radius - 14, 36, 5);
+      ctx.fillStyle = this.hp / this.maxHp > 0.5 ? '#7fff5c' : '#ff5c5c';
+      ctx.fillRect(this.renderX - 18, this.renderY - this.radius - 14, 36 * (this.hp / this.maxHp), 5);
+    }
+    ctx.fillStyle = '#ddd'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(this.name, this.renderX, this.renderY - this.radius - 18);
+  }
+}
+
+class Player {
+  constructor(num, x, y) {
+    this.num = num;
+    this.x = x; this.y = y; this.renderX = x; this.renderY = y;
+    this.vx = 0; this.vy = 0; this.angle = 0;
+    this.hp = 100; this.maxHp = 100; this.alive = true;
+    this.inventory = Array(TOTAL_SLOTS).fill(null);
+    this.selectedSlot = 0; this.equipped = null; this.armor = null;
+    this.attackCooldown = 0; this.dashTimer = 0; this.dashCooldown = 0;
+    this.invincible = 0; this.attackAnim = 0; this.gatherCooldown = 0;
+    this.skinIndex = num - 1;
+    this.color = PLAYER_COLORS[this.skinIndex];
+    this.name = PLAYER_NAMES[this.skinIndex];
+    this.glow = PLAYER_GLOWS[this.skinIndex];
+    this.freeCamera = false; this.cameraX = x; this.cameraY = y;
+    this.craftMenuOpen = false; this.craftCursorX = 0; this.craftCursorY = 0;
+    this.inventoryOpen = false; this.invCursorX = 0; this.invCursorY = 0;
+    this.invSwapSlot = -1; this.prevInput = {};
+    this.craftStickTimer = 0; this.invStickTimer = 0;
+    this.isGuarding = false; this.placeCooldown = 0; this.zlHoldTime = 0;
+    this.respawnTimer = 0; this.stormDmgTimer = 0;
+  }
+  getMaterialCount(type) {
+    let count = 0;
+    for (const slot of this.inventory) { if (slot && slot.itemId === type) count += slot.count; }
+    return count;
+  }
+  consumeMaterial(type, amount) {
+    let remaining = amount;
+    for (let i = 0; i < this.inventory.length && remaining > 0; i++) {
+      const slot = this.inventory[i];
+      if (slot && slot.itemId === type) {
+        const take = Math.min(slot.count, remaining);
+        slot.count -= take; remaining -= take;
+        if (slot.count <= 0) this.inventory[i] = null;
+      }
+    }
+    return remaining <= 0;
+  }
+  addItem(itemId, count) {
+    const def = ITEM_DEFS[itemId];
+    if (def?.stackable) {
+      for (const slot of this.inventory) {
+        if (slot && slot.itemId === itemId && slot.count < MAX_STACK) {
+          const add = Math.min(count, MAX_STACK - slot.count);
+          slot.count += add; count -= add;
+          if (count <= 0) return null;
+        }
+      }
+    }
+    for (let i = 0; i < this.inventory.length && count > 0; i++) {
+      if (!this.inventory[i]) {
+        const add = def?.stackable ? Math.min(count, MAX_STACK) : 1;
+        this.inventory[i] = { itemId, count: add }; count -= add;
+      }
+    }
+    return count > 0 ? { itemId, count } : null;
+  }
+  getSelectedItem() { return this.inventory[this.selectedSlot]; }
+  getAttackPower() {
+    let base = 12;
+    const item = this.getSelectedItem();
+    if (item) { const def = ITEM_DEFS[item.itemId]; if (def?.type === 'weapon') base += def?.atkBonus || 0; }
+    return base;
+  }
+  getDefense() {
+    const item = this.getSelectedItem();
+    if (item) { const def = ITEM_DEFS[item.itemId]; if (def?.type === 'armor') return def?.defBonus || 0; }
+    return 0;
+  }
+  takeDamage(amount, attacker, ignoreInvincible = false) {
+    if (!ignoreInvincible && this.invincible > 0) return 0;
+    if (!this.alive) return 0;
+    if (this.isGuarding && attacker && attacker.alive) {
+      const angle = Math.atan2(attacker.y - this.y, attacker.x - this.x);
+      attacker.x += Math.cos(angle) * KNOCKBACK_FORCE * 1.5;
+      attacker.y += Math.sin(angle) * KNOCKBACK_FORCE * 1.5;
+      return 0;
+    }
+    const actual = Math.max(1, Math.floor(amount * (1 - this.getDefense())));
+    this.hp -= actual;
+    if (!ignoreInvincible) this.invincible = 0.35;
+    this.freeCamera = false;
+    if (this.hp <= 0) {
+      this.hp = 0; this.alive = false;
+      if (!game.pvpEnabled) this.respawnTimer = 10;
+    }
+    return actual;
+  }
+  heal(amount) { this.hp = Math.min(this.maxHp, this.hp + amount); }
+  handleStickCursor(input, timerName, cursorXName, cursorYName, cols, rows, dt) {
+    const stickX = input.leftStickX; const stickY = input.leftStickY;
+    const threshold = 0.4; this[timerName] -= dt;
+    if (this[timerName] <= 0) {
+      if (Math.abs(stickX) > threshold) { this[cursorXName] = (this[cursorXName] + (stickX > 0 ? 1 : -1) + cols) % cols; this[timerName] = 0.18; }
+      if (Math.abs(stickY) > threshold) { this[cursorYName] = (this[cursorYName] + (stickY > 0 ? 1 : -1) + rows) % rows; this[timerName] = 0.18; }
+    }
+  }
+  update(dt, input, game) {
+    if (!this.alive) {
+      if (this.respawnTimer > 0) { this.respawnTimer -= dt; if (this.respawnTimer <= 0) this.respawn(game); }
+      return;
+    }
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
+    if (this.dashCooldown > 0) this.dashCooldown -= dt;
+    if (this.dashTimer > 0) this.dashTimer -= dt;
+    if (this.invincible > 0) this.invincible -= dt;
+    if (this.attackAnim > 0) this.attackAnim -= dt;
+    if (this.gatherCooldown > 0) this.gatherCooldown -= dt;
+    if (this.placeCooldown > 0) this.placeCooldown -= dt;
+
+    const xJust = input.X && !this.prevInput.X;
+    const invJust = input.INVENTORY && !this.prevInput.INVENTORY;
+    if (xJust || invJust) { this.inventoryOpen = !this.inventoryOpen; this.craftMenuOpen = false; this.invSwapSlot = -1; }
+    const aJust = input.A && !this.prevInput.A;
+    if (aJust && !this.inventoryOpen) { this.craftMenuOpen = !this.craftMenuOpen; }
+
+    if (this.craftMenuOpen && !this.inventoryOpen) {
+      const recipesPerRow = 4;
+      const allRecipes = this.getAvailableRecipes(game);
+      const totalRows = Math.ceil(allRecipes.length / recipesPerRow);
+      this.handleStickCursor(input, 'craftStickTimer', 'craftCursorX', 'craftCursorY', recipesPerRow, Math.max(1, totalRows), dt);
+      const zrPressed = input.ZR > 0.5;
+      const zrJust = zrPressed && (!this.prevInput.ZR || this.prevInput.ZR <= 0.5);
+      if (zrJust) this.craft(game, allRecipes);
+      this.prevInput = { ...input }; return;
+    }
+    if (this.inventoryOpen) {
+      this.handleStickCursor(input, 'invStickTimer', 'invCursorX', 'invCursorY', 9, 4, dt);
+      const bJust = input.B && !this.prevInput.B;
+      if (bJust) {
+        let slotIdx = this.invCursorY === 0 ? this.invCursorX : HOTBAR_SLOTS + (this.invCursorY - 1) * 9 + this.invCursorX;
+        if (slotIdx >= TOTAL_SLOTS) slotIdx = TOTAL_SLOTS - 1;
+        if (this.invSwapSlot === -1) { if (this.inventory[slotIdx]) this.invSwapSlot = slotIdx; }
+        else { const temp = this.inventory[slotIdx]; this.inventory[slotIdx] = this.inventory[this.invSwapSlot]; this.inventory[this.invSwapSlot] = temp; this.invSwapSlot = -1; }
+      }
+      const aJust2 = input.A && !this.prevInput.A;
+      if (aJust2) { this.inventoryOpen = false; this.invSwapSlot = -1; }
+      if (input.dpadDown && !this.prevInput.dpadDown) {
+        let slotIdx = this.invCursorY === 0 ? this.invCursorX : HOTBAR_SLOTS + (this.invCursorY - 1) * 9 + this.invCursorX;
+        if (slotIdx >= TOTAL_SLOTS) slotIdx = TOTAL_SLOTS - 1;
+        const item = this.inventory[slotIdx];
+        if (item) { game.droppedItems.push(new DroppedItem(this.x, this.y, item.itemId, item.count)); game.textParticles.push(new TextParticle(this.x, this.y - 15, `${ITEM_DEFS[item.itemId]?.name || ''} 捨てた`, '#ff8888')); this.inventory[slotIdx] = null; }
+      }
+      this.prevInput = { ...input }; return;
+    }
+    if (input.L && !this.prevInput.L) this.selectedSlot = (this.selectedSlot - 1 + HOTBAR_SLOTS) % HOTBAR_SLOTS;
+    if (input.R && !this.prevInput.R) this.selectedSlot = (this.selectedSlot + 1) % HOTBAR_SLOTS;
+
+    const moveX = input.leftStickX; const moveY = input.leftStickY;
+    const isMoving = moveX ** 2 + moveY ** 2 > 0.1;
+    if (isMoving) { this.angle = Math.atan2(moveY, moveX); this.freeCamera = false; }
+    if (input.leftStickPress && !this.prevInput.leftStickPress && this.dashCooldown <= 0 && this.dashTimer <= 0) {
+      this.dashTimer = DASH_DURATION; this.dashCooldown = DASH_COOLDOWN;
+      for (let i = 0; i < 8; i++) game.particles.push(new Particle(this.x, this.y, this.color, 60, 0.4, 3));
+    }
+    const speed = this.dashTimer > 0 ? DASH_SPEED : PLAYER_SPEED;
+    let nextX = this.x + moveX * speed * dt; let nextY = this.y + moveY * speed * dt;
+    for (const b of game.blocks) {
+      const d = Math.hypot(nextX - b.x, nextY - b.y);
+      if (d < PLAYER_RADIUS + b.radius) {
+        const angle = Math.atan2(nextY - b.y, nextX - b.x);
+        const overlap = (PLAYER_RADIUS + b.radius) - d;
+        nextX += Math.cos(angle) * overlap; nextY += Math.sin(angle) * overlap;
+      }
+    }
+    if (!game.infiniteMap) { this.x = clamp(nextX, PLAYER_RADIUS, MAP_SIZE - PLAYER_RADIUS); this.y = clamp(nextY, PLAYER_RADIUS, MAP_SIZE - PLAYER_RADIUS); }
+    else { this.x = nextX; this.y = nextY; }
+
+    const rsX = input.rightStickX; const rsY = input.rightStickY;
+    const rsActive = rsX ** 2 + rsY ** 2 > 0.3;
+    if (rsActive) { this.freeCamera = true; this.cameraX += rsX * 300 * dt; this.cameraY += rsY * 300 * dt; }
+    if (!this.freeCamera) { this.cameraX = this.x; this.cameraY = this.y; }
+
+    const zrPressed = input.ZR > 0.5;
+    const zrJust = zrPressed && (!this.prevInput.ZR || this.prevInput.ZR <= 0.5);
+    if (zrJust && this.attackCooldown <= 0) this.attack(game);
+    const gatherJust = input.B && !this.prevInput.B;
+    if (gatherJust && this.gatherCooldown <= 0) this.tryGather(game);
+
+    const zlPressed = input.ZL > 0.5;
+    const item = this.getSelectedItem();
+    const def = item ? ITEM_DEFS[item.itemId] : null;
+    if (zlPressed) this.zlHoldTime += dt; else this.zlHoldTime = 0;
+    const isShield = def?.type === 'armor';
+    this.isGuarding = isShield && zlPressed && this.zlHoldTime < 0.3;
+    if (zlPressed && this.zlHoldTime >= 0.3 && this.placeCooldown <= 0) {
+      if (def?.type === 'placeable' || def?.type === 'block') {
+        this.tryPlace(game, def.placeType || item.itemId); this.zlHoldTime = 0.2;
+      }
+    }
+    const zlJust = zlPressed && (!this.prevInput.ZL || this.prevInput.ZL <= 0.5);
+    if (zlJust && !isShield && def?.type === 'consumable') this.useSlotItem(game);
+    if (input.dpadDown && !this.prevInput.dpadDown) {
+      const dropItem = this.inventory[this.selectedSlot];
+      if (dropItem) { game.droppedItems.push(new DroppedItem(this.x, this.y, dropItem.itemId, dropItem.count)); game.textParticles.push(new TextParticle(this.x, this.y - 15, `${ITEM_DEFS[dropItem.itemId]?.name || ''} 捨てた`, '#ff8888')); this.inventory[this.selectedSlot] = null; }
+    }
+    this.prevInput = { ...input };
+  }
+  tryPlace(game, placeType) {
+    const item = this.getSelectedItem(); if (!item) return;
+    const px = this.x + Math.cos(this.angle) * (PLAYER_RADIUS + BLOCK_RADIUS + 4);
+    const py = this.y + Math.sin(this.angle) * (PLAYER_RADIUS + BLOCK_RADIUS + 4);
+    for (const b of game.blocks) if (Math.hypot(px - b.x, py - b.y) < BLOCK_RADIUS * 1.8) return;
+    for (const t of game.torches) if (Math.hypot(px - t.x, py - t.y) < 20) return;
+    for (const ct of game.craftingTables) if (Math.hypot(px - ct.x, py - ct.y) < 30) return;
+    for (const p of game.players) if (p !== this && p.alive && Math.hypot(px - p.x, py - p.y) < PLAYER_RADIUS + BLOCK_RADIUS) return;
+    if (placeType === 'torch') game.torches.push(new Torch(px, py));
+    else if (placeType === 'crafting_table') game.craftingTables.push(new CraftingTable(px, py));
+    else if (['wood_block', 'stone_block', 'dirt_block', 'obsidian_block'].includes(placeType)) game.blocks.push(new Block(px, py, placeType));
+    else return;
+    this.placeCooldown = PLACE_COOLDOWN; item.count -= 1;
+    if (item.count <= 0) this.inventory[this.selectedSlot] = null;
+    game.textParticles.push(new TextParticle(px, py - 15, '設置', '#88ccff'));
+    for (let i = 0; i < 4; i++) game.particles.push(new Particle(px, py, '#fff', 40, 0.3));
+  }
+  respawn(game) {
+    this.alive = true; this.hp = this.maxHp; this.invincible = 3.0;
+    let rx, ry, ok = false, tries = 0;
+    while (!ok && tries < 30) {
+      rx = randRange(200, MAP_SIZE - 200); ry = randRange(200, MAP_SIZE - 200); ok = true;
+      for (const m of game.monsters) if (m.alive && Math.hypot(rx - m.x, ry - m.y) < 200) ok = false;
+      tries++;
+    }
+    this.x = rx || MAP_SIZE / 2; this.y = ry || MAP_SIZE / 2;
+    this.cameraX = this.x; this.cameraY = this.y;
+    this.renderX = this.x; this.renderY = this.y;
+    game.textParticles.push(new TextParticle(this.x, this.y - 30, 'リスポーン！', '#44ff44'));
+    for (let i = 0; i < 12; i++) game.particles.push(new Particle(this.x, this.y, this.color, 80, 0.8));
+  }
+  getAvailableRecipes(game) {
+    let nearTable = false;
+    for (const ct of game.craftingTables) if (Math.hypot(this.x - ct.x, this.y - ct.y) < 100) nearTable = true;
+    return nearTable ? [...CRAFT_RECIPES, ...TABLE_RECIPES] : CRAFT_RECIPES;
+  }
+  tryGather(game) {
+    for (let i = game.blocks.length - 1; i >= 0; i--) {
+      const b = game.blocks[i]; const d = dist(this, b);
+      if (d < PLAYER_RADIUS + b.radius + 12) {
+        this.gatherCooldown = 0.3;
+        if (b.hit()) {
+          const dropMap = { wood_block: 'wood', stone_block: 'stone', dirt_block: 'sand', obsidian_block: 'obsidian' };
+          const dropId = dropMap[b.type] || 'wood';
+          const leftover = this.addItem(dropId, 1);
+          if (leftover) game.droppedItems.push(new DroppedItem(b.x, b.y, leftover.itemId, leftover.count));
+          game.blocks.splice(i, 1); game.textParticles.push(new TextParticle(b.x, b.y - 15, `+1 ${ITEM_DEFS[dropId]?.name || ''}`, '#fff'));
+          for (let k = 0; k < 5; k++) game.particles.push(new Particle(b.x, b.y, '#aaa', 40, 0.5));
+        } else { for (let k = 0; k < 2; k++) game.particles.push(new Particle(b.x, b.y, '#fff', 20, 0.3)); }
+        return true;
+      }
+    }
+    for (let i = game.craftingTables.length - 1; i >= 0; i--) {
+      const ct = game.craftingTables[i];
+      if (dist(this, ct) < PLAYER_RADIUS + ct.radius + 10) {
+        this.gatherCooldown = 0.3; game.craftingTables.splice(i, 1);
+        const leftover = this.addItem('crafting_table', 1);
+        if (leftover) game.droppedItems.push(new DroppedItem(ct.x, ct.y, leftover.itemId, leftover.count));
+        game.textParticles.push(new TextParticle(ct.x, ct.y - 15, '作業台 回収', '#ffcc66')); return true;
+      }
+    }
+    for (let i = game.torches.length - 1; i >= 0; i--) {
+      const t = game.torches[i];
+      if (dist(this, t) < PLAYER_RADIUS + t.radius + 10) {
+        this.gatherCooldown = 0.3; game.torches.splice(i, 1);
+        const leftover = this.addItem('torch', 1);
+        if (leftover) game.droppedItems.push(new DroppedItem(t.x, t.y, leftover.itemId, leftover.count));
+        game.textParticles.push(new TextParticle(t.x, t.y - 15, '松明 回収', '#ffaa33')); return true;
+      }
+    }
+    let closest = null, closestDist = 9999;
+    for (const r of game.resources) {
+      const d = dist(this, r);
+      if (d < PLAYER_RADIUS + r.radius + 15 && d < closestDist) { closest = r; closestDist = d; }
+    }
+    if (closest) {
+      this.gatherCooldown = 0.3;
+      if (closest.hit()) {
+        const dropDef = RESOURCE_DROPS[closest.type];
+        if (dropDef) {
+          for (let d = 0; d < dropDef.drops.length; d++) {
+            const dropType = dropDef.drops[d]; const dropCount = dropDef.counts[d];
+            const leftover = this.addItem(dropType, dropCount);
+            if (leftover) { game.droppedItems.push(new DroppedItem(closest.x, closest.y, leftover.itemId, leftover.count)); game.textParticles.push(new TextParticle(closest.x, closest.y - 15, `+${leftover.count} (満杯)`, '#ff8888')); }
+            else game.textParticles.push(new TextParticle(closest.x, closest.y - 15, `+${dropCount}`, '#fff'));
+          }
+        }
+        game.resources = game.resources.filter(res => res !== closest);
+        for (let i = 0; i < 6; i++) game.particles.push(new Particle(closest.x, closest.y, '#8B4513', 40, 0.6));
+      } else { for (let i = 0; i < 3; i++) game.particles.push(new Particle(closest.x, closest.y, '#fff', 20, 0.3)); }
+      return true;
+    }
+    for (let i = game.droppedItems.length - 1; i >= 0; i--) {
+      const d = game.droppedItems[i];
+      if (dist(this, d) < PLAYER_RADIUS + d.radius + 10) {
+        const leftover = this.addItem(d.itemId, d.count);
+        if (leftover) { d.count = leftover.count; game.textParticles.push(new TextParticle(d.x, d.y - 15, '満杯！', '#ff8888')); }
+        else { game.droppedItems.splice(i, 1); game.textParticles.push(new TextParticle(d.x, d.y - 15, `+${d.count}`, '#88ff88')); }
+        return true;
+      }
+    }
+    return false;
+  }
+  attack(game) {
+    this.attackCooldown = ATTACK_COOLDOWN; this.attackAnim = 0.2;
+    for (let i = -3; i <= 3; i++) {
+      const a = this.angle + (i / 6) * ATTACK_ANGLE;
+      game.particles.push(new Particle(this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 30, '#fff', 120, 0.2, 3));
+    }
+    if (game.pvpEnabled) {
+      for (const p of game.players) {
+        if (p !== this && p.alive && dist(this, p) < ATTACK_RANGE + PLAYER_RADIUS) {
+          const toTarget = Math.atan2(p.y - this.y, p.x - this.x);
+          if (angleDiff(toTarget, this.angle) <= ATTACK_ANGLE / 2) {
+            const dmg = p.takeDamage(this.getAttackPower(), this);
+            const angle = Math.atan2(p.y - this.y, p.x - this.x);
+            p.x += Math.cos(angle) * KNOCKBACK_FORCE; p.y += Math.sin(angle) * KNOCKBACK_FORCE;
+            game.textParticles.push(new TextParticle(p.x, p.y - 20, `-${dmg}`, '#ff4444'));
+            for (let i = 0; i < 8; i++) game.particles.push(new Particle(p.x, p.y, '#ff0000', 80, 0.5));
+          }
+        }
+      }
+    }
+    for (const m of game.monsters) {
+      if (m.alive && dist(this, m) < ATTACK_RANGE + m.radius) {
+        const toTarget = Math.atan2(m.y - this.y, m.x - this.x);
+        if (angleDiff(toTarget, this.angle) <= ATTACK_ANGLE / 2) {
+          const dmg = m.takeDamage(this.getAttackPower(), game);
+          const angle = Math.atan2(m.y - this.y, m.x - this.x);
+          m.x += Math.cos(angle) * KNOCKBACK_FORCE; m.y += Math.sin(angle) * KNOCKBACK_FORCE;
+          game.textParticles.push(new TextParticle(m.x, m.y - 20, `-${dmg}`, '#ffcc44'));
+          for (let i = 0; i < 8; i++) game.particles.push(new Particle(m.x, m.y, '#ffaa00', 80, 0.5));
+        }
+      }
+    }
+  }
+  useSlotItem(game) {
+    const item = this.getSelectedItem(); if (!item) return;
+    const def = ITEM_DEFS[item.itemId];
+    if (def?.type === 'consumable' && def.heal) {
+      this.heal(def.heal); game.textParticles.push(new TextParticle(this.x, this.y - 25, `+${def.heal}`, '#44ff44'));
+      for (let i = 0; i < 6; i++) game.particles.push(new Particle(this.x, this.y, '#44ff44', 50, 0.6));
+      item.count -= 1; if (item.count <= 0) this.inventory[this.selectedSlot] = null;
+    }
+  }
+  craft(game, recipes) {
+    const recipesPerRow = 4;
+    const idx = this.craftCursorY * recipesPerRow + this.craftCursorX;
+    if (idx >= recipes.length) return;
+    const recipe = recipes[idx]; if (!recipe) return;
+    for (const [mat, count] of Object.entries(recipe.req)) {
+      if (this.getMaterialCount(mat) < count) { game.textParticles.push(new TextParticle(this.x, this.y - 20, '素材不足！', '#ff4444')); return; }
+    }
+    for (const [mat, count] of Object.entries(recipe.req)) this.consumeMaterial(mat, count);
+    const leftover = this.addItem(recipe.result, recipe.count);
+    const def = ITEM_DEFS[recipe.result];
+    if (leftover) { game.droppedItems.push(new DroppedItem(this.x, this.y, leftover.itemId, leftover.count)); game.textParticles.push(new TextParticle(this.x, this.y - 25, `${def.name} 作成！(満杯)`, '#ffcc00')); }
+    else game.textParticles.push(new TextParticle(this.x, this.y - 25, `${def.name} 作成！`, '#44ff44'));
+    for (let i = 0; i < 8; i++) game.particles.push(new Particle(this.x, this.y, '#ffcc00', 60, 0.5));
+  }
+  syncFrom(data) {
+    const oldX = this.x, oldY = this.y;
+    this.x = data.x; this.y = data.y; this.hp = data.hp; this.maxHp = data.maxHp;
+    this.alive = data.alive; this.angle = data.angle; this.selectedSlot = data.selectedSlot;
+    this.skinIndex = data.skinIndex; this.color = PLAYER_COLORS[this.skinIndex];
+    this.name = PLAYER_NAMES[this.skinIndex]; this.glow = PLAYER_GLOWS[this.skinIndex];
+    if (data.inventory) this.inventory = data.inventory;
+    if (data.cameraX !== undefined) { this.cameraX = data.cameraX; this.cameraY = data.cameraY; }
+    // 100px以上ずれたら瞬間補正
+    if (Math.hypot(this.x - this.renderX, this.y - this.renderY) > 100) {
+      this.renderX = this.x; this.renderY = this.y;
+    }
+  }
+  interpolate(dt) {
+    this.renderX += (this.x - this.renderX) * 0.15;
+    this.renderY += (this.y - this.renderY) * 0.15;
+  }
+  draw(ctx) {
+    if (!this.alive) return;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath(); ctx.ellipse(this.renderX, this.renderY + 14, PLAYER_RADIUS * 0.9, PLAYER_RADIUS * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.translate(this.renderX, this.renderY); ctx.rotate(this.angle);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(14, -5); ctx.lineTo(14, 5); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    if (this.dashTimer > 0) { ctx.strokeStyle = this.glow; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(this.renderX, this.renderY, PLAYER_RADIUS + 6, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.renderX, this.renderY, PLAYER_RADIUS, 0, Math.PI * 2); ctx.fill();
+    if (this.attackAnim > 0) { ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.moveTo(this.renderX, this.renderY); ctx.arc(this.renderX, this.renderY, ATTACK_RANGE, this.angle - ATTACK_ANGLE / 2, this.angle + ATTACK_ANGLE / 2); ctx.closePath(); ctx.fill(); }
+    if (this.invincible > 0 && Math.floor(this.invincible * 12) % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(this.renderX, this.renderY, PLAYER_RADIUS, 0, Math.PI * 2); ctx.fill(); }
+    if (this.isGuarding) {
+      ctx.strokeStyle = 'rgba(68, 136, 255, 0.6)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(this.renderX, this.renderY, PLAYER_RADIUS + 8, this.angle - 0.8, this.angle + 0.8); ctx.stroke();
+      ctx.fillStyle = 'rgba(68, 136, 255, 0.15)'; ctx.beginPath(); ctx.moveTo(this.renderX, this.renderY); ctx.arc(this.renderX, this.renderY, PLAYER_RADIUS + 12, this.angle - 0.8, this.angle + 0.8); ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.renderX - 6, this.renderY - 4, 5, 0, Math.PI * 2); ctx.arc(this.renderX + 6, this.renderY - 4, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(this.renderX - 6, this.renderY - 4, 2.5, 0, Math.PI * 2); ctx.arc(this.renderX + 6, this.renderY - 4, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; ctx.fillText(`P${this.num}`, this.renderX, this.renderY - 38); ctx.shadowBlur = 0;
+    ctx.fillStyle = this.hp > 60 ? '#8f8' : this.hp > 30 ? '#ff8' : '#f88'; ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(`${Math.ceil(this.hp)}/100`, this.renderX, this.renderY - 26);
+    const barW = 44, barH = 5;
+    ctx.fillStyle = '#222'; ctx.fillRect(this.renderX - barW/2, this.renderY - 20, barW, barH);
+    ctx.fillStyle = this.hp > 60 ? '#0f0' : this.hp > 30 ? '#ffcc00' : '#ff2222';
+    ctx.fillRect(this.renderX - barW/2, this.renderY - 20, barW * (this.hp / this.maxHp), barH);
+  }
+  drawCraftMenu(ctx, screenX, screenY, vw, vh, game) {
+    if (!this.craftMenuOpen || !this.alive || this.inventoryOpen) return;
+    const recipes = this.getAvailableRecipes(game);
+    const recipesPerRow = 4; const totalRows = Math.ceil(recipes.length / recipesPerRow);
+    const tileSize = 52; const gap = 5;
+    const panelW = recipesPerRow * (tileSize + gap) + gap + 20;
+    const panelH = totalRows * (tileSize + gap) + gap + 90;
+    const cx = screenX + vw / 2; const cy = screenY + vh / 2;
+    const px = cx - panelW / 2; const py = cy - panelH / 2;
+    ctx.fillStyle = 'rgba(10, 10, 20, 0.95)'; ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(px, py, panelW, panelH, 12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ccc'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    const nearTable = recipes.length > CRAFT_RECIPES.length;
+    ctx.fillText(`🔨 クラフト ${nearTable ? '(作業台拡張)' : ''}(Zで閉じる / Ctrlで作成)`, cx, py + 20);
+    const catColors = { weapon: '#ff6666', armor: '#6688ff', consumable: '#66ff66', material: '#ffcc66', food: '#ffaa44', building: '#cc88ff' };
+    for (let i = 0; i < recipes.length; i++) {
+      const recipe = recipes[i]; const row = Math.floor(i / recipesPerRow); const col = i % recipesPerRow;
+      const tx = px + 10 + col * (tileSize + gap); const ty = py + 32 + row * (tileSize + gap);
+      const isSelected = col === this.craftCursorX && row === this.craftCursorY;
+      const canCraft = Object.entries(recipe.req).every(([k, v]) => this.getMaterialCount(k) >= v);
+      if (isSelected) { ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(tx - 2, ty - 2, tileSize + 4, tileSize + 4, 8); ctx.fill(); ctx.stroke(); }
+      ctx.fillStyle = canCraft ? 'rgba(40, 60, 40, 0.8)' : 'rgba(60, 30, 30, 0.8)';
+      ctx.strokeStyle = canCraft ? '#5a5' : '#a55'; ctx.lineWidth = 1; ctx.beginPath(); ctx.roundRect(tx, ty, tileSize, tileSize, 6); ctx.fill(); ctx.stroke();
+      const def = ITEM_DEFS[recipe.result]; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+      ctx.fillText(def?.icon || '?', tx + tileSize / 2, ty + tileSize / 2 + 6);
+      ctx.font = '8px sans-serif'; ctx.fillStyle = catColors[recipe.category] || '#aaa'; ctx.fillText(recipe.name, tx + tileSize / 2, ty + tileSize - 3);
+      if (recipe.count > 1) { ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'right'; ctx.fillText('x' + recipe.count, tx + tileSize - 2, ty + 10); }
+    }
+    const selIdx = this.craftCursorY * recipesPerRow + this.craftCursorX;
+    if (selIdx < recipes.length) {
+      const sel = recipes[selIdx]; const def = ITEM_DEFS[sel.result];
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(`${def?.name || sel.name} - ${sel.desc}`, cx, py + panelH - 20);
+      ctx.font = '9px sans-serif'; ctx.fillStyle = '#aaa';
+      const reqText = Object.entries(sel.req).map(([k, v]) => `${ITEM_DEFS[k]?.icon || '?'}${this.getMaterialCount(k)}/${v}`).join('  ');
+      ctx.fillText(reqText, cx, py + panelH - 8);
+    }
+  }
+  drawInventoryScreen(ctx, screenX, screenY, vw, vh) {
+    if (!this.inventoryOpen || !this.alive) return;
+    const slotSize = 40; const gap = 3; const cols = 9; const invRows = 3;
+    const panelW = cols * (slotSize + gap) + gap + 30;
+    const panelH = (1 + invRows) * (slotSize + gap) + gap + 90;
+    const cx = screenX + vw / 2; const cy = screenY + vh / 2;
+    const px = cx - panelW / 2; const py = cy - panelH / 2;
+    ctx.fillStyle = 'rgba(10, 10, 20, 0.95)'; ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(px, py, panelW, panelH, 12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ccc'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('🎒 インベントリ (Cで閉じる)', cx, py + 20);
+    ctx.fillStyle = '#888'; ctx.font = '10px sans-serif'; ctx.fillText('X: 選択/並び替え  ↓: 捨てる', cx, py + 34);
+    const startX = px + 15; const hotbarY = py + 46;
+    ctx.fillStyle = '#aaa'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('ホットバー', startX, hotbarY - 6);
+    for (let i = 0; i < HOTBAR_SLOTS; i++) {
+      const sx = startX + i * (slotSize + gap); const sy = hotbarY;
+      const isCursor = i === this.invCursorX && this.invCursorY === 0;
+      const isSwap = i === this.invSwapSlot; const isSelected = i === this.selectedSlot;
+      ctx.fillStyle = isSwap ? 'rgba(255, 200, 0, 0.4)' : isSelected ? 'rgba(255, 200, 50, 0.3)' : 'rgba(0, 0, 0, 0.6)';
+      ctx.strokeStyle = isCursor ? '#ffcc00' : isSelected ? 'rgba(255, 200, 50, 0.7)' : 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = isCursor ? 3 : isSelected ? 2 : 1; ctx.beginPath(); ctx.roundRect(sx, sy, slotSize, slotSize, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#666'; ctx.font = '8px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(String(i + 1), sx + 3, sy + 10);
+      const item = this.inventory[i];
+      if (item) { const def = ITEM_DEFS[item.itemId]; ctx.font = '18px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(def?.icon || '?', sx + slotSize / 2, sy + slotSize / 2 + 6); if (item.count > 1) { ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(String(item.count), sx + slotSize - 3, sy + slotSize - 3); } }
+    }
+    const invY = hotbarY + slotSize + gap + 14;
+    ctx.fillStyle = '#aaa'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('インベントリ', startX, invY - 6);
+    for (let row = 0; row < invRows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const slotIdx = HOTBAR_SLOTS + row * cols + col;
+        if (slotIdx >= TOTAL_SLOTS) continue;
+        const sx = startX + col * (slotSize + gap); const sy = invY + row * (slotSize + gap);
+        const isCursor = col === this.invCursorX && (row + 1) === this.invCursorY; const isSwap = slotIdx === this.invSwapSlot;
+        ctx.fillStyle = isSwap ? 'rgba(255, 200, 0, 0.4)' : 'rgba(0, 0, 0, 0.6)';
+        ctx.strokeStyle = isCursor ? '#ffcc00' : 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = isCursor ? 3 : 1; ctx.beginPath(); ctx.roundRect(sx, sy, slotSize, slotSize, 4); ctx.fill(); ctx.stroke();
+        const item = this.inventory[slotIdx];
+        if (item) { const def = ITEM_DEFS[item.itemId]; ctx.font = '18px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(def?.icon || '?', sx + slotSize / 2, sy + slotSize / 2 + 6); if (item.count > 1) { ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(String(item.count), sx + slotSize - 3, sy + slotSize - 3); } }
+      }
+    }
+    if (this.invSwapSlot !== -1) { ctx.fillStyle = '#ffcc00'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('並び替え中... 移動先をXで決定', cx, py + panelH - 10); }
+  }
+  drawHotbar(ctx, screenX, screenY, vw, vh) {
+    if (!this.alive) return;
+    const barY = screenY + vh - 52; const slotSize = 44; const gap = 3;
+    const totalW = HOTBAR_SLOTS * (slotSize + gap) - gap; const startX = screenX + (vw - totalW) / 2;
+    const hpBarH = 6; const hpBarY = barY - hpBarH - 4; const hpBarW = totalW;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.beginPath(); ctx.roundRect(startX, hpBarY, hpBarW, hpBarH, 3); ctx.fill();
+    const hpRatio = this.hp / this.maxHp; const hpColor = this.hp > 60 ? '#0f0' : this.hp > 30 ? '#ffcc00' : '#ff2222';
+    ctx.fillStyle = hpColor; ctx.beginPath(); ctx.roundRect(startX, hpBarY, hpBarW * hpRatio, hpBarH, 3); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(`${Math.ceil(this.hp)}/${this.maxHp}`, startX + hpBarW / 2, hpBarY - 2);
+    for (let i = 0; i < HOTBAR_SLOTS; i++) {
+      const sx = startX + i * (slotSize + gap); const isSelected = i === this.selectedSlot;
+      ctx.fillStyle = isSelected ? 'rgba(255, 200, 50, 0.3)' : 'rgba(0, 0, 0, 0.6)';
+      ctx.strokeStyle = isSelected ? '#ffcc00' : 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = isSelected ? 2 : 1; ctx.beginPath(); ctx.roundRect(sx, barY, slotSize, slotSize, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#666'; ctx.font = '8px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(String(i + 1), sx + 3, barY + 9);
+      const item = this.inventory[i];
+      if (item) { const def = ITEM_DEFS[item.itemId]; ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(def?.icon || '?', sx + slotSize / 2, barY + slotSize / 2 + 6); if (item.count > 1) { ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'right'; ctx.fillText(String(item.count), sx + slotSize - 3, barY + slotSize - 3); } }
+    }
+    const selItem = this.inventory[this.selectedSlot];
+    if (selItem) {
+      const def = ITEM_DEFS[selItem.itemId];
+      if (def) {
+        const tipY = barY - 40; const tipText = def.name;
+        ctx.font = 'bold 12px sans-serif'; const textW = ctx.measureText(tipText).width;
+        const tipX = startX + this.selectedSlot * (slotSize + gap) + slotSize / 2; const tipPad = 8;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'; ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(tipX - textW / 2 - tipPad, tipY - 14, textW + tipPad * 2, 18, 4); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(tipText, tipX, tipY - 2);
+        if (def.heal && def.heal > 0) {
+          const healText = `+${def.heal} HP`; ctx.font = 'bold 10px sans-serif'; const healW = ctx.measureText(healText).width; const healY = tipY - 30;
+          ctx.fillStyle = 'rgba(0, 40, 0, 0.9)'; ctx.strokeStyle = 'rgba(68, 255, 68, 0.5)'; ctx.beginPath(); ctx.roundRect(tipX - healW / 2 - tipPad, healY - 12, healW + tipPad * 2, 16, 4); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#44ff44'; ctx.fillText(healText, tipX, healY - 2);
+        }
+      }
+    }
+  }
+}
+
+
+class Storm {
+  constructor() {
+    this.x = MAP_SIZE / 2; this.y = MAP_SIZE / 2;
+    this.maxRadius = MAP_SIZE * 0.75; this.minRadius = 120;
+    this.radius = this.maxRadius; this.shrinkTime = 120;
+    this.elapsed = 0; this.active = false;
+  }
+  start() { this.x = MAP_SIZE / 2; this.y = MAP_SIZE / 2; this.active = true; this.elapsed = 0; this.radius = this.maxRadius; }
+  update(dt, players, infiniteMap) {
+    if (!this.active) return;
+    this.elapsed += dt;
+    const t = clamp(this.elapsed / this.shrinkTime, 0, 1);
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    this.radius = lerp(this.maxRadius, this.minRadius, ease);
+    if (infiniteMap && players) {
+      const alive = players.filter(p => p.alive);
+      if (alive.length > 0) {
+        let cx = 0, cy = 0;
+        for (const p of alive) { cx += p.x; cy += p.y; }
+        this.x = cx / alive.length; this.y = cy / alive.length;
+      }
+    } else { this.x = MAP_SIZE / 2; this.y = MAP_SIZE / 2; }
+  }
+  isInside(x, y) { return Math.hypot(x - this.x, y - this.y) <= this.radius; }
+  isInStorm(x, y) { return this.active && Math.hypot(x - this.x, y - this.y) > this.radius; }
+  draw(ctx, camX, camY, vw, vh) {
+    if (!this.active) return;
+    ctx.save(); ctx.beginPath(); ctx.rect(camX, camY, vw, vh); ctx.clip();
+    ctx.fillStyle = 'rgba(180, 20, 20, 0.3)'; ctx.fillRect(camX, camY, vw, vh);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = 'rgba(255, 80, 80, 0.9)'; ctx.lineWidth = 3;
+    ctx.setLineDash([16, 10]); ctx.lineDashOffset = -this.elapsed * 20;
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+}
+
+class Game {
+  constructor() {
+    this.canvas = document.getElementById('gameCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.minimap = document.getElementById('minimap');
+    this.mmCtx = this.minimap.getContext('2d');
+    this.gp = gamepadManager;
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+
+    this.phase = 'lobby'; this.timer = 0; this.dayTime = 0;
+    this.players = []; this.resources = []; this.droppedItems = [];
+    this.particles = []; this.textParticles = []; this.monsters = [];
+    this.monsterSpawnTimer = MONSTER_SPAWN_INTERVAL_BASE;
+    this.monsterKillCount = 0; this.pvpEnabled = false;
+    this.stormEnabled = true; this.infiniteMap = false;
+    this.storm = new Storm(); this.stormTimer = 15;
+    this.caves = []; this.blocks = []; this.torches = []; this.craftingTables = [];
+    this.joinedPlayers = new Set(); this.playerCount = 0;
+
+
+
+    // Pause / Save
+    this.paused = false; this._prevZLZR = false;
+
+
+
+    
+    const pvpToggle = document.getElementById('pvpToggle');
+    if (pvpToggle) pvpToggle.addEventListener('click', () => { if (this.phase === 'lobby') this.togglePvp(); });
+
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) startBtn.addEventListener('click', () => { if (this.joinedPlayers.size >= 1 && this.phase === 'lobby') this.showLoadScreen(); });
+
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (this.phase === 'prepare' || this.phase === 'battle')) this.togglePause(); });
+
+    this.loop = this.loop.bind(this);
+    requestAnimationFrame(this.loop);
+
+    // オプションメニュー
+    this.options = this.loadOptions();
+    this.setupOptionsMenu();
+  }
+
+  resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+
+
+
+  showLoadScreen() {
+    const ls = document.getElementById('loadScreen');
+    const lb = document.getElementById('loadButtons');
+    ls.style.display = 'flex';
+    const saves = this.listSaves();
+    let html = '';
+    if (saves.length > 0) {
+      html += `<button class="load-btn" onclick="game.startFromNew()">🆕 新しく始める（再生成）</button>`;
+      for (const save of saves) {
+        const date = new Date(save.timestamp).toLocaleString('ja-JP');
+        html += `<button class="load-btn" onclick="game.loadGame('${save.key}')">📂 ${save.name} (${date})</button>`;
+      }
+    } else html += `<button class="load-btn" onclick="game.startFromNew()">🆕 ゲーム開始</button>`;
+    lb.innerHTML = html;
+  }
+
+  startFromNew() {
+    document.getElementById('loadScreen').style.display = 'none';
+    this.startGameInternal();
+  }
+
+  startGameInternal() {
+    this.startGame();
+    document.getElementById('loadScreen').style.display = 'none';
+  }
+
+  togglePvp() {
+    this.pvpEnabled = !this.pvpEnabled;
+    const el = document.getElementById('pvpStatus');
+    const box = document.getElementById('pvpToggle');
+    if (el) el.textContent = this.pvpEnabled ? 'ON' : 'OFF';
+    if (box) box.classList.toggle('pvp-on', this.pvpEnabled);
+  }
+
+  spawnMonster(forceCave = false) {
+    const cap = MONSTER_MAX_COUNT_BASE + Math.floor(this.playerCount * 2);
+    if (this.monsters.filter(m => m.alive).length >= cap) return;
+    let x, y, tries = 0, ok = false;
+    const inCave = forceCave || (this.caves.length > 0 && Math.random() < 0.4);
+    let targetCave = null;
+    if (inCave) targetCave = this.caves[Math.floor(Math.random() * this.caves.length)];
+    do {
+      if (targetCave) {
+        const angle = Math.random() * Math.PI * 2; const dst = Math.random() * targetCave.radius * 0.8;
+        x = targetCave.x + Math.cos(angle) * dst; y = targetCave.y + Math.sin(angle) * dst;
+      } else { x = randRange(60, MAP_SIZE - 60); y = randRange(60, MAP_SIZE - 60); }
+      ok = this.players.every(p => !p.alive || dist({ x, y }, p) > MONSTER_MIN_SPAWN_DIST_FROM_PLAYER);
+      tries++;
+    } while (!ok && tries < 20);
+    const isNight = this.dayTime >= NIGHT_START;
+    const isCave = targetCave !== null;
+    const weights = [Math.max(10, 50 - this.monsterKillCount * 0.15), 35, 20 + this.monsterKillCount * 0.1, 5 + this.monsterKillCount * 0.2];
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total; let idx = 0;
+    for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r <= 0) { idx = i; break; } }
+    this.monsters.push(new Monster(x, y, MONSTER_TYPES[idx].id, isNight, isCave));
+  }
+
+  startGame() {
+    this.phase = 'prepare'; this.timer = PREPARE_TIME; this.dayTime = 0;
+    this.stormEnabled = document.getElementById('stormToggle').checked;
+    this.infiniteMap = document.getElementById('infiniteMapToggle').checked;
+    this.storm = new Storm(); this.stormTimer = 15;
+    this.particles = []; this.textParticles = []; this.droppedItems = [];
+    this.monsters = []; this.monsterSpawnTimer = MONSTER_SPAWN_INTERVAL_BASE;
+    this.monsterKillCount = 0; this.playerCount = this.joinedPlayers.size;
+    this.blocks = []; this.torches = []; this.craftingTables = [];
+
+    this.players = [];
+    const positions = [{ x: MAP_SIZE * 0.25, y: MAP_SIZE * 0.25 }, { x: MAP_SIZE * 0.75, y: MAP_SIZE * 0.25 }, { x: MAP_SIZE * 0.25, y: MAP_SIZE * 0.75 }, { x: MAP_SIZE * 0.75, y: MAP_SIZE * 0.75 }];
+    const activeSet = new Set([...this.localPlayerNums, ...this.remotePlayerNums]);
+    const sorted = Array.from(activeSet).sort((a, b) => a - b);
+    for (let i = 0; i < sorted.length; i++) {
+      const num = sorted[i]; const pos = positions[(num - 1) % 4];
+      const player = new Player(num, pos.x, pos.y);
+      if (this.playerSkins && this.playerSkins[num] !== undefined) {
+        player.skinIndex = this.playerSkins[num];
+        player.color = PLAYER_COLORS[player.skinIndex]; player.name = PLAYER_NAMES[player.skinIndex]; player.glow = PLAYER_GLOWS[player.skinIndex];
+      }
+      this.players.push(player);
+    }
+
+    // 洞窟生成
+    this.caves = [];
+    for (let i = 0; i < CAVE_COUNT; i++) this.caves.push(new Cave(randRange(800, MAP_SIZE - 800), randRange(800, MAP_SIZE - 800), randRange(300, 600)));
+
+    // リソース生成
+    this.resources = [];
+    const RES_TYPES = [
+      { type: 'wood', weight: 50 }, { type: 'stone', weight: 45 }, { type: 'iron_chunk', weight: 18 },
+      { type: 'copper_ore', weight: 18 }, { type: 'gold_ore', weight: 12 }, { type: 'diamond_ore', weight: 8 },
+      { type: 'coal', weight: 25 }, { type: 'leather', weight: 15 }, { type: 'apple', weight: 20 },
+      { type: 'mushroom', weight: 20 }, { type: 'carrot', weight: 15 }, { type: 'sand', weight: 20 },
+      { type: 'clay', weight: 15 }, { type: 'obsidian', weight: 8 }, { type: 'emerald_ore', weight: 6 },
+      { type: 'ruby', weight: 5 }, { type: 'sapphire', weight: 5 }, { type: 'crystal', weight: 7 },
+      { type: 'berry', weight: 18 }, { type: 'honey', weight: 10 }, { type: 'egg', weight: 12 },
+      { type: 'pumpkin', weight: 8 }, { type: 'watermelon', weight: 10 }, { type: 'cookie', weight: 10 },
+      { type: 'wheat', weight: 15 }, { type: 'meat', weight: 10 }, { type: 'fish', weight: 10 },
+      { type: 'feather', weight: 8 }, { type: 'string', weight: 10 }, { type: 'flint', weight: 8 },
+      { type: 'sugar', weight: 8 }, { type: 'milk', weight: 6 },
+    ];
+    const totalWeight = RES_TYPES.reduce((s, r) => s + r.weight, 0);
+    for (let i = 0; i < RESOURCE_COUNT; i++) {
+      let r = Math.random() * totalWeight; let type = 'wood';
+      for (const rt of RES_TYPES) { r -= rt.weight; if (r <= 0) { type = rt.type; break; } }
+      this.resources.push(new Resource(randRange(50, MAP_SIZE - 50), randRange(50, MAP_SIZE - 50), type));
+    }
+    const clusters = [
+      { type: 'wood', count: 80, cx: MAP_SIZE * 0.2, cy: MAP_SIZE * 0.2, radius: 660 },
+      { type: 'stone', count: 70, cx: MAP_SIZE * 0.8, cy: MAP_SIZE * 0.2, radius: 550 },
+      { type: 'iron_chunk', count: 40, cx: MAP_SIZE * 0.2, cy: MAP_SIZE * 0.8, radius: 440 },
+      { type: 'gold_ore', count: 30, cx: MAP_SIZE * 0.8, cy: MAP_SIZE * 0.8, radius: 396 },
+      { type: 'diamond_ore', count: 20, cx: MAP_SIZE * 0.5, cy: MAP_SIZE * 0.5, radius: 330 },
+      { type: 'emerald_ore', count: 20, cx: MAP_SIZE * 0.3, cy: MAP_SIZE * 0.5, radius: 264 },
+      { type: 'obsidian', count: 25, cx: MAP_SIZE * 0.7, cy: MAP_SIZE * 0.5, radius: 286 },
+      { type: 'crystal', count: 20, cx: MAP_SIZE * 0.5, cy: MAP_SIZE * 0.3, radius: 220 },
+      { type: 'apple', count: 40, cx: MAP_SIZE * 0.15, cy: MAP_SIZE * 0.5, radius: 440 },
+      { type: 'berry', count: 40, cx: MAP_SIZE * 0.85, cy: MAP_SIZE * 0.5, radius: 440 },
+      { type: 'mushroom', count: 30, cx: MAP_SIZE * 0.5, cy: MAP_SIZE * 0.15, radius: 330 },
+      { type: 'honey', count: 20, cx: MAP_SIZE * 0.5, cy: MAP_SIZE * 0.85, radius: 220 },
+      { type: 'sand', count: 35, cx: MAP_SIZE * 0.1, cy: MAP_SIZE * 0.1, radius: 300 },
+      { type: 'clay', count: 30, cx: MAP_SIZE * 0.9, cy: MAP_SIZE * 0.1, radius: 250 },
+      { type: 'coal', count: 40, cx: MAP_SIZE * 0.1, cy: MAP_SIZE * 0.9, radius: 350 },
+      { type: 'leather', count: 25, cx: MAP_SIZE * 0.9, cy: MAP_SIZE * 0.9, radius: 200 },
+      { type: 'carrot', count: 25, cx: MAP_SIZE * 0.4, cy: MAP_SIZE * 0.6, radius: 280 },
+      { type: 'pumpkin', count: 18, cx: MAP_SIZE * 0.6, cy: MAP_SIZE * 0.4, radius: 200 },
+      { type: 'watermelon', count: 20, cx: MAP_SIZE * 0.35, cy: MAP_SIZE * 0.35, radius: 240 },
+      { type: 'cookie', count: 15, cx: MAP_SIZE * 0.65, cy: MAP_SIZE * 0.65, radius: 150 },
+      { type: 'wheat', count: 30, cx: MAP_SIZE * 0.45, cy: MAP_SIZE * 0.75, radius: 260 },
+      { type: 'meat', count: 20, cx: MAP_SIZE * 0.75, cy: MAP_SIZE * 0.45, radius: 220 },
+      { type: 'fish', count: 20, cx: MAP_SIZE * 0.25, cy: MAP_SIZE * 0.55, radius: 220 },
+      { type: 'feather', count: 15, cx: MAP_SIZE * 0.55, cy: MAP_SIZE * 0.25, radius: 180 },
+      { type: 'string', count: 18, cx: MAP_SIZE * 0.35, cy: MAP_SIZE * 0.45, radius: 200 },
+      { type: 'flint', count: 15, cx: MAP_SIZE * 0.65, cy: MAP_SIZE * 0.55, radius: 180 },
+      { type: 'sugar', count: 12, cx: MAP_SIZE * 0.45, cy: MAP_SIZE * 0.65, radius: 160 },
+      { type: 'milk', count: 10, cx: MAP_SIZE * 0.55, cy: MAP_SIZE * 0.35, radius: 150 },
+    ];
+    for (const c of clusters) {
+      for (let i = 0; i < c.count; i++) {
+        const angle = Math.random() * Math.PI * 2; const dst = Math.random() * c.radius;
+        this.resources.push(new Resource(clamp(c.cx + Math.cos(angle) * dst, 50, MAP_SIZE - 50), clamp(c.cy + Math.sin(angle) * dst, 50, MAP_SIZE - 50), c.type));
+      }
+    }
+
+    this.playerCount = this.players.length;
+    document.getElementById('lobbyScreen').style.display = 'none';
+    document.getElementById('resultScreen').style.display = 'none';
+    document.getElementById('loadScreen').style.display = 'none';
+  }
+
+  restart() {
+    this.paused = false;
+    document.getElementById('pauseMenu').style.display = 'none';
+    document.getElementById('loadScreen').style.display = 'none';
+    this.phase = 'lobby'; this.joinedPlayers.clear(); this.playerSkins = {};
+    this.playerSkinPrev = {}; this.players = []; this.resources = [];
+    this.droppedItems = []; this.particles = []; this.textParticles = [];
+    this.monsters = []; this.monsterSpawnTimer = MONSTER_SPAWN_INTERVAL_BASE;
+    this.monsterKillCount = 0; this.playerCount = 0; this.stormEnabled = true;
+    this.infiniteMap = false; this.storm = new Storm(); this.stormTimer = 15;
+    this.caves = []; this.blocks = []; this.torches = []; this.craftingTables = [];
+    document.getElementById('lobbyScreen').style.display = 'flex';
+    document.getElementById('resultScreen').style.display = 'none';
+    for (let i = 1; i <= 4; i++) {
+      const slot = document.getElementById('slot' + i);
+      slot.className = 'player-slot waiting'; slot.style.color = PLAYER_COLORS[i-1];
+      slot.style.borderColor = ''; slot.textContent = `P${i}: Xキーで参加`;
+    }
+  }
+
+  togglePause() {
+    if (this.phase !== 'prepare' && this.phase !== 'battle') return;
+    this.paused = !this.paused;
+    document.getElementById('pauseMenu').style.display = this.paused ? 'flex' : 'none';
+  }
+
+  resumeGame() { this.paused = false; document.getElementById('pauseMenu').style.display = 'none'; }
+
+  quitToLobby() { this.paused = false; document.getElementById('pauseMenu').style.display = 'none'; this.restart(); }
+
+  getSaveKeyList() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sbr_save_')) {
+        try { const data = JSON.parse(localStorage.getItem(k)); keys.push({ key: k, name: data.name || '無題', timestamp: data.timestamp || 0 }); } catch(e) {}
+      }
+    }
+    return keys.sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  listSaves() { return this.getSaveKeyList(); }
+
+  saveGame() {
+    const name = prompt('セーブデータの名前を入力してください:', `セーブ ${new Date().toLocaleString('ja-JP')}`);
+    if (!name) return;
+    const saveData = {
+      version: 5, name: name, timestamp: Date.now(),
+      phase: this.phase, timer: this.timer, dayTime: this.dayTime,
+      pvpEnabled: this.pvpEnabled, stormEnabled: this.stormEnabled, infiniteMap: this.infiniteMap,
+      monsterKillCount: this.monsterKillCount, monsterSpawnTimer: this.monsterSpawnTimer,
+      players: this.players.map(p => ({
+        num: p.num, x: p.x, y: p.y, vx: p.vx, vy: p.vy, angle: p.angle,
+        hp: p.hp, maxHp: p.maxHp, alive: p.alive, inventory: p.inventory,
+        selectedSlot: p.selectedSlot, skinIndex: p.skinIndex,
+        cameraX: p.cameraX, cameraY: p.cameraY, freeCamera: p.freeCamera,
+        dashTimer: p.dashTimer, dashCooldown: p.dashCooldown,
+        attackCooldown: p.attackCooldown, invincible: p.invincible, respawnTimer: p.respawnTimer,
+      })),
+      resources: this.resources.map(r => ({ x: r.x, y: r.y, type: r.type, hp: r.hp })),
+      droppedItems: this.droppedItems.map(d => ({ x: d.x, y: d.y, itemId: d.itemId, count: d.count, life: d.life })),
+      monsters: this.monsters.map(m => ({ x: m.x, y: m.y, typeId: m.typeId, hp: m.hp, alive: m.alive })),
+      blocks: this.blocks.map(b => ({ x: b.x, y: b.y, type: b.type, hp: b.hp })),
+      torches: this.torches.map(t => ({ x: t.x, y: t.y })),
+      craftingTables: this.craftingTables.map(ct => ({ x: ct.x, y: ct.y })),
+      caves: this.caves.map(c => ({ x: c.x, y: c.y, radius: c.radius })),
+      storm: { x: this.storm.x, y: this.storm.y, radius: this.storm.radius, elapsed: this.storm.elapsed, active: this.storm.active, maxRadius: this.storm.maxRadius, minRadius: this.storm.minRadius, shrinkTime: this.storm.shrinkTime },
+      playerCount: this.playerCount, joinedPlayers: Array.from(this.joinedPlayers), playerSkins: this.playerSkins || {},
+    };
+    const key = 'sbr_save_' + Date.now();
+    localStorage.setItem(key, JSON.stringify(saveData));
+    alert('セーブ完了: ' + name);
+  }
+
+  loadGame(key) {
+    const raw = localStorage.getItem(key);
+    if (!raw) { alert('セーブデータが見つかりません'); return; }
+    let data;
+    try { data = JSON.parse(raw); } catch(e) { alert('読み込み失敗'); return; }
+    this.phase = data.phase; this.timer = data.timer; this.dayTime = data.dayTime;
+    this.pvpEnabled = data.pvpEnabled; this.stormEnabled = data.stormEnabled !== undefined ? data.stormEnabled : true;
+    this.infiniteMap = data.infiniteMap || false; this.monsterKillCount = data.monsterKillCount || 0;
+    this.storm = new Storm(); if (data.storm) Object.assign(this.storm, data.storm);
+    this.monsterSpawnTimer = data.monsterSpawnTimer || MONSTER_SPAWN_INTERVAL_BASE;
+    this.playerCount = data.playerCount; this.joinedPlayers = new Set(data.joinedPlayers || []);
+    this.playerSkins = data.playerSkins || {}; this.paused = false;
+    this.players = (data.players || []).map(pd => {
+      const p = new Player(pd.num, pd.x, pd.y);
+      Object.assign(p, pd); p.color = PLAYER_COLORS[p.skinIndex]; p.name = PLAYER_NAMES[p.skinIndex]; p.glow = PLAYER_GLOWS[p.skinIndex];
+      p.prevInput = {}; p.craftStickTimer = 0; p.invStickTimer = 0;
+      return p;
+    });
+    this.resources = (data.resources || []).map(rd => new Resource(rd.x, rd.y, rd.type));
+    for (let i = 0; i < this.resources.length && i < (data.resources || []).length; i++) this.resources[i].hp = data.resources[i].hp;
+    this.droppedItems = (data.droppedItems || []).map(dd => new DroppedItem(dd.x, dd.y, dd.itemId, dd.count));
+    for (let i = 0; i < this.droppedItems.length && i < (data.droppedItems || []).length; i++) this.droppedItems[i].life = data.droppedItems[i].life;
+    this.monsters = (data.monsters || []).map(md => { const m = new Monster(md.x, md.y, md.typeId); m.hp = md.hp; m.alive = md.alive; return m; });
+    this.blocks = (data.blocks || []).map(bd => { const b = new Block(bd.x, bd.y, bd.type); b.hp = bd.hp; return b; });
+    this.torches = (data.torches || []).map(td => new Torch(td.x, td.y));
+    this.craftingTables = (data.craftingTables || []).map(ctd => new CraftingTable(ctd.x, ctd.y));
+    this.caves = (data.caves || []).map(cd => new Cave(cd.x, cd.y, cd.radius));
+    this.particles = []; this.textParticles = [];
+    document.getElementById('lobbyScreen').style.display = 'none';
+    document.getElementById('resultScreen').style.display = 'none';
+    document.getElementById('loadScreen').style.display = 'none';
+    document.getElementById('pauseMenu').style.display = 'none';
+    alert('ロード完了: ' + (data.name || '無題'));
+  }
+
+  isInCave(x, y) { for (const c of this.caves) if (c.contains(x, y)) return true; return false; }
+
+  getPlayerInput(playerNum) {
+    return this.gp.getPlayerInput(playerNum);
+  }
+
+  getLightLevel(x, y) {
+    let maxLight = 0;
+    for (const t of this.torches) {
+      const d = Math.hypot(x - t.x, y - t.y);
+      if (d < t.lightRadius) maxLight = Math.max(maxLight, 1 - d / t.lightRadius);
+    }
+    return maxLight;
+  }
+
+  // Host Authoritative: ワールド状態を圧縮して送信
+
+  // Guest: 受信したワールド状態を適用
+
+  update(dt) {
+    if (this.paused) return;
+
+    if (this.phase === 'lobby') {
+      let joinedChanged = false;
+      for (let p = 1; p <= 4; p++) {
+        const input = this.gp.getPlayerInput(p);
+        if (!input) continue;
+        if (input.B && !this.joinedPlayers.has(p)) {
+          this.joinedPlayers.add(p); joinedChanged = true;
+          const slot = document.getElementById('slot' + p);
+          slot.className = 'player-slot joined';
+          if (!this.playerSkins) this.playerSkins = {};
+          this.playerSkins[p] = this.playerSkins[p] || 0;
+          const skinIdx = this.playerSkins[p];
+          slot.style.borderColor = PLAYER_COLORS[skinIdx]; slot.style.color = PLAYER_COLORS[skinIdx];
+          slot.textContent = `P${p} ${PLAYER_NAMES[skinIdx]} - 参加済み ✅`;
+        }
+        if (this.joinedPlayers.has(p)) {
+          if (!this.playerSkins) this.playerSkins = {};
+          if (!this.playerSkinPrev) this.playerSkinPrev = {};
+          const prev = this.playerSkinPrev[p] || {};
+          if (input.L && !prev.L) {
+            this.playerSkins[p] = ((this.playerSkins[p] || 0) - 1 + PLAYER_COLORS.length) % PLAYER_COLORS.length;
+            const skinIdx = this.playerSkins[p]; const slot = document.getElementById('slot' + p);
+            slot.style.borderColor = PLAYER_COLORS[skinIdx]; slot.style.color = PLAYER_COLORS[skinIdx];
+            slot.textContent = `P${p} ${PLAYER_NAMES[skinIdx]} - 参加済み ✅`;
+          }
+          if (input.R && !prev.R) {
+            this.playerSkins[p] = ((this.playerSkins[p] || 0) + 1) % PLAYER_COLORS.length;
+            const skinIdx = this.playerSkins[p]; const slot = document.getElementById('slot' + p);
+            slot.style.borderColor = PLAYER_COLORS[skinIdx]; slot.style.color = PLAYER_COLORS[skinIdx];
+            slot.textContent = `P${p} ${PLAYER_NAMES[skinIdx]} - 参加済み ✅`;
+          }
+          this.playerSkinPrev[p] = { L: input.L, R: input.R };
+        }
+      }
+      const startBtn = document.getElementById('startBtn');
+      if (startBtn) {
+        if (this.joinedPlayers.size >= 1) { startBtn.disabled = false; startBtn.classList.add('active'); startBtn.textContent = `🎮 ゲーム開始 (${this.joinedPlayers.size}人)`; }
+        else { startBtn.disabled = true; startBtn.classList.remove('active'); startBtn.textContent = '🎮 ゲーム開始'; }
+      }
+
+      for (let p = 1; p <= 4; p++) {
+        const input = this.gp.getPlayerInput(p);
+        const canStart = this.joinedPlayers.size >= 1 && this.joinedPlayers.has(p);
+        if (input && canStart && input.START) { this.startGame(); break; }
+      }
+      // Oキーでオプション（ロビー中）
+      if (!this._prevOptionsKey) this._prevOptionsKey = {};
+      for (let p = 1; p <= 4; p++) {
+        const input = this.gp.getPlayerInput(p);
+        if (input && input.OPTIONS && !this._prevOptionsKey[p]) this.showOptions();
+        if (input) this._prevOptionsKey[p] = input.OPTIONS;
+      }
+      if (!this.pvpPrevY) this.pvpPrevY = {};
+      for (let p = 1; p <= 4; p++) {
+        if (!this.joinedPlayers.has(p)) continue;
+        const input = this.gp.getPlayerInput(p);
+        if (input && input.Y && !this.pvpPrevY[p]) this.togglePvp();
+        if (input) this.pvpPrevY[p] = input.Y;
+      }
+      return;
+    }
+
+    // === ゲーム進行 ===
+    // ゲストは入力送信のみ、ホストは全計算
+    const isHostOrLocal = true;
+
+    this.timer -= dt;
+    if (this.phase === 'prepare' && this.timer <= 0) {
+      this.phase = 'battle';
+      for (let i = 0; i < 30; i++) this.particles.push(new Particle(MAP_SIZE/2, MAP_SIZE/2, '#ff4444', 200, 1.5, 4));
+    }
+
+    // 昼夜サイクル（ホストのみ計算）
+    if (isHostOrLocal && (this.phase === 'battle' || this.phase === 'prepare')) {
+      this.dayTime = (this.dayTime + dt) % DAY_LENGTH;
+    }
+
+    // ストーム（ホストのみ計算）
+    if (isHostOrLocal) {
+      this.stormTimer -= dt;
+      if (this.phase === 'prepare' && this.timer <= 0 && this.stormEnabled) this.storm.start();
+      if (this.stormEnabled && (this.phase === 'battle' || this.phase === 'prepare')) this.storm.update(dt, this.players, this.infiniteMap);
+      if (this.phase === 'battle' && this.stormEnabled) {
+        for (const p of this.players) {
+          if (p.alive && this.storm.isInStorm(p.x, p.y)) {
+            p.stormDmgTimer = (p.stormDmgTimer || 0) + dt;
+            if (p.stormDmgTimer >= 1.0) { p.stormDmgTimer -= 1.0; const dmg = p.takeDamage(5, null, true); if (dmg) this.textParticles.push(new TextParticle(p.x, p.y - 20, `-${dmg}`, '#ff4444')); }
+          } else p.stormDmgTimer = 0;
+        }
+      }
+    }
+
+    // リソース・ブロック・松明更新（ホストのみ）
+    if (isHostOrLocal) {
+      for (const r of this.resources) r.update(dt);
+      for (const b of this.blocks) b.update(dt);
+      for (const t of this.torches) t.update(dt);
+    }
+    for (const d of this.droppedItems) d.update(dt);
+    this.droppedItems = this.droppedItems.filter(d => d.life > 0);
+
+    // Oキーでオプション（ゲーム中）
+    if (!this._prevOptionsKeyGame) this._prevOptionsKeyGame = {};
+    for (const p of this.players) {
+      const input = this.getPlayerInput(p.num);
+      if (input && input.OPTIONS && !this._prevOptionsKeyGame[p.num]) {
+        if (this.phase === 'prepare' || this.phase === 'battle') {
+          if (document.getElementById('optionsMenu').style.display === 'flex') this.hideOptions();
+          else { this.paused = true; document.getElementById('pauseMenu').style.display = 'none'; this.showOptions(true); }
+        }
+      }
+      if (input) this._prevOptionsKeyGame[p.num] = input.OPTIONS;
+    }
+    // ZR+ZL で一時停止
+    let anyZLZR = false;
+    for (const p of this.players) {
+      const input = this.getPlayerInput(p.num);
+      if (input && input.ZR > 0.5 && input.ZL > 0.5) anyZLZR = true;
+    }
+    if (anyZLZR && !this._prevZLZR) { this._prevZLZR = true; this.togglePause(); }
+    else if (!anyZLZR) this._prevZLZR = false;
+
+    // プレイヤー更新
+    for (const p of this.players) {
+      const input = this.getPlayerInput(p.num);
+      if (input) {
+        if (!this.paused) {
+          p.update(dt, input, this);
+        }
+      }
+    }
+
+    // モンスター更新（ホストのみ）
+    if (isHostOrLocal && (this.phase === 'prepare' || this.phase === 'battle')) {
+      this.monsterSpawnTimer -= dt;
+      let interval = this.phase === 'battle' ? MONSTER_SPAWN_INTERVAL_BASE * 0.6 : MONSTER_SPAWN_INTERVAL_BASE;
+      if (this.phase === 'battle' && Math.random() < 0.02) this.spawnMonster(true);
+      if (this.monsterSpawnTimer <= 0) { this.monsterSpawnTimer = interval; this.spawnMonster(); }
+      for (const m of this.monsters) m.update(dt, this);
+      this.monsters = this.monsters.filter(m => m.alive);
+    }
+
+    // パーティクル更新（両方）
+    this.particles = this.particles.filter(p => p.life > 0);
+    for (const p of this.particles) p.update(dt);
+    this.textParticles = this.textParticles.filter(p => p.life > 0);
+    for (const p of this.textParticles) p.update(dt);
+
+    // 補間（全プレイヤー・モンスター）
+    for (const p of this.players) p.interpolate(dt);
+    for (const m of this.monsters) m.interpolate(dt);
+
+    // 勝利判定（ホストのみ）
+    if (isHostOrLocal && this.phase === 'battle' && this.pvpEnabled) {
+      const alive = this.players.filter(p => p.alive);
+      const isSinglePlayer = this.players.length === 1;
+      if (!isSinglePlayer && alive.length <= 1) {
+        this.phase = 'result';
+        const rs = document.getElementById('resultScreen');
+        const title = document.getElementById('resultTitle');
+        const text = document.getElementById('winnerText');
+        const winner = alive[0];
+        if (winner) { title.textContent = 'VICTORY!'; title.style.color = winner.color; text.textContent = `P${winner.num} ${winner.name} の勝利！（討伐数: ${this.monsterKillCount}）`; text.style.color = winner.color; }
+        else { title.textContent = 'DRAW'; title.style.color = '#fff'; text.textContent = `引き分け（討伐数: ${this.monsterKillCount}）`; }
+        rs.style.display = 'flex';
+      } else if (isSinglePlayer && alive.length === 0) {
+        this.phase = 'result';
+        const rs = document.getElementById('resultScreen');
+        const title = document.getElementById('resultTitle');
+        const text = document.getElementById('winnerText');
+        title.textContent = 'GAME OVER'; title.style.color = '#ff4444';
+        text.textContent = 'あなたは倒れました...（討伐数: ' + this.monsterKillCount + '）'; text.style.color = '#ff8888';
+        rs.style.display = 'flex';
+      }
+    }
+
+    this.updateUI();
+  }
+
+  updateUI() {
+    const phaseLabel = document.getElementById('phaseLabel');
+    const mainTimer = document.getElementById('mainTimer');
+    const aliveCount = document.getElementById('aliveCount');
+    const dayTimer = document.getElementById('dayTimer');
+    const killCount = document.getElementById('killCount');
+    const pvpStatusHud = document.getElementById('pvpStatusHud');
+    const dayNightIcon = document.getElementById('dayNightIcon');
+    const dayNightLabel = document.getElementById('dayNightLabel');
+    if (this.phase === 'battle' && this.stormEnabled && this.storm.active) {
+      const remaining = Math.max(0, Math.ceil(this.storm.shrinkTime - this.storm.elapsed));
+      dayTimer.textContent = 'STORM ' + remaining + 's';
+      dayTimer.style.color = remaining <= 10 ? '#ff4444' : '#ff8844';
+      if (dayNightIcon) dayNightIcon.textContent = '🌪️';
+      if (dayNightLabel) dayNightLabel.textContent = 'STORM APPROACHING';
+    }
+    if (killCount) killCount.textContent = String(this.monsterKillCount || 0);
+    if (pvpStatusHud) { pvpStatusHud.textContent = this.pvpEnabled ? 'ON' : 'OFF'; pvpStatusHud.style.color = this.pvpEnabled ? '#ff4444' : '#888'; }
+    if (this.phase === 'lobby') {
+      phaseLabel.textContent = 'LOBBY'; mainTimer.textContent = '--';
+      aliveCount.textContent = `${this.joinedPlayers.size}/4`; dayTimer.textContent = '--';
+      if (dayNightIcon) dayNightIcon.textContent = '☀️'; if (dayNightLabel) dayNightLabel.textContent = '';
+      return;
+    }
+    if (this.phase === 'prepare') { phaseLabel.textContent = 'PREPARE'; phaseLabel.style.color = '#44ff44'; mainTimer.textContent = Math.ceil(this.timer) + 's'; }
+    else if (this.phase === 'battle') { phaseLabel.textContent = 'BATTLE'; phaseLabel.style.color = '#ff4444'; mainTimer.textContent = '∞'; }
+    else { phaseLabel.textContent = 'FINISH'; mainTimer.textContent = '--'; }
+    const alive = this.players.filter(p => p.alive).length;
+    aliveCount.textContent = `${alive}/${this.players.length}`;
+    const isNight = this.dayTime >= NIGHT_START;
+    const remaining = isNight ? Math.ceil(DAY_LENGTH - this.dayTime) : Math.ceil(NIGHT_START - this.dayTime);
+    if (!(this.phase === 'battle' && this.stormEnabled && this.storm.active)) {
+      dayTimer.textContent = remaining + 's'; dayTimer.style.color = isNight ? '#ff8844' : '#88ccff';
+      if (dayNightIcon) { dayNightIcon.textContent = isNight ? '🌙' : '☀️'; dayNightIcon.style.color = isNight ? '#ff8844' : '#ffcc00'; }
+      if (dayNightLabel) { dayNightLabel.textContent = isNight ? 'NIGHT - モンスター強化中' : 'DAY'; dayNightLabel.style.color = isNight ? '#ff8844' : '#88ccff'; }
+    }
+  }
+  draw() {
+    const ctx = this.ctx;
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if (this.phase === 'lobby') {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, W, H);
+      return;
+    }
+
+    const isNight = this.dayTime >= NIGHT_START;
+    const count = this.players.length;
+    
+    // 1P時は絶対にフルスクリーン、2P以上で分割
+    let cols = 1, rows = 1;
+    if (count === 2) { cols = 2; rows = 1; }
+    else if (count >= 3) { cols = 2; rows = 2; }
+
+    const vw = count === 1 ? W : (W / cols);
+    const vh = count === 1 ? H : (H / rows);
+
+    for (let i = 0; i < count; i++) {
+      const player = this.players[i];
+      if (!player) continue;
+
+      const cx = (i % cols) * vw;
+      const cy = Math.floor(i / cols) * vh;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cx + 1, cy + 1, vw - 2, vh - 2);
+      ctx.clip();
+
+      const camX = player.cameraX - vw / 2;
+      const camY = player.cameraY - vh / 2;
+      ctx.translate(cx - camX, cy - camY);
+
+      // 背景（昼夜で色変化）
+      const nightRatio = isNight ? Math.min(1, (this.dayTime - NIGHT_START) / 30) : Math.max(0, 1 - this.dayTime / 30);
+      const dayColor = { r: 42, g: 90, b: 42 };
+      const nightColor = { r: 12, g: 18, b: 28 };
+      const bgR = lerp(dayColor.r, nightColor.r, nightRatio);
+      const bgG = lerp(dayColor.g, nightColor.g, nightRatio);
+      const bgB = lerp(dayColor.b, nightColor.b, nightRatio);
+      ctx.fillStyle = `rgb(${Math.floor(bgR)},${Math.floor(bgG)},${Math.floor(bgB)})`;
+      ctx.fillRect(camX, camY, vw, vh);
+
+      // グリッド
+      ctx.strokeStyle = `rgba(255,255,255,${0.04 + nightRatio * 0.04})`;
+      ctx.lineWidth = 1;
+      const gs = 120;
+      const sgx = Math.floor(camX / gs) * gs;
+      const sgy = Math.floor(camY / gs) * gs;
+      for (let gx = sgx; gx < camX + vw; gx += gs) {
+        ctx.beginPath(); ctx.moveTo(gx, camY); ctx.lineTo(gx, camY + vh); ctx.stroke();
+      }
+      for (let gy = sgy; gy < camY + vh; gy += gs) {
+        ctx.beginPath(); ctx.moveTo(camX, gy); ctx.lineTo(camX + vw, gy); ctx.stroke();
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+      // 洞窟描画（地面下の暗さ）
+      for (const cave of this.caves) {
+        cave.draw(ctx, camX, camY, vw, vh);
+      }
+
+      // リソース・ブロック・松明・作業台
+      for (const r of this.resources) r.draw(ctx);
+      for (const b of this.blocks) b.draw(ctx);
+      for (const ct of this.craftingTables) ct.draw(ctx);
+      for (const t of this.torches) t.draw(ctx);
+      for (const d of this.droppedItems) d.draw(ctx);
+      for (const m of this.monsters) m.draw(ctx);
+      for (const p of this.players) p.draw(ctx);
+      for (const p of this.particles) p.draw(ctx);
+      for (const p of this.textParticles) p.draw(ctx);
+
+      // 夜/洞窟の暗さオーバーレイ（松明で照らされる）
+      if (isNight || this.isInCave(player.x, player.y)) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(camX, camY, vw, vh);
+        ctx.clip();
+
+        // ベースの暗さ
+        const baseDarkness = isNight ? 0.55 : 0.35;
+        const inCave = this.isInCave(player.x, player.y);
+        const darkness = inCave ? Math.max(baseDarkness, 0.5) : baseDarkness;
+
+        // 視界マスク（松明とプレイヤー周囲）
+        const lights = [];
+        // プレイヤー自身の視界
+        lights.push({ x: player.x, y: player.y, radius: 350 });
+        // 松明
+        for (const t of this.torches) {
+          if (Math.hypot(t.x - player.x, t.y - player.y) < vw) {
+            lights.push({ x: t.x, y: t.y, radius: t.lightRadius });
+          }
+        }
+        // 他プレイヤー
+        for (const p of this.players) {
+          if (p !== player && p.alive) {
+            lights.push({ x: p.x, y: p.y, radius: 120 });
+          }
+        }
+
+        // 暗いオーバーレイ（半透明黒 75%）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.fillRect(camX, camY, vw, vh);
+
+        // 光源（明るい円を重ねる）
+        for (const light of lights) {
+          const screenDx = light.x - player.x;
+          const screenDy = light.y - player.y;
+          if (Math.abs(screenDx) > vw * 1.2 || Math.abs(screenDy) > vh * 1.2) continue;
+          ctx.fillStyle = 'rgba(255, 240, 180, 0.35)';
+          ctx.beginPath();
+          ctx.arc(light.x, light.y, light.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // ストーム描画
+      if (this.stormEnabled && this.storm.active) {
+        this.storm.draw(ctx, camX, camY, vw, vh);
+      }
+
+      ctx.restore();
+
+      player.drawCraftMenu(ctx, cx, cy, vw, vh, this);
+      player.drawInventoryScreen(ctx, cx, cy, vw, vh);
+      player.drawHotbar(ctx, cx, cy, vw, vh);
+
+      ctx.strokeStyle = player.color;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(cx, cy, vw, vh);
+
+      // === 各プレイヤー画面右下のスクロールミニマップ ===
+      const mmW = Math.min(vw * 0.22, 200);
+      const mmH = Math.min(vh * 0.22, 200);
+      const mmX = cx + vw - mmW - 10;
+      const mmY = cy + vh - mmH - 10;
+      const mmRange = Math.max(vw, vh) * 2.5;
+      const mmScale = Math.min(mmW / mmRange, mmH / mmRange);
+      const mmCX = player.cameraX;
+      const mmCY = player.cameraY;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(mmX, mmY, mmW, mmH);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.88)';
+      ctx.fillRect(mmX, mmY, mmW, mmH);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(mmX, mmY, mmW, mmH);
+
+      const toMM = (wx, wy) => ({
+        x: mmX + mmW/2 + (wx - mmCX) * mmScale,
+        y: mmY + mmH/2 + (wy - mmCY) * mmScale
+      });
+
+      // マップ境界
+      const tl = toMM(0, 0);
+      const br = toMM(MAP_SIZE, MAP_SIZE);
+      if (br.x > mmX && tl.x < mmX + mmW && br.y > mmY && tl.y < mmY + mmH) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+      }
+
+      // 洞窟
+      for (const cave of this.caves) {
+        const c = toMM(cave.x, cave.y);
+        if (c.x < mmX - 10 || c.x > mmX + mmW + 10 || c.y < mmY - 10 || c.y > mmY + mmH + 10) continue;
+        ctx.fillStyle = 'rgba(80, 40, 120, 0.45)';
+        ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(2, cave.radius * mmScale), 0, Math.PI * 2); ctx.fill();
+      }
+
+      // リソース
+      for (const r of this.resources) {
+        const p = toMM(r.x, r.y);
+        if (p.x < mmX - 5 || p.x > mmX + mmW + 5 || p.y < mmY - 5 || p.y > mmY + mmH + 5) continue;
+        ctx.fillStyle = r.color || '#888';
+        ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1.5, r.radius * mmScale), 0, Math.PI * 2); ctx.fill();
+      }
+
+      // ブロック
+      for (const b of this.blocks) {
+        const p = toMM(b.x, b.y);
+        if (p.x < mmX - 5 || p.x > mmX + mmW + 5 || p.y < mmY - 5 || p.y > mmY + mmH + 5) continue;
+        const sz = Math.max(1.5, b.radius * 2 * mmScale);
+        ctx.fillStyle = '#777';
+        ctx.fillRect(p.x - sz/2, p.y - sz/2, sz, sz);
+      }
+
+      // 作業台
+      for (const ct of this.craftingTables) {
+        const p = toMM(ct.x, ct.y);
+        if (p.x < mmX - 5 || p.x > mmX + mmW + 5 || p.y < mmY - 5 || p.y > mmY + mmH + 5) continue;
+        ctx.fillStyle = '#8B5A2B';
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+      }
+
+      // 松明
+      for (const t of this.torches) {
+        const p = toMM(t.x, t.y);
+        if (p.x < mmX - 5 || p.x > mmX + mmW + 5 || p.y < mmY - 5 || p.y > mmY + mmH + 5) continue;
+        ctx.fillStyle = '#ffaa33';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // モンスター
+      for (const m of this.monsters) {
+        if (!m.alive) continue;
+        const p = toMM(m.x, m.y);
+        if (p.x < mmX - 5 || p.x > mmX + mmW + 5 || p.y < mmY - 5 || p.y > mmY + mmH + 5) continue;
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // プレイヤー
+      for (const p of this.players) {
+        if (!p.alive) continue;
+        const pt = toMM(p.x, p.y);
+        if (pt.x < mmX - 5 || pt.x > mmX + mmW + 5 || pt.y < mmY - 5 || pt.y > mmY + mmH + 5) continue;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      // カメラ視野矩形
+      const camTL = toMM(player.cameraX - vw/2, player.cameraY - vh/2);
+      const camBR = toMM(player.cameraX + vw/2, player.cameraY + vh/2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(camTL.x, camTL.y, camBR.x - camTL.x, camBR.y - camTL.y);
+
+      // 中心マーカー（カメラ位置）
+      ctx.strokeStyle = '#ffcc00';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(mmX + mmW/2 - 4, mmY + mmH/2);
+      ctx.lineTo(mmX + mmW/2 + 4, mmY + mmH/2);
+      ctx.moveTo(mmX + mmW/2, mmY + mmH/2 - 4);
+      ctx.lineTo(mmX + mmW/2, mmY + mmH/2 + 4);
+      ctx.stroke();
+
+      ctx.restore();
+
+      // プレイヤー情報パネル
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(cx + 8, cy + 8, 190, 90);
+      ctx.fillStyle = player.color;
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`P${player.num} ${player.name}`, cx + 14, cy + 24);
+
+      ctx.fillStyle = '#222';
+      ctx.fillRect(cx + 14, cy + 30, 110, 8);
+      ctx.fillStyle = player.hp > 60 ? '#0f0' : player.hp > 30 ? '#ffcc00' : '#ff2222';
+      ctx.fillRect(cx + 14, cy + 30, 110 * (player.hp / player.maxHp), 8);
+
+      const held = player.getSelectedItem();
+      if (held) {
+        const hDef = ITEM_DEFS[held.itemId];
+        ctx.fillStyle = '#ffcc66';
+        ctx.font = '10px sans-serif';
+        ctx.fillText(`手持ち: ${hDef?.icon || ''}${hDef?.name || ''}`, cx + 14, cy + 48);
+      }
+
+      if (player.freeCamera) {
+        ctx.fillStyle = '#ffcc00';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('📷 フリーカメラ中', cx + 14, cy + 62);
+      }
+
+      // 洞窟内表示
+      if (this.isInCave(player.x, player.y)) {
+        ctx.fillStyle = '#aa66ff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('🕳️ 洞窟内', cx + 14, cy + 76);
+      }
+
+      ctx.fillStyle = '#aaa';
+      ctx.font = '10px sans-serif';
+      const w = player.getMaterialCount('wood');
+      const s = player.getMaterialCount('stone');
+      const ir = player.getMaterialCount('iron');
+      let matStr = '';
+      if (w) matStr += `🪵x${w} `;
+      if (s) matStr += `🪨x${s} `;
+      if (ir) matStr += `⛓x${ir}`;
+      ctx.fillText(matStr || '素材なし', cx + 14, cy + 88);
+
+      if (!player.alive) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(cx, cy, vw, vh);
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 32px sans-serif';
+        ctx.textAlign = 'center';
+        if (player.respawnTimer > 0) {
+          ctx.fillText(`DEAD - ${Math.ceil(player.respawnTimer)}s`, cx + vw/2, cy + vh/2);
+        } else {
+          ctx.fillText('DEAD', cx + vw/2, cy + vh/2);
+        }
+      }
+    }
+
+    // ミニマップ描画（位置はCSSで固定）
+    this.drawMinimap();
+  }
+
+  drawMinimap() {
+    const mm = this.mmCtx;
+    const s = this.minimap.width;
+    mm.clearRect(0, 0, s, s);
+    const scale = s / MAP_SIZE;
+
+    const isNight = this.dayTime >= NIGHT_START;
+    mm.fillStyle = isNight ? '#0a1020' : '#1a3a1a';
+    mm.fillRect(0, 0, s, s);
+
+    // 洞窟
+    for (const c of this.caves) {
+      c.drawMinimap(mm, scale);
+    }
+
+    const resColors = {
+      wood: '#5D3A1A', stone: '#888', iron_chunk: '#666',
+      copper_ore: '#B87333', gold_ore: '#FFD700', diamond_ore: '#00CED1',
+      coal: '#333', leather: '#8B4513', apple: '#ff4444',
+      mushroom: '#D2691E', carrot: '#ff8800', sand: '#C2B280',
+      clay: '#A0522D', obsidian: '#333', emerald_ore: '#50C878',
+      ruby: '#E0115F', sapphire: '#0F52BA', crystal: '#E0FFFF',
+      berry: '#8B008B', honey: '#FFD700', egg: '#FFF8DC',
+      pumpkin: '#FF7518', watermelon: '#2E8B57', cookie: '#D2691E',
+      wheat: '#F5DEB3', meat: '#CD5C5C', fish: '#4682B4',
+      feather: '#FFFACD', string: '#F0E68C', flint: '#2F4F4F',
+      sugar: '#FFF0F5', milk: '#FFFAF0',
+    };
+    for (const r of this.resources) {
+      mm.fillStyle = resColors[r.type] || '#5D3A1A';
+      mm.fillRect(r.x * scale - 1, r.y * scale - 1, 2, 2);
+    }
+
+    // ブロック
+    for (const b of this.blocks) {
+      mm.fillStyle = b.type === 'obsidian_block' ? '#3a1a4a' : (b.type === 'stone_block' ? '#888' : (b.type === 'dirt_block' ? '#8B7355' : '#8B5A2B'));
+      mm.fillRect(b.x * scale - 2, b.y * scale - 2, 4, 4);
+    }
+
+    // 松明
+    for (const t of this.torches) {
+      mm.fillStyle = '#ffaa33';
+      mm.fillRect(t.x * scale - 1, t.y * scale - 1, 2, 2);
+    }
+
+    // 作業台
+    for (const ct of this.craftingTables) {
+      mm.fillStyle = '#ffcc66';
+      mm.fillRect(ct.x * scale - 2, ct.y * scale - 2, 4, 4);
+    }
+
+    for (const d of this.droppedItems) {
+      if (d.life <= 0) continue;
+      mm.fillStyle = '#fff';
+      mm.fillRect(d.x * scale - 1, d.y * scale - 1, 2, 2);
+    }
+
+    for (const m of this.monsters) {
+      if (!m.alive) continue;
+      mm.fillStyle = m.color;
+      mm.beginPath();
+      mm.arc(m.x * scale, m.y * scale, 2.5, 0, Math.PI * 2);
+      mm.fill();
+    }
+
+    for (const p of this.players) {
+      const px = p.x * scale;
+      const py = p.y * scale;
+      if (p.alive) {
+        mm.fillStyle = p.color;
+        mm.beginPath();
+        mm.arc(px, py, 4, 0, Math.PI * 2);
+        mm.fill();
+        mm.strokeStyle = '#fff';
+        mm.lineWidth = 1;
+        mm.stroke();
+        mm.strokeStyle = p.color;
+        mm.lineWidth = 1.5;
+        mm.beginPath();
+        mm.moveTo(px, py);
+        mm.lineTo(px + Math.cos(p.angle) * 6, py + Math.sin(p.angle) * 6);
+        mm.stroke();
+      } else {
+        mm.strokeStyle = '#666';
+        mm.lineWidth = 1.5;
+        mm.beginPath();
+        mm.moveTo(px - 2, py - 2); mm.lineTo(px + 2, py + 2);
+        mm.moveTo(px + 2, py - 2); mm.lineTo(px - 2, py + 2);
+        mm.stroke();
+      }
+    }
+
+    mm.strokeStyle = 'rgba(255,255,255,0.5)';
+    mm.lineWidth = 2;
+    mm.strokeRect(0, 0, s, s);
+  }
+
+  loop() {
+    const now = performance.now();
+    const dt = Math.min((now - (this.lastTime || now)) / 1000, 0.05);
+    this.lastTime = now;
+    this.update(dt);
+    this.draw();
+    requestAnimationFrame(this.loop);
+  }
+
+  // ===== オプションメニュー =====
+  loadOptions() {
+    const defaults = {
+      playerMaxHp: 100,
+      monsterHpMult: 1.0,
+      monsterSpawnInterval: 8,
+      monsterMaxCount: 30,
+      pvpEnabled: false,
+      stormEnabled: false,
+      infiniteMap: false,
+      dayCycleSpeed: 1.0,
+      recipes: {},
+    };
+    try {
+      const saved = localStorage.getItem('survival_options');
+      if (saved) return { ...defaults, ...JSON.parse(saved) };
+    } catch(e) {}
+    return defaults;
+  }
+  saveOptions() {
+    localStorage.setItem('survival_options', JSON.stringify(this.options));
+  }
+  showOptions(fromPause = false) {
+    this.optionsFromPause = fromPause;
+    document.getElementById('optionsMenu').style.display = 'flex';
+    this.buildOptionsList();
+    if (fromPause) document.getElementById('pauseMenu').style.display = 'none';
+  }
+  hideOptions() {
+    document.getElementById('optionsMenu').style.display = 'none';
+    if (this.optionsFromPause) {
+      this.optionsFromPause = false;
+      document.getElementById('pauseMenu').style.display = 'flex';
+    }
+  }
+  buildOptionsList() {
+    const list = document.getElementById('optionsList');
+    const search = (document.getElementById('optSearch').value || '').toLowerCase();
+    const cat = document.getElementById('optCategory').value;
+    list.innerHTML = '';
+    const defs = [
+      { key: 'playerMaxHp', cat: 'game', label: 'プレイヤー最大HP', desc: 'プレイヤーの最大体力', type: 'number', min: 10, max: 1000, step: 10 },
+      { key: 'monsterHpMult', cat: 'game', label: 'モンスターHP倍率', desc: 'モンスターの体力に掛ける倍率', type: 'range', min: 0.1, max: 10, step: 0.1 },
+      { key: 'monsterSpawnInterval', cat: 'game', label: 'モンスター出現間隔(秒)', desc: 'モンスターが出現する間隔', type: 'number', min: 1, max: 60, step: 1 },
+      { key: 'monsterMaxCount', cat: 'game', label: 'モンスター最大数', desc: '同時存在できるモンスターの最大数', type: 'number', min: 5, max: 200, step: 5 },
+      { key: 'pvpEnabled', cat: 'game', label: 'PvP有効', desc: 'プレイヤー同士の攻撃を有効にする', type: 'toggle' },
+      { key: 'stormEnabled', cat: 'game', label: 'ストーム有効', desc: 'ストーム（縮小エリア）を有効にする', type: 'toggle' },
+      { key: 'infiniteMap', cat: 'game', label: '無限マップ', desc: 'マップを無限にする', type: 'toggle' },
+      { key: 'dayCycleSpeed', cat: 'game', label: '昼夜サイクル速度', desc: '昼夜の変化速度', type: 'range', min: 0.1, max: 5, step: 0.1 },
+    ];
+    const allRecipes = (typeof CRAFT_RECIPES !== 'undefined') ? CRAFT_RECIPES : [];
+    for (const r of allRecipes) {
+      if (r && r.id) {
+        defs.push({ key: 'recipe_' + r.id, cat: 'recipe', label: 'レシピ: ' + (r.name || r.id), desc: r.desc || '必要素材を編集', type: 'recipe', recipeKey: r.id });
+      }
+    }
+    // キーバインド設定
+    const kbActions = [
+      { key: 'kb_move_up', label: '上移動', desc: '上方向への移動キー', action: 'move_up' },
+      { key: 'kb_move_down', label: '下移動', desc: '下方向への移動キー', action: 'move_down' },
+      { key: 'kb_move_left', label: '左移動', desc: '左方向への移動キー', action: 'move_left' },
+      { key: 'kb_move_right', label: '右移動', desc: '右方向への移動キー', action: 'move_right' },
+      { key: 'kb_a', label: 'Aボタン (クラフト/決定)', desc: 'クラフトメニュー開閉・決定', action: 'a' },
+      { key: 'kb_b', label: 'Bボタン (回収/キャンセル)', desc: '回収・キャンセル', action: 'b' },
+      { key: 'kb_x', label: 'Xボタン (参加/インベントリ)', desc: 'ロビー参加・インベントリ開閉', action: 'x' },
+      { key: 'kb_y', label: 'Yボタン (PvP切替)', desc: 'PvP切替', action: 'y' },
+      { key: 'kb_l', label: 'Lボタン (ホットバー左)', desc: 'ホットバー左', action: 'l' },
+      { key: 'kb_r', label: 'Rボタン (ホットバー右)', desc: 'ホットバー右', action: 'r' },
+      { key: 'kb_zl', label: 'ZL (使用/ガード)', desc: 'アイテム使用・ガード', action: 'zl' },
+      { key: 'kb_zr', label: 'ZR (攻撃)', desc: '攻撃', action: 'zr' },
+      { key: 'kb_start', label: 'START (ゲーム開始/ポーズ)', desc: 'ゲーム開始・ポーズ', action: 'start' },
+      { key: 'kb_inventory', label: 'インベントリ', desc: 'インベントリ開閉', action: 'inventory' },
+      { key: 'kb_options', label: 'オプション', desc: 'オプションメニュー開閉', action: 'options' },
+    ];
+    for (const kba of kbActions) {
+      defs.push({ key: kba.key, cat: 'control', label: kba.label, desc: kba.desc, type: 'keybind', action: kba.action });
+    }
+    defs.push({ key: 'kb_reset', cat: 'control', label: 'キーバインド初期化', desc: '全てのキーバインドをデフォルトに戻す', type: 'keybind_reset' });
+    const groups = {};
+    for (const d of defs) {
+      if (cat !== 'all' && d.cat !== cat) continue;
+      if (search && !d.label.toLowerCase().includes(search) && !d.desc.toLowerCase().includes(search)) continue;
+      if (!groups[d.cat]) groups[d.cat] = [];
+      groups[d.cat].push(d);
+    }
+    const catNames = { game: '[GAME] ゲーム設定', recipe: '[RECIPE] レシピ編集', control: '[CONTROL] コントロール' };
+    for (const [c, items] of Object.entries(groups)) {
+      const g = document.createElement('div'); g.className = 'opt-group';
+      const titleDiv = document.createElement('div'); titleDiv.className = 'opt-group-title';
+      titleDiv.textContent = catNames[c] || c;
+      g.appendChild(titleDiv);
+      for (const item of items) {
+        const row = document.createElement('div'); row.className = 'opt-item';
+        const labelDiv = document.createElement('div');
+        const labelText = document.createElement('div'); labelText.className = 'opt-label'; labelText.textContent = item.label;
+        const descText = document.createElement('div'); descText.className = 'opt-desc'; descText.textContent = item.desc;
+        labelDiv.appendChild(labelText); labelDiv.appendChild(descText);
+        const ctrlDiv = document.createElement('div'); ctrlDiv.className = 'opt-control';
+        if (item.type === 'number') {
+          const inp = document.createElement('input'); inp.className = 'opt-input-num'; inp.type = 'number';
+          inp.min = item.min; inp.max = item.max; inp.step = item.step;
+          inp.value = this.options[item.key] || item.min;
+          inp.onchange = () => this.setOption(item.key, inp.value);
+          ctrlDiv.appendChild(inp);
+        } else if (item.type === 'range') {
+          const val = this.options[item.key] || item.min;
+          const inp = document.createElement('input'); inp.className = 'opt-slider'; inp.type = 'range';
+          inp.min = item.min; inp.max = item.max; inp.step = item.step; inp.value = val;
+          const span = document.createElement('span'); span.style.cssText = 'color:#ffcc00;font-size:12px;width:40px;text-align:right;';
+          span.textContent = val;
+          inp.oninput = () => { this.setOption(item.key, inp.value); span.textContent = inp.value; };
+          ctrlDiv.appendChild(inp); ctrlDiv.appendChild(span);
+        } else if (item.type === 'toggle') {
+          const toggle = document.createElement('div'); toggle.className = 'opt-toggle';
+          if (this.options[item.key]) toggle.classList.add('active');
+          toggle.onclick = () => this.toggleOption(item.key, toggle);
+          ctrlDiv.appendChild(toggle);
+        } else if (item.type === 'recipe') {
+          const btn = document.createElement('button'); btn.className = 'opt-btn'; btn.textContent = '編集';
+          btn.onclick = () => this.editRecipe(item.recipeKey);
+          ctrlDiv.appendChild(btn);
+        } else if (item.type === 'keybind') {
+          const btn = document.createElement('button'); btn.className = 'opt-btn';
+          const currentKey = this.getKeyForAction(item.action);
+          btn.textContent = currentKey ? currentKey.toUpperCase() : '未設定';
+          btn.onclick = () => this.startKeyBind(item.action, btn);
+          ctrlDiv.appendChild(btn);
+        } else if (item.type === 'keybind_reset') {
+          const btn = document.createElement('button'); btn.className = 'opt-btn'; btn.textContent = 'リセット';
+          btn.style.borderColor = '#ff4444'; btn.style.color = '#ff8888';
+          btn.onclick = () => { this.gp.resetKeyBindings(); this.buildOptionsList(); };
+          ctrlDiv.appendChild(btn);
+        }
+        row.appendChild(labelDiv); row.appendChild(ctrlDiv);
+        g.appendChild(row);
+      }
+      list.appendChild(g);
+    }
+    if (list.children.length === 0) {
+      const empty = document.createElement('div'); empty.style.cssText = 'text-align:center;color:#666;padding:40px;';
+      empty.textContent = '該当するオプションが見つかりません';
+      list.appendChild(empty);
+    }
+  }
+  getKeyForAction(action) {
+    for (const [key, map] of Object.entries(this.gp.keyBindings)) {
+      if (action === 'move_up' && map.leftStickY === -1) return key;
+      if (action === 'move_down' && map.leftStickY === 1) return key;
+      if (action === 'move_left' && map.leftStickX === -1) return key;
+      if (action === 'move_right' && map.leftStickX === 1) return key;
+      if (action === 'a' && map.A) return key;
+      if (action === 'b' && map.B) return key;
+      if (action === 'x' && map.X) return key;
+      if (action === 'y' && map.Y) return key;
+      if (action === 'l' && map.L) return key;
+      if (action === 'r' && map.R) return key;
+      if (action === 'zl' && map.ZL === 1.0) return key;
+      if (action === 'zr' && map.ZR === 1.0) return key;
+      if (action === 'start' && map.START) return key;
+      if (action === 'inventory' && map.INVENTORY) return key;
+      if (action === 'options' && map.OPTIONS) return key;
+    }
+    return null;
+  }
+  startKeyBind(action, btnEl) {
+    btnEl.textContent = 'キーを押してください...';
+    btnEl.style.borderColor = '#ffcc00';
+    const handler = (e) => {
+      e.preventDefault();
+      const newKey = e.key.toLowerCase();
+      // 既存の同じキーを削除
+      const newBindings = {};
+      for (const [k, v] of Object.entries(this.gp.keyBindings)) {
+        if (k !== newKey) newBindings[k] = v;
+      }
+      // 新しい割り当て
+      const map = {};
+      if (action === 'move_up') map.leftStickY = -1;
+      else if (action === 'move_down') map.leftStickY = 1;
+      else if (action === 'move_left') map.leftStickX = -1;
+      else if (action === 'move_right') map.leftStickX = 1;
+      else if (action === 'a') map.A = true;
+      else if (action === 'b') map.B = true;
+      else if (action === 'x') map.X = true;
+      else if (action === 'y') map.Y = true;
+      else if (action === 'l') map.L = true;
+      else if (action === 'r') map.R = true;
+      else if (action === 'zl') map.ZL = 1.0;
+      else if (action === 'zr') map.ZR = 1.0;
+      else if (action === 'start') map.START = true;
+      else if (action === 'inventory') map.INVENTORY = true;
+      else if (action === 'options') map.OPTIONS = true;
+      newBindings[newKey] = map;
+      this.gp.setKeyBinding(action, newBindings);
+      window.removeEventListener('keydown', handler);
+      this.buildOptionsList();
+    };
+    window.addEventListener('keydown', handler, { once: true });
+  }
+  setOption(key, value) {
+    if (key.startsWith('recipe_')) return;
+    const num = parseFloat(value);
+    this.options[key] = isNaN(num) ? value : num;
+    this.applyOptions();
+    this.saveOptions();
+    this.buildOptionsList();
+  }
+  toggleOption(key, el) {
+    this.options[key] = !this.options[key];
+    el.classList.toggle('active', this.options[key]);
+    this.applyOptions();
+    this.saveOptions();
+  }
+  applyOptions() {
+    if (this.players) {
+      for (const p of this.players) {
+        p.maxHp = this.options.playerMaxHp || 100;
+        if (p.hp > p.maxHp) p.hp = p.maxHp;
+      }
+    }
+    this.pvpEnabled = !!this.options.pvpEnabled;
+    this.stormEnabled = !!this.options.stormEnabled;
+    this.infiniteMap = !!this.options.infiniteMap;
+    if (this.options.recipes && typeof CRAFT_RECIPES !== 'undefined') {
+      for (const r of CRAFT_RECIPES) {
+        if (r.id && this.options.recipes[r.id]) {
+          r.req = { ...this.options.recipes[r.id] };
+        }
+      }
+    }
+  }
+  editRecipe(recipeKey) {
+    const modal = document.getElementById('recipeModal');
+    const content = document.getElementById('recipeModalContent');
+    const allRecipes = (typeof CRAFT_RECIPES !== 'undefined') ? CRAFT_RECIPES : [];
+    const recipeDef = allRecipes.find(r => r.id === recipeKey);
+    const recipe = this.options.recipes[recipeKey] || (recipeDef ? recipeDef.req : null);
+    if (!recipe) return;
+    document.getElementById('recipeModalTitle').textContent = '[RECIPE] ' + (recipeDef?.name || recipeKey) + ' のレシピ編集';
+    content.innerHTML = '';
+    const header = document.createElement('div');
+    header.style.cssText = 'margin-bottom:12px;font-size:12px;color:#888;';
+    header.textContent = '必要素材（アイテムID: 個数）';
+    content.appendChild(header);
+    for (const [ing, count] of Object.entries(recipe)) {
+      const row = document.createElement('div'); row.className = 'opt-recipe-row';
+      const nameSpan = document.createElement('span'); nameSpan.className = 'opt-recipe-name';
+      nameSpan.textContent = ITEM_DEFS[ing]?.name || ing;
+      const idInput = document.createElement('input'); idInput.type = 'text'; idInput.className = 'opt-input-text';
+      idInput.value = ing; idInput.style.width = '120px';
+      idInput.onchange = () => this.updateRecipeKey(recipeKey, ing, idInput.value);
+      const numInput = document.createElement('input'); numInput.type = 'number'; numInput.className = 'opt-input-num';
+      numInput.value = count; numInput.min = 0; numInput.max = 99;
+      numInput.onchange = () => this.updateRecipeCount(recipeKey, ing, numInput.value);
+      const delBtn = document.createElement('button'); delBtn.className = 'opt-btn'; delBtn.textContent = 'DELETE';
+      delBtn.onclick = () => this.removeRecipeIng(recipeKey, ing);
+      row.appendChild(nameSpan); row.appendChild(idInput); row.appendChild(numInput); row.appendChild(delBtn);
+      content.appendChild(row);
+    }
+    const addDiv = document.createElement('div'); addDiv.style.cssText = 'margin-top:12px;text-align:center;';
+    const addBtn = document.createElement('button'); addBtn.className = 'opt-btn'; addBtn.textContent = 'ADD 素材追加';
+    addBtn.onclick = () => this.addRecipeIng(recipeKey);
+    addDiv.appendChild(addBtn); content.appendChild(addDiv);
+    modal.style.display = 'flex';
+  }
+  updateRecipeKey(recipeKey, oldIng, newIng) {
+    if (!this.options.recipes[recipeKey]) { const _rd = (typeof CRAFT_RECIPES !== 'undefined') ? CRAFT_RECIPES.find(r => r.id === recipeKey) : null; this.options.recipes[recipeKey] = { ...(_rd ? _rd.req : {}) }; }
+    const val = this.options.recipes[recipeKey][oldIng];
+    delete this.options.recipes[recipeKey][oldIng];
+    if (newIng.trim()) this.options.recipes[recipeKey][newIng.trim()] = val || 1;
+    this.saveOptions();
+    this.editRecipe(recipeKey);
+  }
+  updateRecipeCount(recipeKey, ing, count) {
+    if (!this.options.recipes[recipeKey]) { const _rd = (typeof CRAFT_RECIPES !== 'undefined') ? CRAFT_RECIPES.find(r => r.id === recipeKey) : null; this.options.recipes[recipeKey] = { ...(_rd ? _rd.req : {}) }; }
+    this.options.recipes[recipeKey][ing] = Math.max(0, parseInt(count) || 0);
+    this.saveOptions();
+  }
+  removeRecipeIng(recipeKey, ing) {
+    if (!this.options.recipes[recipeKey]) { const _rd = (typeof CRAFT_RECIPES !== 'undefined') ? CRAFT_RECIPES.find(r => r.id === recipeKey) : null; this.options.recipes[recipeKey] = { ...(_rd ? _rd.req : {}) }; }
+    delete this.options.recipes[recipeKey][ing];
+    this.saveOptions();
+    this.editRecipe(recipeKey);
+  }
+  addRecipeIng(recipeKey) {
+    if (!this.options.recipes[recipeKey]) { const _rd = (typeof CRAFT_RECIPES !== 'undefined') ? CRAFT_RECIPES.find(r => r.id === recipeKey) : null; this.options.recipes[recipeKey] = { ...(_rd ? _rd.req : {}) }; }
+    this.options.recipes[recipeKey]['wood'] = 1;
+    this.saveOptions();
+    this.editRecipe(recipeKey);
+  }
+  exportOptions() {
+    const blob = new Blob([JSON.stringify(this.options, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'survival_options.json'; a.click(); URL.revokeObjectURL(url);
+  }
+  importOptions() {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try { this.options = JSON.parse(ev.target.result); this.applyOptions(); this.saveOptions(); this.buildOptionsList(); alert('インポート成功！'); }
+        catch(err) { alert('インポート失敗: ' + err.message); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+  setupOptionsMenu() {
+    const search = document.getElementById('optSearch');
+    const cat = document.getElementById('optCategory');
+    const close = document.getElementById('btnCloseOptions');
+    const reset = document.getElementById('btnResetOptions');
+    const exp = document.getElementById('btnExportOptions');
+    const imp = document.getElementById('btnImportOptions');
+    const saveRec = document.getElementById('btnSaveRecipe');
+    const cancelRec = document.getElementById('btnCancelRecipe');
+    if (search) search.addEventListener('input', () => this.buildOptionsList());
+    if (cat) cat.addEventListener('change', () => this.buildOptionsList());
+    if (close) close.addEventListener('click', () => this.hideOptions());
+    if (reset) reset.addEventListener('click', () => { localStorage.removeItem('survival_options'); this.options = this.loadOptions(); this.applyOptions(); this.buildOptionsList(); });
+    if (exp) exp.addEventListener('click', () => this.exportOptions());
+    if (imp) imp.addEventListener('click', () => this.importOptions());
+    if (saveRec) saveRec.addEventListener('click', () => { document.getElementById('recipeModal').style.display = 'none'; this.applyOptions(); this.saveOptions(); });
+    if (cancelRec) cancelRec.addEventListener('click', () => { document.getElementById('recipeModal').style.display = 'none'; });
+    // Bキーでオプション閉じる（ゲーム中）
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'b' && document.getElementById('optionsMenu').style.display === 'flex') {
+        e.preventDefault(); this.hideOptions();
+      }
+    });
+  }
+}
+
+const game = new Game();
+window.game = game;
+</script>
+</body>
+</html>

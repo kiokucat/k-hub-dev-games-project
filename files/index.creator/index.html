@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>インテリジェントUIビルダー</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  body { font-family: 'Inter', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif; }
+  .pal-item { transition: transform .2s, box-shadow .2s, border-color .2s, opacity .2s; cursor: grab; }
+  .pal-item:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37,99,235,.12); border-color: #93c5fd; }
+  .pal-item:active { cursor: grabbing; }
+  .pal-item.dragging { opacity: .45; transform: scale(.96); border-style: dashed; border-color: #2563eb; }
+  #canvas { transition: background-color .25s, outline-color .25s, box-shadow .25s; outline: 2px dashed transparent; outline-offset: -8px; }
+  #canvas.drag-over { background-color: #eff6ff; outline-color: #3b82f6; box-shadow: inset 0 0 0 4px rgba(59,130,246,.08); }
+  .ub-item { position: relative; border-radius: 10px; outline: 2px solid transparent; outline-offset: 6px; transition: outline-color .15s, background-color .15s; animation: pop .28s ease-out; }
+  .ub-item:hover { outline-color: #93c5fd; }
+  .ub-del { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 15px; line-height: 24px; text-align: center; border: 0; cursor: pointer; opacity: 0; transform: scale(.7); transition: opacity .15s, transform .15s; box-shadow: 0 2px 6px rgba(0,0,0,.2); z-index: 5; }
+  .ub-item:hover .ub-del { opacity: 1; transform: scale(1); }
+  .ub-del:hover { background: #dc2626; }
+  .ub-item.removing { opacity: 0; transform: scale(.95); transition: all .18s; }
+  [contenteditable]:focus { outline: 2px solid #3b82f6; outline-offset: 3px; border-radius: 4px; }
+  [contenteditable]:hover { cursor: text; }
+  .drop-line { height: 4px; border-radius: 4px; background: #3b82f6; margin: 4px 0; animation: pop .15s; }
+  .ub-item:hover, .ub-item:focus-within { z-index: 20; }
+  .ub-tool { position: absolute; top: -10px; right: 22px; height: 24px; padding: 0 10px; border-radius: 9999px; background: #2563eb; color: #fff; font-size: 11px; line-height: 24px; border: 0; cursor: pointer; opacity: 0; transform: scale(.7); transition: opacity .15s, transform .15s; box-shadow: 0 2px 6px rgba(0,0,0,.2); z-index: 5; }
+  .ub-item:hover .ub-tool { opacity: 1; transform: scale(1); }
+  #urlbar { width: 340px; }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+<header class="h-14 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-5 shadow-sm">
+  <div class="flex items-center gap-2 font-bold text-slate-900">
+    <span class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center"><i data-lucide="layout-template" class="w-4 h-4"></i></span>
+    インテリジェントUIビルダー
+  </div>
+  <div class="flex items-center gap-2">
+    <button id="clearBtn" class="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">
+      <i data-lucide="trash-2" class="w-4 h-4"></i>クリア
+    </button>
+    <button id="exportBtn" class="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
+      <i data-lucide="download" class="w-4 h-4"></i>HTML出力
+    </button>
+  </div>
+</header>
+
+<div class="flex flex-1 min-h-0">
+  <aside class="w-64 shrink-0 bg-white border-r border-slate-200 p-4 overflow-y-auto">
+    <h2 class="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-3">コンポーネント</h2>
+    <div class="grid grid-cols-2 gap-3" id="palette">
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="heading"><i data-lucide="heading-1" class="w-5 h-5 text-blue-600"></i>大見出し</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="paragraph"><i data-lucide="align-left" class="w-5 h-5 text-blue-600"></i>段落</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="button"><i data-lucide="mouse-pointer-click" class="w-5 h-5 text-blue-600"></i>ボタン</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="input"><i data-lucide="text-cursor-input" class="w-5 h-5 text-blue-600"></i>入力欄</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="card"><i data-lucide="square-stack" class="w-5 h-5 text-blue-600"></i>情報カード</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="image"><i data-lucide="image" class="w-5 h-5 text-blue-600"></i>画像エリア</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="icon"><i data-lucide="star" class="w-5 h-5 text-blue-600"></i>アイコン</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="quiz"><i data-lucide="circle-help" class="w-5 h-5 text-blue-600"></i>クイズ</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="dropdown"><i data-lucide="square-chevron-down" class="w-5 h-5 text-blue-600"></i>ドロップダウン</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="html"><i data-lucide="code" class="w-5 h-5 text-blue-600"></i>HTML埋め込み</div>
+      <div class="pal-item flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-sm" draggable="true" data-type="embed"><i data-lucide="globe" class="w-5 h-5 text-blue-600"></i>URL埋め込み</div>
+    </div>
+    <p class="text-xs text-slate-400 mt-5 leading-relaxed">パーツをキャンバスへドラッグ。テキストはクリックで直接編集。リンク文字をクリックするとURL入力欄が出ます。クイズは ✓ で正解を選択、アイコンはホバーで変更できます。</p>
+  </aside>
+
+  <main class="flex-1 p-6 overflow-auto">
+    <div id="canvas" class="relative min-h-full max-w-3xl mx-auto bg-white rounded-2xl shadow-xl shadow-slate-300/40 border border-slate-200 p-10">
+      <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none select-none">
+        <i data-lucide="mouse-pointer-2" class="w-10 h-10 mb-3"></i>
+        <p class="text-base font-medium">ここにドラッグ＆ドロップしてください</p>
+      </div>
+      <div id="items" class="space-y-6 relative"></div>
+    </div>
+  </main>
+</div>
+
+<div id="modal" class="hidden fixed inset-0 z-[60] bg-slate-900/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-5">
+    <h3 class="font-semibold text-slate-900 mb-3">HTMLを編集</h3>
+    <textarea id="modalTa" spellcheck="false" class="w-full h-64 font-mono text-sm p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    <div class="flex justify-end gap-2 mt-3">
+      <button id="modalCancel" type="button" class="px-4 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-50">キャンセル</button>
+      <button id="modalOk" type="button" class="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">反映</button>
+    </div>
+  </div>
+</div>
+<div id="urlbar" class="hidden fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-2 flex items-center gap-2">
+  <span class="text-xs font-semibold text-slate-400 pl-1">URL</span>
+  <input id="urlbarInput" type="text" placeholder="https://example.com" class="flex-1 min-w-0 px-2.5 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+</div>
+<script>
+(function () {
+  var T = {
+    heading: '<h1 class="text-4xl font-bold tracking-tight text-slate-900" contenteditable="true">大見出しテキスト</h1>',
+    paragraph: '<p class="text-base leading-relaxed text-slate-600" contenteditable="true">ここに本文が入ります。クリックして自由に編集してください。</p>',
+    button: '<a href="#" class="inline-block px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium shadow-md shadow-blue-600/20 hover:bg-blue-700 transition" contenteditable="true">ボタン</a>',
+    input: '<div><label class="block text-sm font-medium text-slate-700 mb-1.5" contenteditable="true">ラベル</label><input type="text" placeholder="入力してください" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></div>',
+    card: '<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60"><h3 class="text-xl font-semibold text-slate-900 mb-2" contenteditable="true">カードのタイトル</h3><p class="text-slate-600 mb-4" contenteditable="true">カードの説明文がここに入ります。</p><a href="#" class="text-blue-600 font-medium hover:underline" contenteditable="true">詳しく見る →</a></div>',
+    image: '<div class="w-full h-56 rounded-2xl bg-gradient-to-br from-blue-100 via-slate-100 to-blue-200 flex items-center justify-center text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg></div>'
+  };
+
+  var ICONS = [
+    '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+    '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 7L2 7"/>',
+    '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'
+  ];
+  function iconSvg(i) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[i] + '</svg>';
+  }
+  var MARK_OFF = 'q-mark w-7 h-7 shrink-0 rounded-full text-sm bg-slate-100 text-slate-400 hover:bg-green-100 transition';
+  var MARK_ON = 'q-mark w-7 h-7 shrink-0 rounded-full text-sm bg-green-500 text-white transition';
+  function qrow(label, on) {
+    return '<div class="q-row flex items-center gap-2"' + (on ? ' data-correct="true"' : '') + '><button type="button" class="' + (on ? MARK_ON : MARK_OFF) + '" title="正解にする">✓</button><div class="q-choice flex-1 px-4 py-2.5 rounded-lg border border-slate-200 bg-white" contenteditable="true">' + label + '</div></div>';
+  }
+  T.icon = '<div class="ub-icon inline-flex w-16 h-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">' + iconSvg(0) + '</div>';
+  T.quiz = '<div class="ub-quiz rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60"><p class="text-xs font-bold tracking-wider text-blue-600 mb-1">QUIZ</p><h3 class="text-lg font-semibold text-slate-900 mb-4" contenteditable="true">問題文を入力してください</h3><div class="space-y-2">' + qrow('選択肢A（正解）', true) + qrow('選択肢B', false) + qrow('選択肢C', false) + '</div><p class="q-result mt-3 text-sm font-medium"></p></div>';
+  T.dropdown = '<div class="relative inline-block group" tabindex="0"><div class="px-5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-700 font-medium shadow-sm inline-flex items-center gap-2"><span contenteditable="true">メニュー</span><span>▾</span></div><div class="hidden group-hover:block group-focus-within:block absolute left-0 top-full pt-1 z-10 min-w-[12rem]"><div class="rounded-xl border border-slate-200 bg-white shadow-xl py-1.5 flex flex-col"><a href="#" class="px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600" contenteditable="true">項目1</a><a href="#" class="px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600" contenteditable="true">項目2</a><a href="#" class="px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600" contenteditable="true">項目3</a></div></div></div>';
+
+  T.html = '<div class="ub-html-view"><div style="padding:16px;border-radius:12px;background:#f1f5f9;text-align:center;color:#475569">カスタムHTML（ホバーして「HTML編集」で書き換え）</div></div>';
+  T.embed = '<div class="ub-embed"><div class="ub-embed-ph h-56 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-sm">「URL設定」で埋め込み先（YouTube・地図・サイト等）を指定</div></div>';
+  var TOOLS = { icon: 'アイコン変更', html: 'HTML編集', embed: 'URL設定' };
+  function toEmbedUrl(u) {
+    var m = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
+    return m ? 'https://www.youtube.com/embed/' + m[1] : u;
+  }
+  function setEmbed(box) {
+    var cur = box.querySelector('iframe');
+    var u = prompt('埋め込むURLを入力してください', cur ? cur.getAttribute('src') : 'https://');
+    if (!u || !u.trim() || /^\s*javascript:/i.test(u)) return;
+    var f = document.createElement('iframe');
+    f.src = toEmbedUrl(u.trim());
+    f.className = 'w-full h-72 rounded-xl border border-slate-200';
+    f.setAttribute('loading', 'lazy');
+    f.setAttribute('allowfullscreen', '');
+    box.innerHTML = '';
+    box.appendChild(f);
+  }
+  var modal = document.getElementById('modal');
+  var modalTa = document.getElementById('modalTa');
+  var curView = null;
+  function openModal(v) { curView = v; modalTa.value = v.innerHTML; modal.classList.remove('hidden'); modalTa.focus(); }
+  function closeModal() { modal.classList.add('hidden'); curView = null; }
+  document.getElementById('modalOk').addEventListener('click', function () { if (curView) curView.innerHTML = modalTa.value; closeModal(); });
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+
+  var bar = document.getElementById('urlbar');
+  var barIn = document.getElementById('urlbarInput');
+  var curA = null;
+  function showBar(a) {
+    curA = a;
+    barIn.value = a.getAttribute('href') || '';
+    var r = a.getBoundingClientRect();
+    bar.style.top = Math.min(r.bottom + 8, window.innerHeight - 64) + 'px';
+    bar.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 360)) + 'px';
+    bar.classList.remove('hidden');
+  }
+  function hideBar() { bar.classList.add('hidden'); curA = null; }
+  barIn.addEventListener('input', function () { if (curA) curA.setAttribute('href', barIn.value.trim() || '#'); });
+  barIn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === 'Escape') hideBar(); });
+  document.addEventListener('mousedown', function (e) { if (!bar.contains(e.target) && !e.target.closest('a')) hideBar(); });
+  document.querySelector('main').addEventListener('scroll', hideBar);
+
+  var canvas = document.getElementById('canvas');
+  var items = document.getElementById('items');
+  var ph = document.getElementById('placeholder');
+  var dragType = null;
+  var line = document.createElement('div');
+  line.className = 'drop-line';
+
+  function refresh() {
+    ph.style.display = items.querySelector('.ub-item') ? 'none' : 'flex';
+  }
+
+  document.querySelectorAll('.pal-item').forEach(function (el) {
+    el.addEventListener('dragstart', function (e) {
+      dragType = el.getAttribute('data-type');
+      e.dataTransfer.setData('text/plain', dragType);
+      e.dataTransfer.effectAllowed = 'copy';
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', function () {
+      el.classList.remove('dragging');
+      canvas.classList.remove('drag-over');
+      line.remove();
+      dragType = null;
+    });
+  });
+
+  function afterEl(y) {
+    var els = Array.prototype.slice.call(items.querySelectorAll('.ub-item'));
+    for (var i = 0; i < els.length; i++) {
+      var r = els[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) return els[i];
+    }
+    return null;
+  }
+
+  canvas.addEventListener('dragover', function (e) {
+    if (!dragType) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    canvas.classList.add('drag-over');
+    var a = afterEl(e.clientY);
+    if (a) items.insertBefore(line, a); else items.appendChild(line);
+  });
+  canvas.addEventListener('dragleave', function (e) {
+    if (!canvas.contains(e.relatedTarget)) {
+      canvas.classList.remove('drag-over');
+      line.remove();
+    }
+  });
+  canvas.addEventListener('drop', function (e) {
+    e.preventDefault();
+    var type = dragType || e.dataTransfer.getData('text/plain');
+    canvas.classList.remove('drag-over');
+    if (!T[type]) { line.remove(); return; }
+    var wrap = document.createElement('div');
+    wrap.className = 'ub-item';
+    var tool = TOOLS[type] ? '<button type="button" class="ub-tool" data-act="' + type + '">' + TOOLS[type] + '</button>' : '';
+    wrap.innerHTML = '<button type="button" class="ub-del" title="削除">×</button>' + tool + '<div class="ub-body">' + T[type] + '</div>';
+    if (line.parentNode === items) items.insertBefore(wrap, line); else items.appendChild(wrap);
+    line.remove();
+    dragType = null;
+    refresh();
+  });
+
+  items.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.classList && t.classList.contains('ub-del')) {
+      var item = t.closest('.ub-item');
+      item.classList.add('removing');
+      setTimeout(function () { item.remove(); refresh(); }, 180);
+      return;
+    }
+    if (t.classList && t.classList.contains('ub-tool')) {
+      var it = t.closest('.ub-item');
+      var act = t.getAttribute('data-act');
+      if (act === 'html') { openModal(it.querySelector('.ub-html-view')); return; }
+      if (act === 'embed') { setEmbed(it.querySelector('.ub-embed')); return; }
+      var n = ((+it.dataset.icon || 0) + 1) % ICONS.length;
+      it.dataset.icon = n;
+      it.querySelector('.ub-icon').innerHTML = iconSvg(n);
+      return;
+    }
+    if (t.classList && t.classList.contains('q-mark')) {
+      var quiz = t.closest('.ub-quiz');
+      quiz.querySelectorAll('.q-row').forEach(function (r) {
+        r.removeAttribute('data-correct');
+        r.querySelector('.q-mark').className = MARK_OFF;
+      });
+      t.closest('.q-row').setAttribute('data-correct', 'true');
+      t.className = MARK_ON;
+      return;
+    }
+    var a = t.closest('a');
+    if (a) { e.preventDefault(); showBar(a); }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    if (!items.children.length) return;
+    if (confirm('すべての要素を削除しますか？')) { items.innerHTML = ''; refresh(); }
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var bodies = items.querySelectorAll('.ub-body');
+    if (!bodies.length) { alert('キャンバスが空です。'); return; }
+    var tmp = document.createElement('div');
+    bodies.forEach(function (b) { tmp.appendChild(b.cloneNode(true)); });
+    tmp.querySelectorAll('[contenteditable]').forEach(function (n) { n.removeAttribute('contenteditable'); });
+    tmp.querySelectorAll('.ub-del, .ub-tool, .q-mark, .ub-embed-ph').forEach(function (n) { n.remove(); });
+    var inner = '';
+    Array.prototype.forEach.call(tmp.children, function (c) {
+      inner += '    <div>' + c.innerHTML + '</div>\n';
+    });
+    var QUIZ = function () {
+      document.querySelectorAll('.ub-quiz').forEach(function (q) {
+        var res = q.querySelector('.q-result');
+        var done = false;
+        q.querySelectorAll('.q-choice').forEach(function (c) {
+          c.style.cursor = 'pointer';
+          c.addEventListener('click', function () {
+            if (done) return;
+            done = true;
+            var ok = c.parentNode.hasAttribute('data-correct');
+            c.style.background = ok ? '#dcfce7' : '#fee2e2';
+            c.style.borderColor = ok ? '#22c55e' : '#f87171';
+            if (!ok) {
+              var r = q.querySelector('[data-correct] .q-choice');
+              if (r) { r.style.background = '#dcfce7'; r.style.borderColor = '#22c55e'; }
+            }
+            res.textContent = ok ? '正解！' : '不正解…';
+            res.style.color = ok ? '#16a34a' : '#dc2626';
+          });
+        });
+      });
+    };
+    var extra = tmp.querySelector('.ub-quiz') ? '<script>(' + QUIZ.toString() + ')();<\/script>\n' : '';
+    var html = '<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Exported Page</title>\n<script src="https://cdn.tailwindcss.com/3.4.17"><\/script>\n</head>\n<body class="bg-white text-slate-800">\n  <main class="max-w-3xl mx-auto p-8 space-y-6">\n' + inner + '  </main>\n' + extra + '</body>\n</html>\n';
+    var blob = new Blob([html], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'exported-page.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  if (window.lucide) lucide.createIcons();
+  refresh();
+})();
+</script>
+</body>
+</html>

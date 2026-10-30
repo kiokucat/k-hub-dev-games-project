@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE BACKROOMS — LEVEL 0</title>
+<meta name="description" content="無限に広がるバックルームズを探索するブラウザ3Dゲーム。ページを集めて出口を探せ。オンラインでロビーに参加すれば他プレイヤーと同じ迷路を共有できる。">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#000;font-family:'Courier New',monospace;color:#e8d98a;overflow-x:hidden;}
+  body{
+    min-height:100vh;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at 50% 20%, #3a3010 0%, #0a0800 70%);
+  }
+  a{color:inherit;}
+
+  #tapeTop, #tapeBottom{
+    position:fixed;left:0;width:100%;height:22px;
+    background:repeating-linear-gradient(45deg,#111 0 18px,#e2c020 18px 36px);
+    opacity:.8;z-index:5;
+  }
+  #tapeTop{top:0;} #tapeBottom{bottom:0;}
+
+  .wrap{max-width:860px;margin:0 auto;padding:70px 24px 60px;position:relative;z-index:1;}
+
+  header{text-align:center;margin-bottom:2.6rem;}
+  h1{
+    font-size:3.2rem;letter-spacing:.5rem;margin:0 0 .3rem 0;color:#e8d370;
+    text-shadow:0 0 2px #000, 0 0 26px rgba(232,211,112,.45);font-weight:700;
+  }
+  @media (max-width:560px){ h1{font-size:2.1rem;letter-spacing:.3rem;} }
+  .sub{color:#8a7a3a;font-size:.85rem;letter-spacing:.35rem;}
+
+  .panel{
+    background:rgba(20,16,4,.72);border:1px solid rgba(232,211,112,.3);
+    border-radius:6px;padding:1.8rem 2rem;backdrop-filter:blur(4px);
+    box-shadow:0 0 40px rgba(150,120,20,.15);margin-bottom:1.6rem;
+  }
+  .panel h2{
+    margin:0 0 .9rem 0;font-size:1rem;letter-spacing:.2rem;color:#e8d370;
+    border-bottom:1px solid rgba(232,211,112,.25);padding-bottom:.5rem;
+  }
+  .panel p{line-height:1.9;font-size:.85rem;color:#c9bc86;margin:0 0 .8rem 0;}
+  .panel p:last-child{margin-bottom:0;}
+
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .feature{
+    background:rgba(30,24,8,.5);border:1px solid rgba(232,211,112,.18);border-radius:5px;
+    padding:1rem 1.1rem;
+  }
+  .feature .icon{font-size:1.3rem;margin-bottom:.4rem;}
+  .feature h3{margin:0 0 .4rem 0;font-size:.82rem;letter-spacing:.08rem;color:#e8d98a;}
+  .feature p{margin:0;font-size:.75rem;color:#a89760;line-height:1.7;}
+
+  .controls{width:100%;border-collapse:collapse;font-size:.78rem;}
+  .controls td{padding:.4rem .3rem;border-bottom:1px solid rgba(232,211,112,.12);color:#c9bc86;}
+  .controls td:first-child{color:#e8d370;white-space:nowrap;width:38%;font-weight:700;}
+
+  .playArea{text-align:center;margin:2.4rem 0 1.2rem;}
+  #playBtn{
+    cursor:pointer;border:none;border-radius:5px;padding:1.1rem 3.2rem;
+    font-size:1.05rem;letter-spacing:.3rem;font-weight:700;font-family:inherit;
+    background:#e8d370;color:#151005;box-shadow:0 6px 26px rgba(200,170,60,.4);
+    transition:filter .15s, transform .15s;
+  }
+  #playBtn:hover{filter:brightness(1.12);transform:translateY(-1px);}
+  #playBtn:active{transform:translateY(1px);}
+  .playHint{margin-top:.8rem;font-size:.65rem;color:#6b5f30;letter-spacing:.05rem;}
+
+  footer{text-align:center;margin-top:2.6rem;font-size:.65rem;color:#5a5028;letter-spacing:.08rem;}
+</style>
+</head>
+<body>
+<div id="tapeTop"></div>
+
+<div class="wrap">
+  <header>
+    <h1>THE BACKROOMS</h1>
+    <div class="sub">LEVEL 0 — INFINITE NO-CLIP</div>
+  </header>
+
+  <div class="panel">
+    <h2>ABOUT</h2>
+    <p>ブラウザだけで動く3D探索ゲーム。プレイヤーの周囲にほぼ無限に生成される黄ばんだ迷路「バックルームズ」を彷徨い、散らばったページを集めて出口を目指す。</p>
+    <p>徘徊する存在から逃げ、SANITYとHPを管理しながら奥へ進め。オンラインモードでは同じロビー番号のプレイヤーと迷路を共有し、近づけばボイスチャットも繋がる。</p>
+  </div>
+
+  <div class="panel">
+    <h2>FEATURES</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="icon">🌀</div>
+        <h3>無限生成マップ</h3>
+        <p>シード値から生成される黄色い迷路。バックルームズ/平原・砂漠/街並みの3ステージから選択可能。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🎒</div>
+        <h3>装備と探索</h3>
+        <p>懐中電灯・剣・弓・銃・食料を切り替えて探索。パンでHP、リンゴでSANITYを回復できる。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">👥</div>
+        <h3>オンラインロビー</h3>
+        <p>game1〜game5のロビーに参加し、同じ迷路を他プレイヤーと共有。テキストチャット・近距離ボイスチャット・PvPにも対応。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">👁️</div>
+        <h3>徘徊する存在</h3>
+        <p>近づくと襲いかかってくる存在から逃げつつ、SANITYが尽きる前に出口を見つけ出せ。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>CONTROLS</h2>
+    <table class="controls">
+      <tr><td>W A S D</td><td>移動</td></tr>
+      <tr><td>← → ↑ ↓</td><td>視点旋回・見上げ／見下ろし</td></tr>
+      <tr><td>マウスクリック</td><td>ポインターロックしてマウスで視点操作</td></tr>
+      <tr><td>Space</td><td>ジャンプ</td></tr>
+      <tr><td>1〜5 / ホイール</td><td>懐中電灯・剣・弓・銃・食料の切替</td></tr>
+      <tr><td>左クリック</td><td>使用・攻撃・発射</td></tr>
+      <tr><td>右クリック</td><td>照準(銃・弓)</td></tr>
+      <tr><td>P</td><td>視点切替(1〜3人称)</td></tr>
+      <tr><td>T</td><td>チャット入力</td></tr>
+      <tr><td>Esc</td><td>タイトルへ戻る</td></tr>
+    </table>
+  </div>
+
+  <div class="playArea">
+    <button id="playBtn">PLAY</button>
+    <div class="playHint">タイトル画面が開きます — 名前・シード値・ステージ・ロビーはそこで選択</div>
+  </div>
+
+  <footer>THE BACKROOMS — a browser liminal-space exploration game</footer>
+</div>
+
+<div id="tapeBottom"></div>
+
+<script>
+document.getElementById('playBtn').addEventListener('click', () => {
+  window.location.href = './loading.html';
+});
+</script>
+</body>
+</html>

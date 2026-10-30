@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オセロ Online</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+:root{
+  --bg-0:#120d0a;
+  --bg-1:#1c140f;
+  --wood-a:#4a2c1c;
+  --wood-b:#6b3f26;
+  --wood-hi:#8a5a35;
+  --felt:#0c3d2c;
+  --felt-dark:#082e21;
+  --gold:#c9a24d;
+  --gold-dim:#7d6531;
+  --ivory:#f3ead6;
+  --sumi:#15110d;
+  --vermillion:#a8402c;
+  --text:#ece3cf;
+  --text-muted:#a89878;
+  --danger:#c0503a;
+  --panel:#1b1512;
+  --panel-2:#241b15;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:'Zen Kaku Gothic New', sans-serif;
+  color:var(--text);
+  background:radial-gradient(ellipse at top, #241a12 0%, var(--bg-0) 60%);
+  min-height:100%;
+}
+
+.hidden{ display:none !important; }
+
+.app{ max-width:1100px; margin:0 auto; padding:0 16px 60px; }
+
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 4px; border-bottom:1px solid rgba(201,162,77,0.18); margin-bottom:24px;
+}
+.brand{ font-family:'Shippori Mincho', serif; font-weight:800; font-size:24px; letter-spacing:0.08em; }
+.brand span{ font-size:13px; font-weight:500; color:var(--gold); letter-spacing:0.2em; margin-left:6px; }
+
+.user-box{ display:flex; align-items:center; gap:12px; font-size:13px; color:var(--text-muted); }
+.user-name{ color:var(--ivory); font-weight:500; cursor:pointer; }
+.user-rating{ color:var(--gold); font-weight:700; }
+
+.btn{
+  font-family:inherit; font-size:13px; font-weight:700; letter-spacing:0.04em;
+  padding:10px 16px; border-radius:8px; cursor:pointer; border:1px solid transparent;
+  transition:transform .15s ease, filter .15s ease, background .15s ease;
+}
+.btn:active{ transform:scale(0.97); }
+.btn.primary{ background:linear-gradient(160deg, var(--gold), #a3833c); color:#241a0d; border-color:var(--gold-dim); }
+.btn.primary:hover{ filter:brightness(1.08); }
+.btn.ghost{ background:transparent; color:var(--text); border-color:rgba(201,162,77,0.35); }
+.btn.ghost:hover{ background:rgba(201,162,77,0.08); }
+.btn.danger{ background:linear-gradient(160deg, var(--danger), #7a2f1f); color:#fbe9e3; width:100%; margin-top:6px; }
+
+.view{ animation:fadeIn .35s ease; }
+@keyframes fadeIn{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+
+.lobby-hero{ text-align:center; margin:28px 0 40px; }
+.lobby-hero h1{ font-family:'Shippori Mincho', serif; font-size:30px; margin:0 0 10px; color:var(--ivory); }
+.lobby-hero p{ color:var(--text-muted); margin:0; font-size:14px; }
+
+.mode-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:720px; margin:0 auto; }
+@media (max-width:640px){ .mode-grid{ grid-template-columns:1fr; } }
+
+.mode-card{
+  position:relative; overflow:hidden; text-align:left; cursor:pointer;
+  background:linear-gradient(160deg, var(--panel-2), var(--panel));
+  border:1px solid rgba(201,162,77,0.25); border-radius:14px; padding:28px 24px;
+  transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.mode-card:hover{ transform:translateY(-4px); border-color:var(--gold); box-shadow:0 16px 40px -18px rgba(0,0,0,0.6); }
+.mode-card::before{
+  content:""; position:absolute; top:0; left:-60%; width:40%; height:100%;
+  background:linear-gradient(120deg, transparent, rgba(201,162,77,0.16), transparent);
+  transform:skewX(-20deg); transition:left .6s ease;
+}
+.mode-card:hover::before{ left:130%; }
+.mode-card h2{ font-family:'Shippori Mincho', serif; font-size:22px; margin:0 0 8px; color:var(--ivory); }
+.mode-card p{ margin:0; font-size:13px; color:var(--text-muted); line-height:1.6; }
+.mode-tag{ display:inline-block; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); margin-bottom:10px; }
+
+.card{
+  background:linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  border:1px solid rgba(201,162,77,0.25); border-radius:12px; padding:18px 20px; margin-bottom:16px;
+}
+.card h3{ font-family:'Shippori Mincho', serif; font-size:14px; letter-spacing:0.1em; text-transform:uppercase; margin:0 0 12px; color:var(--gold); }
+
+.ol-grid{ display:grid; grid-template-columns:260px 1fr 240px; gap:20px; align-items:start; }
+@media (max-width:900px){ .ol-grid{ grid-template-columns:1fr; } }
+
+.field{ display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.field label{ font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); }
+input, select{
+  background:var(--bg-1); color:var(--text); border:1px solid rgba(201,162,77,0.35);
+  border-radius:6px; padding:9px 10px; font-size:13px; font-family:inherit; width:100%;
+}
+
+.room-list, .player-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.room-row, .player-row{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:rgba(255,255,255,0.03); border:1px solid rgba(201,162,77,0.15);
+  border-radius:8px; padding:8px 12px; font-size:13px;
+}
+.room-row .meta{ color:var(--text-muted); font-size:11px; }
+.empty-hint{ color:var(--text-muted); font-size:12px; padding:8px 2px; }
+.status-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+.status-dot.lobby{ background:#7d9a5c; }
+.status-dot.playing{ background:var(--vermillion); }
+
+.back-btn{ margin-top:6px; }
+
+.game-topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+.game-title{ font-family:'Shippori Mincho', serif; font-size:16px; color:var(--ivory); }
+.game-timer{ font-size:12px; color:var(--text-muted); }
+
+.game-main{ display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+
+.board-scroll{
+  max-width:min(600px, 90vw); max-height:600px; overflow:auto;
+  background:linear-gradient(155deg, var(--wood-hi), var(--wood-b) 45%, var(--wood-a) 100%);
+  padding:14px; border-radius:10px; box-shadow:0 20px 50px -15px rgba(0,0,0,0.65);
+  flex-shrink:0;
+}
+#boardCanvas{ display:block; border-radius:4px; cursor:pointer; }
+
+.side-panel{ width:250px; flex-shrink:0; }
+.score-row{ display:flex; align-items:center; gap:10px; padding:6px 0; font-size:14px; }
+.score-row + .score-row{ border-top:1px solid rgba(201,162,77,0.15); }
+.score-num{ margin-left:auto; font-size:19px; font-weight:700; font-family:'Shippori Mincho', serif; color:var(--ivory); }
+.mini-disc{ width:16px; height:16px; border-radius:50%; flex-shrink:0; background:var(--sumi); }
+.mini-disc.white{ background:radial-gradient(circle at 32% 28%, #fffdf6, var(--ivory) 75%); }
+.mini-disc.black{ background:radial-gradient(circle at 32% 28%, #3d362d, var(--sumi) 72%); }
+.turn-line{ display:flex; align-items:center; gap:10px; font-size:14px; }
+.message{ margin-top:10px; font-size:13px; color:var(--gold); min-height:32px; line-height:1.5; }
+.message.over{ color:var(--ivory); font-weight:500; }
+
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(8,5,3,0.72); display:flex; align-items:center; justify-content:center;
+  z-index:50; padding:20px; animation:fadeIn .2s ease;
+}
+.modal-box{
+  background:var(--panel); border:1px solid rgba(201,162,77,0.3); border-radius:14px;
+  padding:26px 26px; width:100%; max-width:360px;
+}
+.modal-box h3{ font-family:'Shippori Mincho', serif; margin:0 0 16px; font-size:18px; color:var(--ivory); }
+.modal-actions{ display:flex; gap:10px; margin-top:18px; }
+.modal-actions .btn{ flex:1; }
+.tab-row{ display:flex; gap:8px; margin-bottom:16px; }
+.tab-btn{ flex:1; padding:8px; border-radius:6px; border:1px solid rgba(201,162,77,0.3); background:transparent; color:var(--text-muted); font-size:12px; cursor:pointer; font-family:inherit; }
+.tab-btn.active{ background:rgba(201,162,77,0.15); color:var(--gold); font-weight:700; }
+.form-error{ color:var(--danger); font-size:12px; min-height:16px; margin-top:4px; }
+.stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+.stat-box{ background:rgba(255,255,255,0.03); border-radius:8px; padding:10px; text-align:center; }
+.stat-box .num{ font-size:20px; font-weight:700; font-family:'Shippori Mincho', serif; color:var(--ivory); }
+.stat-box .lbl{ font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">オセロ <span>Online</span></div>
+    <div class="user-box" id="userBox">
+      <button class="btn ghost" id="signInBtn">サインイン</button>
+    </div>
+  </header>
+
+  <main id="viewLobby" class="view">
+    <div class="lobby-hero">
+      <h1>好きな相手と、好きな盤面で。</h1>
+      <p>Vs CPU で練習するか、Online で対戦相手を見つけましょう。</p>
+    </div>
+    <div class="mode-grid">
+      <div class="mode-card" id="btnModeOnline">
+        <span class="mode-tag">Multiplayer</span>
+        <h2>オセロ Online</h2>
+        <p>ルームを作って対戦・観戦。レーティング付き。サインインが必要です。</p>
+      </div>
+      <div class="mode-card" id="btnModeCpu">
+        <span class="mode-tag">Practice</span>
+        <h2>Vs CPU</h2>
+        <p>難易度と手番を選んで、ひとりで練習対局。</p>
+      </div>
+    </div>
+  </main>
+
+  <main id="viewOnlineLobby" class="view hidden">
+    <div class="ol-grid">
+      <section class="card">
+        <h3>ルームを作る</h3>
+        <div class="field">
+          <label>ルーム名</label>
+          <input id="roomNameInput" maxlength="24" placeholder="例: 初心者歓迎">
+        </div>
+        <div class="field">
+          <label>盤の大きさ</label>
+          <select id="boardSizeSelect">
+            <option value="8">8 × 8（標準）</option>
+            <option value="10">10 × 10</option>
+            <option value="12">12 × 12</option>
+            <option value="16">16 × 16</option>
+          </select>
+        </div>
+        <button class="btn primary" id="createRoomBtn" style="width:100%;">ルームを作成</button>
+      </section>
+
+      <section class="card">
+        <h3>参加できるルーム</h3>
+        <div id="waitingRooms" class="room-list"><p class="empty-hint">読み込み中…</p></div>
+        <h3>観戦できるルーム</h3>
+        <div id="playingRooms" class="room-list"><p class="empty-hint">読み込み中…</p></div>
+      </section>
+
+      <section class="card">
+        <h3>オンラインのプレイヤー</h3>
+        <div id="onlinePlayers" class="player-list"><p class="empty-hint">読み込み中…</p></div>
+      </section>
+    </div>
+    <button class="btn ghost back-btn" id="backFromOnlineLobby">← ロビーに戻る</button>
+  </main>
+
+  <main id="viewGame" class="view hidden">
+    <div class="game-topbar">
+      <button class="btn ghost" id="backFromGame">← 退出</button>
+      <div class="game-title" id="gameTitle"></div>
+      <div class="game-timer" id="idleHint"></div>
+    </div>
+    <div class="game-main">
+      <div class="board-scroll" id="boardScroll">
+        <canvas id="boardCanvas"></canvas>
+      </div>
+      <aside class="side-panel">
+        <div class="card">
+          <h3>スコア</h3>
+          <div class="score-row"><span class="mini-disc black"></span>Black<span class="score-num" id="scoreBlack">2</span></div>
+          <div class="score-row"><span class="mini-disc white"></span>White<span class="score-num" id="scoreWhite">2</span></div>
+        </div>
+        <div class="card">
+          <h3>手番</h3>
+          <div class="turn-line"><span class="mini-disc" id="turnDisc"></span><span id="turnName"></span></div>
+          <div class="message" id="gameMessage"></div>
+        </div>
+        <button class="btn danger" id="resignBtn">投了する (Esc)</button>
+      </aside>
+    </div>
+  </main>
+
+</div>
+
+<!-- Auth modal -->
+<div class="modal-overlay hidden" id="authModal">
+  <div class="modal-box">
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabSignIn">サインイン</button>
+      <button class="tab-btn" id="tabSignUp">新規登録</button>
+    </div>
+    <h3 id="authTitle">サインイン</h3>
+    <div class="field">
+      <label>ユーザー名</label>
+      <input id="usernameInput" maxlength="20" placeholder="taro" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>パスワード</label>
+      <input id="passwordInput" type="password" placeholder="6文字以上" autocomplete="current-password">
+    </div>
+    <div class="form-error" id="authError"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="authCancelBtn">閉じる</button>
+      <button class="btn primary" id="authSubmitBtn">サインイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile modal -->
+<div class="modal-overlay hidden" id="profileModal">
+  <div class="modal-box">
+    <h3 id="profileName">Player</h3>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num" id="statRating">1000</div><div class="lbl">Rating</div></div>
+      <div class="stat-box"><div class="num" id="statPlaytime">0m</div><div class="lbl">Play time</div></div>
+      <div class="stat-box"><div class="num" id="statWins">0</div><div class="lbl">Wins</div></div>
+      <div class="stat-box"><div class="num" id="statLosses">0</div><div class="lbl">Losses</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="profileCloseBtn">閉じる</button>
+      <button class="btn danger" id="signOutBtn" style="margin-top:0;">サインアウト</button>
+    </div>
+  </div>
+</div>
+
+<!-- CPU setup modal -->
+<div class="modal-overlay hidden" id="cpuSetupModal">
+  <div class="modal-box">
+    <h3>Vs CPU 設定</h3>
+    <div class="field">
+      <label>盤の大きさ</label>
+      <select id="cpuBoardSize">
+        <option value="8" selected>8 × 8（標準）</option>
+        <option value="10">10 × 10</option>
+        <option value="12">12 × 12</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>手番</label>
+      <select id="cpuColorSelect">
+        <option value="1" selected>黒（先手）</option>
+        <option value="-1">白（後手）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>難易度</label>
+      <select id="cpuDiffSelect">
+        <option value="1">やさしい</option>
+        <option value="3" selected>ふつう</option>
+        <option value="5">むずかしい</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cpuCancelBtn">閉じる</button>
+      <button class="btn primary" id="cpuStartBtn">対局開始</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resign confirm modal -->
+<div class="modal-overlay hidden" id="resignModal">
+  <div class="modal-box">
+    <h3>本当に投了しますか？</h3>
+    <p style="font-size:13px; color:var(--text-muted); margin:0;">この対局は不戦敗として記録されます。</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="resignCancelBtn">キャンセル</button>
+      <button class="btn danger" id="resignConfirmBtn" style="margin-top:0;">投了する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// ============================================================
+// Config
+// ============================================================
+const SUPABASE_URL = "https://nurrabxcvyfajsmjwgkp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_45F1e-RE-mrUauuVDsDZmQ_U5QYal0r";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const CELL = 52;
+const IDLE_LIMIT_MS = 30000;
+
+// ============================================================
+// Generic Othello engine (works for any even board size N)
+// ============================================================
+const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+function initialBoard(n){
+  const b = [];
+  for(let r=0;r<n;r++) b.push(new Array(n).fill(0));
+  const a = n/2 - 1, c2 = n/2;
+  b[a][a] = -1; b[a][c2] = 1;
+  b[c2][a] = 1; b[c2][c2] = -1;
+  return b;
+}
+function cloneBoard(b){ return b.map(row=>row.slice()); }
+function inBounds(n,r,c){ return r>=0 && r<n && c>=0 && c<n; }
+
+function getFlips(b,n,r,c,player){
+  if(b[r][c] !== 0) return null;
+  let all = [];
+  for(const [dr,dc] of DIRS){
+    let nr=r+dr, nc=c+dc, line=[];
+    while(inBounds(n,nr,nc) && b[nr][nc] === -player){ line.push([nr,nc]); nr+=dr; nc+=dc; }
+    if(line.length>0 && inBounds(n,nr,nc) && b[nr][nc]===player) all = all.concat(line);
+  }
+  return all;
+}
+function validMoves(b,n,player){
+  const moves=[];
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const f = getFlips(b,n,r,c,player);
+    if(f && f.length>0) moves.push({r,c,flips:f});
+  }
+  return moves;
+}
+function applyMove(b,r,c,player,flips){
+  b[r][c]=player;
+  for(const [fr,fc] of flips) b[fr][fc]=player;
+}
+function countDiscs(b,n){
+  let black=0,white=0,empty=0;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    if(b[r][c]===1) black++; else if(b[r][c]===-1) white++; else empty++;
+  }
+  return {black,white,empty};
+}
+function weightAt(n,r,c){
+  const corner = x => x===0 || x===n-1;
+  const near = x => x===1 || x===n-2;
+  if(corner(r) && corner(c)) return 120;
+  if((corner(r)&&near(c)) || (near(r)&&corner(c))) return -20;
+  if(near(r) && near(c)) return -40;
+  if(corner(r) || corner(c)) return 20;
+  if(near(r) || near(c)) return -5;
+  return 3;
+}
+function evaluate(b,n,aiPlayer){
+  const {empty} = countDiscs(b,n);
+  let positional=0, material=0;
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const v=b[r][c];
+    if(v!==0){ const s=(v===aiPlayer)?1:-1; positional += s*weightAt(n,r,c); material += s; }
+  }
+  const myMoves = validMoves(b,n,aiPlayer).length;
+  const oppMoves = validMoves(b,n,-aiPlayer).length;
+  const mobility = (myMoves-oppMoves)*12;
+  if(empty <= 8) return material*100 + positional*0.5 + mobility;
+  return positional*1.5 + mobility + material*2;
+}
+function minimax(b,n,depth,player,aiPlayer,alpha,beta){
+  const moves = validMoves(b,n,player);
+  if(depth===0) return {score: evaluate(b,n,aiPlayer)};
+  if(moves.length===0){
+    const opp = validMoves(b,n,-player);
+    if(opp.length===0){
+      const {black,white}=countDiscs(b,n);
+      const diff = aiPlayer===1 ? (black-white) : (white-black);
+      return {score: diff*10000};
+    }
+    return {score: minimax(b,n,depth-1,-player,aiPlayer,alpha,beta).score};
+  }
+  let bestMove = moves[0];
+  if(player===aiPlayer){
+    let value=-Infinity;
+    for(const mv of moves){
+      const nb=cloneBoard(b); applyMove(nb,mv.r,mv.c,player,mv.flips);
+      const res = minimax(nb,n,depth-1,-player,aiPlayer,alpha,beta);
+      if(res.score>value){ value=res.score; bestMove=mv; }
+      alpha=Math.max(alpha,value); if(alpha>=beta) break;
+    }
+    return {score:value, move:bestMove};
+  } else {
+    let value=Infinity;
+    for(const mv of moves){
+      const nb=cloneBoard(b); applyMove(nb,mv.r,mv.c,player,mv.flips);
+      const res = minimax(nb,n,depth-1,-player,aiPlayer,alpha,beta);
+      if(res.score<value){ value=res.score; bestMove=mv; }
+      beta=Math.min(beta,value); if(alpha>=beta) break;
+    }
+    return {score:value, move:bestMove};
+  }
+}
+
+// ============================================================
+// Global state
+// ============================================================
+const state = {
+  session: null,
+  profile: null,
+  mode: null,          // 'cpu' | 'online'
+  n: 8,
+  board: null,
+  turn: 1,
+  gameOver: false,
+  myColor: 1,          // for cpu mode: which color the human plays
+  cpuDepth: 3,
+  isSpectator: false,
+  roomId: null,
+  room: null,
+  roomChannel: null,
+  presenceChannel: null,
+  lobbyRefreshTimer: null,
+  lastActivity: Date.now(),
+  gameStartTime: null,
+  anims: [],           // {r,c,from,to,start,delay}
+  hoverCell: null,
+  busy: false
+};
+
+// ============================================================
+// DOM refs
+// ============================================================
+const $ = id => document.getElementById(id);
+const viewLobby = $("viewLobby");
+const viewOnlineLobby = $("viewOnlineLobby");
+const viewGame = $("viewGame");
+const userBox = $("userBox");
+
+function showView(v){
+  [viewLobby, viewOnlineLobby, viewGame].forEach(el => el.classList.add("hidden"));
+  v.classList.remove("hidden");
+}
+
+// ============================================================
+// Auth
+// ============================================================
+let authMode = "signin";
+
+function openAuthModal(){
+  $("authModal").classList.remove("hidden");
+  $("authError").textContent = "";
+}
+function closeAuthModal(){ $("authModal").classList.add("hidden"); }
+
+$("signInBtn").addEventListener("click", openAuthModal);
+$("authCancelBtn").addEventListener("click", closeAuthModal);
+
+$("tabSignIn").addEventListener("click", () => setAuthMode("signin"));
+$("tabSignUp").addEventListener("click", () => setAuthMode("signup"));
+
+function setAuthMode(m){
+  authMode = m;
+  $("tabSignIn").classList.toggle("active", m==="signin");
+  $("tabSignUp").classList.toggle("active", m==="signup");
+  $("authTitle").textContent = m==="signin" ? "サインイン" : "新規登録";
+  $("authSubmitBtn").textContent = m==="signin" ? "サインイン" : "登録する";
+  $("authError").textContent = "";
+}
+
+function usernameToAuthEmail(username){
+  const clean = username.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, "");
+  return clean ? (clean + "@othello.local") : "";
+}
+
+$("authSubmitBtn").addEventListener("click", async () => {
+  const rawUsername = $("usernameInput").value.trim();
+  const password = $("passwordInput").value;
+  const errEl = $("authError");
+  errEl.textContent = "";
+  if(!rawUsername || !password){ errEl.textContent = "ユーザー名とパスワードを入力してください。"; return; }
+  const authEmail = usernameToAuthEmail(rawUsername);
+  if(!authEmail){ errEl.textContent = "ユーザー名は英数字を含めてください。"; return; }
+
+  $("authSubmitBtn").disabled = true;
+  try{
+    if(authMode === "signup"){
+      const { data, error } = await sb.auth.signUp({ email: authEmail, password });
+      if(error){
+        if(/already registered|already exists/i.test(error.message)) throw new Error("そのユーザー名は既に使われています。");
+        throw error;
+      }
+      if(data.user){
+        await sb.from("profiles").update({ username: rawUsername }).eq("id", data.user.id);
+      }
+      if(!data.session){
+        errEl.textContent = "登録できませんでした。もう一度お試しください。";
+      } else {
+        closeAuthModal();
+      }
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email: authEmail, password });
+      if(error){
+        if(/invalid login credentials/i.test(error.message)) throw new Error("ユーザー名またはパスワードが違います。");
+        throw error;
+      }
+      closeAuthModal();
+    }
+  } catch(e){
+    errEl.textContent = e.message || "エラーが発生しました。";
+  } finally {
+    $("authSubmitBtn").disabled = false;
+  }
+});
+
+sb.auth.onAuthStateChange((event, session) => {
+  state.session = session;
+  refreshUserBox();
+});
+
+async function refreshUserBox(){
+  if(!state.session){
+    userBox.innerHTML = '<button class="btn ghost" id="signInBtn">サインイン</button>';
+    $("signInBtn").addEventListener("click", openAuthModal);
+    state.profile = null;
+    return;
+  }
+  const { data } = await sb.from("profiles").select("*").eq("id", state.session.user.id).single();
+  state.profile = data;
+  userBox.innerHTML =
+    '<span class="user-name" id="userNameBtn">' + escapeHtml(data?.username || "player") + '</span>' +
+    '<span class="user-rating">' + (data?.rating ?? 1000) + '</span>';
+  $("userNameBtn").addEventListener("click", openProfileModal);
+  updatePresenceStatus();
+}
+
+function openProfileModal(){
+  if(!state.profile) return;
+  $("profileName").textContent = state.profile.username;
+  $("statRating").textContent = state.profile.rating;
+  $("statWins").textContent = state.profile.wins;
+  $("statLosses").textContent = state.profile.losses;
+  const mins = Math.round(state.profile.play_seconds / 60);
+  $("statPlaytime").textContent = mins < 60 ? (mins + "m") : (Math.floor(mins/60) + "h" + (mins%60) + "m");
+  $("profileModal").classList.remove("hidden");
+}
+$("profileCloseBtn").addEventListener("click", () => $("profileModal").classList.add("hidden"));
+$("signOutBtn").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  $("profileModal").classList.add("hidden");
+  showView(viewLobby);
+});
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ============================================================
+// Lobby: mode selection
+// ============================================================
+$("btnModeCpu").addEventListener("click", () => {
+  $("cpuSetupModal").classList.remove("hidden");
+});
+$("cpuCancelBtn").addEventListener("click", () => $("cpuSetupModal").classList.add("hidden"));
+$("cpuStartBtn").addEventListener("click", () => {
+  $("cpuSetupModal").classList.add("hidden");
+  const n = parseInt($("cpuBoardSize").value, 10);
+  const humanColor = parseInt($("cpuColorSelect").value, 10);
+  const depth = parseInt($("cpuDiffSelect").value, 10);
+  startCpuGame(n, humanColor, depth);
+});
+
+$("btnModeOnline").addEventListener("click", () => {
+  if(!state.session){ openAuthModal(); return; }
+  enterOnlineLobby();
+});
+$("backFromOnlineLobby").addEventListener("click", () => {
+  stopOnlineLobbyRefresh();
+  leavePresenceLobby();
+  showView(viewLobby);
+});
+$("backFromGame").addEventListener("click", () => leaveGame());
+
+// ============================================================
+// CPU game
+// ============================================================
+function startCpuGame(n, humanColor, depth){
+  state.mode = "cpu";
+  state.n = n;
+  state.board = initialBoard(n);
+  state.turn = 1;
+  state.gameOver = false;
+  state.myColor = humanColor;
+  state.cpuDepth = depth;
+  state.isSpectator = false;
+  state.anims = [];
+  setGameMessage("");
+  showView(viewGame);
+  $("gameTitle").textContent = "Vs CPU";
+  $("idleHint").textContent = "";
+  $("resignBtn").textContent = "投了する (Esc)";
+  setupCanvas();
+  renderGameMeta();
+  drawLoopStart();
+  if(state.turn !== state.myColor) setTimeout(cpuMove, 500);
+}
+
+function cpuMove(){
+  if(state.gameOver) return;
+  const result = minimax(state.board, state.n, state.cpuDepth, state.turn, state.turn, -Infinity, Infinity);
+  const mv = result.move || validMoves(state.board, state.n, state.turn)[0];
+  if(!mv){ finishLocalGame(); return; }
+  const prev = cloneBoard(state.board);
+  applyMove(state.board, mv.r, mv.c, state.turn, mv.flips);
+  queueAnimations(prev, state.board, mv);
+  advanceTurnLocal();
+}
+
+function isMyTurnCpu(){ return state.turn === state.myColor; }
+
+// ============================================================
+// Shared local move handling (cpu mode)
+// ============================================================
+function advanceTurnLocal(){
+  renderGameMeta();
+  const nextMoves = validMoves(state.board, state.n, -state.turn);
+  if(nextMoves.length > 0){
+    state.turn = -state.turn;
+    setGameMessage("");
+    renderGameMeta();
+    if(state.mode==="cpu" && state.turn !== state.myColor){
+      setGameMessage("CPU が考え中…");
+      setTimeout(cpuMove, 500);
+    }
+    return;
+  }
+  const stillMoves = validMoves(state.board, state.n, state.turn);
+  if(stillMoves.length === 0){ finishLocalGame(); return; }
+  const passName = state.turn === 1 ? "白" : "黒";
+  setGameMessage(passName + "はパスです。");
+  if(state.mode==="cpu" && state.turn !== state.myColor){
+    setTimeout(cpuMove, 500);
+  }
+}
+
+function finishLocalGame(){
+  state.gameOver = true;
+  const {black,white} = countDiscs(state.board, state.n);
+  let text;
+  if(black===white) text = "引き分け " + black + "–" + white + "。";
+  else {
+    const winner = black>white ? "黒" : "白";
+    text = winner + "の勝ち（" + Math.max(black,white) + "–" + Math.min(black,white) + "）。";
+  }
+  setGameMessage(text, true);
+  renderGameMeta();
+}
+
+function onBoardClick(r,c){
+  if(state.mode==="cpu"){
+    if(state.gameOver || !isMyTurnCpu()) return;
+    const flips = getFlips(state.board, state.n, r, c, state.turn);
+    if(!flips || flips.length===0) return;
+    const prev = cloneBoard(state.board);
+    applyMove(state.board, r, c, state.turn, flips);
+    queueAnimations(prev, state.board, {r,c});
+    advanceTurnLocal();
+  } else if(state.mode==="online"){
+    onlineBoardClick(r,c);
+  }
+}
+
+// ============================================================
+// Online lobby
+// ============================================================
+function enterOnlineLobby(){
+  showView(viewOnlineLobby);
+  refreshRoomLists();
+  startOnlineLobbyRefresh();
+  joinPresenceLobby();
+}
+
+function startOnlineLobbyRefresh(){
+  stopOnlineLobbyRefresh();
+  state.lobbyRefreshTimer = setInterval(refreshRoomLists, 4000);
+}
+function stopOnlineLobbyRefresh(){
+  if(state.lobbyRefreshTimer){ clearInterval(state.lobbyRefreshTimer); state.lobbyRefreshTimer=null; }
+}
+
+async function refreshRoomLists(){
+  const { data, error } = await sb.from("rooms")
+    .select("id,name,board_size,status,black_id,white_id,created_at")
+    .in("status", ["waiting","playing"])
+    .order("created_at", { ascending:false })
+    .limit(30);
+  if(error) return;
+  const waitEl = $("waitingRooms"), playEl = $("playingRooms");
+  const waiting = data.filter(r => r.status==="waiting");
+  const playing = data.filter(r => r.status==="playing");
+
+  waitEl.innerHTML = waiting.length ? "" : '<p class="empty-hint">現在、待機中のルームはありません。</p>';
+  waiting.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "room-row";
+    row.innerHTML = '<div><span class="status-dot lobby"></span>' + escapeHtml(r.name) +
+      '<div class="meta">' + r.board_size + '×' + r.board_size + '</div></div>';
+    const btn = document.createElement("button");
+    btn.className = "btn primary"; btn.textContent = "参加";
+    btn.addEventListener("click", () => joinRoom(r.id));
+    row.appendChild(btn);
+    waitEl.appendChild(row);
+  });
+
+  playEl.innerHTML = playing.length ? "" : '<p class="empty-hint">現在、進行中のルームはありません。</p>';
+  playing.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "room-row";
+    row.innerHTML = '<div><span class="status-dot playing"></span>' + escapeHtml(r.name) +
+      '<div class="meta">' + r.board_size + '×' + r.board_size + '</div></div>';
+    const btn = document.createElement("button");
+    btn.className = "btn ghost"; btn.textContent = "観戦";
+    btn.addEventListener("click", () => spectateRoom(r.id));
+    row.appendChild(btn);
+    playEl.appendChild(row);
+  });
+}
+
+$("createRoomBtn").addEventListener("click", async () => {
+  if(!state.session) { openAuthModal(); return; }
+  const name = $("roomNameInput").value.trim() || (state.profile?.username + " のルーム");
+  const n = parseInt($("boardSizeSelect").value, 10);
+  const { data, error } = await sb.from("rooms").insert({
+    name, board_size: n, black_id: state.session.user.id,
+    status: "waiting", current_turn: 1, board: initialBoard(n)
+  }).select().single();
+  if(error){ alert(error.message); return; }
+  await joinRoom(data.id, true);
+});
+
+async function joinRoom(roomId, isCreator){
+  if(!isCreator){
+    const { data, error } = await sb.from("rooms")
+      .update({ white_id: state.session.user.id, status: "playing", last_move_at: new Date().toISOString() })
+      .eq("id", roomId).is("white_id", null).eq("status","waiting")
+      .select().single();
+    if(error || !data){ alert("このルームはすでに埋まっています。"); refreshRoomLists(); return; }
+  }
+  const { data: room } = await sb.from("rooms").select("*").eq("id", roomId).single();
+  enterRoom(room, false);
+}
+
+async function spectateRoom(roomId){
+  const { data: room } = await sb.from("rooms").select("*").eq("id", roomId).single();
+  if(!room) return;
+  enterRoom(room, true);
+}
+
+// ============================================================
+// Online game room
+// ============================================================
+function enterRoom(room, spectator){
+  stopOnlineLobbyRefresh();
+  leavePresenceLobby();
+
+  state.mode = "online";
+  state.roomId = room.id;
+  state.room = room;
+  state.n = room.board_size;
+  state.board = room.board;
+  state.turn = room.current_turn;
+  state.gameOver = room.status === "finished";
+  state.isSpectator = spectator || (state.session?.user.id !== room.black_id && state.session?.user.id !== room.white_id);
+  state.myColor = state.session?.user.id === room.black_id ? 1 : (state.session?.user.id === room.white_id ? -1 : 0);
+  state.anims = [];
+  state.gameStartTime = Date.now();
+  state.lastActivity = Date.now();
+
+  showView(viewGame);
+  $("gameTitle").textContent = escapeHtml(room.name) + (state.isSpectator ? "（観戦中）" : "");
+  $("resignBtn").classList.toggle("hidden", state.isSpectator);
+  setGameMessage(room.status==="waiting" ? "対戦相手を待っています…" : "");
+  setupCanvas();
+  renderGameMeta();
+  drawLoopStart();
+  subscribeRoom(room.id);
+  updatePresenceStatus("playing");
+}
+
+function subscribeRoom(roomId){
+  unsubscribeRoom();
+  state.roomChannel = sb.channel("room-" + roomId)
+    .on("postgres_changes", { event:"UPDATE", schema:"public", table:"rooms", filter:"id=eq."+roomId }, payload => {
+      onRoomUpdate(payload.new);
+    })
+    .subscribe();
+}
+function unsubscribeRoom(){
+  if(state.roomChannel){ sb.removeChannel(state.roomChannel); state.roomChannel=null; }
+}
+
+function onRoomUpdate(newRoom){
+  const prevBoard = state.board;
+  state.room = newRoom;
+  state.turn = newRoom.current_turn;
+  state.n = newRoom.board_size;
+  const changed = boardsDiffer(prevBoard, newRoom.board);
+  if(changed.length){
+    // find the newly placed disc (was 0, now non-zero) to radiate the ripple from
+    let origin = changed[0];
+    for(const ch of changed){ if(prevBoard[ch.r][ch.c]===0){ origin = ch; break; } }
+    queueAnimationsFromDiff(changed, origin);
+  }
+  state.board = newRoom.board;
+
+  if(newRoom.status === "waiting"){
+    setGameMessage("対戦相手を待っています…");
+  } else if(newRoom.status === "playing"){
+    if(!state.gameOver) setGameMessage("");
+  } else if(newRoom.status === "finished"){
+    state.gameOver = true;
+    announceOnlineResult(newRoom);
+    if(state.session && !newRoom.ratings_applied){
+      sb.rpc("finish_game", { p_room_id: newRoom.id });
+    }
+    recordPlaytimeOnce();
+  }
+  renderGameMeta();
+}
+
+function boardsDiffer(a,b){
+  const out=[];
+  for(let r=0;r<a.length;r++) for(let c=0;c<a[r].length;c++){
+    if(a[r][c] !== b[r][c]) out.push({r,c});
+  }
+  return out;
+}
+
+function announceOnlineResult(room){
+  const {black,white} = countDiscs(state.board, state.n);
+  let text;
+  if(room.winner_id === null) text = "引き分け " + black + "–" + white + "。";
+  else {
+    const iWon = room.winner_id === state.session?.user.id;
+    const winnerColor = room.winner_id === room.black_id ? "黒" : "白";
+    text = winnerColor + "の勝ち（" + Math.max(black,white) + "–" + Math.min(black,white) + "）" + (state.isSpectator ? "" : (iWon ? " — あなたの勝ちです！" : " — あなたの負けです。"));
+  }
+  setGameMessage(text, true);
+}
+
+async function onlineBoardClick(r,c){
+  if(state.isSpectator || state.gameOver || state.busy) return;
+  if(state.room.status !== "playing") return;
+  if(state.turn !== state.myColor) return;
+  const flips = getFlips(state.board, state.n, r, c, state.turn);
+  if(!flips || flips.length===0) return;
+
+  state.busy = true;
+  state.lastActivity = Date.now();
+  const prev = cloneBoard(state.board);
+  const nb = cloneBoard(state.board);
+  applyMove(nb, r, c, state.turn, flips);
+  queueAnimations(prev, nb, {r,c});
+  state.board = nb;
+
+  let nextTurn = -state.turn;
+  let status = "playing";
+  let winner_id = null;
+  const nextMoves = validMoves(nb, state.n, nextTurn);
+  if(nextMoves.length === 0){
+    const sameMoves = validMoves(nb, state.n, state.turn);
+    if(sameMoves.length === 0){
+      status = "finished";
+      const {black,white} = countDiscs(nb, state.n);
+      if(black>white) winner_id = state.room.black_id;
+      else if(white>black) winner_id = state.room.white_id;
+      else winner_id = null;
+    } else {
+      nextTurn = state.turn; // opponent passes
+    }
+  }
+
+  const update = { board: nb, current_turn: nextTurn, last_move_at: new Date().toISOString() };
+  if(status === "finished"){ update.status = "finished"; update.winner_id = winner_id; }
+
+  const { data, error } = await sb.from("rooms").update(update).eq("id", state.roomId).select().single();
+  state.busy = false;
+  if(!error && data){
+    state.room = data;
+    state.turn = data.current_turn;
+    if(data.status === "finished"){
+      state.gameOver = true;
+      announceOnlineResult(data);
+      sb.rpc("finish_game", { p_room_id: data.id });
+      recordPlaytimeOnce();
+    }
+  }
+  renderGameMeta();
+}
+
+let playtimeRecorded = false;
+async function recordPlaytimeOnce(){
+  if(playtimeRecorded || !state.session || state.isSpectator) return;
+  playtimeRecorded = true;
+  const seconds = Math.round((Date.now() - (state.gameStartTime||Date.now()))/1000);
+  await sb.rpc("increment_play_seconds", { p_seconds: seconds });
+}
+
+async function forfeitOnline(reason){
+  if(!state.room || state.isSpectator || state.gameOver) return;
+  const opponent = state.myColor===1 ? state.room.white_id : state.room.black_id;
+  const { data } = await sb.from("rooms").update({
+    status:"finished", winner_id: opponent || null
+  }).eq("id", state.roomId).eq("status","playing").select().single();
+  if(data){
+    state.room = data;
+    state.gameOver = true;
+    setGameMessage(reason, true);
+    sb.rpc("finish_game", { p_room_id: data.id });
+    recordPlaytimeOnce();
+  }
+}
+
+function leaveGame(){
+  clearInterval(idleCheckTimer);
+  drawLoopStop();
+  if(state.mode === "online"){
+    unsubscribeRoom();
+    updatePresenceStatus("lobby");
+    enterOnlineLobby();
+  } else {
+    showView(viewLobby);
+  }
+  state.mode = null;
+  playtimeRecorded = false;
+}
+
+$("resignBtn").addEventListener("click", () => $("resignModal").classList.remove("hidden"));
+$("resignCancelBtn").addEventListener("click", () => $("resignModal").classList.add("hidden"));
+$("resignConfirmBtn").addEventListener("click", () => {
+  $("resignModal").classList.add("hidden");
+  if(state.mode==="online"){
+    forfeitOnline("投了しました。");
+  } else if(state.mode==="cpu"){
+    state.gameOver = true;
+    const loser = state.myColor===1 ? "黒" : "白";
+    setGameMessage(loser + "が投了しました。", true);
+    renderGameMeta();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape" && viewGame && !viewGame.classList.contains("hidden") && !state.isSpectator && !state.gameOver){
+    $("resignModal").classList.remove("hidden");
+  }
+});
+
+// ============================================================
+// Idle detection (30s of no input => auto-disconnect / forfeit)
+// ============================================================
+["mousemove","keydown","click","touchstart","wheel"].forEach(evt => {
+  document.addEventListener(evt, () => { state.lastActivity = Date.now(); });
+});
+const idleCheckTimer = setInterval(() => {
+  if(state.mode==="online" && !state.isSpectator && !state.gameOver && state.room && state.room.status==="playing"){
+    if(Date.now() - state.lastActivity > IDLE_LIMIT_MS){
+      forfeitOnline("30秒操作がなかったため、切断扱いになりました。");
+    }
+  }
+}, 2000);
+
+// ============================================================
+// Presence (online players list)
+// ============================================================
+function joinPresenceLobby(){
+  if(state.presenceChannel) return;
+  state.presenceChannel = sb.channel("presence-lobby", { config: { presence: { key: state.session.user.id } } });
+  state.presenceChannel.on("presence", { event: "sync" }, renderOnlinePlayers);
+  state.presenceChannel.subscribe(async (status) => {
+    if(status === "SUBSCRIBED"){
+      await state.presenceChannel.track({
+        username: state.profile?.username || "player",
+        rating: state.profile?.rating || 1000,
+        status: "lobby"
+      });
+    }
+  });
+}
+function leavePresenceLobby(){
+  if(state.presenceChannel){ sb.removeChannel(state.presenceChannel); state.presenceChannel=null; }
+}
+function updatePresenceStatus(status){
+  if(state.presenceChannel){
+    state.presenceChannel.track({
+      username: state.profile?.username || "player",
+      rating: state.profile?.rating || 1000,
+      status: status || "lobby"
+    });
+  }
+}
+function renderOnlinePlayers(){
+  const el = $("onlinePlayers");
+  if(!state.presenceChannel){ return; }
+  const stateObj = state.presenceChannel.presenceState();
+  const people = [];
+  Object.values(stateObj).forEach(arr => arr.forEach(p => people.push(p)));
+  el.innerHTML = people.length ? "" : '<p class="empty-hint">オンラインのプレイヤーはいません。</p>';
+  people.sort((a,b) => (b.rating||0)-(a.rating||0));
+  people.forEach(p => {
+    const row = document.createElement("div");
+    row.className = "player-row";
+    row.innerHTML = '<div><span class="status-dot ' + (p.status==="playing"?"playing":"lobby") + '"></span>' +
+      escapeHtml(p.username) + '</div><span class="user-rating">' + (p.rating||1000) + '</span>';
+    el.appendChild(row);
+  });
+}
+
+// ============================================================
+// Canvas rendering
+// ============================================================
+const canvas = $("boardCanvas");
+const ctx = canvas.getContext("2d");
+let rafId = null;
+
+function setupCanvas(){
+  const n = state.n;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = (n*CELL) + "px";
+  canvas.style.height = (n*CELL) + "px";
+  canvas.width = n*CELL*dpr;
+  canvas.height = n*CELL*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+canvas.addEventListener("click", (e) => {
+  const r = Math.floor(e.offsetY / CELL);
+  const c = Math.floor(e.offsetX / CELL);
+  if(r<0||c<0||r>=state.n||c>=state.n) return;
+  onBoardClick(r,c);
+});
+canvas.addEventListener("mousemove", (e) => {
+  state.hoverCell = { r: Math.floor(e.offsetY/CELL), c: Math.floor(e.offsetX/CELL) };
+});
+canvas.addEventListener("mouseleave", () => { state.hoverCell = null; });
+
+function queueAnimations(prevBoard, newBoard, placedCell){
+  const now = performance.now();
+  for(let r=0;r<state.n;r++) for(let c=0;c<state.n;c++){
+    if(prevBoard[r][c] !== newBoard[r][c]){
+      const dist = Math.max(Math.abs(r-placedCell.r), Math.abs(c-placedCell.c));
+      state.anims.push({ r, c, from: prevBoard[r][c], to: newBoard[r][c], start: now, delay: dist*70 });
+    }
+  }
+}
+function queueAnimationsFromDiff(cells, originCell){
+  const now = performance.now();
+  const prevBoard = state.board;
+  for(const {r,c} of cells){
+    const dist = Math.max(Math.abs(r-originCell.r), Math.abs(c-originCell.c));
+    state.anims.push({ r, c, from: prevBoard[r][c], to: null, start: now, delay: dist*70, deferredTo:true });
+  }
+}
+
+function activeAnim(r,c){
+  for(let i=state.anims.length-1;i>=0;i--){
+    if(state.anims[i].r===r && state.anims[i].c===c) return state.anims[i];
+  }
+  return null;
+}
+
+function drawLoopStart(){ if(!rafId) rafId = requestAnimationFrame(draw); }
+function drawLoopStop(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
+
+function draw(ts){
+  rafId = requestAnimationFrame(draw);
+  const n = state.n;
+  const w = n*CELL, h = n*CELL;
+  ctx.clearRect(0,0,w,h);
+
+  const feltGrad = ctx.createLinearGradient(0,0,w,h);
+  feltGrad.addColorStop(0, "#0f4a37");
+  feltGrad.addColorStop(0.4, "#0c3d2c");
+  feltGrad.addColorStop(1, "#082e21");
+  ctx.fillStyle = feltGrad;
+  ctx.fillRect(0,0,w,h);
+
+  ctx.strokeStyle = "rgba(201,162,77,0.45)";
+  ctx.lineWidth = 1;
+  for(let i=0;i<=n;i++){
+    ctx.beginPath(); ctx.moveTo(i*CELL+0.5,0); ctx.lineTo(i*CELL+0.5,h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*CELL+0.5); ctx.lineTo(w,i*CELL+0.5); ctx.stroke();
+  }
+
+  const showMoves = canInteractNow();
+  const moveSet = showMoves ? new Set(validMoves(state.board,n,state.turn).map(m=>m.r+","+m.c)) : new Set();
+  const pulse = 0.4 + 0.3*Math.sin(ts/350);
+
+  for(let r=0;r<n;r++){
+    for(let c=0;c<n;c++){
+      const cx = c*CELL + CELL/2, cy = r*CELL + CELL/2;
+      const anim = activeAnim(r,c);
+      let val = state.board[r][c];
+      let scaleX = 1, drawVal = val;
+
+      if(anim){
+        const elapsed = ts - (anim.start + anim.delay);
+        if(elapsed < 0){
+          drawVal = anim.deferredTo ? anim.from : anim.from;
+          if(drawVal === 0){ continue; }
+        } else {
+          const dur = 380;
+          const t = Math.min(1, elapsed/dur);
+          if(anim.from === 0){
+            const s = 0.3 + 0.7*t;
+            drawVal = anim.to !== null ? anim.to : val;
+            scaleX = s;
+          } else {
+            scaleX = Math.abs(Math.cos(t*Math.PI));
+            drawVal = t < 0.5 ? anim.from : (anim.to !== null ? anim.to : val);
+          }
+          if(t>=1){
+            const idx = state.anims.indexOf(anim);
+            if(idx>=0) state.anims.splice(idx,1);
+            drawVal = val; scaleX = 1;
+          }
+        }
+      }
+
+      if(moveSet.has(r+","+c) && val===0){
+        ctx.beginPath();
+        ctx.arc(cx, cy, CELL*0.09, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(201,162,77," + pulse.toFixed(2) + ")";
+        ctx.fill();
+      }
+
+      if(drawVal !== 0){
+        drawDisc(cx, cy, CELL*0.4, drawVal, scaleX);
+      }
+    }
+  }
+
+  if(state.hoverCell && canInteractNow()){
+    const {r,c} = state.hoverCell;
+    if(r>=0&&c>=0&&r<n&&c<n && moveSet.has(r+","+c)){
+      ctx.strokeStyle = "rgba(201,162,77,0.7)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(c*CELL+1, r*CELL+1, CELL-2, CELL-2);
+    }
+  }
+}
+
+function canInteractNow(){
+  if(state.gameOver) return false;
+  if(state.mode==="cpu") return isMyTurnCpu();
+  if(state.mode==="online") return !state.isSpectator && state.room?.status==="playing" && state.turn===state.myColor;
+  return false;
+}
+
+function drawDisc(cx, cy, radius, val, scaleX){
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scaleX, 1);
+  ctx.beginPath();
+  ctx.arc(0,0,radius,0,Math.PI*2);
+  const grad = ctx.createRadialGradient(-radius*0.3,-radius*0.35,radius*0.1, 0,0,radius);
+  if(val === 1){
+    grad.addColorStop(0, "#3d362d"); grad.addColorStop(1, "#15110d");
+  } else {
+    grad.addColorStop(0, "#fffdf6"); grad.addColorStop(1, "#f3ead6");
+  }
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ============================================================
+// Game meta (score / turn text)
+// ============================================================
+function setGameMessage(text, over){
+  const el = $("gameMessage");
+  el.textContent = text || "";
+  el.classList.toggle("over", !!over);
+}
+
+function renderGameMeta(){
+  const {black,white} = countDiscs(state.board, state.n);
+  $("scoreBlack").textContent = black;
+  $("scoreWhite").textContent = white;
+  const turnDisc = $("turnDisc");
+  turnDisc.className = "mini-disc " + (state.turn===1 ? "black" : "white");
+  if(!state.gameOver){
+    const name = state.turn===1 ? "黒" : "白";
+    let who = "";
+    if(state.mode==="cpu") who = (state.turn===state.myColor) ? "（あなた）" : "（CPU）";
+    if(state.mode==="online" && !state.isSpectator) who = (state.turn===state.myColor) ? "（あなた）" : "（相手）";
+    $("turnName").textContent = name + "の番" + who;
+  } else {
+    $("turnName").textContent = "対局終了";
+  }
+}
+
+// ============================================================
+// Boot
+// ============================================================
+(async function boot(){
+  const { data } = await sb.auth.getSession();
+  state.session = data.session;
+  refreshUserBox();
+})();
+
+})();
+</script>
+</body>
+</html>

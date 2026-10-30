@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Space Invaders - Mini Edition</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, #020617, #0f172a);
+            color: #fff; font-family: 'Courier New', Courier, monospace;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
+        }
+        /* 画面サイズをコンパクトに（640x480） */
+        #game-container {
+            position: relative; width: 640px; height: 480px;
+            background: #000; border: 4px solid #10b981; border-radius: 8px;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3); overflow: hidden;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10;
+        }
+        .hidden { display: none !important; }
+        h1 { font-size: 32px; color: #10b981; text-shadow: 0 0 15px #10b981; margin-bottom: 20px; text-align: center; }
+        .menu-row { display: flex; gap: 15px; margin-bottom: 12px; }
+        button {
+            padding: 10px 20px; font-size: 15px; font-weight: bold; background: #111;
+            border: 2px solid #10b981; color: #10b981; cursor: pointer; border-radius: 4px;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); transition: all 0.2s;
+        }
+        button:hover { background: #10b981; color: #000; box-shadow: 0 0 20px #10b981; }
+        button:disabled { border-color: #334155; color: #334155; cursor: not-allowed; box-shadow: none; }
+        
+        /* リセットボタン専用スタイル */
+        #btn-reset { border-color: #ef4444; color: #ef4444; }
+        #btn-reset:hover { background: #ef4444; color: #000; box-shadow: 0 0 20px #ef4444; }
+        
+        .controls-info { font-size: 11px; color: #64748b; line-height: 1.5; text-align: center; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="640" height="480"></canvas>
+
+    <div id="menu-screen" class="screen">
+        <h1>NEON INVADERS</h1>
+        <div class="menu-row">
+            <button id="btn-1p">1 PLAYER</button>
+            <button id="btn-2p">2 PLAYERS</button>
+        </div>
+        <div class="menu-row">
+            <button id="btn-load" disabled>データをロード</button>
+            <button id="btn-reset" class="hidden">データ消去</button>
+        </div>
+        <div class="controls-info">
+            【1P操作】 A / D : 移動 | W : 弾を発射<br>
+            【2P操作】 ← / → : 移動 | ↑ : 弾を発射<br>
+            ※WAVEクリア時に進行状況が自動セーブされます。
+        </div>
+    </div>
+
+    <div id="over-screen" class="screen hidden">
+        <h1 id="over-title">GAME OVER</h1>
+        <p style="font-size: 18px;">WAVE: <span id="lbl-wave">1</span></p>
+        <p style="font-size: 18px; margin-bottom: 20px;">SCORE: <span id="lbl-score">0</span></p>
+        <button id="btn-restart">メニューに戻る</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const menuScreen = document.getElementById('menu-screen');
+const overScreen = document.getElementById('over-screen');
+const container = document.getElementById('game-container');
+const btnLoad = document.getElementById('btn-load');
+const btnReset = document.getElementById('btn-reset');
+
+// ゲームステート
+let isPlaying = false;
+let is2PMode = false;
+let score = 0;
+let highScore = localStorage.getItem('inv_highScore') ? parseInt(localStorage.getItem('inv_highScore')) : 0;
+let currentWave = 1;
+let shakeTime = 0;
+
+// キー入力状態
+const keys = {};
+
+// オブジェクト管理
+let players = [];
+let playerBullets = [];
+let enemyBullets = [];
+let enemies = [];
+let particles = [];
+let items = [];
+
+// パワーアップ定義
+const ITEM_TYPES = [
+    { type: 'SPEED', color: '#f59e0b', label: 'S' },
+    { type: 'WIDE', color: '#10b981', label: 'W' },
+    { type: 'SHIELD', color: '#3b82f6', label: 'B' }
+];
+
+class Player {
+    constructor(id, x, color, leftKey, rightKey, shootKey) {
+        this.id = id;
+        this.x = x;
+        this.y = canvas.height - 40;
+        this.width = 32; // サイズ微調整
+        this.height = 16;
+        this.baseSpeed = 3.5;
+        this.speedMod = 0;
+        this.color = color;
+        this.leftKey = leftKey;
+        this.rightKey = rightKey;
+        this.shootKey = shootKey;
+        this.shootCooldown = 0;
+        this.hasWide = false;
+        this.wideTimer = 0;
+        this.hasShield = false;
+        this.isDead = false;
+    }
+
+    update() {
+        if (this.isDead) return;
+
+        let currentSpeed = this.baseSpeed + this.speedMod;
+        if (keys[this.leftKey] && this.x > 0) this.x -= currentSpeed;
+        if (keys[this.rightKey] && this.x < canvas.width - this.width) this.x += currentSpeed;
+
+        if (keys[this.shootKey] && this.shootCooldown <= 0) {
+            this.shoot();
+            this.shootCooldown = 22;
+        }
+        if (this.shootCooldown > 0) this.shootCooldown--;
+
+        if (this.wideTimer > 0) {
+            this.wideTimer--;
+            if (this.wideTimer <= 0) this.hasWide = false;
+        }
+    }
+
+    shoot() {
+        if (this.hasWide) {
+            playerBullets.push({ x: this.x + this.width/2, y: this.y, vx: 0, vy: -6.5 });
+            playerBullets.push({ x: this.x + this.width/2, y: this.y, vx: -1.8, vy: -6 });
+            playerBullets.push({ x: this.x + this.width/2, y: this.y, vx: 1.8, vy: -6 });
+        } else {
+            playerBullets.push({ x: this.x + this.width/2, y: this.y, vx: 0, vy: -6.5 });
+        }
+    }
+
+    draw() {
+        if (this.isDead) return;
+        ctx.save();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width / 2, this.y);
+        ctx.lineTo(this.x, this.y + this.height);
+        ctx.lineTo(this.x + this.width, this.y + this.height);
+        ctx.closePath();
+        ctx.fill();
+
+        if (this.hasShield) {
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.8, 0, Math.PI*2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+
+class Enemy {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.width = 24;  // サイズ微調整
+        this.height = 20;
+        this.type = type;
+        this.color = type === 3 ? '#ec4899' : type === 2 ? '#a855f7' : '#06b6d4';
+        this.animTimer = Math.random() * 100;
+    }
+
+    update(dx, dy) {
+        this.x += dx;
+        this.y += dy;
+        this.animTimer++;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+
+        let offset = Math.sin(this.animTimer * 0.1) * 2;
+        ctx.fillRect(this.x, this.y + offset, this.width, this.height);
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(this.x + 5, this.y + 5 + offset, 3, 3);
+        ctx.fillRect(this.x + this.width - 8, this.y + 5 + offset, 3, 3);
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * 5;
+        this.vy = (Math.random() - 0.5) * 5;
+        this.alpha = 1;
+        this.color = color;
+    }
+    update() { this.x += this.vx; this.y += this.vy; this.alpha -= 0.035; }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 2.5, 2.5);
+        ctx.restore();
+    }
+}
+
+class Item {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.width = 18; this.height = 18;
+        this.info = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+    }
+    update() { this.y += 1.8; }
+    draw() {
+        ctx.save();
+        ctx.fillStyle = this.info.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.info.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.info.label, this.x + this.width/2, this.y + this.height/2);
+        ctx.restore();
+    }
+}
+
+function spawnEnemyGrid() {
+    enemies = [];
+    const rows = 4;
+    const cols = 8;
+    const spacingX = 48; // 間隔を調整
+    const spacingY = 36;
+    const startX = (canvas.width - (cols * spacingX)) / 2;
+    
+    for (let r = 0; r < rows; r++) {
+        let type = r === 0 ? 3 : r < 3 ? 2 : 1;
+        for (let c = 0; c < cols; c++) {
+            enemies.push(new Enemy(startX + c * spacingX, 60 + r * spacingY, type));
+        }
+    }
+}
+
+function saveGame() {
+    localStorage.setItem('inv_save_exists', 'true');
+    localStorage.setItem('inv_score', score);
+    localStorage.setItem('inv_wave', currentWave);
+    if(score > highScore) {
+        highScore = score;
+        localStorage.setItem('inv_highScore', highScore);
+    }
+    checkSaveData();
+}
+
+function loadGame() {
+    if (localStorage.getItem('inv_save_exists') === 'true') {
+        score = parseInt(localStorage.getItem('inv_score'));
+        currentWave = parseInt(localStorage.getItem('inv_wave'));
+        return true;
+    }
+    return false;
+}
+
+// データリセット処理
+function resetGameData() {
+    localStorage.removeItem('inv_save_exists');
+    localStorage.removeItem('inv_score');
+    localStorage.removeItem('inv_wave');
+    // ハイスコアもリセットしたい場合は以下を有効化
+    // localStorage.removeItem('inv_highScore'); highScore = 0;
+    checkSaveData();
+}
+
+function checkSaveData() {
+    if (localStorage.getItem('inv_save_exists') === 'true') {
+        btnLoad.removeAttribute('disabled');
+        btnLoad.textContent = `継続プレイ (WAVE ${localStorage.getItem('inv_wave')})`;
+        btnReset.classList.remove('hidden');
+    } else {
+        btnLoad.setAttribute('disabled', 'true');
+        btnLoad.textContent = `データをロード`;
+        btnReset.classList.add('hidden');
+    }
+}
+
+function isColliding(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+let enemyDirection = 1;
+let enemySpeed = 0.8;
+const enemyDropDistance = 12;
+
+function gameLoop() {
+    if (!isPlaying) return;
+
+    if (shakeTime > 0) {
+        let dx = (Math.random() - 0.5) * 6;
+        let dy = (Math.random() - 0.5) * 6;
+        container.style.transform = `translate(${dx}px, ${dy}px)`;
+        shakeTime--;
+    } else {
+        container.style.transform = 'translate(0,0)';
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = '14px "Courier New"';
+    ctx.fillText(`SCORE: ${score}`, 15, 25);
+    ctx.fillText(`HIGH: ${highScore}`, canvas.width / 2 - 40, 25);
+    ctx.fillText(`WAVE: ${currentWave}`, canvas.width - 90, 25);
+
+    let allPlayersDead = true;
+    players.forEach(p => {
+        p.update();
+        p.draw();
+        if (!p.isDead) allPlayersDead = false;
+    });
+
+    if (allPlayersDead) {
+        endGame(false);
+        return;
+    }
+
+    for (let i = playerBullets.length - 1; i >= 0; i--) {
+        let b = playerBullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(b.x - 1.5, b.y, 3, 8);
+
+        if (b.y < 0 || b.x < 0 || b.x > canvas.width) {
+            playerBullets.splice(i, 1);
+            continue;
+        }
+
+        let hit = false;
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            let e = enemies[j];
+            if (isColliding({x: b.x-1.5, y: b.y, width: 3, height: 8}, e)) {
+                for(let p=0; p<6; p++) particles.push(new Particle(e.x + e.width/2, e.y + e.height/2, e.color));
+                if (Math.random() < 0.18) items.push(new Item(e.x + e.width/2, e.y));
+
+                score += e.type * 100;
+                enemies.splice(j, 1);
+                hit = true;
+                break;
+            }
+        }
+        if (hit) playerBullets.splice(i, 1);
+    }
+
+    let shiftDown = false;
+    let currentSpeedX = enemySpeed * enemyDirection * (1 + (currentWave * 0.08));
+
+    enemies.forEach(e => {
+        e.update(currentSpeedX, 0);
+        if (e.x + e.width > canvas.width - 8 || e.x < 8) shiftDown = true;
+    });
+
+    if (shiftDown) {
+        enemyDirection *= -1;
+        enemies.forEach(e => e.update(0, enemyDropDistance));
+    }
+
+    enemies.forEach(e => {
+        e.draw();
+        if (e.y + e.height >= canvas.height - 50) endGame(false);
+        if (Math.random() < 0.002 + (currentWave * 0.0004)) {
+            enemyBullets.push({ x: e.x + e.width/2, y: e.y + e.height });
+        }
+    });
+
+    if (enemies.length === 0) {
+        currentWave++;
+        saveGame();
+        spawnEnemyGrid();
+    }
+
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        let b = enemyBullets[i];
+        b.y += 3.5 + (currentWave * 0.15);
+
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(b.x - 1.5, b.y, 3, 10);
+
+        if (b.y > canvas.height) {
+            enemyBullets.splice(i, 1);
+            continue;
+        }
+
+        for (let p of players) {
+            if (!p.isDead && isColliding({x: b.x-1.5, y: b.y, width: 3, height: 10}, p)) {
+                enemyBullets.splice(i, 1);
+                shakeTime = 12;
+                if (p.hasShield) {
+                    p.hasShield = false;
+                } else {
+                    p.isDead = true;
+                    for(let pt=0; pt<15; pt++) particles.push(new Particle(p.x + p.width/2, p.y + p.height/2, p.color));
+                }
+                break;
+            }
+        }
+    }
+
+    for (let i = items.length - 1; i >= 0; i--) {
+        let item = items[i];
+        item.update();
+        item.draw();
+
+        if (item.y > canvas.height) {
+            items.splice(i, 1);
+            continue;
+        }
+
+        for (let p of players) {
+            if (!p.isDead && isColliding(item, p)) {
+                if (item.info.type === 'SPEED') p.speedMod = 2.5;
+                if (item.info.type === 'WIDE') { p.hasWide = true; p.wideTimer = 350; }
+                if (item.info.type === 'SHIELD') p.hasShield = true;
+                items.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+        else particles[i].draw();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+window.addEventListener('keydown', e => { keys[e.key] = true; });
+window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+function initGame(is2P, loadSaved = false) {
+    isPlaying = true;
+    is2PMode = is2P;
+    playerBullets = [];
+    enemyBullets = [];
+    particles = [];
+    items = [];
+    enemyDirection = 1;
+
+    if (!loadSaved) {
+        score = 0;
+        currentWave = 1;
+    }
+
+    players = [];
+    if (!is2PMode) {
+        players.push(new Player(1, canvas.width/2 - 16, '#06b6d4', 'a', 'd', 'w'));
+    } else {
+        players.push(new Player(1, canvas.width/3 - 16, '#06b6d4', 'a', 'd', 'w'));
+        players.push(new Player(2, (canvas.width/3)*2 - 16, '#ec4899', 'ArrowLeft', 'ArrowRight', 'ArrowUp'));
+    }
+
+    spawnEnemyGrid();
+    menuScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    requestAnimationFrame(gameLoop);
+}
+
+function endGame(win) {
+    isPlaying = false;
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('inv_highScore', highScore);
+    }
+    document.getElementById('lbl-wave').textContent = currentWave;
+    document.getElementById('lbl-score').textContent = score;
+    document.getElementById('over-title').textContent = win ? "VICTORY!" : "GAME OVER";
+    document.getElementById('over-title').style.color = win ? "#10b981" : "#ef4444";
+    overScreen.classList.remove('hidden');
+    checkSaveData();
+}
+
+// イベント設定
+document.getElementById('btn-1p').addEventListener('click', () => initGame(false));
+document.getElementById('btn-2p').addEventListener('click', () => initGame(true));
+btnLoad.addEventListener('click', () => { if(loadGame()) initGame(is2PMode, true); });
+btnReset.addEventListener('click', () => { if(confirm('本当にセーブデータを削除しますか？')) resetGameData(); });
+document.getElementById('btn-restart').addEventListener('click', () => {
+    overScreen.classList.add('hidden');
+    menuScreen.classList.remove('hidden');
+});
+
+checkSaveData();
+</script>
+
+</body>
+</html>

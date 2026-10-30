@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>株シミュレーター Pro - 無限市場</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: "Segoe UI","Hiragino Sans","Meiryo",sans-serif; overflow: hidden; transition: background 0.3s, color 0.3s; }
+
+  :root, .theme-classic {
+    --bg: #e6e6fa; --card-bg: #ffffff; --text: #111111; --subtext: #555555;
+    --border: #cccccc; --up: #e60012; --down: #0066cc; --accent: #888888;
+    --header-bg: #dde5ff; --modal-bg: #ffffff; --btn-primary: #dde5ff; --btn-hover: #c5d5ff;
+    --gauge-cpu: #9c27b0; --gauge-player: #4caf50; --gauge-free: #bdbdbd;
+    --shadow: rgba(0,0,0,0.1); --col-bg: #dde5ff;
+  }
+  .theme-real {
+    --bg: #0a0a0a; --card-bg: #1a1a1a; --text: #e0e0e0; --subtext: #888888;
+    --border: #333333; --up: #00e676; --down: #ff5252; --accent: #444444;
+    --header-bg: #141414; --modal-bg: #1a1a1a; --btn-primary: #2a2a2a; --btn-hover: #3a3a3a;
+    --gauge-cpu: #7c4dff; --gauge-player: #00e676; --gauge-free: #424242;
+    --shadow: rgba(0,0,0,0.5); --col-bg: #111111;
+  }
+
+  body { background: var(--bg); color: var(--text); }
+  #app { display: flex; flex-direction: column; height: 100vh; }
+  .top-fixed { flex-shrink: 0; background: var(--bg); z-index: 200; border-bottom: 2px solid var(--border); transition: all 0.3s; }
+  .top-bar { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 20px 0; gap: 15px; }
+  .left-inputs { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
+  .left-inputs input { width: 220px; height: 34px; border: 2px solid var(--accent); background: var(--card-bg); color: var(--text); font-size: 14px; padding: 0 8px; border-radius: 6px; }
+  .theme-toggle-btn { padding: 6px 12px; border: 2px solid var(--accent); background: var(--btn-primary); color: var(--text); cursor: pointer; font-size: 12px; font-weight: bold; border-radius: 6px; width: 220px; transition: all 0.2s; }
+  .theme-toggle-btn:hover { background: var(--btn-hover); }
+  .center-area { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .news-box { width: 100%; max-width: 600px; background: var(--card-bg); border: 2px solid var(--accent); padding: 12px 16px; min-height: 70px; font-size: 15px; line-height: 1.5; border-radius: 8px; transition: all 0.3s; }
+  .news-triangle { width: 0; height: 0; border-left: 70px solid transparent; border-right: 70px solid transparent; border-top: 24px solid var(--up); margin-top: -2px; opacity: 0.8; }
+  .money-display { font-size: 24px; font-weight: bold; border-bottom: 3px solid var(--text); padding-bottom: 4px; min-width: 180px; text-align: right; white-space: nowrap; color: var(--text); display: flex; flex-direction: column; }
+  .money-display .dollar { color: var(--up); font-size: 16px; margin-left: 2px; }
+  .save-load-bar { text-align: center; padding: 8px 0; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .save-load-bar button { padding: 8px 16px; border: 2px solid var(--accent); background: var(--btn-primary); color: var(--text); cursor: pointer; font-size: 13px; font-weight: bold; border-radius: 6px; transition: all 0.2s; }
+  .save-load-bar button:hover { background: var(--btn-hover); }
+  .status-msg { font-size: 12px; color: var(--subtext); margin-top: 4px; height: 16px; text-align: center; }
+  .market-info { text-align: center; font-size: 13px; color: var(--subtext); padding-bottom: 6px; }
+  .columns { flex: 1; display: flex; gap: 20px; padding: 0 20px 20px; overflow: hidden; min-height: 0; }
+  .column { flex: 1; background: var(--col-bg); border: 2px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; transition: all 0.3s; }
+  .column-header { background: var(--accent); color: var(--text); text-align: center; padding: 12px; font-weight: bold; font-size: 16px; border-bottom: 2px solid var(--border); flex-shrink: 0; transition: all 0.3s; }
+  .column-content { padding: 10px; overflow-y: auto; flex: 1; position: relative; }
+  .stock-row { background: var(--card-bg); margin: 6px 0; padding: 10px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; border: 1px solid var(--border); transition: background 0.3s, border-color 0.2s ease; position: relative; overflow: hidden; }
+  .stock-row:hover { border-color: var(--accent); background: var(--btn-hover); }
+  .stock-main { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+  .stock-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .stock-name { font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .stock-ticker { font-size: 11px; color: var(--subtext); }
+  .stock-price-area { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .stock-price { font-family: monospace; font-size: 16px; font-weight: bold; color: var(--text); }
+  .stock-change { font-size: 12px; font-weight: bold; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .hold-badge { font-size: 10px; background: var(--up); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+  .fav-badge { font-size: 10px; background: #ffcc00; color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+  .empty-msg { text-align: center; color: var(--subtext); padding: 20px; font-size: 14px; }
+  .sparkline { margin-top: 2px; opacity: 0.8; }
+  .gauge-area { margin-top: 6px; width: 100%; }
+  .gauge-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--subtext); margin-bottom: 2px; }
+  .gauge-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; width: 100%; background: var(--gauge-free); }
+  .gauge-cpu { background: var(--gauge-cpu); transition: width 0.3s ease; }
+  .gauge-player { background: var(--gauge-player); transition: width 0.3s ease; }
+  .gauge-free { background: var(--gauge-free); transition: width 0.3s ease; }
+
+  @keyframes flashUp { 0% { background-color: rgba(0, 230, 118, 0.3); } 100% { background-color: var(--card-bg); } }
+  @keyframes flashDown { 0% { background-color: rgba(255, 82, 82, 0.3); } 100% { background-color: var(--card-bg); } }
+  .theme-classic .flash-up { animation: flashUpClassic 0.6s ease-out; }
+  .theme-classic .flash-down { animation: flashDownClassic 0.6s ease-out; }
+  @keyframes flashUpClassic { 0% { background-color: rgba(230, 0, 18, 0.15); } 100% { background-color: var(--card-bg); } }
+  @keyframes flashDownClassic { 0% { background-color: rgba(0, 102, 204, 0.15); } 100% { background-color: var(--card-bg); } }
+  .theme-real .flash-up { animation: flashUp 0.6s ease-out; }
+  .theme-real .flash-down { animation: flashDown 0.6s ease-out; }
+
+  /* ページネーション */
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 8px 0; flex-shrink: 0; background: var(--col-bg); border-top: 1px solid var(--border); }
+  .pagination button { padding: 4px 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); cursor: pointer; font-size: 12px; border-radius: 4px; min-width: 32px; transition: all 0.15s; }
+  .pagination button:hover { background: var(--btn-hover); }
+  .pagination button.active { background: var(--up); color: #fff; border-color: var(--up); }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination .page-info { font-size: 12px; color: var(--subtext); margin: 0 8px; }
+
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 300; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  .modal-overlay.show { display: flex; opacity: 1; pointer-events: auto; }
+  .modal { background: var(--modal-bg); padding: 24px; border-radius: 16px; min-width: 380px; max-width: 92vw; max-height: 90vh; overflow-y: auto; border: 2px solid var(--border); color: var(--text); transform: scale(0.95); transition: transform 0.15s; }
+  .modal-overlay.show .modal { transform: scale(1); }
+  .modal h2 { margin-top: 0; font-size: 20px; color: var(--text); margin-bottom: 12px; }
+  .modal-row { margin: 8px 0; font-size: 15px; color: var(--text); }
+  .modal-row b { display: inline-block; width: 120px; color: var(--subtext); }
+  .modal-card-area { margin: 12px 0; padding: 10px; background: var(--col-bg); border-radius: 10px; border: 1px solid var(--border); }
+  .modal-card-area .stock-row { margin: 0; cursor: default; }
+  .trade-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .trade-grid button { padding: 10px 4px; border: 2px solid var(--border); cursor: pointer; font-weight: bold; font-size: 13px; border-radius: 8px; transition: all 0.2s; }
+  .trade-grid .btn-buy { background: rgba(0,230,118,0.15); color: var(--text); } .trade-grid .btn-buy:hover { background: rgba(0,230,118,0.3); }
+  .trade-grid .btn-sell { background: rgba(255,82,82,0.15); color: var(--text); } .trade-grid .btn-sell:hover { background: rgba(255,82,82,0.3); }
+  .btn-fav { background: rgba(255,204,0,0.2); color: var(--text); padding: 10px; border: 2px solid var(--border); cursor: pointer; font-weight: bold; font-size: 14px; border-radius: 8px; transition: all 0.2s; flex: 1; }
+  .btn-fav:hover { background: rgba(255,204,0,0.4); }
+  .btn-close { background: var(--btn-primary); color: var(--text); padding: 10px; border: 2px solid var(--border); cursor: pointer; font-weight: bold; font-size: 14px; border-radius: 8px; transition: all 0.2s; flex: 1; }
+  .btn-close:hover { background: var(--btn-hover); }
+  .modal-bottom { display: flex; gap: 10px; margin-top: 12px; }
+  .quantity-input { width: 80px; padding: 6px; border: 2px solid var(--accent); font-size: 14px; background: var(--card-bg); color: var(--text); border-radius: 4px; }
+
+  .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; max-height: 60vh; overflow-y: auto; }
+  .slot-card { background: var(--card-bg); border: 2px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; transition: all 0.2s; }
+  .slot-card:hover { border-color: var(--up); }
+  .slot-card.active { border-color: var(--up); box-shadow: 0 0 0 2px var(--up); }
+  .slot-name { font-weight: bold; font-size: 16px; margin-bottom: 8px; color: var(--text); }
+  .slot-info { font-size: 12px; color: var(--subtext); margin-bottom: 4px; }
+  .slot-card button { margin-top: 8px; padding: 8px 16px; border: none; background: var(--up); color: #fff; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
+  .slot-card button:hover { opacity: 0.9; }
+  .slot-card.empty button { background: var(--accent); }
+
+  /* スキルツリー */
+  .skill-tree-modal { min-width: 600px; max-width: 90vw; }
+  .skill-tree-container { position: relative; width: 100%; height: 400px; background: var(--col-bg); border: 2px solid var(--border); border-radius: 12px; overflow: hidden; cursor: grab; user-select: none; }
+  .skill-tree-container:active { cursor: grabbing; }
+  .skill-node { position: absolute; background: var(--card-bg); border: 2px solid var(--border); border-radius: 8px; padding: 12px; width: 140px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .skill-node:hover { border-color: var(--up); box-shadow: 0 0 8px var(--up); }
+  .skill-node.purchased { border-color: var(--up); background: rgba(0,230,118,0.1); }
+  .skill-name { font-weight: bold; font-size: 13px; color: var(--text); margin-bottom: 6px; }
+  .skill-cost { font-size: 11px; color: var(--subtext); margin-bottom: 4px; }
+  .skill-desc { font-size: 10px; color: var(--subtext); margin-bottom: 6px; }
+  .skill-btn { background: var(--up); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; width: 100%; transition: all 0.2s; }
+  .skill-btn:hover { opacity: 0.9; }
+  .skill-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body class="theme-classic">
+<div id="app">
+  <div class="top-fixed">
+    <div class="top-bar">
+      <div class="left-inputs">
+        <input type="text" id="searchInput" placeholder="銘柄検索..." oninput="scheduleRender()">
+        <input type="text" id="filterInput" placeholder="フィルタ...">
+        <button class="theme-toggle-btn" onclick="toggleTheme()">🌙 テーマ切替</button>
+      </div>
+      <div class="center-area">
+        <div class="news-box" id="newsBox">ようこそ！株シミュレーターProを開始しました。8億人のCPUトレーダーが市場を動かしています。</div>
+        <div class="news-triangle"></div>
+        <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center;">
+          <button onclick="buyClickPower(10)" style="padding: 8px 12px; font-size: 12px; border: 2px solid var(--accent); background: var(--btn-primary); color: var(--text); cursor: pointer; border-radius: 6px; font-weight: bold;">+10 <br><span style="font-size: 10px;">$<span id="price10">100</span></span></button>
+          <button onclick="buyClickPower(100)" style="padding: 8px 12px; font-size: 12px; border: 2px solid var(--accent); background: var(--btn-primary); color: var(--text); cursor: pointer; border-radius: 6px; font-weight: bold;">+100 <br><span style="font-size: 10px;">$<span id="price100">990</span></span></button>
+          <button onclick="buyClickPower(1000)" style="padding: 8px 12px; font-size: 12px; border: 2px solid var(--accent); background: var(--btn-primary); color: var(--text); cursor: pointer; border-radius: 6px; font-weight: bold;">+1000 <br><span style="font-size: 10px;">$<span id="price1000">9980</span></span></button>
+        </div>
+      </div>
+      <div class="money-display" id="moneySection">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <button onclick="clickerClick()" style="background: none; border: none; font-size: 32px; cursor: pointer; padding: 0; margin: 0;">💵</button>
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <span id="moneyDisplay">10000</span>
+          </div>
+          <span class="dollar">$</span>
+        </div>
+        <div style="font-size: 12px; color: var(--subtext); margin-top: 4px;">Lv. <span id="levelDisplay">1</span></div>
+        <div style="font-size: 11px; color: var(--accent); margin-top: 2px;">PP: <span id="prestigeDisplay">0</span></div>
+      </div>
+    </div>
+    <div class="save-load-bar">
+      <button onclick="switchSlot()">🔄 別データへ</button>
+      <button onclick="saveGame()">💾 セーブ</button>
+      <button onclick="loadGame()">📂 ロード</button>
+      <button onclick="showPrestigeModal()">⭐ 転生</button>
+      <button onclick="showSkillTree()">🎯 スキル</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+    <div class="market-info">
+      市場参加者: <b>8億人</b> | 取引間隔: 銘柄ごとに1〜4秒ランダム | 保有評価額: <b id="evalDisplay">0 $</b> | 銘柄数: <b id="stockCount">0</b>
+    </div>
+  </div>
+  <div class="columns">
+    <div class="column">
+      <div class="column-header">保有株 / お気に入り株</div>
+      <div class="column-content" id="holdingsCol"></div>
+    </div>
+    <div class="column">
+      <div class="column-header">急上昇</div>
+      <div class="column-content" id="surgeCol"></div>
+    </div>
+    <div class="column">
+      <div class="column-header">全銘柄</div>
+      <div class="column-content" id="allStocksCol"></div>
+      <div class="pagination" id="allStocksPage"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="slotModalOverlay" onclick="if(event.target===this)closeSlotModal()">
+  <div class="modal slot-modal">
+    <h2>セーブデータを選択</h2>
+    <div id="slotGrid" class="slot-grid"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modalTitle">銘柄詳細</h2>
+    <div id="modalCardArea" class="modal-card-area"></div>
+    <div class="modal-row"><b>ティッカー:</b> <span id="modalTicker"></span></div>
+    <div class="modal-row"><b>現在価格:</b> <span id="modalPrice"></span></div>
+    <div class="modal-row"><b>変動率:</b> <span id="modalChange"></span></div>
+    <div class="modal-row"><b>あなたの保有:</b> <span id="modalHold"></span>株</div>
+    <div class="modal-row"><b>CPU保有:</b> <span id="modalCpuHold"></span>株</div>
+    <div class="modal-row"><b>発行済み:</b> <span id="modalTotal"></span>株</div>
+    <div class="trade-grid">
+      <button class="btn-buy" onclick="tradeQty(1,'buy')">買い 1株</button>
+      <button class="btn-buy" onclick="tradeQty(10,'buy')">買い 10株</button>
+      <button class="btn-buy" onclick="tradeQty(100,'buy')">買い 100株</button>
+      <button class="btn-buy" onclick="tradeQty(-1,'buy')">買い 全株</button>
+      <button class="btn-sell" onclick="tradeQty(1,'sell')">売り 1株</button>
+      <button class="btn-sell" onclick="tradeQty(10,'sell')">売り 10株</button>
+      <button class="btn-sell" onclick="tradeQty(100,'sell')">売り 100株</button>
+      <button class="btn-sell" onclick="tradeQty(-1,'sell')">売り 全株</button>
+    </div>
+    <div class="modal-bottom">
+      <button class="btn-fav" onclick="toggleFav()">お気に入り切替</button>
+      <button class="btn-close" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- スキルツリーモーダル -->
+<div class="modal-overlay" id="skillTreeOverlay" onclick="if(event.target===this)closeSkillTree()">
+  <div class="modal skill-tree-modal">
+    <h2>スキルツリー</h2>
+    <div id="skillTreeContainer" class="skill-tree-container" onmousemove="handleSkillTreeDrag(event)" onmouseup="endSkillTreeDrag()"></div>
+    <div style="margin-top: 12px; font-size: 12px; color: var(--subtext);">右クリックドラッグでスクロール</div>
+    <button class="btn-close" onclick="closeSkillTree()" style="margin-top: 12px;">閉じる</button>
+  </div>
+</div>
+
+<!-- 転生モーダル -->
+<div class="modal-overlay" id="prestigeOverlay" onclick="if(event.target===this)closePrestigeModal()">
+  <div class="modal">
+    <h2>⭐ 転生システム</h2>
+    <div class="modal-row"><b>現在のレベル:</b> <span id="prestigeCurrentLevel"></span></div>
+    <div class="modal-row"><b>獲得予定ポイント:</b> <span id="prestigeGainPoints"></span> PP</div>
+    <div class="modal-row"><b>総保有ポイント:</b> <span id="prestigeTotalPoints"></span> PP</div>
+    <div style="background: var(--col-bg); padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 13px; color: var(--subtext);">
+      <b>転生について</b><br>
+      現在のデータをリセットして新規開始します。<br>
+      獲得したレベルの一定割合が <b>転生ポイント</b> として保持されます。<br>
+      転生ポイントはスキルツリーでレベルアップやショップ購入に使えます。
+    </div>
+    <button class="btn-buy" onclick="executePrestige()" style="width: 100%; padding: 12px; margin: 8px 0;">転生する</button>
+    <button class="btn-close" onclick="closePrestigeModal()" style="width: 100%; padding: 12px;">キャンセル</button>
+  </div>
+</div>
+
+<script>
+const INITIAL_MONEY = 10000;
+const SAVE_KEY = "stockSim_v3_slots";
+const PAGE_SIZE = 20;
+const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown'];
+let money = INITIAL_MONEY;
+let stocks = [];
+let konamiSequence = [];
+
+// レベリング・転生要素
+let level = 1;
+let prestigePoints = 0;
+let autoClickerLevel = 0;
+let x5PowerActive = false;
+let x5PowerEndTime = 0;
+let autoClickerActive = false;
+let skillTreeDragging = false;
+let skillTreeDragStart = { x: 0, y: 0 };
+
+let holdings = {};
+let favorites = new Set();
+let selectedTicker = null;
+let tickCount = 0;
+let memStorage = {};
+let modalAnimating = false;
+let currentPage = 1;
+let renderScheduleTimer = null;
+
+const RAW_STOCKS = [{"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸ（年１回決算型）", "ticker": "YGLC", "price": 747.6, "volatility": 0.0054}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＴＯＰＩＸ連動型上場投信", "ticker": "NSHB", "price": 401.1, "volatility": 0.0041}, {"name": "上場インデックスファンドＴＯＰＩＸ", "ticker": "WNRH", "price": 403.9, "volatility": 0.0091}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＣｈｉｎａＡＭＣ・中国株式・上証５０連動型上場投信", "ticker": "AKNB", "price": 767.4, "volatility": 0.0104}, {"name": "Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ", "ticker": "AQNM", "price": 831.4, "volatility": 0.0044}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＴＯＰＩＸ　Ｃｏｒｅ　３０連動型上場投信", "ticker": "BMTC", "price": 807.8, "volatility": 0.0108}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経３００株価指数連動型上場投信", "ticker": "ZMCR", "price": 828.9, "volatility": 0.0041}, {"name": "ＣＣＮグループ", "ticker": "NMWB", "price": 424.2, "volatility": 0.0088}, {"name": "ｉＦｒｅｅＥＴＦ　日経２２５（年１回決算型）", "ticker": "NPQT", "price": 400.9, "volatility": 0.0121}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経２２５連動型上場投信", "ticker": "FHVU", "price": 395.0, "volatility": 0.008}, {"name": "上場インデックスファンド中国Ａ株（パンダ）Ｅ　Ｆｕｎｄ　ＣＳＩ３００", "ticker": "LSOH", "price": 222.3, "volatility": 0.0053}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ブラジル株式指数・ボベスパ連動型上場投信", "ticker": "KUFJ", "price": 185.0, "volatility": 0.008}, {"name": "ＳＰＤＲゴールド・シェア", "ticker": "BHXH", "price": 562.4, "volatility": 0.0054}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　金価格連動型上場投信", "ticker": "RZWQ", "price": 507.2, "volatility": 0.0058}, {"name": "ｉシェアーズ・コア　日経２２５　ＥＴＦ", "ticker": "OJUL", "price": 620.3, "volatility": 0.0127}, {"name": "アイエヌホールディングス", "ticker": "WKJC", "price": 438.6, "volatility": 0.0044}, {"name": "上場インデックスファンド２２５", "ticker": "RLRD", "price": 64.4, "volatility": 0.0086}, {"name": "ニッスイ", "ticker": "RXFP", "price": 976.9, "volatility": 0.0061}, {"name": "Ｕｍｉｏｓ", "ticker": "XGKD", "price": 670.2, "volatility": 0.0128}, {"name": "グローバルＸ　超短期米国債　ＥＴＦ", "ticker": "NFUQ", "price": 546.0, "volatility": 0.007}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　東証ＲＥＩＴ　指数連動型上場投信", "ticker": "ZTFK", "price": 258.2, "volatility": 0.0048}, {"name": "上場インデックスファンドＪリート（東証ＲＥＩＴ指数）隔月分配型", "ticker": "WRUZ", "price": 745.8, "volatility": 0.0088}, {"name": "ＭＡＸＩＳ　日経２２５上場投信", "ticker": "ZGGJ", "price": 159.9, "volatility": 0.0129}, {"name": "ＭＡＸＩＳ　トピックス上場投信", "ticker": "MBFD", "price": 670.5, "volatility": 0.0035}, {"name": "ＡＢＦ汎アジア債券インデックス・ファンド", "ticker": "VEIF", "price": 956.5, "volatility": 0.0095}, {"name": "アプライズ", "ticker": "DOOM", "price": 242.7, "volatility": 0.0103}, {"name": "ＴＯＰＩＸベア２倍上場投信", "ticker": "LRPU", "price": 559.8, "volatility": 0.0128}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経平均ダブルインバース・インデックス連動型上場投信", "ticker": "PPRS", "price": 79.9, "volatility": 0.0031}, {"name": "上場インデックスファンド日経レバレッジ指数", "ticker": "UCPW", "price": 833.0, "volatility": 0.006}, {"name": "ＶＲＡＩＮ　Ｓｏｌｕｔｉｏｎ", "ticker": "TUKJ", "price": 629.6, "volatility": 0.0126}, {"name": "日経平均ベア２倍上場投信", "ticker": "XHOA", "price": 409.5, "volatility": 0.0125}, {"name": "ｉシェアーズ　ＪＰＸ日経４００　ＥＴＦ", "ticker": "LPWP", "price": 791.0, "volatility": 0.012}, {"name": "ｉＦｒｅｅＥＴＦ　日経平均レバレッジ・インデックス", "ticker": "UWYW", "price": 279.3, "volatility": 0.0037}, {"name": "ｉＦｒｅｅＥＴＦ　日経平均ダブルインバース・インデックス", "ticker": "LXSK", "price": 910.4, "volatility": 0.0034}, {"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸレバレッジ（２倍）指数", "ticker": "EUSJ", "price": 464.5, "volatility": 0.0075}, {"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸダブルインバース（－２倍）指数", "ticker": "HJJK", "price": 285.9, "volatility": 0.0089}, {"name": "Ｏｎｅ　ＥＴＦ　日経２２５", "ticker": "OZEB", "price": 367.3, "volatility": 0.0057}, {"name": "ユキグニファクトリー", "ticker": "OJPM", "price": 377.5, "volatility": 0.0105}, {"name": "カネコ種苗", "ticker": "RRUK", "price": 275.0, "volatility": 0.008}, {"name": "サカタのタネ", "ticker": "AYVI", "price": 604.7, "volatility": 0.0083}, {"name": "ホクト", "ticker": "PPGW", "price": 178.5, "volatility": 0.0115}, {"name": "Ｃｏｃｏｌｉｖｅ", "ticker": "SQLV", "price": 183.2, "volatility": 0.0062}, {"name": "秋川牧園", "ticker": "PIUI", "price": 370.1, "volatility": 0.0031}, {"name": "アクシーズ", "ticker": "PGAD", "price": 956.9, "volatility": 0.0099}, {"name": "ホーブ", "ticker": "OYJZ", "price": 162.2, "volatility": 0.0052}, {"name": "ベルグアース", "ticker": "TKHH", "price": 875.5, "volatility": 0.0075}, {"name": "ホクリヨウ", "ticker": "ASDY", "price": 828.5, "volatility": 0.0115}, {"name": "光フードサービス", "ticker": "NVUQ", "price": 268.9, "volatility": 0.0119}, {"name": "ＳＭＤＡＭ　日経２２５上場投信", "ticker": "RYAW", "price": 664.8, "volatility": 0.0082}, {"name": "ＳＭＤＡＭ　東証ＲＥＩＴ指数上場投信", "ticker": "DKDN", "price": 606.5, "volatility": 0.0065}, {"name": "上場インデックスファンドＭＳＣＩ日本株高配当低ボラティリティ", "ticker": "ZHRW", "price": 462.1, "volatility": 0.0051}, {"name": "東日本地所", "ticker": "ASJZ", "price": 560.1, "volatility": 0.0031}, {"name": "エムビーエス", "ticker": "OAVS", "price": 193.6, "volatility": 0.0094}, {"name": "ウエストホールディングス", "ticker": "WMKL", "price": 637.5, "volatility": 0.0055}, {"name": "ｉＦｒｅｅＥＴＦ　米国１０年国債先物インバース", "ticker": "DKSG", "price": 611.2, "volatility": 0.0118}, {"name": "ショーボンドホールディングス", "ticker": "RNWJ", "price": 843.5, "volatility": 0.0095}, {"name": "ミライト・ワン", "ticker": "YWSO", "price": 260.1, "volatility": 0.0129}, {"name": "インターライフホールディングス", "ticker": "CRDO", "price": 628.9, "volatility": 0.0119}, {"name": "タマホーム", "ticker": "QYSH", "price": 280.3, "volatility": 0.0127}, {"name": "トライアルホールディングス", "ticker": "OMMJ", "price": 493.5, "volatility": 0.0065}, {"name": "サンヨーホームズ", "ticker": "VBQD", "price": 126.6, "volatility": 0.0096}, {"name": "日本アクア", "ticker": "BGYM", "price": 443.7, "volatility": 0.0067}, {"name": "ジンジブ", "ticker": "WCNJ", "price": 234.1, "volatility": 0.0071}, {"name": "ファーストコーポレーション", "ticker": "HNUQ", "price": 236.3, "volatility": 0.0093}, {"name": "Ｌｉｂ　Ｗｏｒｋ", "ticker": "BGCY", "price": 431.8, "volatility": 0.0112}, {"name": "動力", "ticker": "FNTL", "price": 396.5, "volatility": 0.0065}, {"name": "ベステラ", "ticker": "MMHO", "price": 470.9, "volatility": 0.0039}, {"name": "ＪＥＳＣＯホールディングス", "ticker": "BHAC", "price": 964.2, "volatility": 0.0088}, {"name": "ｒｏｂｏｔ　ｈｏｍｅ", "ticker": "NEVY", "price": 267.5, "volatility": 0.0055}, {"name": "グリーンエナジー＆カンパニー", "ticker": "RJDD", "price": 360.6, "volatility": 0.0124}, {"name": "岐阜造園", "ticker": "DSVY", "price": 810.7, "volatility": 0.0123}, {"name": "イシン", "ticker": "ZCDO", "price": 568.0, "volatility": 0.011}, {"name": "技研ホールディングス", "ticker": "EJAH", "price": 478.1, "volatility": 0.0111}, {"name": "ニッソウ", "ticker": "IGMZ", "price": 682.6, "volatility": 0.0056}, {"name": "ひかりホールディングス", "ticker": "JXDN", "price": 623.7, "volatility": 0.0067}, {"name": "キャンディル", "ticker": "DYJI", "price": 891.2, "volatility": 0.0118}, {"name": "ＳＡＡＦホールディングス", "ticker": "SNCH", "price": 643.3, "volatility": 0.0097}, {"name": "エネルギーパワー", "ticker": "SREL", "price": 750.7, "volatility": 0.0123}, {"name": "ＴＡＮＡＫＥＮ", "ticker": "RTWJ", "price": 66.6, "volatility": 0.0096}, {"name": "横浜ライト工業", "ticker": "NMTJ", "price": 451.4, "volatility": 0.0116}, {"name": "ｉＦｒｅｅＥＴＦ　日経平均インバース・インデックス", "ticker": "IRFJ", "price": 189.8, "volatility": 0.0128}, {"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸインバース（－１倍）指数", "ticker": "VGEE", "price": 567.4, "volatility": 0.0056}, {"name": "楽天ＥＴＦ‐日経レバレッジ指数連動型", "ticker": "VTSY", "price": 921.8, "volatility": 0.0048}, {"name": "楽天ＥＴＦ‐日経ダブルインバース指数連動型", "ticker": "DTNT", "price": 439.6, "volatility": 0.0126}, {"name": "Ｌ　ｉｓ　Ｂ", "ticker": "JUXJ", "price": 66.6, "volatility": 0.0064}, {"name": "ｉＦｒｅｅＥＴＦ　ＪＰＸ日経４００ダブルインバース・インデックス", "ticker": "DQSS", "price": 982.2, "volatility": 0.0108}, {"name": "ＪＰＸ日経４００ベア２倍上場投信（ダブルインバース）", "ticker": "GSKN", "price": 755.0, "volatility": 0.008}, {"name": "コロンビア・ワークス", "ticker": "GRTX", "price": 364.2, "volatility": 0.0072}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＪＰＸ日経４００ダブルインバース・インデックス連動型上場投信", "ticker": "KWPS", "price": 859.0, "volatility": 0.012}, {"name": "Ｏｎｅ　ＥＴＦ　トピックス", "ticker": "ETDD", "price": 467.3, "volatility": 0.0057}, {"name": "Ｏｎｅ　ＥＴＦ　ＪＰＸ日経４００", "ticker": "IWHC", "price": 143.9, "volatility": 0.0091}, {"name": "ｉシェアーズ・コア　ＴＯＰＩＸ　ＥＴＦ", "ticker": "MLPF", "price": 682.0, "volatility": 0.011}, {"name": "ｉシェアーズ・コア　Ｊリート　ＥＴＦ", "ticker": "HAXY", "price": 649.0, "volatility": 0.004}, {"name": "ｉシェアーズ　ＭＳＣＩ　日本株最小分散　ＥＴＦ", "ticker": "VWRW", "price": 476.0, "volatility": 0.007}, {"name": "ｉシェアーズ　ＭＳＣＩ　ジャパン高配当利回り　ＥＴＦ", "ticker": "HGJA", "price": 739.8, "volatility": 0.0128}, {"name": "ｉＦｒｅｅＥＴＦ　ＭＳＣＩ日本株人材設備投資指数", "ticker": "LJYO", "price": 449.7, "volatility": 0.0127}, {"name": "ソラコム", "ticker": "EIVV", "price": 718.8, "volatility": 0.0042}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　野村企業価値分配指数連動型上場投信", "ticker": "QNRV", "price": 331.9, "volatility": 0.0049}, {"name": "上場インデックスファンド日本経済貢献株", "ticker": "KCNB", "price": 722.1, "volatility": 0.0109}, {"name": "ｉシェアーズ・コア　米国債７－１０年　ＥＴＦ（為替ヘッジあり）", "ticker": "AMIA", "price": 619.9, "volatility": 0.0129}, {"name": "ｉシェアーズ　ＪＰＸ／Ｓ＆Ｐ設備・人材投資　ＥＴＦ", "ticker": "KTVH", "price": 643.7, "volatility": 0.0067}, {"name": "Ｏｎｅ　ＥＴＦ　ＪＰＸ／Ｓ＆Ｐ　設備・人材投資指数", "ticker": "SDQK", "price": 446.3, "volatility": 0.0093}, {"name": "ＭＡＸＩＳ　ＪＡＰＡＮ　設備・人材積極投資企業２００上場投信", "ticker": "WOUZ", "price": 888.5, "volatility": 0.0115}, {"name": "上場インデックスファンド米国債券（為替ヘッジなし）", "ticker": "UUOT", "price": 93.0, "volatility": 0.01}, {"name": "上場インデックスファンド米国債券（為替ヘッジあり）", "ticker": "RUGS", "price": 360.2, "volatility": 0.0128}, {"name": "ｉＦｒｅｅＥＴＦ　東証ＲＥＩＴ指数", "ticker": "JXMW", "price": 365.9, "volatility": 0.0089}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経平均高配当株５０指数連動型上場投信", "ticker": "RWPV", "price": 527.2, "volatility": 0.0058}, {"name": "ハッチ・ワーク", "ticker": "OLCS", "price": 762.3, "volatility": 0.0053}, {"name": "上場インデックスファンドＭＳＣＩ日本株高配当低ボラティリティ（βヘッジ）", "ticker": "NILL", "price": 558.9, "volatility": 0.0119}, {"name": "中外鉱業", "ticker": "QDBN", "price": 274.6, "volatility": 0.0084}, {"name": "Ｏｎｅ　ＥＴＦ　ＪＰＸ日経中小型", "ticker": "UFNO", "price": 256.5, "volatility": 0.0065}, {"name": "Ｏｎｅ　ＥＴＦ　高配当日本株", "ticker": "WAHS", "price": 749.2, "volatility": 0.0122}, {"name": "上場インデックスファンドアジアリート", "ticker": "BSMG", "price": 351.0, "volatility": 0.012}, {"name": "ｉシェアーズ　米ドル建て投資適格社債　ＥＴＦ（為替ヘッジあり）", "ticker": "ANOM", "price": 360.4, "volatility": 0.0034}, {"name": "ｉシェアーズ　米ドル建てハイイールド社債　ＥＴＦ（為替ヘッジあり）", "ticker": "BTBN", "price": 361.4, "volatility": 0.0044}, {"name": "Ｏｎｅ　ＥＴＦ　ＥＳＧ", "ticker": "BWIW", "price": 168.8, "volatility": 0.0118}, {"name": "ＭＡＸＩＳ日本株高配当７０マーケットニュートラル上場投信", "ticker": "WLTA", "price": 588.3, "volatility": 0.0113}, {"name": "シンカ", "ticker": "GPMB", "price": 946.6, "volatility": 0.0096}, {"name": "ＪＳＨ", "ticker": "CVSR", "price": 695.5, "volatility": 0.0085}, {"name": "住石ホールディングス", "ticker": "XTHC", "price": 582.6, "volatility": 0.0056}, {"name": "日鉄鉱業", "ticker": "PIHV", "price": 224.4, "volatility": 0.0086}, {"name": "三井松島ホールディングス", "ticker": "MYCM", "price": 827.9, "volatility": 0.0109}, {"name": "ダイブグループ", "ticker": "BMMS", "price": 742.8, "volatility": 0.0058}, {"name": "オプティ", "ticker": "KYSN", "price": 489.4, "volatility": 0.0036}, {"name": "カウリス", "ticker": "SKPV", "price": 918.7, "volatility": 0.0043}, {"name": "純金上場信託（現物国内保管型）", "ticker": "PKRM", "price": 412.0, "volatility": 0.005}, {"name": "純プラチナ上場信託（現物国内保管型）", "ticker": "SXLW", "price": 139.4, "volatility": 0.0124}, {"name": "純銀上場信託（現物国内保管型）", "ticker": "YCAP", "price": 164.2, "volatility": 0.0072}, {"name": "純パラジウム上場信託（現物国内保管型）", "ticker": "YUAN", "price": 86.9, "volatility": 0.0061}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＮＡＳＤＡＱ－１００（為替ヘッジなし）連動型上場投信", "ticker": "ZZNC", "price": 835.2, "volatility": 0.0082}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ダウ・ジョーンズ工業株３０種平均株価（為替ヘッジなし）連動型上場投信", "ticker": "FLTJ", "price": 235.7, "volatility": 0.0073}, {"name": "上場インデックスファンド米国株式（Ｓ＆Ｐ５００）", "ticker": "RRKG", "price": 852.8, "volatility": 0.0102}, {"name": "ＧＡＩＡ", "ticker": "LQKS", "price": 239.5, "volatility": 0.0125}, {"name": "ＭＡＸＩＳ　海外株式（ＭＳＣＩコクサイ）上場投信", "ticker": "BOIB", "price": 642.5, "volatility": 0.0105}, {"name": "東証スタンダードＴＯＰ２０ＥＴＦ", "ticker": "OVPB", "price": 572.8, "volatility": 0.0058}, {"name": "上場インデックスファンド世界株式（ＭＳＣＩ　ＡＣＷＩ）除く日本", "ticker": "ZQPD", "price": 829.6, "volatility": 0.0126}, {"name": "上場インデックスファンド豪州リート（Ｓ＆Ｐ／ＡＳＸ２００　Ａ－ＲＥＩＴ）", "ticker": "SPLQ", "price": 70.3, "volatility": 0.0033}, {"name": "Ｓｔａｔｅ　Ｓｔｒｅｅｔ　ＳＰＤＲ　Ｓ＆Ｐ　５００　ＥＴＦ", "ticker": "BLZA", "price": 436.1, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　タイ株式ＳＥＴ５０指数連動型上場投信", "ticker": "OOEY", "price": 578.7, "volatility": 0.0117}, {"name": "情報戦略テクノロジー", "ticker": "HWJQ", "price": 913.9, "volatility": 0.0091}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＦＴＳＥブルサ・マレーシアＫＬＣＩ連動型上場投信", "ticker": "PIGI", "price": 883.4, "volatility": 0.0064}, {"name": "東証グロース・コアＥＴＦ", "ticker": "LANC", "price": 715.6, "volatility": 0.0074}, {"name": "上場インデックスファンド新興国債券", "ticker": "VOWC", "price": 186.9, "volatility": 0.0099}, {"name": "ＴＯＰＩＸブル２倍上場投信", "ticker": "OPXU", "price": 588.9, "volatility": 0.0119}, {"name": "ＴＯＰＩＸベア上場投信", "ticker": "VHWJ", "price": 466.0, "volatility": 0.009}, {"name": "マテリアルグループ", "ticker": "LWQI", "price": 853.0, "volatility": 0.006}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経平均レバレッジ・インデックス連動型上場投信", "ticker": "QQWE", "price": 848.6, "volatility": 0.0044}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経平均インバース・インデックス連動型上場投信", "ticker": "CJMI", "price": 466.5, "volatility": 0.0095}, {"name": "中国Ｈ株ブル２倍上場投信", "ticker": "ZHHE", "price": 97.3, "volatility": 0.0057}, {"name": "中国Ｈ株ベア上場投信", "ticker": "QDBP", "price": 503.0, "volatility": 0.01}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　野村日本株高配当７０連動型上場投信", "ticker": "RMMN", "price": 399.9, "volatility": 0.0129}, {"name": "上場インデックスファンド日経２２５（ミニ）", "ticker": "MQGD", "price": 762.8, "volatility": 0.0058}, {"name": "日経平均ブル２倍上場投信", "ticker": "QTDZ", "price": 850.6, "volatility": 0.0036}, {"name": "グリーンモンスター", "ticker": "GQZN", "price": 489.6, "volatility": 0.0126}, {"name": "日経平均ベア上場投信", "ticker": "IRGB", "price": 695.8, "volatility": 0.0088}, {"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸ　Ｅｘ－Ｆｉｎａｎｃｉａｌｓ", "ticker": "ZXKT", "price": 860.8, "volatility": 0.0038}, {"name": "上場インデックスファンドＴＯＰＩＸ　Ｅｘ－Ｆｉｎａｎｃｉａｌｓ", "ticker": "FYGV", "price": 128.4, "volatility": 0.0114}, {"name": "エクセリ", "ticker": "LQPZ", "price": 470.8, "volatility": 0.0038}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＪＰＸ日経インデックス４００連動型上場投信", "ticker": "TECE", "price": 442.2, "volatility": 0.0052}, {"name": "上場インデックスファンドＪＰＸ日経インデックス４００", "ticker": "GVBX", "price": 688.8, "volatility": 0.0118}, {"name": "ＭＡＸＩＳ　ＪＰＸ日経インデックス４００上場投信", "ticker": "GSXU", "price": 726.3, "volatility": 0.0067}, {"name": "ＮＺＡＭ　上場投信　東証ＲＥＩＴ指数", "ticker": "FQAT", "price": 565.2, "volatility": 0.0078}, {"name": "ＮＺＡＭ　上場投信　ＴＯＰＩＸ　Ｅｘ－Ｆｉｎａｎｃｉａｌｓ", "ticker": "FSYG", "price": 936.4, "volatility": 0.0066}, {"name": "ＭＡＸＩＳ　Ｊリート上場投信", "ticker": "VZHE", "price": 151.7, "volatility": 0.0113}, {"name": "ｉＦｒｅｅＥＴＦ　ＪＰＸ日経４００", "ticker": "ONTS", "price": 195.1, "volatility": 0.0081}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＪＰＸプライム１５０指数連動型上場投信", "ticker": "TVNA", "price": 153.5, "volatility": 0.0095}, {"name": "ＩＮＰＥＸ", "ticker": "KXDN", "price": 984.2, "volatility": 0.0088}, {"name": "アズパートナーズ", "ticker": "LJFD", "price": 645.1, "volatility": 0.0079}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　東証銀行業株価指数連動型上場投信", "ticker": "BGIR", "price": 829.4, "volatility": 0.0124}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　食品（ＴＯＰＩＸ－１７）上場投信", "ticker": "UFJO", "price": 352.8, "volatility": 0.0058}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　エネルギー資源（ＴＯＰＩＸ－１７）上場投信", "ticker": "IANX", "price": 749.8, "volatility": 0.0128}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　建設・資材（ＴＯＰＩＸ－１７）上場投信", "ticker": "QXFO", "price": 729.4, "volatility": 0.0124}, {"name": "三葉", "ticker": "KWGV", "price": 981.3, "volatility": 0.0117}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　素材・化学（ＴＯＰＩＸ－１７）上場投信", "ticker": "YBKG", "price": 565.6, "volatility": 0.0074}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　医薬品（ＴＯＰＩＸ－１７）上場投信", "ticker": "WNBC", "price": 643.1, "volatility": 0.0099}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　自動車・輸送機（ＴＯＰＩＸ－１７）上場投信", "ticker": "OSOF", "price": 109.5, "volatility": 0.0035}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　鉄鋼・非鉄（ＴＯＰＩＸ－１７）上場投信", "ticker": "YHSR", "price": 199.0, "volatility": 0.004}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　機械（ＴＯＰＩＸ－１７）上場投信", "ticker": "QHNG", "price": 582.0, "volatility": 0.005}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　電機・精密（ＴＯＰＩＸ－１７）上場投信", "ticker": "DFJF", "price": 606.0, "volatility": 0.007}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　情報通信・サービスその他（ＴＯＰＩＸ－１７）上場投信", "ticker": "EFRE", "price": 712.4, "volatility": 0.0106}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　電力・ガス（ＴＯＰＩＸ－１７）上場投信", "ticker": "KFRY", "price": 512.6, "volatility": 0.0104}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　運輸・物流（ＴＯＰＩＸ－１７）上場投信", "ticker": "SNSH", "price": 522.0, "volatility": 0.011}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　商社・卸売（ＴＯＰＩＸ－１７）上場投信", "ticker": "YTGX", "price": 265.6, "volatility": 0.0086}, {"name": "ＡＩセレクトメガトレンド　日本株（ネットリターン）ＥＴＮ", "ticker": "NHDF", "price": 51.4, "volatility": 0.0116}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　小売（ＴＯＰＩＸ－１７）上場投信", "ticker": "VCDO", "price": 748.9, "volatility": 0.0119}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　銀行（ＴＯＰＩＸ－１７）上場投信", "ticker": "BZHL", "price": 976.1, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　金融（除く銀行）（ＴＯＰＩＸ－１７）上場投信", "ticker": "AWRT", "price": 331.9, "volatility": 0.0111}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　不動産（ＴＯＰＩＸ－１７）上場投信", "ticker": "GFUB", "price": 380.4, "volatility": 0.0126}, {"name": "半導体フォーカス　日本株（ネットリターン）ＥＴＮ", "ticker": "RIJV", "price": 598.2, "volatility": 0.0112}, {"name": "アップルパーク", "ticker": "BJVW", "price": 363.3, "volatility": 0.0097}, {"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸ高配当４０指数", "ticker": "MQET", "price": 622.9, "volatility": 0.0101}, {"name": "ｉＦｒｅｅＥＴＦ　ＭＳＣＩ日本株女性活躍指数（ＷＩＮ）", "ticker": "AKNX", "price": 267.9, "volatility": 0.0051}, {"name": "ｉＦｒｅｅＥＴＦ　ＭＳＣＩジャパンＥＳＧセレクト・リーダーズ指数", "ticker": "THGO", "price": 504.5, "volatility": 0.0085}, {"name": "ｉＦｒｅｅＥＴＦ　ＦＴＳＥ　ＪＰＸ　Ｂｌｏｓｓｏｍ　Ｊａｐａｎ　Ｉｎｄｅｘ", "ticker": "UVDR", "price": 954.9, "volatility": 0.0079}, {"name": "ｉシェアーズ　Ｓ＆Ｐ　５００　米国株　ＥＴＦ", "ticker": "DCOM", "price": 352.4, "volatility": 0.0106}, {"name": "ｉシェアーズ・コア　米国債７－１０年　ＥＴＦ", "ticker": "EMIJ", "price": 833.4, "volatility": 0.0064}, {"name": "ｉシェアーズ・コア　ＭＳＣＩ　先進国株（除く日本）ＥＴＦ", "ticker": "TCIU", "price": 158.8, "volatility": 0.0118}, {"name": "ｉシェアーズ・コア　ＭＳＣＩ　新興国株　ＥＴＦ", "ticker": "THPE", "price": 113.5, "volatility": 0.0095}, {"name": "ｉシェアーズ　米国リート　ＥＴＦ", "ticker": "BYBO", "price": 941.0, "volatility": 0.004}, {"name": "ＭＡＸＩＳ高利回りＪリート上場投信", "ticker": "TFPH", "price": 320.7, "volatility": 0.0037}, {"name": "石油資源開発", "ticker": "FGCV", "price": 912.9, "volatility": 0.0059}, {"name": "Ｋ＆Ｏエナジーグループ", "ticker": "WYSD", "price": 838.0, "volatility": 0.005}, {"name": "タスキホールディングス", "ticker": "SSMX", "price": 766.9, "volatility": 0.0061}, {"name": "ＷＴＩ原油価格連動型上場投信", "ticker": "PFHX", "price": 635.9, "volatility": 0.0071}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　金上場投資信託", "ticker": "NXDI", "price": 838.5, "volatility": 0.0115}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　銀上場投資信託", "ticker": "MZDO", "price": 785.0, "volatility": 0.008}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　白金上場投資信託", "ticker": "YLOA", "price": 988.4, "volatility": 0.0114}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　パラジウム上場投資信託", "ticker": "SPFU", "price": 750.0, "volatility": 0.003}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　貴金属バスケット上場投資信託", "ticker": "GJBY", "price": 647.4, "volatility": 0.0056}, {"name": "上場インデックスファンド海外債券（ＦＴＳＥ　ＷＧＢＩ）毎月分配型", "ticker": "FKXP", "price": 771.9, "volatility": 0.0049}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　インド株式指数・Ｎｉｆｔｙ　５０　連動型上場投信", "ticker": "CIZG", "price": 56.4, "volatility": 0.0094}, {"name": "Ｓｉｍｐｌｅ－Ｘ　ＮＹ　ダウ・ジョーンズ・インデックス上場投信", "ticker": "ROTS", "price": 958.1, "volatility": 0.0049}, {"name": "リョーサン菱洋ホールディングス", "ticker": "MVTY", "price": 883.6, "volatility": 0.0066}, {"name": "上場インデックスファンド海外先進国株式（ＭＳＣＩ－ＫＯＫＵＳＡＩ）", "ticker": "FTRT", "price": 730.6, "volatility": 0.0124}, {"name": "上場インデックスファンド海外新興国株式（ＭＳＣＩ　エマージング）", "ticker": "JXRQ", "price": 591.4, "volatility": 0.0044}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　ブロード上場投資信託", "ticker": "ZQTA", "price": 692.8, "volatility": 0.0058}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　エネルギー上場投資信託", "ticker": "DIAI", "price": 349.1, "volatility": 0.0039}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　産業用金属上場投資信託", "ticker": "PUCY", "price": 410.8, "volatility": 0.0122}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　農産物上場投資信託", "ticker": "YPVE", "price": 552.6, "volatility": 0.0104}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　穀物上場投資信託", "ticker": "DNGP", "price": 852.4, "volatility": 0.0106}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　天然ガス上場投資信託", "ticker": "VIZX", "price": 843.6, "volatility": 0.0094}, {"name": "イタミアート", "ticker": "IPRD", "price": 653.6, "volatility": 0.0094}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　ＷＴＩ　原油上場投資信託", "ticker": "SPTP", "price": 906.1, "volatility": 0.0091}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　ガソリン上場投資信託", "ticker": "ENGE", "price": 841.0, "volatility": 0.004}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　アルミニウム上場投資信託", "ticker": "ATIT", "price": 671.4, "volatility": 0.0116}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　銅上場投資信託", "ticker": "EIHJ", "price": 659.9, "volatility": 0.0129}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　ニッケル上場投資信託", "ticker": "FOQG", "price": 239.2, "volatility": 0.0038}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　小麦上場投資信託", "ticker": "QEBX", "price": 90.8, "volatility": 0.0038}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　とうもろこし上場投資信託", "ticker": "EVDK", "price": 426.2, "volatility": 0.0092}, {"name": "ＷｉｓｄｏｍＴｒｅｅ　大豆上場投資信託", "ticker": "PLDM", "price": 757.2, "volatility": 0.0102}, {"name": "上場インデックスファンド日本高配当（東証配当フォーカス１００）", "ticker": "WRPN", "price": 444.5, "volatility": 0.0075}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＮＯＭＵＲＡ　原油インデックス連動型上場投信", "ticker": "LQOJ", "price": 665.2, "volatility": 0.0078}, {"name": "ＳＭＴ　ＥＴＦ日本好配当株アクティブ", "ticker": "BBTF", "price": 831.2, "volatility": 0.0042}, {"name": "ＳＤＳホールディングス", "ticker": "QXVP", "price": 330.8, "volatility": 0.0122}, {"name": "第一カッター興業", "ticker": "RRWK", "price": 771.4, "volatility": 0.0116}, {"name": "明豊ファシリティワークス", "ticker": "QLUQ", "price": 758.5, "volatility": 0.0115}, {"name": "美樹工業", "ticker": "JZVI", "price": 239.3, "volatility": 0.0037}, {"name": "安藤・間", "ticker": "NDWX", "price": 411.3, "volatility": 0.0117}, {"name": "ゼロジャパン", "ticker": "USUD", "price": 946.8, "volatility": 0.0098}, {"name": "東急建設", "ticker": "AGZZ", "price": 230.6, "volatility": 0.0036}, {"name": "コムシスホールディングス", "ticker": "HIVQ", "price": 287.5, "volatility": 0.0055}, {"name": "日本電技", "ticker": "QUGW", "price": 171.1, "volatility": 0.0119}, {"name": "シンクレイヤ", "ticker": "ZRFO", "price": 503.9, "volatility": 0.0091}, {"name": "ネオホーム", "ticker": "ETVW", "price": 77.7, "volatility": 0.0107}, {"name": "オーテック", "ticker": "VBJG", "price": 403.0, "volatility": 0.01}, {"name": "ハンモック", "ticker": "ZOIA", "price": 696.3, "volatility": 0.0093}, {"name": "太洋基礎工業", "ticker": "WWID", "price": 358.2, "volatility": 0.0048}, {"name": "Ｗｉｌｌ　Ｓｍａｒｔ", "ticker": "GBFR", "price": 664.9, "volatility": 0.0081}, {"name": "高松コンストラクショングループ", "ticker": "HVRI", "price": 368.7, "volatility": 0.0117}, {"name": "工藤建設", "ticker": "XAXS", "price": 896.4, "volatility": 0.0094}, {"name": "東建コーポレーション", "ticker": "DLUA", "price": 548.2, "volatility": 0.0112}, {"name": "ソネック", "ticker": "AVSF", "price": 149.7, "volatility": 0.0127}, {"name": "藤田エンジニアリング", "ticker": "XYJC", "price": 516.4, "volatility": 0.0094}, {"name": "ワイ・ティー・エル・コーポレーション・バーハッド", "ticker": "NEYV", "price": 655.2, "volatility": 0.0082}, {"name": "コージンバイオ", "ticker": "YOHC", "price": 144.6, "volatility": 0.0084}, {"name": "ヤマウラ", "ticker": "AODP", "price": 205.3, "volatility": 0.0083}, {"name": "ｆａｎｔａｓｉｓｔａ", "ticker": "PNOE", "price": 981.2, "volatility": 0.0118}, {"name": "オリエンタル白石", "ticker": "GNDU", "price": 976.5, "volatility": 0.0095}, {"name": "ナカボーテック", "ticker": "RAHJ", "price": 628.3, "volatility": 0.0113}, {"name": "三東工業社", "ticker": "FIUT", "price": 826.1, "volatility": 0.0069}, {"name": "グローバルＸ　革新的優良企業　ＥＴＦ", "ticker": "TGVW", "price": 951.8, "volatility": 0.0048}, {"name": "大本組", "ticker": "SFQR", "price": 481.5, "volatility": 0.0045}, {"name": "マサル", "ticker": "OCKY", "price": 304.2, "volatility": 0.0072}, {"name": "守谷商会", "ticker": "ZIVZ", "price": 583.8, "volatility": 0.0092}, {"name": "第一建設工業", "ticker": "VZLE", "price": 639.4, "volatility": 0.0124}, {"name": "グローバルＸ　超長期米国債　ＥＴＦ（為替ヘッジあり）", "ticker": "ZIHA", "price": 937.5, "volatility": 0.0105}, {"name": "大成建設", "ticker": "UBZP", "price": 59.9, "volatility": 0.0031}, {"name": "大林組", "ticker": "ULPJ", "price": 754.0, "volatility": 0.007}, {"name": "清水建設", "ticker": "SAMM", "price": 119.2, "volatility": 0.0122}, {"name": "佐藤渡辺", "ticker": "ABMJ", "price": 756.5, "volatility": 0.0065}, {"name": "長谷工コーポレーション", "ticker": "AURI", "price": 543.9, "volatility": 0.0091}, {"name": "グローバルＸ　超長期米国債　ＥＴＦ", "ticker": "CKQR", "price": 933.9, "volatility": 0.0069}, {"name": "松井建設", "ticker": "LVKB", "price": 685.9, "volatility": 0.0089}, {"name": "錢高組", "ticker": "ZXMO", "price": 707.8, "volatility": 0.0052}, {"name": "鹿島建設", "ticker": "DNME", "price": 380.2, "volatility": 0.0032}, {"name": "不動テトラ", "ticker": "ICQC", "price": 599.4, "volatility": 0.0124}, {"name": "大末建設", "ticker": "YVRN", "price": 532.7, "volatility": 0.0057}, {"name": "鉄建建設", "ticker": "CMYX", "price": 221.4, "volatility": 0.0044}, {"name": "ＭＡＸＩＳ米国国債１－３年上場投信（為替ヘッジなし）", "ticker": "ILWP", "price": 332.2, "volatility": 0.0108}, {"name": "西松建設", "ticker": "PHNO", "price": 573.7, "volatility": 0.0093}, {"name": "大豊建設", "ticker": "MRBM", "price": 834.3, "volatility": 0.0073}, {"name": "佐田建設", "ticker": "NUYW", "price": 941.9, "volatility": 0.0111}, {"name": "ナカノフドー建設", "ticker": "OLWM", "price": 607.7, "volatility": 0.0107}, {"name": "田辺工業", "ticker": "QPDD", "price": 930.1, "volatility": 0.0031}, {"name": "ＭＡＸＩＳ米国国債２０年超上場投信（為替ヘッジなし）", "ticker": "PMGS", "price": 581.8, "volatility": 0.0112}, {"name": "奥村組", "ticker": "SDWD", "price": 255.6, "volatility": 0.0086}, {"name": "東鉄工業", "ticker": "UUPP", "price": 734.6, "volatility": 0.0076}, {"name": "ＭＡＸＩＳ米国国債２０年超上場投信（為替ヘッジあり）", "ticker": "TDHV", "price": 264.9, "volatility": 0.0079}, {"name": "土屋ホールディングス", "ticker": "RDSX", "price": 878.2, "volatility": 0.0048}, {"name": "大盛工業", "ticker": "LWFS", "price": 660.7, "volatility": 0.0037}, {"name": "イチケン", "ticker": "JAUB", "price": 96.9, "volatility": 0.0099}, {"name": "富士ピー・エス", "ticker": "VEZP", "price": 391.1, "volatility": 0.0119}, {"name": "学びエイド", "ticker": "ZJWT", "price": 498.1, "volatility": 0.0111}, {"name": "南海辰村建設", "ticker": "NMFR", "price": 514.2, "volatility": 0.0072}, {"name": "淺沼組", "ticker": "JNIM", "price": 474.9, "volatility": 0.0079}, {"name": "森組", "ticker": "MZKA", "price": 292.4, "volatility": 0.0054}, {"name": "リサイクルテック・ジャパン", "ticker": "NWUQ", "price": 312.2, "volatility": 0.0052}, {"name": "戸田建設", "ticker": "MTYL", "price": 618.5, "volatility": 0.0045}, {"name": "熊谷組", "ticker": "PQAG", "price": 178.2, "volatility": 0.0112}, {"name": "北野建設", "ticker": "UGZB", "price": 804.5, "volatility": 0.0075}, {"name": "植木組", "ticker": "SUME", "price": 706.3, "volatility": 0.0093}, {"name": "アストロスケールホールディングス", "ticker": "PNGH", "price": 735.8, "volatility": 0.0072}, {"name": "矢作建設工業", "ticker": "DINQ", "price": 710.3, "volatility": 0.0033}, {"name": "ピーエス・コンストラクション", "ticker": "HCVI", "price": 185.0, "volatility": 0.008}, {"name": "日本ハウスホールディングス", "ticker": "UITB", "price": 424.1, "volatility": 0.0089}, {"name": "大東建託", "ticker": "OEGH", "price": 743.6, "volatility": 0.0094}, {"name": "新日本建設", "ticker": "TMAP", "price": 206.5, "volatility": 0.0095}, {"name": "東亜道路工業", "ticker": "JJDA", "price": 358.9, "volatility": 0.0119}, {"name": "東亜建設工業", "ticker": "GXCN", "price": 624.3, "volatility": 0.0073}, {"name": "日本国土開発", "ticker": "DZHK", "price": 547.4, "volatility": 0.0104}, {"name": "若築建設", "ticker": "MTQM", "price": 101.5, "volatility": 0.0045}, {"name": "グローバルＸ　インド・トップ１０＋　ＥＴＦ", "ticker": "MECZ", "price": 292.8, "volatility": 0.0058}, {"name": "五洋建設", "ticker": "QGXN", "price": 82.5, "volatility": 0.0055}, {"name": "金下建設", "ticker": "IBTU", "price": 501.2, "volatility": 0.0042}, {"name": "世紀東急工業", "ticker": "OVHR", "price": 796.2, "volatility": 0.0092}, {"name": "福田組", "ticker": "QYJZ", "price": 817.4, "volatility": 0.0056}, {"name": "Ｄ＆Ｍカンパニー", "ticker": "FNDQ", "price": 875.7, "volatility": 0.0087}, {"name": "大成温調", "ticker": "NBEJ", "price": 772.6, "volatility": 0.0104}, {"name": "テノックス", "ticker": "JKGR", "price": 102.9, "volatility": 0.0059}, {"name": "日本ドライケミカル", "ticker": "BAAM", "price": 317.5, "volatility": 0.0055}, {"name": "Ｃｈｏｒｄｉａ　Ｔｈｅｒａｐｅｕｔｉｃｓ", "ticker": "FHVP", "price": 451.9, "volatility": 0.0111}, {"name": "住友林業", "ticker": "FOJR", "price": 59.1, "volatility": 0.0121}, {"name": "日本基礎技術", "ticker": "LQYR", "price": 746.2, "volatility": 0.0068}, {"name": "巴コーポレーション", "ticker": "OZMP", "price": 907.9, "volatility": 0.0109}, {"name": "大和ハウス工業", "ticker": "MDZR", "price": 442.6, "volatility": 0.0104}, {"name": "ライト工業", "ticker": "HTID", "price": 324.3, "volatility": 0.0073}, {"name": "積水ハウス", "ticker": "BOQY", "price": 433.1, "volatility": 0.0061}, {"name": "日特建設", "ticker": "ZEPF", "price": 560.4, "volatility": 0.0126}, {"name": "インテグループ", "ticker": "IPZF", "price": 666.6, "volatility": 0.0064}, {"name": "北陸電気工事", "ticker": "BPDJ", "price": 587.8, "volatility": 0.0108}, {"name": "ユアテック", "ticker": "KXVN", "price": 957.2, "volatility": 0.0102}, {"name": "日本リーテック", "ticker": "HLRB", "price": 882.5, "volatility": 0.0055}, {"name": "四電工", "ticker": "TXFI", "price": 748.4, "volatility": 0.0114}, {"name": "中電工", "ticker": "GLDS", "price": 176.2, "volatility": 0.0068}, {"name": "関電工", "ticker": "GUUT", "price": 846.9, "volatility": 0.0099}, {"name": "きんでん", "ticker": "OYCD", "price": 924.2, "volatility": 0.0088}, {"name": "東京エネシス", "ticker": "SESL", "price": 916.1, "volatility": 0.0069}, {"name": "トーエネック", "ticker": "RHWT", "price": 299.7, "volatility": 0.0127}, {"name": "弘電社", "ticker": "ROBC", "price": 180.3, "volatility": 0.0033}, {"name": "ＷＯＬＶＥＳ　ＨＡＮＤ", "ticker": "KNEL", "price": 496.0, "volatility": 0.009}, {"name": "日本電設工業", "ticker": "ZQCI", "price": 381.3, "volatility": 0.0117}, {"name": "エクシオグループ", "ticker": "XYFT", "price": 398.3, "volatility": 0.0047}, {"name": "新日本空調", "ticker": "RNYG", "price": 551.4, "volatility": 0.0116}, {"name": "クラフティア", "ticker": "VIUF", "price": 849.7, "volatility": 0.0127}, {"name": "ＭＵＳＣＡＴ　ＧＲＯＵＰ", "ticker": "OQUQ", "price": 485.4, "volatility": 0.0084}, {"name": "サンテック", "ticker": "PKFI", "price": 933.1, "volatility": 0.0099}, {"name": "三機工業", "ticker": "LMON", "price": 886.3, "volatility": 0.0093}, {"name": "日揮ホールディングス", "ticker": "AJEO", "price": 957.2, "volatility": 0.0102}, {"name": "中外炉工業", "ticker": "XWYN", "price": 283.9, "volatility": 0.0069}, {"name": "テクノ菱和", "ticker": "HWGV", "price": 982.4, "volatility": 0.0106}, {"name": "高田工業所", "ticker": "QKAW", "price": 532.1, "volatility": 0.0109}, {"name": "ヤマト", "ticker": "HYFU", "price": 221.8, "volatility": 0.0048}, {"name": "太平電業", "ticker": "NVRW", "price": 956.7, "volatility": 0.0097}, {"name": "高砂熱学工業", "ticker": "MKAQ", "price": 973.1, "volatility": 0.0061}, {"name": "ＭＦＳ", "ticker": "UUIY", "price": 215.2, "volatility": 0.0082}, {"name": "三晃金属工業", "ticker": "VDKW", "price": 167.3, "volatility": 0.0103}, {"name": "朝日工業社", "ticker": "NTCU", "price": 828.8, "volatility": 0.0042}, {"name": "明星工業", "ticker": "PEXU", "price": 325.4, "volatility": 0.0084}, {"name": "大氣社", "ticker": "MXMR", "price": 959.4, "volatility": 0.0036}, {"name": "タウンズ", "ticker": "KKEH", "price": 372.4, "volatility": 0.0106}, {"name": "ダイダン", "ticker": "TJCQ", "price": 103.3, "volatility": 0.0063}, {"name": "協和日成", "ticker": "VPAH", "price": 854.9, "volatility": 0.0079}, {"name": "日比谷総合設備", "ticker": "JREB", "price": 106.3, "volatility": 0.0067}, {"name": "ＰｏｓｔＰｒｉｍｅ", "ticker": "KGVH", "price": 320.6, "volatility": 0.0124}, {"name": "神田通信機", "ticker": "YDES", "price": 834.1, "volatility": 0.0071}, {"name": "高橋カーテンウォール工業", "ticker": "BWNA", "price": 83.6, "volatility": 0.0094}, {"name": "暁飯島工業", "ticker": "XXXS", "price": 219.9, "volatility": 0.0129}, {"name": "メディエア", "ticker": "JCQY", "price": 97.5, "volatility": 0.0055}, {"name": "ニップン", "ticker": "GKOT", "price": 571.4, "volatility": 0.0044}, {"name": "日清製粉グループ本社", "ticker": "FQYW", "price": 953.5, "volatility": 0.0095}, {"name": "日東富士製粉", "ticker": "RVWO", "price": 697.6, "volatility": 0.0106}, {"name": "昭和産業", "ticker": "AEHZ", "price": 152.8, "volatility": 0.0058}, {"name": "鳥越製粉", "ticker": "KFHP", "price": 331.8, "volatility": 0.0048}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日経半導体株指数連動型上場投信", "ticker": "KAAI", "price": 817.2, "volatility": 0.0102}, {"name": "ＳＭＤＡＭ　Ａｃｔｉｖｅ　ＥＴＦ　日本高配当株式", "ticker": "YZMY", "price": 666.2, "volatility": 0.0092}, {"name": "ｉシェアーズ　米国債０－３ヶ月　ＥＴＦ", "ticker": "WLTW", "price": 255.2, "volatility": 0.0082}, {"name": "ｉシェアーズ　米国高配当株　ＥＴＦ", "ticker": "XZCP", "price": 311.2, "volatility": 0.0118}, {"name": "ｉシェアーズ　米国連続増配株　ＥＴＦ", "ticker": "HBBJ", "price": 779.8, "volatility": 0.0032}, {"name": "ｉＦｒｅｅＥＴＦ　米国国債７－１０年（為替ヘッジなし）", "ticker": "UULU", "price": 676.4, "volatility": 0.0094}, {"name": "ｉＦｒｅｅＥＴＦ　米国国債７－１０年（為替ヘッジあり）", "ticker": "QFBJ", "price": 850.3, "volatility": 0.0033}, {"name": "ｉＦｒｅｅＥＴＦ　ＪＰＸプライム１５０", "ticker": "DVSO", "price": 595.9, "volatility": 0.0089}, {"name": "グローバルＸ　ＵＳ　ＲＥＩＴ・トップ２０　ＥＴＦ", "ticker": "UTHP", "price": 363.1, "volatility": 0.0061}, {"name": "グローバルＸ　米国優先証券　ＥＴＦ（隔月分配型）", "ticker": "UHVN", "price": 604.2, "volatility": 0.0072}, {"name": "ｉシェアーズ　Ｎｉｆｔｙ　５０　インド株　ＥＴＦ", "ticker": "TVZW", "price": 400.8, "volatility": 0.0122}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　香港ハンセン・ダブル・ブル　ＥＴＮ", "ticker": "HDZO", "price": 624.2, "volatility": 0.0072}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　香港ハンセン・ベア　ＥＴＮ", "ticker": "OCMW", "price": 269.5, "volatility": 0.0035}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　韓国ＫＯＳＰＩ・ダブル・ブル　ＥＴＮ", "ticker": "PKKK", "price": 448.2, "volatility": 0.0112}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　韓国ＫＯＳＰＩ・ベア　ＥＴＮ", "ticker": "QTFM", "price": 64.4, "volatility": 0.0086}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　金先物　ダブル・ブル　ＥＴＮ", "ticker": "PTJV", "price": 827.3, "volatility": 0.0103}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　金先物　ベア　ＥＴＮ", "ticker": "BXEK", "price": 476.6, "volatility": 0.0064}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　ドバイ原油先物　ダブル・ブル　ＥＴＮ", "ticker": "RDPN", "price": 983.9, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　ドバイ原油先物　ベア　ＥＴＮ", "ticker": "BPRS", "price": 665.3, "volatility": 0.0083}, {"name": "シュンビン", "ticker": "QNYJ", "price": 632.2, "volatility": 0.0108}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　ＮＹダウ・ダブル・ブル・ドルヘッジ　ＥＴＮ", "ticker": "AFPS", "price": 605.4, "volatility": 0.0084}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　ＮＹダウ・ベア・ドルヘッジ　ＥＴＮ", "ticker": "OYEC", "price": 686.1, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　東証グロース市場２５０　ＥＴＮ", "ticker": "NONU", "price": 197.8, "volatility": 0.0108}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　ＳＴＯＸＸ　アセアン好配当５０（円、ネットリターン）ＥＴＮ", "ticker": "VNHA", "price": 342.9, "volatility": 0.0059}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　Ｓ＆Ｐ５００　配当貴族（ネットリターン）　ＥＴＮ", "ticker": "DPIC", "price": 250.7, "volatility": 0.0123}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　Ｓ＆Ｐ　シンガポール　リート（ネットリターン）　ＥＴＮ", "ticker": "KXPB", "price": 556.1, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　インドＮｉｆｔｙ・ダブル・ブル　ＥＴＮ", "ticker": "LGZG", "price": 345.0, "volatility": 0.008}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　インドＮｉｆｔｙ・ベア　ＥＴＮ", "ticker": "ZZYX", "price": 146.1, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　野村日本株高配当７０（ドルヘッジ、ネットリターン）ＥＴＮ", "ticker": "FMET", "price": 324.2, "volatility": 0.0072}, {"name": "タイヨーパッケージ", "ticker": "ZJXF", "price": 575.8, "volatility": 0.0072}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　ニッチトップ　中小型日本株（ネットリターン）ＥＴＮ", "ticker": "WWCO", "price": 459.6, "volatility": 0.0034}, {"name": "中部飼料", "ticker": "BOPZ", "price": 440.8, "volatility": 0.0122}, {"name": "日和産業", "ticker": "EUBX", "price": 996.2, "volatility": 0.0068}, {"name": "ロゴスホールディングス", "ticker": "NLVD", "price": 654.1, "volatility": 0.0071}, {"name": "フィード・ワン", "ticker": "FVGF", "price": 534.4, "volatility": 0.0086}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　日本株配当貴族（ドルヘッジ、ネットリターン）ＥＴＮ", "ticker": "RNXO", "price": 266.9, "volatility": 0.0061}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　東証ＲＥＩＴ（ドルヘッジ、ネットリターン）ＥＴＮ", "ticker": "KVGC", "price": 584.7, "volatility": 0.0083}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　野村ＡＩビジネス７０（ネットリターン）ＥＴＮ", "ticker": "QAIO", "price": 927.6, "volatility": 0.0106}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　高ベータ３０（ネットリターン）ＥＴＮ", "ticker": "JYVE", "price": 494.6, "volatility": 0.0076}, {"name": "ＮＥＸＴ　ＮＯＴＥＳ　低ベータ５０（ネットリターン）ＥＴＮ", "ticker": "LDQS", "price": 565.4, "volatility": 0.0084}, {"name": "ＰＲＩＳＭ　ＢｉｏＬａｂ", "ticker": "ZSKP", "price": 634.5, "volatility": 0.0075}, {"name": "スマートＥＳＧ３０女性活躍（ネットリターン）ＥＴＮ", "ticker": "LXFP", "price": 479.6, "volatility": 0.0034}, {"name": "スマートＥＳＧ３０総合（ネットリターン）ＥＴＮ", "ticker": "HRAI", "price": 202.2, "volatility": 0.0108}, {"name": "トップシェアインデックス（ネットリターン）ＥＴＮ", "ticker": "HYGM", "price": 267.9, "volatility": 0.0051}, {"name": "スマートＥＳＧ３０低カーボンリスク（ネットリターン）ＥＴＮ", "ticker": "LMDU", "price": 424.6, "volatility": 0.0084}, {"name": "ライジングコーポレーション", "ticker": "ATGI", "price": 140.9, "volatility": 0.0121}, {"name": "ＰＢＲ１倍割れ解消推進ＥＴＦ", "ticker": "ERWS", "price": 532.2, "volatility": 0.0052}, {"name": "政策保有解消推進ＥＴＦ", "ticker": "LGSD", "price": 220.0, "volatility": 0.003}, {"name": "投資家経営者一心同体ＥＴＦ", "ticker": "UIZV", "price": 599.3, "volatility": 0.0037}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日本成長株アクティブ上場投信", "ticker": "FHJY", "price": 464.6, "volatility": 0.0076}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　日本高配当株アクティブ上場投信", "ticker": "GFNT", "price": 241.6, "volatility": 0.0046}, {"name": "ＭＡＸＩＳ高配当日本株アクティブ上場投信", "ticker": "JFXL", "price": 356.4, "volatility": 0.0094}, {"name": "ＮＺＡＭ　上場投信　Ｓ＆Ｐ５００（為替ヘッジあり）", "ticker": "LPKU", "price": 431.2, "volatility": 0.0118}, {"name": "ＮＺＡＭ　上場投信　ＮＡＳＤＡＱ１００（為替ヘッジあり）", "ticker": "IIFC", "price": 415.2, "volatility": 0.0078}, {"name": "ＮＺＡＭ　上場投信　ＮＹダウ３０（為替ヘッジあり）", "ticker": "VOZF", "price": 134.1, "volatility": 0.0089}, {"name": "ＮＺＡＭ　上場投信　ＤＡＸ（為替ヘッジあり）", "ticker": "KHUF", "price": 223.1, "volatility": 0.0099}, {"name": "構造計画研究所ホールディングス", "ticker": "DTNB", "price": 377.7, "volatility": 0.0053}, {"name": "ＮＺＡＭ　上場投信　米国国債７－１０年（為替ヘッジあり）", "ticker": "QCWD", "price": 759.5, "volatility": 0.0035}, {"name": "ＮＺＡＭ　上場投信　ドイツ国債７－１０年（為替ヘッジあり）", "ticker": "CMXO", "price": 994.1, "volatility": 0.0089}, {"name": "ＮＺＡＭ　上場投信　フランス国債７－１０年（為替ヘッジあり）", "ticker": "OJVH", "price": 136.7, "volatility": 0.0097}, {"name": "上場Ｔｒａｃｅｒｓ　米国債０－２年ラダー（為替ヘッジなし）", "ticker": "VVYP", "price": 670.0, "volatility": 0.003}, {"name": "東証ＲＥＩＴインバースＥＴＦ", "ticker": "NWMT", "price": 773.6, "volatility": 0.0066}, {"name": "グローバルＸ　Ｓ＆Ｐ５００配当貴族　ＥＴＦ（為替ヘッジあり）", "ticker": "VUIS", "price": 946.0, "volatility": 0.009}, {"name": "グローバルＸ　オフィス・Ｊ－ＲＥＩＴ　ＥＴＦ", "ticker": "VNEV", "price": 197.8, "volatility": 0.0108}, {"name": "グローバルＸ　レジデンシャル・Ｊ－ＲＥＩＴ　ＥＴＦ", "ticker": "JBMM", "price": 238.4, "volatility": 0.0046}, {"name": "グローバルＸ　ホテル＆リテール・Ｊ－ＲＥＩＴ　ＥＴＦ", "ticker": "ZNNU", "price": 409.9, "volatility": 0.0031}, {"name": "小野谷機工", "ticker": "KVZR", "price": 861.6, "volatility": 0.0046}, {"name": "日本甜菜製糖", "ticker": "TLFH", "price": 278.8, "volatility": 0.0042}, {"name": "ＤＭ三井製糖", "ticker": "POOB", "price": 774.7, "volatility": 0.0077}, {"name": "ｉＦｒｅｅＥＴＦ　日経高利回りＲＥＩＴ指数", "ticker": "SQCB", "price": 69.3, "volatility": 0.0123}, {"name": "塩水港精糖", "ticker": "LSXW", "price": 871.1, "volatility": 0.0119}, {"name": "フジ日本", "ticker": "UGHB", "price": 264.2, "volatility": 0.0072}, {"name": "ウェルネオシュガー", "ticker": "IJLN", "price": 980.3, "volatility": 0.0127}, {"name": "カドス・コーポレーション", "ticker": "ACND", "price": 822.6, "volatility": 0.0056}, {"name": "ＬＩＦＵＬＬ", "ticker": "RSWJ", "price": 655.0, "volatility": 0.008}, {"name": "ＭＩＸＩ", "ticker": "QIOA", "price": 661.1, "volatility": 0.0119}, {"name": "インタースペース", "ticker": "BUUX", "price": 697.1, "volatility": 0.0101}, {"name": "ジェイエイシーリクルートメント", "ticker": "KGMU", "price": 643.3, "volatility": 0.0063}, {"name": "日本Ｍ＆Ａセンターホールディングス", "ticker": "EPHN", "price": 188.1, "volatility": 0.0111}, {"name": "フィットイージー", "ticker": "RADA", "price": 261.3, "volatility": 0.0117}, {"name": "メンバーズ", "ticker": "YXKW", "price": 284.0, "volatility": 0.009}, {"name": "北浜キャピタルパートナーズ", "ticker": "MKBS", "price": 183.8, "volatility": 0.0092}, {"name": "ヒップ", "ticker": "LLDY", "price": 567.7, "volatility": 0.0053}, {"name": "クルーズ", "ticker": "FFNQ", "price": 354.2, "volatility": 0.0072}, {"name": "中広", "ticker": "HUFJ", "price": 243.3, "volatility": 0.0097}, {"name": "上場インデックスファンド日経半導体株", "ticker": "ULNB", "price": 404.8, "volatility": 0.0082}, {"name": "ＵＴグループ", "ticker": "QAAV", "price": 796.8, "volatility": 0.0062}, {"name": "アイティメディア", "ticker": "FOXT", "price": 300.3, "volatility": 0.0127}, {"name": "幼児活動研究会", "ticker": "BERI", "price": 147.7, "volatility": 0.0053}, {"name": "Ｅ・Ｊホールディングス", "ticker": "WFPH", "price": 651.9, "volatility": 0.0111}, {"name": "オープンアップグループ", "ticker": "EQXM", "price": 150.8, "volatility": 0.0038}, {"name": "セーラー広告", "ticker": "ZLDW", "price": 947.3, "volatility": 0.0103}, {"name": "コシダカホールディングス", "ticker": "VBLR", "price": 236.2, "volatility": 0.0068}, {"name": "ＦＲＯＮＴＥＯ", "ticker": "GSEU", "price": 721.4, "volatility": 0.0044}, {"name": "タイミー", "ticker": "EHFH", "price": 660.0, "volatility": 0.003}, {"name": "ジーエヌアイグループ", "ticker": "UUCN", "price": 402.0, "volatility": 0.005}, {"name": "ｎｍｓ　ホールディングス", "ticker": "LPLC", "price": 837.1, "volatility": 0.0101}, {"name": "アルトナー", "ticker": "DPUK", "price": 709.5, "volatility": 0.0125}, {"name": "地域新聞社", "ticker": "IIBK", "price": 463.1, "volatility": 0.0061}, {"name": "パソナグループ", "ticker": "OQUJ", "price": 648.1, "volatility": 0.0111}, {"name": "ＣＤＳ", "ticker": "BMJJ", "price": 471.0, "volatility": 0.012}, {"name": "ライフクリエイト", "ticker": "ELDU", "price": 345.9, "volatility": 0.0089}, {"name": "リンクアンドモチベーション", "ticker": "YYWI", "price": 439.3, "volatility": 0.0123}, {"name": "博展", "ticker": "RMWJ", "price": 276.3, "volatility": 0.0093}, {"name": "エス・エム・エス", "ticker": "JVVN", "price": 944.0, "volatility": 0.007}, {"name": "成学社", "ticker": "MBKZ", "price": 857.2, "volatility": 0.0058}, {"name": "サポート", "ticker": "DTPA", "price": 299.5, "volatility": 0.0035}, {"name": "サニーサイドアップグループ", "ticker": "GBJJ", "price": 731.6, "volatility": 0.0046}, {"name": "パーソルホールディングス", "ticker": "ZNNJ", "price": 885.2, "volatility": 0.0078}, {"name": "リニカル", "ticker": "WBDC", "price": 440.6, "volatility": 0.0036}, {"name": "シイエム・シイ", "ticker": "YEQX", "price": 271.7, "volatility": 0.0047}, {"name": "ソーバル", "ticker": "QXDS", "price": 803.3, "volatility": 0.0063}, {"name": "Ｌｉｂｅｒａｗａｒｅ", "ticker": "KYNX", "price": 781.0, "volatility": 0.012}, {"name": "クックパッド", "ticker": "GHNM", "price": 904.4, "volatility": 0.0086}, {"name": "アミタホールディングス", "ticker": "MPWJ", "price": 935.2, "volatility": 0.0082}, {"name": "アイ・ケイ・ケイホールディングス", "ticker": "TVLW", "price": 854.9, "volatility": 0.0079}, {"name": "Ｈｅａｒｔｓｅｅｄ", "ticker": "HGYD", "price": 815.9, "volatility": 0.0071}, {"name": "森永製菓", "ticker": "KEDH", "price": 268.2, "volatility": 0.0112}, {"name": "中村屋", "ticker": "EJMC", "price": 989.4, "volatility": 0.0124}, {"name": "江崎グリコ", "ticker": "XRQA", "price": 558.4, "volatility": 0.0114}, {"name": "ｍｅｉｔｏ", "ticker": "OAIT", "price": 495.7, "volatility": 0.0087}, {"name": "ブルボン", "ticker": "JVAE", "price": 457.1, "volatility": 0.0059}, {"name": "井村屋グループ", "ticker": "EXZK", "price": 612.6, "volatility": 0.0104}, {"name": "Ｆａｂｅｒ　Ｃｏｍｐａｎｙ", "ticker": "GOCY", "price": 906.2, "volatility": 0.0068}, {"name": "不二家", "ticker": "XXWJ", "price": 661.6, "volatility": 0.0114}, {"name": "山崎製パン", "ticker": "UBUV", "price": 427.8, "volatility": 0.0108}, {"name": "第一屋製パン", "ticker": "DHVG", "price": 436.0, "volatility": 0.007}, {"name": "カンロ", "ticker": "SDWA", "price": 615.9, "volatility": 0.0071}, {"name": "モロゾフ", "ticker": "JPUI", "price": 804.5, "volatility": 0.0085}, {"name": "ＭＡＸＩＳ日経半導体株上場投信", "ticker": "TREZ", "price": 714.8, "volatility": 0.0078}, {"name": "亀田製菓", "ticker": "AUKX", "price": 503.4, "volatility": 0.0096}, {"name": "岩塚製菓", "ticker": "NGWD", "price": 431.7, "volatility": 0.0113}, {"name": "寿スピリッツ", "ticker": "FXRS", "price": 144.9, "volatility": 0.0079}, {"name": "コモ", "ticker": "XEKT", "price": 204.0, "volatility": 0.009}, {"name": "湖池屋", "ticker": "XDEM", "price": 837.1, "volatility": 0.0059}, {"name": "カルビー", "ticker": "OPMD", "price": 582.1, "volatility": 0.0109}, {"name": "ＮＩＣＳ", "ticker": "QJBH", "price": 490.3, "volatility": 0.0033}, {"name": "上場インデックスファンド米国株式（ダウ平均）為替ヘッジなし", "ticker": "GJLM", "price": 373.9, "volatility": 0.0069}, {"name": "グローバルＸ　Ｓ＆Ｐ５００配当貴族ＥＴＦ", "ticker": "EQJK", "price": 601.1, "volatility": 0.0119}, {"name": "ｉＦｒｅｅＥＴＦ　Ｓ＆Ｐ５００レバレッジ", "ticker": "KDKM", "price": 733.2, "volatility": 0.0062}, {"name": "ｉＦｒｅｅＥＴＦ　Ｓ＆Ｐ５００インバース", "ticker": "GANJ", "price": 844.5, "volatility": 0.0085}, {"name": "上場インデックスファンドＳ＆Ｐ５００先物レバレッジ２倍", "ticker": "FZSB", "price": 915.4, "volatility": 0.0084}, {"name": "グローバルＸ　ＡＩ＆ビッグデータ　ＥＴＦ", "ticker": "PQRX", "price": 740.6, "volatility": 0.0124}, {"name": "上場インデックスファンドＳ＆Ｐ５００先物インバース", "ticker": "DCIQ", "price": 395.2, "volatility": 0.0082}, {"name": "ＭＡＸＩＳ　ＮＹダウ上場投信", "ticker": "BWQI", "price": 557.3, "volatility": 0.0057}, {"name": "ＭＡＸＩＳ　ＮＹダウ上場投信（為替ヘッジあり）", "ticker": "LPBS", "price": 987.7, "volatility": 0.0053}, {"name": "グローバルＸ　半導体　ＥＴＦ", "ticker": "IFOO", "price": 498.0, "volatility": 0.011}, {"name": "グローバルＸ　ＵＳ　テック・トップ２０　ＥＴＦ", "ticker": "QMZA", "price": 227.5, "volatility": 0.0105}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ブルームバーグ・ドイツ国債（７－１０年）インデックス（為替ヘッジあり）連動型上場投信", "ticker": "PWPQ", "price": 338.2, "volatility": 0.0048}, {"name": "ｉＦｒｅｅＥＴＦ　Ｓ＆Ｐ５００（為替ヘッジなし）", "ticker": "FVUD", "price": 480.1, "volatility": 0.0129}, {"name": "ｉＦｒｅｅＥＴＦ　Ｓ＆Ｐ５００（為替ヘッジあり）", "ticker": "CJNN", "price": 842.3, "volatility": 0.0107}, {"name": "ｉＦｒｅｅＥＴＦ　Ｓ＆Ｐ５００ダブルインバース", "ticker": "EXZC", "price": 573.5, "volatility": 0.0065}, {"name": "グローバルＸ　ウラニウムビジネス　ＥＴＦ", "ticker": "IRZH", "price": 777.2, "volatility": 0.0058}, {"name": "ｉシェアーズ　ＭＳＣＩ　ジャパン気候変動アクション　ＥＴＦ", "ticker": "TLVY", "price": 429.9, "volatility": 0.0129}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＪＰＸ国債先物ダブルインバース指数連動型上場投信", "ticker": "ZUCD", "price": 560.2, "volatility": 0.0032}, {"name": "グローバルＸ　Ｍｏｒｎｉｎｇｓｔａｒ　米国中小型　Ｍｏａｔ　ＥＴＦ", "ticker": "YFDG", "price": 330.6, "volatility": 0.0036}, {"name": "グローバルＸ　スーパーディビィデンド－ＵＳ　ＥＴＦ", "ticker": "ZAQF", "price": 296.2, "volatility": 0.0068}, {"name": "グローバルＸ　チャイナＥＶ＆バッテリー　ＥＴＦ", "ticker": "ULBY", "price": 607.3, "volatility": 0.0057}, {"name": "ｉシェアーズ　米国債２０年超　ＥＴＦ", "ticker": "ITNE", "price": 830.1, "volatility": 0.0031}, {"name": "ｉシェアーズ　米国総合債券　ＥＴＦ", "ticker": "FEWW", "price": 603.3, "volatility": 0.0063}, {"name": "ｉシェアーズ　米ドル建て投資適格社債　ＥＴＦ", "ticker": "KFMB", "price": 299.6, "volatility": 0.0126}, {"name": "ｉシェアーズ　米ドル建てハイイールド社債　ＥＴＦ", "ticker": "ZCJA", "price": 263.0, "volatility": 0.006}, {"name": "ｉシェアーズ　フランス国債７－１０年　ＥＴＦ（為替ヘッジあり）", "ticker": "BUTN", "price": 543.5, "volatility": 0.0065}, {"name": "森永乳業", "ticker": "VYSA", "price": 628.1, "volatility": 0.0111}, {"name": "六甲バター", "ticker": "AZIP", "price": 529.9, "volatility": 0.0031}, {"name": "ヤクルト本社", "ticker": "LZQH", "price": 265.1, "volatility": 0.0081}, {"name": "Ｂ－Ｒ　サーティワン　アイスクリーム", "ticker": "ZXTI", "price": 572.2, "volatility": 0.0108}, {"name": "明治ホールディングス", "ticker": "UBTT", "price": 409.4, "volatility": 0.0124}, {"name": "勝美ジャパン", "ticker": "OQHS", "price": 809.0, "volatility": 0.012}, {"name": "雪印メグミルク", "ticker": "UFBK", "price": 917.1, "volatility": 0.0101}, {"name": "ＩＮＳＩＧＨＴ　ＬＡＢ", "ticker": "UQWN", "price": 457.2, "volatility": 0.0102}, {"name": "プリマハム", "ticker": "RBNY", "price": 660.7, "volatility": 0.0123}, {"name": "日本ハム", "ticker": "OEHY", "price": 989.5, "volatility": 0.0035}, {"name": "林兼産業", "ticker": "BCTB", "price": 103.1, "volatility": 0.0061}, {"name": "丸大食品", "ticker": "BZAB", "price": 160.2, "volatility": 0.0128}, {"name": "オプロ", "ticker": "XMCK", "price": 123.3, "volatility": 0.0097}, {"name": "福留ハム", "ticker": "LQFX", "price": 734.2, "volatility": 0.0088}, {"name": "Ｓ　Ｆｏｏｄｓ", "ticker": "XKDR", "price": 101.1, "volatility": 0.0119}, {"name": "滝沢ハム", "ticker": "NZSU", "price": 862.9, "volatility": 0.0101}, {"name": "柿安本店", "ticker": "RJYB", "price": 694.8, "volatility": 0.0082}, {"name": "伊藤ハム米久ホールディングス", "ticker": "AFMG", "price": 121.6, "volatility": 0.0046}, {"name": "アスミホールディングス", "ticker": "TMEE", "price": 668.5, "volatility": 0.0045}, {"name": "きょくとう", "ticker": "RQOQ", "price": 679.1, "volatility": 0.0039}, {"name": "学情", "ticker": "WFMQ", "price": 188.4, "volatility": 0.0114}, {"name": "ドーン", "ticker": "NDRK", "price": 541.4, "volatility": 0.0044}, {"name": "ＣＳＳホールディングス", "ticker": "RUWV", "price": 798.7, "volatility": 0.0117}, {"name": "スタジオアリス", "ticker": "YWFO", "price": 307.4, "volatility": 0.0056}, {"name": "クロスキャット", "ticker": "FEQR", "price": 473.7, "volatility": 0.0067}, {"name": "エプコ", "ticker": "AZTB", "price": 390.5, "volatility": 0.0125}, {"name": "ＣＡＩＣＡ　ＤＩＧＩＴＡＬ", "ticker": "VJQC", "price": 450.8, "volatility": 0.0122}, {"name": "システナ", "ticker": "KMRC", "price": 619.4, "volatility": 0.0036}, {"name": "ソフトフロントホールディングス", "ticker": "XKXX", "price": 760.0, "volatility": 0.003}, {"name": "ｆｏｎｆｕｎ", "ticker": "THDZ", "price": 526.9, "volatility": 0.0061}, {"name": "ＮＪＳ", "ticker": "CDEJ", "price": 129.8, "volatility": 0.0128}, {"name": "デジタルアーツ", "ticker": "RFTF", "price": 656.9, "volatility": 0.0099}, {"name": "日鉄ソリューションズ", "ticker": "NCMO", "price": 913.0, "volatility": 0.01}, {"name": "東北新社", "ticker": "RFOU", "price": 258.6, "volatility": 0.0044}, {"name": "フォーサイド", "ticker": "RCWS", "price": 187.3, "volatility": 0.0057}, {"name": "ＡＬＳＯＫ", "ticker": "GWRA", "price": 127.7, "volatility": 0.0053}, {"name": "クエスト", "ticker": "NEPK", "price": 53.5, "volatility": 0.0095}, {"name": "イオレ", "ticker": "LPUA", "price": 705.2, "volatility": 0.0082}, {"name": "キューブシステム", "ticker": "TFJM", "price": 489.8, "volatility": 0.0032}, {"name": "いちご", "ticker": "KSUZ", "price": 874.9, "volatility": 0.0079}, {"name": "クオンタムソリューションズ", "ticker": "BKTT", "price": 69.3, "volatility": 0.0123}, {"name": "ｉＦｒｅｅＥＴＦ　インドＮｉｆｔｙ５０", "ticker": "ZBCC", "price": 186.1, "volatility": 0.0069}, {"name": "極楽湯ホールディングス", "ticker": "LURH", "price": 506.9, "volatility": 0.0061}, {"name": "アルバイトタイムス", "ticker": "HWTZ", "price": 508.7, "volatility": 0.0043}, {"name": "トランスジェニックグループ", "ticker": "SVJA", "price": 847.5, "volatility": 0.0105}, {"name": "ＨＯＤＬ１", "ticker": "NHBI", "price": 667.1, "volatility": 0.0101}, {"name": "エヌアイデイ", "ticker": "VXTI", "price": 133.6, "volatility": 0.0094}, {"name": "グローバルＸ　ＭＳＣＩ　キャッシュフローキング－日本株式　ＥＴＦ", "ticker": "IBSA", "price": 652.4, "volatility": 0.0054}, {"name": "ＡＳＪ", "ticker": "FOKS", "price": 429.5, "volatility": 0.0035}, {"name": "日本駐車場開発", "ticker": "GKRJ", "price": 379.3, "volatility": 0.0123}, {"name": "ＹＥ　ＤＩＧＩＴＡＬ", "ticker": "BUVP", "price": 152.4, "volatility": 0.0054}, {"name": "コア", "ticker": "UKQX", "price": 157.7, "volatility": 0.0053}, {"name": "グローバルＸ　高配当３０－日本株式　ＥＴＦ", "ticker": "DXUM", "price": 92.2, "volatility": 0.0052}, {"name": "ｉシェアーズ　日本国債７－１０年　ＥＴＦ", "ticker": "FCVM", "price": 352.3, "volatility": 0.0107}, {"name": "メディネット", "ticker": "UJYA", "price": 100.0, "volatility": 0.003}, {"name": "カカクコム", "ticker": "MCQA", "price": 508.7, "volatility": 0.0117}, {"name": "ケア２１", "ticker": "UJAB", "price": 973.1, "volatility": 0.0099}, {"name": "ギグワークス", "ticker": "MSNH", "price": 725.7, "volatility": 0.0087}, {"name": "サイネックス", "ticker": "AUHM", "price": 903.9, "volatility": 0.0069}, {"name": "ルネサンス", "ticker": "HUHF", "price": 572.6, "volatility": 0.0056}, {"name": "ディップ", "ticker": "FDOE", "price": 145.7, "volatility": 0.0087}, {"name": "ｉシェアーズ　米国債２５年超　ロングデュレーション　ＥＴＦ", "ticker": "ZFBT", "price": 159.2, "volatility": 0.0038}, {"name": "ＳＢＳホールディングス", "ticker": "VICY", "price": 845.6, "volatility": 0.0074}, {"name": "総医研ホールディングス", "ticker": "KQEF", "price": 327.7, "volatility": 0.0107}, {"name": "ウェッジホールディングス", "ticker": "PHEB", "price": 451.4, "volatility": 0.0116}, {"name": "ｉシェアーズ　米国債２５年超　ロングデュレーション　ＥＴＦ（為替ヘッジあり）", "ticker": "IIBW", "price": 93.3, "volatility": 0.0063}, {"name": "プラネット", "ticker": "KDOD", "price": 904.5, "volatility": 0.0085}, {"name": "日本ケアサプライ", "ticker": "NJPQ", "price": 333.2, "volatility": 0.0098}, {"name": "新日本科学", "ticker": "NNGM", "price": 905.2, "volatility": 0.0082}, {"name": "バレッグス", "ticker": "HEKA", "price": 654.8, "volatility": 0.0082}, {"name": "鉄人化ホールディングス", "ticker": "FJGV", "price": 309.8, "volatility": 0.0128}, {"name": "ＫＧ情報", "ticker": "SHGA", "price": 82.7, "volatility": 0.0057}, {"name": "キャリアデザインセンター", "ticker": "WJHO", "price": 567.3, "volatility": 0.0103}, {"name": "ゲンダイエージェンシー", "ticker": "DLZQ", "price": 128.1, "volatility": 0.0049}, {"name": "エムスリー", "ticker": "VKZH", "price": 888.8, "volatility": 0.0118}, {"name": "ヒューマンホールディングス", "ticker": "SGAM", "price": 283.8, "volatility": 0.0068}, {"name": "ツカダ・グローバルホールディング", "ticker": "SENL", "price": 828.2, "volatility": 0.0112}, {"name": "ＲＯＸＸ", "ticker": "MWLO", "price": 269.8, "volatility": 0.0032}, {"name": "ブラス", "ticker": "BJJY", "price": 291.5, "volatility": 0.0115}, {"name": "ケアサービス", "ticker": "UHET", "price": 470.9, "volatility": 0.0039}, {"name": "ウェルネット", "ticker": "TMPM", "price": 513.8, "volatility": 0.0068}, {"name": "ワールドホールディングス", "ticker": "IQQF", "price": 711.9, "volatility": 0.0049}, {"name": "ディー・エヌ・エー", "ticker": "ZNSB", "price": 841.5, "volatility": 0.0045}, {"name": "博報堂ＤＹホールディングス", "ticker": "SVKI", "price": 974.6, "volatility": 0.0084}, {"name": "シダー", "ticker": "GAZB", "price": 591.5, "volatility": 0.0115}, {"name": "共同ピーアール", "ticker": "UAOS", "price": 799.4, "volatility": 0.0124}, {"name": "Ｓｈｉｎｗａ　Ｗｉｓｅ　Ｈｏｌｄｉｎｇｓ", "ticker": "ZCAT", "price": 124.1, "volatility": 0.0071}, {"name": "アスカネット", "ticker": "QFOY", "price": 699.1, "volatility": 0.0121}, {"name": "トップス", "ticker": "BWVI", "price": 265.0, "volatility": 0.008}, {"name": "ぐるなび", "ticker": "KIJA", "price": 233.0, "volatility": 0.006}, {"name": "タカミヤ", "ticker": "NLWV", "price": 710.9, "volatility": 0.0039}, {"name": "プラップジャパン", "ticker": "YBQE", "price": 674.1, "volatility": 0.0071}, {"name": "グロースエクスパートナーズ", "ticker": "SLAG", "price": 697.3, "volatility": 0.0057}, {"name": "コンピュータマインド", "ticker": "AYLJ", "price": 851.4, "volatility": 0.0044}, {"name": "オールアバウト", "ticker": "XABM", "price": 460.3, "volatility": 0.0033}, {"name": "アウンコンサルティング", "ticker": "LGLS", "price": 498.9, "volatility": 0.0041}, {"name": "ＩＮＧＳ", "ticker": "ECAM", "price": 157.1, "volatility": 0.0101}, {"name": "ファンコミュニケーションズ", "ticker": "IPKV", "price": 494.2, "volatility": 0.0088}, {"name": "ライク", "ticker": "ZWDE", "price": 458.7, "volatility": 0.0117}, {"name": "Ａｏｂａ‐ＢＢＴ", "ticker": "VYFL", "price": 524.2, "volatility": 0.0088}, {"name": "ヒビノ", "ticker": "RTEW", "price": 909.4, "volatility": 0.0036}, {"name": "アスア", "ticker": "BNHR", "price": 677.5, "volatility": 0.0105}, {"name": "エスプール", "ticker": "GNVC", "price": 350.0, "volatility": 0.003}, {"name": "ＷＤＢホールディングス", "ticker": "TFYN", "price": 164.9, "volatility": 0.0081}, {"name": "手間いらず", "ticker": "VZJZ", "price": 800.9, "volatility": 0.0121}, {"name": "ジェイテック", "ticker": "JREF", "price": 153.9, "volatility": 0.0069}, {"name": "Ａｉロボティクス", "ticker": "KTNV", "price": 995.3, "volatility": 0.0077}, {"name": "システム・ロケーション", "ticker": "STJI", "price": 829.4, "volatility": 0.0036}, {"name": "タウンニュース社", "ticker": "TLEK", "price": 910.0, "volatility": 0.003}, {"name": "翻訳センター", "ticker": "MFFG", "price": 739.0, "volatility": 0.004}, {"name": "出前館", "ticker": "PYKW", "price": 127.4, "volatility": 0.0056}, {"name": "ティア", "ticker": "OEBD", "price": 568.8, "volatility": 0.0118}, {"name": "ＪＴＰ", "ticker": "UVBU", "price": 949.2, "volatility": 0.0122}, {"name": "アドウェイズ", "ticker": "HZDP", "price": 307.2, "volatility": 0.0102}, {"name": "キッズスター", "ticker": "EILQ", "price": 692.9, "volatility": 0.0059}, {"name": "バリューコマース", "ticker": "FYGZ", "price": 170.0, "volatility": 0.003}, {"name": "インフォマート", "ticker": "WOKR", "price": 447.3, "volatility": 0.0103}, {"name": "イーサポートリンク", "ticker": "JLHV", "price": 955.2, "volatility": 0.0082}, {"name": "ユナイテッド", "ticker": "VMEP", "price": 250.6, "volatility": 0.0124}, {"name": "オリエンタルコンサルタンツホールディングス", "ticker": "UEAL", "price": 561.4, "volatility": 0.0044}, {"name": "日本和装ホールディングス", "ticker": "EJME", "price": 356.0, "volatility": 0.007}, {"name": "ヒューマンアジャスト", "ticker": "PDIF", "price": 733.0, "volatility": 0.01}, {"name": "サッポロビール", "ticker": "ESYA", "price": 512.1, "volatility": 0.0109}, {"name": "アサヒグループホールディングス", "ticker": "TMEZ", "price": 339.9, "volatility": 0.0129}, {"name": "キリンホールディングス", "ticker": "PUWV", "price": 255.0, "volatility": 0.008}, {"name": "シマダヤ", "ticker": "WXSC", "price": 220.0, "volatility": 0.003}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　国内債券・ＮＯＭＵＲＡ－ＢＰＩ総合連動型上場投信", "ticker": "WSWA", "price": 764.3, "volatility": 0.0073}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　外国債券・ＦＴＳＥ世界国債インデックス（除く日本・為替ヘッジなし）連動型上場投信", "ticker": "CNPR", "price": 967.2, "volatility": 0.0058}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　外国債券・ＦＴＳＥ世界国債インデックス（除く日本・為替ヘッジあり）連動型上場投信", "ticker": "SCZF", "price": 771.7, "volatility": 0.0113}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　外国株式・ＭＳＣＩ－ＫＯＫＵＳＡＩ指数（為替ヘッジなし）連動型上場投信", "ticker": "GLOL", "price": 537.3, "volatility": 0.0103}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　外国株式・ＭＳＣＩ－ＫＯＫＵＳＡＩ指数（為替ヘッジあり）連動型上場投信", "ticker": "KZOQ", "price": 590.9, "volatility": 0.0039}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　外国ＲＥＩＴ・Ｓ＆Ｐ先進国ＲＥＩＴ指数（除く日本・為替ヘッジなし）連動型上場投信", "ticker": "KOGP", "price": 449.0, "volatility": 0.012}, {"name": "東証グロース２５０ＥＴＦ", "ticker": "EPYL", "price": 699.4, "volatility": 0.0124}, {"name": "ＭＡＸＩＳ　Ｊリート・コア上場投信", "ticker": "JIYR", "price": 986.7, "volatility": 0.0097}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＭＳＣＩ日本株女性活躍指数（セレクト）連動型上場投信", "ticker": "TPGZ", "price": 578.2, "volatility": 0.0112}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　新興国債券・Ｊ．Ｐ．モルガン・エマージング・マーケット・ボンド・インデックス・プラス（為替ヘッジなし）連動型上場投信", "ticker": "XHYB", "price": 988.8, "volatility": 0.0118}, {"name": "ニューロマジック", "ticker": "QISG", "price": 666.6, "volatility": 0.0064}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　新興国株式・ＭＳＣＩエマージング・マーケット・インデックス（為替ヘッジなし）連動型上場投信", "ticker": "FHLX", "price": 517.9, "volatility": 0.0109}, {"name": "上場インデックスファンド米国株式（Ｓ＆Ｐ５００）為替ヘッジあり", "ticker": "CNUM", "price": 766.7, "volatility": 0.0097}, {"name": "ｉシェアーズ　オートメーション　＆　ロボット　ＥＴＦ", "ticker": "IDLA", "price": 361.9, "volatility": 0.0049}, {"name": "ＭＡＸＩＳトピックス（除く金融）上場投信", "ticker": "LJRT", "price": 976.0, "volatility": 0.007}, {"name": "ＮＺＡＭ　上場投信　ＴＯＰＩＸ", "ticker": "CXIV", "price": 841.6, "volatility": 0.0046}, {"name": "ＮＺＡＭ　上場投信　日経２２５", "ticker": "VGBZ", "price": 781.8, "volatility": 0.0048}, {"name": "ＮＺＡＭ　上場投信　ＪＰＸ日経４００", "ticker": "KIEO", "price": 52.5, "volatility": 0.0055}, {"name": "ＮＺＡＭ　上場投信　東証ＲＥＩＴ　Ｃｏｒｅ指数", "ticker": "EWUE", "price": 333.9, "volatility": 0.0091}, {"name": "ｉＦｒｅｅＥＴＦ　東証ＲＥＩＴ　Ｃｏｒｅ指数", "ticker": "OSUN", "price": 856.1, "volatility": 0.0069}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　野村株主還元７０連動型上場投信", "ticker": "EJUS", "price": 366.8, "volatility": 0.0062}, {"name": "ウェッジ", "ticker": "NNXJ", "price": 466.8, "volatility": 0.0062}, {"name": "ＭＡＸＩＳ　ＨｕａＡｎ中国株式（上海１８０Ａ株）上場投信", "ticker": "VXPU", "price": 568.4, "volatility": 0.0046}, {"name": "宝ホールディングス", "ticker": "HMSC", "price": 715.5, "volatility": 0.0085}, {"name": "オエノンホールディングス", "ticker": "AXDG", "price": 242.6, "volatility": 0.0056}, {"name": "ＥＴＳグループ", "ticker": "DTZI", "price": 896.5, "volatility": 0.0095}, {"name": "ＡＩフュージョンキャピタルグループ", "ticker": "ZBXB", "price": 276.2, "volatility": 0.0068}, {"name": "上場インデックスファンドＪリート（東証ＲＥＩＴ指数）隔月分配型（ミニ）", "ticker": "VDSB", "price": 568.8, "volatility": 0.0042}, {"name": "Ｏｎｅ　ＥＴＦ　南方　中国Ａ株　ＣＳＩ５００", "ticker": "MTHB", "price": 279.7, "volatility": 0.0033}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ブルームバーグ米国投資適格社債（１－１０年）インデックス（為替ヘッジあり）連動型上場投信", "ticker": "XOAS", "price": 366.8, "volatility": 0.0062}, {"name": "東証ＲＥＩＴ　ＥＴＦ", "ticker": "RFCT", "price": 839.0, "volatility": 0.004}, {"name": "Ｏｎｅ　ＥＴＦ　東証ＲＥＩＴ指数", "ticker": "GFLV", "price": 75.4, "volatility": 0.0076}, {"name": "ＳＭＤＡＭ　トピックス上場投信", "ticker": "EEGN", "price": 370.0, "volatility": 0.003}, {"name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信", "ticker": "MMDH", "price": 309.0, "volatility": 0.004}, {"name": "ＭＡＸＩＳ全世界株式（オール・カントリー）上場投信", "ticker": "WKVR", "price": 144.1, "volatility": 0.0071}, {"name": "ジーエルテクノホールディングス", "ticker": "XHNN", "price": 702.5, "volatility": 0.0055}, {"name": "ＭＡＸＩＳカーボン・エフィシェント日本株上場投信", "ticker": "UFRN", "price": 724.3, "volatility": 0.0073}, {"name": "ｉシェアーズ・コア　日本国債　ＥＴＦ", "ticker": "SGDO", "price": 771.9, "volatility": 0.0049}, {"name": "上場インデックスファンド米国株式（ダウ平均）為替ヘッジあり", "ticker": "YDPG", "price": 858.2, "volatility": 0.0112}, {"name": "ｉシェアーズ　Ｓ＆Ｐ　５００　米国株　ＥＴＦ（為替ヘッジあり）", "ticker": "GHZX", "price": 331.6, "volatility": 0.0046}, {"name": "グローバルＸ　ＭＳＣＩスーパーディビィデンド－日本株式　ＥＴＦ", "ticker": "JPUW", "price": 688.7, "volatility": 0.0117}, {"name": "グローバルＸ　ロジスティクス・Ｊ－ＲＥＩＴ　ＥＴＦ", "ticker": "AENZ", "price": 816.6, "volatility": 0.0064}, {"name": "上場インデックスファンド日経ＥＳＧリート", "ticker": "IOIT", "price": 245.9, "volatility": 0.0071}, {"name": "ＮＺＡＭ　上場投信　Ｓ＆Ｐ／ＪＰＸカーボン・エフィシェント指数", "ticker": "JFIU", "price": 966.1, "volatility": 0.0069}, {"name": "上場インデックスファンド米国株式（ＮＡＳＤＡＱ１００）為替ヘッジなし", "ticker": "IKMY", "price": 787.4, "volatility": 0.0104}, {"name": "上場インデックスファンド米国株式（ＮＡＳＤＡＱ１００）為替ヘッジあり", "ticker": "EEQS", "price": 392.2, "volatility": 0.0052}, {"name": "飛島ホールディングス", "ticker": "MXUR", "price": 245.1, "volatility": 0.0081}, {"name": "北海道コカ・コーラボトリング", "ticker": "JVTR", "price": 248.6, "volatility": 0.0044}, {"name": "コカ・コーラ　ボトラーズジャパンホールディングス", "ticker": "PKXN", "price": 841.1, "volatility": 0.0041}, {"name": "ＳＭＴ　ＥＴＦ日本株厳選投資アクティブ", "ticker": "JLNO", "price": 121.9, "volatility": 0.0111}, {"name": "ライフドリンク　カンパニー", "ticker": "RHFI", "price": 287.5, "volatility": 0.0105}, {"name": "フルッタフルッタ", "ticker": "XQFD", "price": 981.2, "volatility": 0.0118}, {"name": "サントリービバレッジ＆フード", "ticker": "WQLN", "price": 745.8, "volatility": 0.0088}, {"name": "プレミアムウォーターホールディングス", "ticker": "YMKS", "price": 184.8, "volatility": 0.0082}, {"name": "ＳＭＴ　ＥＴＦ国内リート厳選投資アクティブ", "ticker": "POEG", "price": 912.7, "volatility": 0.0057}, {"name": "ダイドーグループホールディングス", "ticker": "RPVK", "price": 964.4, "volatility": 0.0074}, {"name": "伊藤園", "ticker": "NOSP", "price": 207.3, "volatility": 0.0057}, {"name": "伊藤園第１種優先株式", "ticker": "LCNE", "price": 869.3, "volatility": 0.0037}, {"name": "キーコーヒー", "ticker": "KKAN", "price": 94.1, "volatility": 0.0071}, {"name": "ユニカフェ", "ticker": "RLYE", "price": 327.9, "volatility": 0.0051}, {"name": "日清オイリオグループ", "ticker": "DIEN", "price": 478.5, "volatility": 0.0115}, {"name": "不二製油", "ticker": "YOYX", "price": 307.2, "volatility": 0.0058}, {"name": "かどや製油", "ticker": "NUJY", "price": 740.4, "volatility": 0.0126}, {"name": "Ｊ－オイルミルズ", "ticker": "VBHE", "price": 796.8, "volatility": 0.0098}, {"name": "日水コン", "ticker": "YKJF", "price": 204.4, "volatility": 0.0074}, {"name": "ｉシェアーズ　米国債１－３年　ＥＴＦ", "ticker": "XDUP", "price": 124.9, "volatility": 0.0079}, {"name": "ｉシェアーズ　米国債２０年超　ＥＴＦ（為替ヘッジあり）", "ticker": "AFFJ", "price": 884.3, "volatility": 0.0087}, {"name": "ｉシェアーズ　米ドル建て新興国債券　ＥＴＦ（為替ヘッジあり）", "ticker": "LXEE", "price": 573.8, "volatility": 0.0068}, {"name": "ｉシェアーズ　ユーロ建て投資適格社債　ＥＴＦ（為替ヘッジあり）", "ticker": "QDBQ", "price": 126.8, "volatility": 0.0098}, {"name": "ｉＦｒｅｅＥＴＦ　日経２２５（年４回決算型）", "ticker": "ERER", "price": 684.1, "volatility": 0.0089}, {"name": "ｉＦｒｅｅＥＴＦ　ＴＯＰＩＸ（年４回決算型）", "ticker": "SVOB", "price": 147.7, "volatility": 0.0107}, {"name": "グローバルＸ　デジタル・イノベーション－日本株式　ＥＴＦ", "ticker": "ADBI", "price": 904.1, "volatility": 0.0071}, {"name": "グローバルＸ　ｅコマース－日本株式　ＥＴＦ", "ticker": "YNRX", "price": 964.0, "volatility": 0.007}, {"name": "ｉＦｒｅｅＥＴＦ　中国科創板５０（ＳＴＡＲ５０）", "ticker": "SBAT", "price": 774.4, "volatility": 0.0086}, {"name": "ｉＦｒｅｅＥＴＦ　中国グレーターベイエリア・イノベーション１００（ＧＢＡ１００）", "ticker": "UBCD", "price": 635.0, "volatility": 0.008}, {"name": "インターメスティック", "ticker": "SBFJ", "price": 935.2, "volatility": 0.0082}, {"name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信（為替ヘッジあり）", "ticker": "IUHQ", "price": 935.6, "volatility": 0.0074}, {"name": "ＭＡＸＩＳナスダック１００上場投信", "ticker": "OPPB", "price": 735.5, "volatility": 0.0085}, {"name": "ＭＡＸＩＳナスダック１００上場投信（為替ヘッジあり）", "ticker": "QLOQ", "price": 276.4, "volatility": 0.0066}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　Ｓ＆Ｐ　５００　指数（為替ヘッジなし）連動型上場投信", "ticker": "WPFY", "price": 822.8, "volatility": 0.0058}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　Ｓ＆Ｐ　５００　指数（為替ヘッジあり）連動型上場投信", "ticker": "NFRL", "price": 149.9, "volatility": 0.0031}, {"name": "グローバルＸ　ＭＳＣＩ　ガバナンス・クオリティ－日本株式　ＥＴＦ", "ticker": "LRNR", "price": 339.0, "volatility": 0.012}, {"name": "グローバルＸ　クリーンテック－日本株式　ＥＴＦ", "ticker": "LFDB", "price": 780.1, "volatility": 0.0129}, {"name": "グローバルＸ　ロボティクス＆ＡＩ－日本株式　ＥＴＦ", "ticker": "UVMM", "price": 81.3, "volatility": 0.0043}, {"name": "グローバルＸ　バイオ＆メドテック－日本株式　ＥＴＦ", "ticker": "DVOI", "price": 767.5, "volatility": 0.0055}, {"name": "デジタルキューブ", "ticker": "FBLM", "price": 548.0, "volatility": 0.005}, {"name": "グローバルＸ　ゲーム＆アニメ－日本株式　ＥＴＦ", "ticker": "MFIB", "price": 519.2, "volatility": 0.0038}, {"name": "グローバルＸ　グローバルリーダーズ－日本株式　ＥＴＦ", "ticker": "BXAF", "price": 311.2, "volatility": 0.0118}, {"name": "ＳＭＴ　ＥＴＦカーボン・エフィシェント日本株", "ticker": "OXAH", "price": 239.7, "volatility": 0.0033}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＭＳＣＩジャパンカントリー指数（セレクト）連動型上場投信", "ticker": "EUAI", "price": 348.8, "volatility": 0.0042}, {"name": "グローバルＸ　半導体関連－日本株式　ＥＴＦ", "ticker": "XLWL", "price": 310.7, "volatility": 0.0037}, {"name": "グローバルＸ　レジャー＆エンターテインメント－日本株式　ＥＴＦ", "ticker": "BFEE", "price": 389.3, "volatility": 0.0123}, {"name": "グローバルＸ　メタルビジネス－日本株式　ＥＴＦ", "ticker": "IAOB", "price": 340.8, "volatility": 0.0038}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ブルームバーグ米国国債（７－１０年）インデックス（為替ヘッジなし）連動型上場投信", "ticker": "YDRQ", "price": 478.1, "volatility": 0.0049}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ブルームバーグ米国国債（７－１０年）インデックス（為替ヘッジあり）連動型上場投信", "ticker": "RXZG", "price": 316.4, "volatility": 0.0066}, {"name": "ｉシェアーズ　米国政府系機関ジニーメイＭＢＳ　ＥＴＦ（為替ヘッジあり）", "ticker": "KQOY", "price": 483.9, "volatility": 0.0069}, {"name": "Ｓｃｈｏｏ", "ticker": "YNAX", "price": 615.7, "volatility": 0.0073}, {"name": "まんだらけ", "ticker": "NNMH", "price": 624.5, "volatility": 0.0075}, {"name": "イオン九州", "ticker": "KUQO", "price": 540.6, "volatility": 0.0124}, {"name": "アスモ", "ticker": "QIHF", "price": 336.8, "volatility": 0.0062}, {"name": "ベクターホールディングス", "ticker": "EVFO", "price": 934.2, "volatility": 0.0088}, {"name": "サンエー", "ticker": "PWEU", "price": 963.1, "volatility": 0.0061}, {"name": "Ｈｍｃｏｍｍ", "ticker": "BXTP", "price": 236.7, "volatility": 0.0063}, {"name": "カワチ薬品", "ticker": "GGAL", "price": 382.4, "volatility": 0.0106}, {"name": "オートウェーブ", "ticker": "GNDK", "price": 135.9, "volatility": 0.0071}, {"name": "イメージ　ワン", "ticker": "FXTL", "price": 928.5, "volatility": 0.0115}, {"name": "タビオ", "ticker": "COGZ", "price": 315.7, "volatility": 0.0073}, {"name": "カネ美食品", "ticker": "UYQY", "price": 133.2, "volatility": 0.0062}, {"name": "グローカルマーケティング", "ticker": "CICA", "price": 437.0, "volatility": 0.01}, {"name": "エービーシー・マート", "ticker": "FCYA", "price": 790.8, "volatility": 0.0122}, {"name": "夢みつけ隊", "ticker": "PMCD", "price": 405.1, "volatility": 0.0079}, {"name": "ハードオフコーポレーション", "ticker": "ZUQG", "price": 441.4, "volatility": 0.0044}, {"name": "高千穂交易", "ticker": "ESRM", "price": 432.5, "volatility": 0.0055}, {"name": "アスクル", "ticker": "MQNI", "price": 604.4, "volatility": 0.0074}, {"name": "トワライズ", "ticker": "VKVB", "price": 429.8, "volatility": 0.0032}, {"name": "ゲオホールディングス", "ticker": "SKXU", "price": 687.7, "volatility": 0.0053}, {"name": "魚喜", "ticker": "WLIN", "price": 973.4, "volatility": 0.0064}, {"name": "アンドエスティＨＤ", "ticker": "CSIF", "price": 845.4, "volatility": 0.0084}, {"name": "シー・ヴイ・エス・ベイエリア", "ticker": "ATLE", "price": 156.1, "volatility": 0.0091}, {"name": "オルバヘルスケアホールディングス", "ticker": "QTGX", "price": 479.0, "volatility": 0.012}, {"name": "リガク・ホールディングス", "ticker": "QBQY", "price": 293.2, "volatility": 0.0098}, {"name": "ＹＫＴ", "ticker": "GWQE", "price": 489.8, "volatility": 0.0128}, {"name": "焼肉坂井ホールディングス", "ticker": "CXWI", "price": 980.0, "volatility": 0.003}, {"name": "くら寿司", "ticker": "BXXA", "price": 989.4, "volatility": 0.0124}, {"name": "キャンドゥ", "ticker": "KVCA", "price": 813.4, "volatility": 0.0096}, {"name": "Ｓａｐｅｅｔ", "ticker": "MUNZ", "price": 456.2, "volatility": 0.0092}, {"name": "木徳神糧", "ticker": "OBCK", "price": 145.2, "volatility": 0.0078}, {"name": "日本マクドナルドホールディングス", "ticker": "WKCP", "price": 525.7, "volatility": 0.0087}, {"name": "大戸屋ホールディングス", "ticker": "ZZRW", "price": 76.8, "volatility": 0.0098}, {"name": "久世", "ticker": "FWGE", "price": 164.5, "volatility": 0.0085}, {"name": "アクセリア", "ticker": "TALH", "price": 248.5, "volatility": 0.0115}, {"name": "ジェイホールディングス", "ticker": "GQAY", "price": 907.3, "volatility": 0.0103}, {"name": "ＩＫホールディングス", "ticker": "MCNN", "price": 424.0, "volatility": 0.009}, {"name": "パルグループホールディングス", "ticker": "BBTB", "price": 122.5, "volatility": 0.0055}, {"name": "エディオン", "ticker": "NQCW", "price": 329.7, "volatility": 0.0127}, {"name": "あらた", "ticker": "KAQI", "price": 310.8, "volatility": 0.0122}, {"name": "サーラコーポレーション", "ticker": "BEAZ", "price": 138.3, "volatility": 0.0113}, {"name": "ワッツ", "ticker": "UYQE", "price": 678.1, "volatility": 0.0111}, {"name": "フェスタリアホールディングス", "ticker": "AHAN", "price": 795.5, "volatility": 0.0075}, {"name": "トーメンデバイス", "ticker": "FXOK", "price": 229.1, "volatility": 0.0121}, {"name": "ＳＢＩ　サウジアラビア株式上場投信", "ticker": "HEYR", "price": 932.7, "volatility": 0.0057}, {"name": "ハローズ", "ticker": "PPQA", "price": 211.7, "volatility": 0.0047}, {"name": "北雄ラッキー", "ticker": "SNNQ", "price": 586.1, "volatility": 0.0069}, {"name": "ＪＰホールディングス", "ticker": "QHUK", "price": 612.3, "volatility": 0.0107}, {"name": "ガーデン", "ticker": "OORO", "price": 617.5, "volatility": 0.0105}, {"name": "石光商事", "ticker": "LBQY", "price": 550.9, "volatility": 0.0039}, {"name": "テンポスホールディングス", "ticker": "UTCQ", "price": 181.2, "volatility": 0.0118}, {"name": "フジオフードグループ本社", "ticker": "ZJCD", "price": 564.8, "volatility": 0.0082}, {"name": "あみやき亭", "ticker": "ENIN", "price": 755.7, "volatility": 0.0073}, {"name": "東京エレクトロン　デバイス", "ticker": "MZAZ", "price": 221.6, "volatility": 0.0114}, {"name": "ＳＡＮＫＯ　ＭＡＲＫＥＴＩＮＧ　ＦＯＯＤＳ", "ticker": "MVKL", "price": 371.2, "volatility": 0.0118}, {"name": "ひらまつ", "ticker": "TAJU", "price": 952.8, "volatility": 0.0058}, {"name": "円谷フィールズホールディングス", "ticker": "NJWG", "price": 580.3, "volatility": 0.0127}, {"name": "双日", "ticker": "WPJW", "price": 854.1, "volatility": 0.0071}, {"name": "ヴィレッジヴァンガードコーポレーション", "ticker": "EPNS", "price": 709.0, "volatility": 0.012}, {"name": "ククレブ・アドバイザーズ", "ticker": "EQHM", "price": 584.0, "volatility": 0.009}, {"name": "新都ホールディングス", "ticker": "ZVHY", "price": 643.9, "volatility": 0.0069}, {"name": "パレモ・ホールディングス", "ticker": "XPZI", "price": 672.7, "volatility": 0.0057}, {"name": "グロービング", "ticker": "KPBH", "price": 757.4, "volatility": 0.0056}, {"name": "コメ兵ホールディングス", "ticker": "AQTR", "price": 732.4, "volatility": 0.0106}, {"name": "セリア", "ticker": "HRIW", "price": 464.2, "volatility": 0.0088}, {"name": "アルフレッサ　ホールディングス", "ticker": "ZUDD", "price": 576.5, "volatility": 0.0095}, {"name": "アップルインターナショナル", "ticker": "FTDV", "price": 293.1, "volatility": 0.0061}, {"name": "カルラ", "ticker": "JUQN", "price": 664.4, "volatility": 0.0074}, {"name": "Ｔｅｒｒａ　Ｄｒｏｎｅ", "ticker": "SYFP", "price": 715.0, "volatility": 0.008}, {"name": "ナフコ", "ticker": "NMRE", "price": 512.3, "volatility": 0.0053}, {"name": "大黒天物産", "ticker": "HTGS", "price": 107.1, "volatility": 0.0059}, {"name": "ハニーズホールディングス", "ticker": "SSQD", "price": 713.2, "volatility": 0.0098}, {"name": "日本プリメックス", "ticker": "RHNC", "price": 725.8, "volatility": 0.0072}, {"name": "ファーマライズホールディングス", "ticker": "URWL", "price": 508.3, "volatility": 0.0113}, {"name": "ワイズテーブルコーポレーション", "ticker": "LYDZ", "price": 239.7, "volatility": 0.0033}, {"name": "インターグ", "ticker": "LUMD", "price": 95.8, "volatility": 0.0088}, {"name": "キッコーマン", "ticker": "SEGQ", "price": 589.6, "volatility": 0.0126}, {"name": "味の素", "ticker": "HGIY", "price": 753.3, "volatility": 0.0063}, {"name": "ブルドックソース", "ticker": "AJKX", "price": 386.9, "volatility": 0.0099}, {"name": "ヱスビー食品", "ticker": "FGAE", "price": 983.7, "volatility": 0.0067}, {"name": "ユタカフーズ", "ticker": "QFSU", "price": 710.5, "volatility": 0.0035}, {"name": "キユーピー", "ticker": "SJMV", "price": 593.8, "volatility": 0.0068}, {"name": "ＴＭＨ", "ticker": "NNWM", "price": 769.7, "volatility": 0.0127}, {"name": "ハウス食品グループ本社", "ticker": "HONL", "price": 473.9, "volatility": 0.0069}, {"name": "カゴメ", "ticker": "LAOI", "price": 880.1, "volatility": 0.0129}, {"name": "和弘食品", "ticker": "CUUE", "price": 305.3, "volatility": 0.0083}, {"name": "佐藤食品工業", "ticker": "QISH", "price": 275.5, "volatility": 0.0085}, {"name": "アリアケジャパン", "ticker": "XMRW", "price": 511.1, "volatility": 0.0041}, {"name": "ダイショー", "ticker": "CAUI", "price": 203.1, "volatility": 0.0099}, {"name": "ピエトロ", "ticker": "LWMV", "price": 846.6, "volatility": 0.0096}, {"name": "エバラ食品工業", "ticker": "HBUY", "price": 959.1, "volatility": 0.0121}, {"name": "インフォメティス", "ticker": "VJPK", "price": 485.6, "volatility": 0.0086}, {"name": "やまみ", "ticker": "VGJU", "price": 316.7, "volatility": 0.0063}, {"name": "グローバルＸ　半導体・トップ１０－日本株式　ＥＴＦ", "ticker": "VVAZ", "price": 601.2, "volatility": 0.0042}, {"name": "はごろもフーズ", "ticker": "EJQC", "price": 739.0, "volatility": 0.012}, {"name": "グローバルＸ　フィンテック－日本株式　ＥＴＦ", "ticker": "IMYV", "price": 404.1, "volatility": 0.0071}, {"name": "グローバルＸ　中小型リーダーズ－日本株式　ＥＴＦ", "ticker": "TNHV", "price": 472.9, "volatility": 0.0059}, {"name": "ＭＡＸＩＳ米国国債７－１０年上場投信（為替ヘッジなし）", "ticker": "YJBY", "price": 864.6, "volatility": 0.0084}, {"name": "ＭＡＸＩＳ米国国債７－１０年上場投信（為替ヘッジあり）", "ticker": "ETPC", "price": 832.7, "volatility": 0.0057}, {"name": "グローバルＸ　ＵＳ　テック・配当貴族　ＥＴＦ", "ticker": "LNVD", "price": 491.4, "volatility": 0.0044}, {"name": "ｉＦｒｅｅＥＴＦ　ＮＡＳＤＡＱ１００（為替ヘッジなし）", "ticker": "NQIA", "price": 836.7, "volatility": 0.0097}, {"name": "ｉＦｒｅｅＥＴＦ　ＮＡＳＤＡＱ１００（為替ヘッジあり）", "ticker": "EKPO", "price": 253.5, "volatility": 0.0095}, {"name": "ｉＦｒｅｅＥＴＦ　ＮＡＳＤＡＱ１００インバース", "ticker": "JONR", "price": 95.4, "volatility": 0.0084}, {"name": "上場インデックスファンド豪州国債（為替ヘッジあり）", "ticker": "BLAN", "price": 402.1, "volatility": 0.0051}, {"name": "上場インデックスファンド豪州国債（為替ヘッジなし）", "ticker": "SESH", "price": 391.5, "volatility": 0.0115}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＮＡＳＤＡＱ－１００（為替ヘッジあり）連動型上場投信", "ticker": "VPWB", "price": 489.5, "volatility": 0.0035}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ダウ・ジョーンズ工業株３０種平均株価（為替ヘッジあり）連動型上場投信", "ticker": "HVKU", "price": 593.8, "volatility": 0.0092}, {"name": "グローバルＸ　新成長インフラ－日本株式　ＥＴＦ", "ticker": "SYUP", "price": 991.7, "volatility": 0.0113}, {"name": "グローバルＸ　ＭＳＣＩ　気候変動対応－日本株式　ＥＴＦ", "ticker": "PICU", "price": 746.9, "volatility": 0.0099}, {"name": "グローバルＸ　Ｍｏｒｎｉｎｇｓｔａｒ　高配当　ＥＳＧ－日本株式　ＥＴＦ", "ticker": "HFRI", "price": 351.4, "volatility": 0.0116}, {"name": "フクヤ建設", "ticker": "BQOR", "price": 361.6, "volatility": 0.0114}, {"name": "ｉシェアーズ　ＭＳＣＩ　ジャパンＳＲＩ　ＥＴＦ", "ticker": "YIUM", "price": 314.3, "volatility": 0.0087}, {"name": "ｉシェアーズ　グリーンＪリート　ＥＴＦ", "ticker": "OUYI", "price": 210.9, "volatility": 0.0121}, {"name": "ｉシェアーズ　気候リスク調整世界国債　ＥＴＦ（除く日本・為替ヘッジあり）", "ticker": "ZSMG", "price": 353.1, "volatility": 0.0099}, {"name": "グローバルＸ　テック・トップ２０－日本株式　ＥＴＦ", "ticker": "CAEP", "price": 924.5, "volatility": 0.0085}, {"name": "グローバルＸ　グリーン・Ｊ－ＲＥＩＴ　ＥＴＦ", "ticker": "BORK", "price": 783.5, "volatility": 0.0065}, {"name": "ｉシェアーズ　米国債３－７年　ＥＴＦ（為替ヘッジあり）", "ticker": "FEKA", "price": 745.0, "volatility": 0.008}, {"name": "ｉシェアーズ　ドイツ国債　ＥＴＦ（為替ヘッジあり）", "ticker": "JNXL", "price": 658.4, "volatility": 0.0114}, {"name": "グローバルＸ　日経２２５　カバード・コール　ＥＴＦ（プレミアム再投資型）", "ticker": "WVOM", "price": 253.3, "volatility": 0.0063}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ユーロ・ストックス５０指数（為替ヘッジあり）連動型上場投信", "ticker": "CTVO", "price": 639.3, "volatility": 0.0123}, {"name": "キオクシアホールディングス", "ticker": "OGHB", "price": 543.7, "volatility": 0.0067}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ドイツ株式・ＤＡＸ（為替ヘッジあり）連動型上場投信", "ticker": "AVLV", "price": 428.5, "volatility": 0.0115}, {"name": "上場インデックスファンドフランス国債（為替ヘッジなし）", "ticker": "DHTB", "price": 894.1, "volatility": 0.0071}, {"name": "上場インデックスファンドフランス国債（為替ヘッジあり）", "ticker": "IVVV", "price": 774.5, "volatility": 0.0085}, {"name": "グローバルＸ　ロジスティクス・ＲＥＩＴ　ＥＴＦ", "ticker": "TENZ", "price": 304.2, "volatility": 0.0088}, {"name": "グローバルＸ　ＮＡＳＤＡＱ１００・カバード・コール　ＥＴＦ", "ticker": "JHRT", "price": 102.1, "volatility": 0.0051}, {"name": "グローバルＸ　米国優先証券　ＥＴＦ", "ticker": "TULZ", "price": 300.6, "volatility": 0.0036}, {"name": "グローバルＸ　自動運転＆ＥＶ　ＥＴＦ", "ticker": "HVFJ", "price": 208.3, "volatility": 0.0113}, {"name": "グローバルＸ　Ｓ＆Ｐ５００・カバード・コール　ＥＴＦ", "ticker": "BUNN", "price": 523.8, "volatility": 0.0068}, {"name": "ｉＦｒｅｅＥＴＦ　ＮＡＳＤＡＱ１００レバレッジ", "ticker": "BHXU", "price": 385.3, "volatility": 0.0083}, {"name": "ユカリア", "ticker": "RNGY", "price": 564.7, "volatility": 0.0083}, {"name": "ｉＦｒｅｅＥＴＦ　ＮＡＳＤＡＱ１００ダブルインバース", "ticker": "ZMCH", "price": 967.3, "volatility": 0.0057}, {"name": "ニチレイ", "ticker": "KYWA", "price": 910.9, "volatility": 0.0121}, {"name": "セイヒョー", "ticker": "QCAT", "price": 658.4, "volatility": 0.0046}, {"name": "横浜冷凍", "ticker": "QPZU", "price": 572.0, "volatility": 0.005}, {"name": "東洋水産", "ticker": "FCTX", "price": 300.2, "volatility": 0.0128}, {"name": "デルソーレ", "ticker": "JPJO", "price": 187.0, "volatility": 0.006}, {"name": "日東ベスト", "ticker": "GNRD", "price": 973.6, "volatility": 0.0094}, {"name": "黒田グループ", "ticker": "EAZS", "price": 886.3, "volatility": 0.0067}, {"name": "イートアンドホールディングス", "ticker": "IEQT", "price": 786.1, "volatility": 0.0069}, {"name": "大冷", "ticker": "ENPV", "price": 316.7, "volatility": 0.0063}, {"name": "ヨシムラ・フード・ホールディングス", "ticker": "YZVQ", "price": 437.6, "volatility": 0.0054}, {"name": "ラクサス・テクノロジーズ", "ticker": "OUFQ", "price": 820.6, "volatility": 0.0036}, {"name": "日本食品化工", "ticker": "KARK", "price": 352.2, "volatility": 0.0052}, {"name": "石井食品", "ticker": "QCCZ", "price": 676.7, "volatility": 0.0063}, {"name": "日清食品ホールディングス", "ticker": "AATC", "price": 168.6, "volatility": 0.0044}, {"name": "ウェルディッシュ", "ticker": "AZGP", "price": 698.4, "volatility": 0.0046}, {"name": "シノブフーズ", "ticker": "GSXQ", "price": 944.4, "volatility": 0.0074}, {"name": "一正蒲鉾", "ticker": "OMLS", "price": 577.7, "volatility": 0.0053}, {"name": "あじかん", "ticker": "EKXH", "price": 301.1, "volatility": 0.0119}, {"name": "フジッコ", "ticker": "MMKE", "price": 488.4, "volatility": 0.0046}, {"name": "Ｓｙｎｓｐｅｃｔｉｖｅ", "ticker": "TQCC", "price": 211.9, "volatility": 0.0049}, {"name": "ロック・フィールド", "ticker": "UFIE", "price": 676.6, "volatility": 0.0096}, {"name": "旭松食品", "ticker": "KUZX", "price": 508.0, "volatility": 0.011}, {"name": "日本たばこ産業", "ticker": "JYJJ", "price": 963.2, "volatility": 0.0062}, {"name": "ケンコーマヨネーズ", "ticker": "CFPZ", "price": 163.0, "volatility": 0.006}, {"name": "仙波糖化工業", "ticker": "XSKA", "price": 527.4, "volatility": 0.0104}, {"name": "大森屋", "ticker": "MEKC", "price": 221.0, "volatility": 0.012}, {"name": "わらべや日洋ホールディングス", "ticker": "BUCQ", "price": 811.3, "volatility": 0.0117}, {"name": "リスキル", "ticker": "POKA", "price": 880.1, "volatility": 0.0129}, {"name": "なとり", "ticker": "CJEL", "price": 857.5, "volatility": 0.0055}, {"name": "サトウ食品", "ticker": "XNCK", "price": 580.3, "volatility": 0.0033}, {"name": "イフジ産業", "ticker": "YZCD", "price": 99.2, "volatility": 0.0038}, {"name": "篠崎屋", "ticker": "RZQD", "price": 697.4, "volatility": 0.0104}, {"name": "ＡＦＣ－ＨＤアムスライフサイエンス", "ticker": "MLDK", "price": 374.6, "volatility": 0.0076}, {"name": "ファーマフーズ", "ticker": "XZOY", "price": 505.9, "volatility": 0.0071}, {"name": "エスアイイー", "ticker": "FLGR", "price": 316.4, "volatility": 0.0094}, {"name": "北の達人コーポレーション", "ticker": "VEVA", "price": 434.3, "volatility": 0.0087}, {"name": "ユーグレナ", "ticker": "HNGH", "price": 208.8, "volatility": 0.0042}, {"name": "ＳＴＩフードホールディングス", "ticker": "HRGA", "price": 975.5, "volatility": 0.0075}, {"name": "紀文食品", "ticker": "OTPV", "price": 715.8, "volatility": 0.0072}, {"name": "ジェイフロンティア", "ticker": "ASKG", "price": 454.2, "volatility": 0.0072}, {"name": "ピックルスホールディングス", "ticker": "LXSJ", "price": 174.3, "volatility": 0.0073}, {"name": "ベースフード", "ticker": "OALQ", "price": 115.6, "volatility": 0.0074}, {"name": "サンクゼール", "ticker": "KEDI", "price": 713.6, "volatility": 0.0094}, {"name": "オカムラ食品工業", "ticker": "KXGR", "price": 168.9, "volatility": 0.0119}, {"name": "ＢＡＢＹ　ＪＯＢ", "ticker": "SJDJ", "price": 691.5, "volatility": 0.0115}, {"name": "ＮＥＸＴ　ＦＵＮＤＳ　ＭＳＣＩジャパン気候変動指数（セレクト）連動型上場投信", "ticker": "GHRG", "price": 635.7, "volatility": 0.0087}, {"name": "Ｏｎｅ　ＥＴＦ　ＦＴＳＥ・サウジアラビア・インデックス", "ticker": "JPCA", "price": 496.3, "volatility": 0.0067}, {"name": "日本調理機", "ticker": "JNDF", "price": 809.6, "volatility": 0.0126}, {"name": "テクニスコ", "ticker": "VSVF", "price": 909.1, "volatility": 0.0121}, {"name": "令和アカウンティング・ホールディングス", "ticker": "BXNJ", "price": 739.4, "volatility": 0.0036}, {"name": "ＧＬＣ　ＧＲＯＵＰ", "ticker": "PAUA", "price": 754.0, "volatility": 0.007}, {"name": "エスコンジャパンリート投資法人", "ticker": "PSKH", "price": 806.1, "volatility": 0.0069}, {"name": "サンケイリアルエステート投資法人", "ticker": "SHXV", "price": 181.8, "volatility": 0.0048}, {"name": "スター・マイカ・ホールディングス", "ticker": "GGFN", "price": 475.3, "volatility": 0.0083}, {"name": "ツクルバ", "ticker": "AGOF", "price": 159.8, "volatility": 0.0032}, {"name": "ＳＯＳｉＬＡ物流リート投資法人", "ticker": "FFTX", "price": 79.8, "volatility": 0.0032}, {"name": "アルピコホールディングス", "ticker": "SIRV", "price": 422.3, "volatility": 0.0107}, {"name": "ＳＲＥホールディングス", "ticker": "FDTD", "price": 493.8, "volatility": 0.0068}, {"name": "ランディックス", "ticker": "TWBL", "price": 354.2, "volatility": 0.0088}, {"name": "ＡＤワークスグループ", "ticker": "PCCF", "price": 64.2, "volatility": 0.0072}, {"name": "アールプランナー", "ticker": "SYQA", "price": 227.3, "volatility": 0.0057}, {"name": "ヤマイチエステート", "ticker": "NEOE", "price": 409.1, "volatility": 0.0039}, {"name": "ファーストステージ", "ticker": "UPAH", "price": 729.6, "volatility": 0.0126}, {"name": "ＬＡホールディングス", "ticker": "KAVV", "price": 855.4, "volatility": 0.0076}, {"name": "東海道リート投資法人", "ticker": "QEKK", "price": 234.5, "volatility": 0.0085}, {"name": "ＧＶＡ　ＴＥＣＨ", "ticker": "NEAI", "price": 850.8, "volatility": 0.0122}, {"name": "アイダ設計", "ticker": "QVLW", "price": 189.5, "volatility": 0.0125}, {"name": "ランドネット", "ticker": "CNLE", "price": 784.0, "volatility": 0.009}, {"name": "アーバンライク", "ticker": "CBUV", "price": 813.8, "volatility": 0.0092}, {"name": "長栄", "ticker": "VDEB", "price": 977.0, "volatility": 0.01}, {"name": "アンサーホールディングス", "ticker": "NYNF", "price": 529.1, "volatility": 0.0121}, {"name": "ジェイレックス・コーポレーション", "ticker": "MYXY", "price": 188.0, "volatility": 0.005}, {"name": "ストレージ王", "ticker": "YQUK", "price": 284.8, "volatility": 0.0082}, {"name": "クリアル", "ticker": "YYWZ", "price": 106.6, "volatility": 0.0064}, {"name": "ホームポジション", "ticker": "LJOF", "price": 216.8, "volatility": 0.0062}, {"name": "クラシル", "ticker": "RJHK", "price": 635.1, "volatility": 0.0081}, {"name": "片倉工業", "ticker": "NTCU", "price": 412.8, "volatility": 0.0058}, {"name": "グンゼ", "ticker": "JHDG", "price": 328.7, "volatility": 0.0117}, {"name": "ヒューリック", "ticker": "LSKB", "price": 198.0, "volatility": 0.011}, {"name": "神栄", "ticker": "TSWH", "price": 228.5, "volatility": 0.0115}, {"name": "ＭＩＣ", "ticker": "JAMX", "price": 558.1, "volatility": 0.0111}, {"name": "ポラリス・ホールディングス", "ticker": "TNIB", "price": 757.5, "volatility": 0.0105}, {"name": "バナーズ", "ticker": "FWJO", "price": 325.6, "volatility": 0.0086}, {"name": "インデックス", "ticker": "QZIR", "price": 432.5, "volatility": 0.0055}, {"name": "アプライド", "ticker": "YBQW", "price": 201.9, "volatility": 0.0049}, {"name": "パシフィックネット", "ticker": "SAVL", "price": 283.0, "volatility": 0.01}, {"name": "ラサ商事", "ticker": "SFOC", "price": 472.6, "volatility": 0.0104}, {"name": "クリエイト", "ticker": "HLGM", "price": 545.0, "volatility": 0.008}, {"name": "アルペン", "ticker": "XPBH", "price": 226.6, "volatility": 0.0064}, {"name": "ビースタイルホールディングス", "ticker": "CKFB", "price": 118.7, "volatility": 0.0043}, {"name": "ハブ", "ticker": "CZMO", "price": 272.5, "volatility": 0.0055}, {"name": "ラクーンホールディングス", "ticker": "FYKP", "price": 990.1, "volatility": 0.0129}, {"name": "クオールホールディングス", "ticker": "JCXW", "price": 506.4, "volatility": 0.0094}, {"name": "ケイティケイ", "ticker": "OURC", "price": 415.9, "volatility": 0.0071}, {"name": "アルコニックス", "ticker": "UVPI", "price": 602.1, "volatility": 0.0051}, {"name": "神戸物産", "ticker": "QCAU", "price": 724.7, "volatility": 0.0083}, {"name": "ｖｉｓｕｍｏ", "ticker": "JRSX", "price": 789.5, "volatility": 0.0125}, {"name": "ソリトンシステムズ", "ticker": "HFAA", "price": 631.4, "volatility": 0.0116}, {"name": "ビューティカダンホールディングス", "ticker": "TBWY", "price": 571.9, "volatility": 0.0049}, {"name": "セキュアヴェイル", "ticker": "RKAH", "price": 651.0, "volatility": 0.004}, {"name": "カワサキ", "ticker": "WYLJ", "price": 636.8, "volatility": 0.0062}, {"name": "ジンズホールディングス", "ticker": "UGPR", "price": 315.3, "volatility": 0.0077}, {"name": "ビックカメラ", "ticker": "AWLI", "price": 88.0, "volatility": 0.005}, {"name": "フォルシア", "ticker": "SHAY", "price": 754.2, "volatility": 0.0072}, {"name": "ＤＣＭホールディングス", "ticker": "HWEL", "price": 695.8, "volatility": 0.0072}, {"name": "ペッパーフードサービス", "ticker": "VEIP", "price": 847.1, "volatility": 0.0059}, {"name": "ハイパー", "ticker": "VFVP", "price": 101.5, "volatility": 0.0115}, {"name": "三洋堂ホールディングス", "ticker": "SKOM", "price": 411.4, "volatility": 0.0044}, {"name": "ヒラキ", "ticker": "ZWQA", "price": 885.3, "volatility": 0.0083}, {"name": "ダブルツリー", "ticker": "CQBN", "price": 601.0, "volatility": 0.004}, {"name": "ジェイグループホールディングス", "ticker": "IWSZ", "price": 136.8, "volatility": 0.0062}, {"name": "ＭｏｎｏｔａＲＯ", "ticker": "HGRF", "price": 443.8, "volatility": 0.0092}, {"name": "ライフフーズ", "ticker": "EWTF", "price": 796.3, "volatility": 0.0093}, {"name": "東京一番フーズ", "ticker": "EMSC", "price": 303.2, "volatility": 0.0098}, {"name": "ＷＤＩ", "ticker": "KPAE", "price": 71.4, "volatility": 0.0044}, {"name": "ＪＦＬＡホールディングス", "ticker": "JLDZ", "price": 453.5, "volatility": 0.0095}, {"name": "ジェリービーンズグループ", "ticker": "MSOP", "price": 650.1, "volatility": 0.0129}, {"name": "ストリーム", "ticker": "MXKB", "price": 488.3, "volatility": 0.0047}, {"name": "銚子丸", "ticker": "NNFH", "price": 114.5, "volatility": 0.0075}, {"name": "あい　ホールディングス", "ticker": "MWCX", "price": 574.7, "volatility": 0.0077}, {"name": "ホリイフードサービス", "ticker": "QXRF", "price": 225.9, "volatility": 0.0089}, {"name": "ディーブイエックス", "ticker": "UBJS", "price": 105.5, "volatility": 0.0075}, {"name": "ハウジング・スタッフ", "ticker": "MCFF", "price": 870.3, "volatility": 0.0127}, {"name": "ジェーソン", "ticker": "UNEQ", "price": 213.7, "volatility": 0.0067}, {"name": "きちりホールディングス", "ticker": "QIAJ", "price": 781.7, "volatility": 0.0113}, {"name": "スターシーズ", "ticker": "XVNA", "price": 323.1, "volatility": 0.0099}, {"name": "Ｊ．フロント　リテイリング", "ticker": "IXFB", "price": 206.2, "volatility": 0.0068}, {"name": "ドトール・日レスホールディングス", "ticker": "MIWU", "price": 327.0, "volatility": 0.006}, {"name": "マツキヨココカラ＆カンパニー", "ticker": "VEVU", "price": 386.3, "volatility": 0.0067}, {"name": "テクノアルファ", "ticker": "NLVM", "price": 423.9, "volatility": 0.0069}, {"name": "ぽすとめいとホールディングス", "ticker": "IFNH", "price": 458.3, "volatility": 0.0047}, {"name": "ブロンコビリー", "ticker": "NMZW", "price": 398.2, "volatility": 0.0112}, {"name": "ＺＯＺＯ", "ticker": "JIUE", "price": 267.7, "volatility": 0.0107}, {"name": "トレジャー・ファクトリー", "ticker": "NCGY", "price": 704.1, "volatility": 0.0071}, {"name": "オーシャンシステム", "ticker": "SRGG", "price": 908.9, "volatility": 0.0041}, {"name": "物語コーポレーション", "ticker": "PCNL", "price": 111.1, "volatility": 0.0041}, {"name": "三越伊勢丹ホールディングス", "ticker": "LTNW", "price": 976.0, "volatility": 0.009}, {"name": "コスモス調剤", "ticker": "ZVXN", "price": 830.3, "volatility": 0.0033}, {"name": "東洋紡", "ticker": "HIQC", "price": 636.3, "volatility": 0.0093}, {"name": "ユニチカ", "ticker": "IRIL", "price": 668.2, "volatility": 0.0048}, {"name": "富士紡ホールディングス", "ticker": "AWGD", "price": 453.4, "volatility": 0.0064}, {"name": "日清紡ホールディングス", "ticker": "STDD", "price": 274.3, "volatility": 0.0073}, {"name": "倉敷紡績", "ticker": "HOZR", "price": 357.1, "volatility": 0.0059}, {"name": "ダイワボウホールディングス", "ticker": "MLOG", "price": 809.1, "volatility": 0.0039}, {"name": "シキボウ", "ticker": "BWJX", "price": 889.1, "volatility": 0.0121}, {"name": "サーティーフォー", "ticker": "VMAH", "price": 246.7, "volatility": 0.0063}, {"name": "日東紡績", "ticker": "KEAJ", "price": 853.5, "volatility": 0.0095}, {"name": "オーミケンシ", "ticker": "OOVJ", "price": 539.7, "volatility": 0.0033}, {"name": "ＵＮＩＶＡ・Ｏａｋホールディングス", "ticker": "IHFP", "price": 133.4, "volatility": 0.0096}, {"name": "トヨタ紡織", "ticker": "SZWJ", "price": 81.4, "volatility": 0.0116}, {"name": "マーチャント・バンカーズ", "ticker": "CDMB", "price": 866.3, "volatility": 0.0093}, {"name": "サイボー", "ticker": "HBYA", "price": 835.2, "volatility": 0.0082}, {"name": "シンコーホールディングス", "ticker": "KITU", "price": 800.7, "volatility": 0.0123}, {"name": "シンデン・ハイテックス", "ticker": "XKDY", "price": 245.8, "volatility": 0.0072}, {"name": "マクニカホールディングス", "ticker": "ZKED", "price": 204.8, "volatility": 0.0078}, {"name": "海帆", "ticker": "IQGC", "price": 963.1, "volatility": 0.0061}, {"name": "Ｈａｍｅｅ", "ticker": "JRPL", "price": 242.1, "volatility": 0.0051}, {"name": "マーケットエンタープライズ", "ticker": "URXC", "price": 714.1, "volatility": 0.0089}, {"name": "ファンデリー", "ticker": "HALH", "price": 321.0, "volatility": 0.012}, {"name": "富士山マガジンサービス", "ticker": "IFPD", "price": 306.0, "volatility": 0.007}, {"name": "ラクト・ジャパン", "ticker": "DCDF", "price": 586.8, "volatility": 0.0098}, {"name": "ｉシェアーズ　Ｓ＆Ｐ　５００　トップ　２０　ＥＴＦ", "ticker": "DDOG", "price": 841.6, "volatility": 0.0046}, {"name": "ＢＲＵＮＯ", "ticker": "JLKQ", "price": 785.1, "volatility": 0.0079}, {"name": "オーウイル", "ticker": "SOEB", "price": 452.6, "volatility": 0.0056}, {"name": "クリエイトＳＤホールディングス", "ticker": "KDMD", "price": 858.2, "volatility": 0.0112}, {"name": "ｉシェアーズ　ゴールド　ＥＴＦ", "ticker": "ZFTE", "price": 963.8, "volatility": 0.0092}, {"name": "グリムス", "ticker": "HVDS", "price": 234.6, "volatility": 0.0084}, {"name": "バイタルケーエスケー・ホールディングス", "ticker": "NNWX", "price": 149.8, "volatility": 0.0032}, {"name": "八洲電機", "ticker": "PBPU", "price": 390.0, "volatility": 0.003}, {"name": "メディアスホールディングス", "ticker": "RJPZ", "price": 469.0, "volatility": 0.012}, {"name": "レスター", "ticker": "SNFL", "price": 871.0, "volatility": 0.004}, {"name": "ジオリーブグループ", "ticker": "DWSR", "price": 861.1, "volatility": 0.0041}, {"name": "丸善ＣＨＩホールディングス", "ticker": "XAKR", "price": 957.3, "volatility": 0.0103}, {"name": "グローバルＸ　銀行　高配当－日本株式　ＥＴＦ", "ticker": "YLFU", "price": 188.6, "volatility": 0.0116}, {"name": "大光", "ticker": "IUDG", "price": 133.6, "volatility": 0.0066}, {"name": "アゼアス", "ticker": "FDVN", "price": 529.0, "volatility": 0.004}, {"name": "ＯＣＨＩホールディングス", "ticker": "EDOM", "price": 456.6, "volatility": 0.0096}, {"name": "ＴＯＫＡＩホールディングス", "ticker": "RWFV", "price": 910.4, "volatility": 0.0126}, {"name": "ＭＥＲＦ", "ticker": "QPAE", "price": 849.5, "volatility": 0.0035}, {"name": "ミサワ", "ticker": "MPUE", "price": 875.8, "volatility": 0.0088}, {"name": "ｉＦｒｅｅＥＴＦ　ＦＡＮＧ＋", "ticker": "HQIZ", "price": 111.0, "volatility": 0.004}, {"name": "ティーライフ", "ticker": "MYWF", "price": 964.4, "volatility": 0.0086}, {"name": "Ｃｏｍｉｎｉｘ", "ticker": "MTPL", "price": 266.2, "volatility": 0.0068}, {"name": "ハピネス・アンド・ディ", "ticker": "AAVV", "price": 63.7, "volatility": 0.0093}, {"name": "エー・ピーホールディングス", "ticker": "MZIH", "price": 118.7, "volatility": 0.0117}, {"name": "三洋貿易", "ticker": "DSZN", "price": 256.4, "volatility": 0.0094}, {"name": "ありがとうサービス", "ticker": "QBWD", "price": 471.1, "volatility": 0.0041}, {"name": "チムニー", "ticker": "HTOS", "price": 970.8, "volatility": 0.0122}, {"name": "シュッピン", "ticker": "QLDR", "price": 282.2, "volatility": 0.0108}, {"name": "エス・エム・エス・データテック", "ticker": "WEII", "price": 347.7, "volatility": 0.0107}, {"name": "ビューティガレージ", "ticker": "BMMK", "price": 358.8, "volatility": 0.0118}, {"name": "買取王国", "ticker": "WTQA", "price": 819.3, "volatility": 0.0037}, {"name": "オイシックス", "ticker": "ZDTO", "price": 178.7, "volatility": 0.0117}, {"name": "ウイン・パートナーズ", "ticker": "YCOS", "price": 192.5, "volatility": 0.0105}, {"name": "ＩＣＤＡホールディングス", "ticker": "EPES", "price": 88.3, "volatility": 0.0047}, {"name": "夢展望", "ticker": "UPFW", "price": 260.6, "volatility": 0.0036}, {"name": "ネクステージ", "ticker": "GRFK", "price": 166.0, "volatility": 0.007}, {"name": "ミラタップ", "ticker": "XDLJ", "price": 633.8, "volatility": 0.0092}, {"name": "ＡＮＡＰホールディングス", "ticker": "ODXS", "price": 110.3, "volatility": 0.0127}, {"name": "ＶＩＸ短期先物指数ＥＴＦ", "ticker": "NNVE", "price": 222.3, "volatility": 0.0107}, {"name": "ホットマン", "ticker": "EXQF", "price": 925.1, "volatility": 0.0081}, {"name": "ジョイフル本田", "ticker": "DODQ", "price": 839.9, "volatility": 0.0031}, {"name": "白鳩", "ticker": "YHFD", "price": 355.2, "volatility": 0.0082}, {"name": "エターナルホスピタリティグループ", "ticker": "LSNF", "price": 123.3, "volatility": 0.0063}, {"name": "ジェネレーションパス", "ticker": "GTBF", "price": 736.9, "volatility": 0.0099}, {"name": "ホットランドホールディングス", "ticker": "JQNH", "price": 323.8, "volatility": 0.0092}, {"name": "すかいらーくホールディングス", "ticker": "CMRF", "price": 816.3, "volatility": 0.0067}, {"name": "綿半ホールディングス", "ticker": "CJPB", "price": 520.9, "volatility": 0.0121}, {"name": "技術承継機構", "ticker": "SMEV", "price": 843.5, "volatility": 0.0095}, {"name": "日本毛織", "ticker": "OKJC", "price": 139.7, "volatility": 0.0127}, {"name": "ダイトウボウ", "ticker": "VJXL", "price": 860.0, "volatility": 0.003}, {"name": "トーア紡コーポレーション", "ticker": "SQVX", "price": 776.6, "volatility": 0.0064}, {"name": "ダイドーリミテッド", "ticker": "OWWM", "price": 625.6, "volatility": 0.0086}, {"name": "Ｄ＆Ｉ", "ticker": "ILKQ", "price": 388.2, "volatility": 0.0048}, {"name": "ヒューマンステージホールディングス", "ticker": "YOKK", "price": 89.2, "volatility": 0.0038}, {"name": "ヨシックスホールディングス", "ticker": "EKNN", "price": 813.7, "volatility": 0.0093}, {"name": "ユナイテッド・スーパーマーケット・ホールディングス", "ticker": "DRVG", "price": 56.4, "volatility": 0.0094}, {"name": "エスエルディー", "ticker": "MNUR", "price": 633.1, "volatility": 0.0099}, {"name": "ゼネラル・オイスター", "ticker": "EKDW", "price": 127.0, "volatility": 0.01}, {"name": "三井不動産アコモデーションファンド投資法人", "ticker": "XFPK", "price": 277.0, "volatility": 0.006}, {"name": "ヒメジ理化", "ticker": "NDLG", "price": 418.8, "volatility": 0.0042}, {"name": "野村不動産ホールディングス", "ticker": "VUED", "price": 425.2, "volatility": 0.0082}, {"name": "三重交通グループホールディングス", "ticker": "GYDJ", "price": 850.4, "volatility": 0.0126}, {"name": "森ヒルズリート投資法人", "ticker": "MAPK", "price": 435.1, "volatility": 0.0081}, {"name": "プロパスト", "ticker": "WQAP", "price": 780.4, "volatility": 0.0034}, {"name": "イントランス", "ticker": "GLRQ", "price": 717.1, "volatility": 0.0059}, {"name": "セントラル総合開発", "ticker": "DCGZ", "price": 151.9, "volatility": 0.0111}, {"name": "フライヤー", "ticker": "KYFB", "price": 758.3, "volatility": 0.0113}, {"name": "ウィル", "ticker": "UPIA", "price": 106.3, "volatility": 0.0093}, {"name": "アーバネットコーポレーション", "ticker": "TMVI", "price": 94.4, "volatility": 0.0074}, {"name": "ディア・ライフ", "ticker": "MWRU", "price": 592.7, "volatility": 0.0103}, {"name": "コーセーアールイー", "ticker": "JDKN", "price": 637.0, "volatility": 0.006}, {"name": "アールエイジ", "ticker": "LEZL", "price": 480.3, "volatility": 0.0033}, {"name": "産業ファンド投資法人", "ticker": "MWIT", "price": 499.1, "volatility": 0.0121}, {"name": "ブッキングリゾート", "ticker": "UGCW", "price": 803.5, "volatility": 0.0065}, {"name": "地主", "ticker": "WRSQ", "price": 324.5, "volatility": 0.0075}, {"name": "ＴＥＮＴＩＡＬ", "ticker": "ZJYQ", "price": 214.4, "volatility": 0.0086}, {"name": "グランディーズ", "ticker": "RZMA", "price": 235.4, "volatility": 0.0076}, {"name": "ファンドクリエーショングループ", "ticker": "VSRH", "price": 123.8, "volatility": 0.0092}, {"name": "フィル・カンパニー", "ticker": "ZIHO", "price": 107.8, "volatility": 0.0052}, {"name": "アドバンス・レジデンス投資法人", "ticker": "QUYR", "price": 143.7, "volatility": 0.0093}, {"name": "ａｅｒｏ　ｌａｂ　ｉｎｔｅｒｎａｔｉｏｎａｌ", "ticker": "GUHQ", "price": 325.7, "volatility": 0.0087}, {"name": "ＪＰＭＣ", "ticker": "HMRU", "price": 259.2, "volatility": 0.0122}, {"name": "サンセイランディック", "ticker": "JFSE", "price": 990.0, "volatility": 0.003}, {"name": "アクティビア・プロパティーズ投資法人", "ticker": "AMWE", "price": 362.4, "volatility": 0.0054}, {"name": "エストラスト", "ticker": "OJNL", "price": 433.7, "volatility": 0.0067}, {"name": "ＧＬＰ投資法人", "ticker": "ZIHF", "price": 83.7, "volatility": 0.0093}, {"name": "コンフォリア・レジデンシャル投資法人", "ticker": "KUBF", "price": 636.2, "volatility": 0.0092}, {"name": "日本プロロジスリート投資法人", "ticker": "CYYU", "price": 645.0, "volatility": 0.008}, {"name": "フージャースホールディングス", "ticker": "ZUMT", "price": 574.1, "volatility": 0.0089}, {"name": "トラストホールディングス", "ticker": "ZMOA", "price": 654.1, "volatility": 0.0089}, {"name": "星野リゾート・リート投資法人", "ticker": "GBMG", "price": 526.7, "volatility": 0.0063}, {"name": "オープンハウスグループ", "ticker": "TVAK", "price": 402.8, "volatility": 0.0058}, {"name": "東急不動産ホールディングス", "ticker": "KMCO", "price": 816.0, "volatility": 0.009}, {"name": "グローバルＸ　プライシングパワー・リーダーズ－日本株式　ＥＴＦ", "ticker": "TNSI", "price": 667.0, "volatility": 0.01}, {"name": "Ｏｎｅリート投資法人", "ticker": "AEJP", "price": 313.9, "volatility": 0.0069}, {"name": "飯田グループホールディングス", "ticker": "RRPG", "price": 56.5, "volatility": 0.0065}, {"name": "イオンリート投資法人", "ticker": "EACP", "price": 960.0, "volatility": 0.003}, {"name": "アズマハウス", "ticker": "MJFO", "price": 482.6, "volatility": 0.0104}, {"name": "ヒューリックリート投資法人", "ticker": "VMEJ", "price": 650.8, "volatility": 0.0038}, {"name": "日本リート投資法人", "ticker": "CMTF", "price": 852.2, "volatility": 0.0052}, {"name": "東武住販", "ticker": "QQCT", "price": 54.5, "volatility": 0.0085}, {"name": "ムゲンエステート", "ticker": "CQDK", "price": 211.6, "volatility": 0.0114}, {"name": "ジールアソシエイツ", "ticker": "MEJS", "price": 736.7, "volatility": 0.0097}, {"name": "アンビション　ＤＸ　ホールディングス", "ticker": "SOAO", "price": 768.7, "volatility": 0.0043}, {"name": "帝国繊維", "ticker": "VMOA", "price": 869.8, "volatility": 0.0128}, {"name": "日本製麻", "ticker": "LBMA", "price": 809.7, "volatility": 0.0127}, {"name": "積水ハウス・リート投資法人", "ticker": "XRCE", "price": 99.9, "volatility": 0.0031}, {"name": "ＴａｌｅｎｔＸ", "ticker": "VLWJ", "price": 575.0, "volatility": 0.008}, {"name": "日本コークス工業", "ticker": "POSW", "price": 406.0, "volatility": 0.007}, {"name": "フライングガーデン", "ticker": "ZFSM", "price": 272.1, "volatility": 0.0051}, {"name": "メディックス", "ticker": "SUWA", "price": 109.6, "volatility": 0.0126}, {"name": "クロスプラス", "ticker": "MBIP", "price": 696.0, "volatility": 0.009}, {"name": "ミタチ産業", "ticker": "XZLF", "price": 392.5, "volatility": 0.0105}, {"name": "レカム", "ticker": "XYPO", "price": 348.4, "volatility": 0.0114}, {"name": "ランシステム", "ticker": "TJHZ", "price": 764.1, "volatility": 0.0089}, {"name": "東和フードサービス", "ticker": "BRKB", "price": 351.8, "volatility": 0.0112}, {"name": "ミーク", "ticker": "CZKF", "price": 146.5, "volatility": 0.0095}, {"name": "あさひ", "ticker": "KLRQ", "price": 791.7, "volatility": 0.0047}, {"name": "テクノスマイル", "ticker": "UHMC", "price": 70.0, "volatility": 0.003}, {"name": "コスモス薬品", "ticker": "JHNF", "price": 864.1, "volatility": 0.0089}, {"name": "ビジュアル・プロセッシング・ジャパン", "ticker": "FQPD", "price": 343.6, "volatility": 0.0066}, {"name": "メタプラネット", "ticker": "OXAZ", "price": 898.2, "volatility": 0.0048}, {"name": "バッファロー", "ticker": "QQJP", "price": 199.4, "volatility": 0.0036}, {"name": "メディカル一光グループ", "ticker": "WAWF", "price": 902.4, "volatility": 0.0054}, {"name": "クリヤマホールディングス", "ticker": "DYKG", "price": 800.7, "volatility": 0.0123}, {"name": "Ｔｒａｉｌｈｅａｄ　Ｇｌｏｂａｌ　Ｈｏｌｄｉｎｇｓ", "ticker": "RDGY", "price": 858.9, "volatility": 0.0041}, {"name": "ｃｏｔｔａ", "ticker": "DUGI", "price": 582.7, "volatility": 0.0103}, {"name": "ミライロ", "ticker": "MSGG", "price": 743.4, "volatility": 0.0064}, {"name": "シップヘルスケアホールディングス", "ticker": "FYWB", "price": 269.2, "volatility": 0.0122}, {"name": "トーエル", "ticker": "OEXL", "price": 532.1, "volatility": 0.0051}, {"name": "ダイナミックマッププラットフォーム", "ticker": "MHPE", "price": 522.7, "volatility": 0.0103}, {"name": "フジタコーポレーション", "ticker": "BOXE", "price": 432.2, "volatility": 0.0052}, {"name": "ソフトクリエイトホールディングス", "ticker": "WRGL", "price": 746.0, "volatility": 0.009}];
+const NEWS_TEMPLATES = [
+  {text:"{name}の新製品発表！市場が沸く",effect:"up",mag:1.04,target:"single"},
+  {text:"{name}、決算で過去最高益を達成",effect:"up",mag:1.08,target:"single"},
+  {text:"{name}に不正会計疑惑が浮上",effect:"down",mag:0.92,target:"single"},
+  {text:"{name}、大手投資家から大量売却報道",effect:"down",mag:0.95,target:"single"},
+  {text:"{name}、新規事業参入で期待高まる",effect:"up",mag:1.05,target:"single"},
+  {text:"{name}の工場で火災事故が発生",effect:"down",mag:0.93,target:"single"},
+  {text:"{name}、独占禁止法違反で調査受ける",effect:"down",mag:0.90,target:"single"},
+  {text:"{name}、提携拡大でシナジー期待",effect:"up",mag:1.03,target:"single"},
+  {text:"米国市場が全面高、投資家心理改善",effect:"up",mag:1.02,target:"all"},
+  {text:"景気後退懸念が再燃、市場に売り圧力",effect:"down",mag:0.97,target:"all"},
+  {text:"中央銀行が利上げを発表",effect:"down",mag:0.96,target:"all"},
+  {text:"テックバブル再来の声、IT銘柄に買い",effect:"up",mag:1.03,target:"all"},
+  {text:"地政学リスクが後退、市場安心感",effect:"up",mag:1.015,target:"all"},
+  {text:"為替円安進行、輸出関連に追い風",effect:"up",mag:1.02,target:"all"},
+  {text:"原油高騰、エネルギーコスト圧迫",effect:"down",mag:0.98,target:"all"},
+  {text:"8億人の個人投資家が一斉に買い注文！",effect:"up",mag:1.04,target:"all"},
+  {text:"8億人の個人投資家が利益確定売り",effect:"down",mag:0.96,target:"all"},
+  {text:"AIブーム継続、関連銘柄が急騰",effect:"up",mag:1.05,target:"all"},
+  {text:"規制強化の動き、ハイテク株に重し",effect:"down",mag:0.97,target:"all"},
+  {text:"{name}、CEOが辞任表明",effect:"down",mag:0.94,target:"single"},
+  {text:"{name}、特許訴訟で勝訴",effect:"up",mag:1.06,target:"single"},
+  {text:"{name}、買収提案を受ける",effect:"up",mag:1.12,target:"single"},
+  {text:"{name}、主要顧客との契約解除",effect:"down",mag:0.91,target:"single"},
+  {text:"世界同時株高へ、8億人が参加",effect:"up",mag:1.03,target:"all"},
+  {text:"パニック売り発生、8億人のうち30%が売却",effect:"down",mag:0.95,target:"all"}
+];
+
+function safeLSGet(key) {
+  try { return localStorage.getItem(key); } catch(e) { return memStorage[key] || null; }
+}
+function safeLSSet(key, val) {
+  try { localStorage.setItem(key, val); } catch(e) { memStorage[key] = val; }
+}
+function safeLSRemove(key) {
+  try { localStorage.removeItem(key); } catch(e) { delete memStorage[key]; }
+}
+
+function getScaleFactor(price) {
+  if (price >= 800) return 0.5;
+  if (price >= 500) return 0.7;
+  if (price >= 300) return 0.9;
+  if (price >= 150) return 1.1;
+  return 1.5;
+}
+
+function initStocks() {
+  stocks = RAW_STOCKS.map(s => {
+    const scaleFactor = getScaleFactor(s.price);
+    const totalShares = Math.floor(50000 + Math.random() * 450000);
+    const cpuShares = Math.floor(totalShares * (0.3 + Math.random() * 0.4));
+    return {
+      name: s.name, ticker: s.ticker, price: s.price, prevPrice: s.price,
+      changeRate: 0, volatility: s.volatility, scaleFactor: scaleFactor,
+      totalShares: totalShares, cpuShares: cpuShares,
+      lastUpdate: Date.now() + Math.random() * 4000,
+      updateInterval: 1000 + Math.random() * 3000,
+      history: [s.price], flash: null
+    };
+  });
+}
+
+function init() {
+  initTheme();
+  initStocks();
+  document.getElementById("stockCount").textContent = stocks.length.toLocaleString();
+  const saveObj = getSaveSlots();
+  if (saveObj.activeSlot !== null && saveObj.slots[saveObj.activeSlot] && saveObj.slots[saveObj.activeSlot].data) {
+    loadFromSlot(saveObj.activeSlot);
+    startGame();
+  } else {
+    showSlotModal();
+  }
+  
+  // コナミコマンド（↑↑↓↓）リスナー
+  document.addEventListener('keydown', (e) => {
+    if (e.key === ' ') {
+      e.preventDefault();
+      clickerClick();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      konamiSequence.push(e.key);
+      if (konamiSequence.length > 4) {
+        konamiSequence.shift();
+      }
+      if (konamiSequence.length === 4 && 
+          konamiSequence[0] === 'ArrowUp' && konamiSequence[1] === 'ArrowUp' &&
+          konamiSequence[2] === 'ArrowDown' && konamiSequence[3] === 'ArrowDown') {
+        konamiSequence = [];
+        activateDebugMode();
+      }
+    }
+  });
+  
+  // 左ドラッグスクロール
+  let isDragging = false;
+  let dragStart = { x: 0, y: 0 };
+  document.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { // 左クリック
+      isDragging = true;
+      dragStart = { x: e.clientX, y: e.clientY };
+    }
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
+      const columns = document.querySelectorAll('.column-content');
+      columns.forEach(col => {
+        col.scrollLeft -= dx;
+        col.scrollTop -= dy;
+      });
+      dragStart = { x: e.clientX, y: e.clientY };
+    }
+  });
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+}
+
+function startGame() {
+  render();
+  setInterval(gameLoop, 100);
+  setInterval(newsTick, 5000);
+  setInterval(checkLevelUp, 1000);
+}
+
+function checkLevelUp() {
+  const requiredMoney = 10000 * Math.pow(1.1, level - 1);
+  if (money >= requiredMoney) {
+    level += 1;
+    render();
+    showStatus(`🆙 レベルアップ！ Lv. ${level}`);
+  }
+}
+
+function updateStock(s) {
+  const marketSentiment = (Math.random() - 0.5) * 0.02;
+  const buyers = Math.random() * 400000000 + Math.random() * 400000000;
+  const sellers = Math.random() * 400000000 + Math.random() * 400000000;
+  const orderImbalance = (buyers - sellers) / 800000000;
+  const randomWalk = (Math.random() - 0.5) * s.volatility * s.scaleFactor;
+  const cpuImpact = orderImbalance * s.volatility * s.scaleFactor * 3;
+  let newPrice = s.price * (1 + marketSentiment + randomWalk + cpuImpact);
+  newPrice = Math.max(1, newPrice);
+  s.prevPrice = s.price;
+  s.price = Math.round(newPrice * 100) / 100;
+  s.changeRate = ((s.price - s.prevPrice) / s.prevPrice * 100);
+  s.history.push(s.price);
+  if (s.history.length > 30) s.history.shift();
+  const playerShares = holdings[s.ticker] || 0;
+  const maxCpu = Math.max(0, s.totalShares - playerShares);
+  const cpuChange = 1 + (Math.random() - 0.5) * 0.04;
+  s.cpuShares = Math.max(0, Math.min(maxCpu, Math.floor(s.cpuShares * cpuChange)));
+  s.flash = s.price > s.prevPrice ? 'up' : (s.price < s.prevPrice ? 'down' : null);
+}
+
+function gameLoop() {
+  const now = Date.now();
+  let updated = false;
+  stocks.forEach(s => {
+    if (now - s.lastUpdate >= s.updateInterval) {
+      updateStock(s);
+      s.lastUpdate = now;
+      s.updateInterval = 1000 + Math.random() * 3000;
+      updated = true;
+    }
+  });
+  if (updated) { updateDisplay(); }
+}
+
+function newsTick() {
+  if (Math.random() > 0.6) return;
+  const tpl = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
+  let target = null;
+  if (tpl.target === "single") target = stocks[Math.floor(Math.random() * stocks.length)];
+  const text = target ? tpl.text.replace("{name}", target.name) : tpl.text;
+  if (tpl.target === "single" && target) {
+    const old = target.price;
+    target.price = Math.round(target.price * tpl.mag * 100) / 100;
+    target.changeRate = ((target.price - old) / old * 100);
+    target.history.push(target.price);
+    if (target.history.length > 30) target.history.shift();
+    target.flash = target.price > old ? 'up' : 'down';
+  } else if (tpl.target === "all") {
+    stocks.forEach(s => {
+      const old = s.price;
+      s.price = Math.round(s.price * tpl.mag * 100) / 100;
+      s.changeRate = ((s.price - old) / old * 100);
+      s.history.push(s.price);
+      if (s.history.length > 30) s.history.shift();
+      s.flash = s.price > old ? 'up' : 'down';
+    });
+  }
+  document.getElementById("newsBox").textContent = text;
+  render();
+  updateModalCard();
+}
+
+function scheduleRender() {
+  if (renderScheduleTimer) clearTimeout(renderScheduleTimer);
+  renderScheduleTimer = setTimeout(() => { render(); }, 200);
+}
+
+function activateDebugMode() {
+  const amount = prompt('追加するお金の額を入力:');
+  if (amount !== null && !isNaN(amount) && amount !== '') {
+    const addAmount = parseInt(amount);
+    money += addAmount;
+    render();
+    showStatus(`💰 ${addAmount.toLocaleString()}$ を追加しました！`);
+    autoSave();
+  }
+}
+
+function updateDisplay() {
+  // 既存の要素を保持して、値だけ更新
+  const rows = document.querySelectorAll(".stock-row");
+  rows.forEach(row => {
+    const tickerEl = row.querySelector(".stock-ticker");
+    if (!tickerEl) return;
+    const ticker = tickerEl.textContent;
+    const s = stocks.find(x => x.ticker === ticker);
+    if (!s) return;
+    
+    // テキスト更新（要素は保持）
+    const priceEl = row.querySelector(".stock-price");
+    const changeEl = row.querySelector(".stock-change");
+    if (priceEl) priceEl.textContent = "$" + s.price.toFixed(2);
+    if (changeEl) {
+      const up = s.changeRate >= 0;
+      changeEl.className = "stock-change " + (up ? "up" : "down");
+      changeEl.textContent = (up ? "+" : "") + s.changeRate.toFixed(2) + "%";
+    }
+    
+    // ゲージ更新
+    const playerShares = holdings[s.ticker] || 0;
+    const cpuPct = (s.cpuShares / s.totalShares) * 100;
+    const playerPct = (playerShares / s.totalShares) * 100;
+    const freePct = Math.max(0, 100 - cpuPct - playerPct);
+    const cpuGauge = row.querySelector(".gauge-cpu");
+    const playerGauge = row.querySelector(".gauge-player");
+    const freeGauge = row.querySelector(".gauge-free");
+    if (cpuGauge) cpuGauge.style.width = cpuPct + "%";
+    if (playerGauge) playerGauge.style.width = playerPct + "%";
+    if (freeGauge) freeGauge.style.width = freePct + "%";
+  });
+  
+  // モーダルが開いている時だけ更新
+  updateModalCard();
+}
+
+function render() {
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  let evalVal = money;
+  for (const [t, q] of Object.entries(holdings)) {
+    const s = stocks.find(x => x.ticker === t);
+    if (s) evalVal += s.price * q;
+  }
+  document.getElementById("moneyDisplay").textContent = Math.floor(money).toLocaleString();
+  document.getElementById("evalDisplay").textContent = Math.floor(evalVal).toLocaleString() + " $";
+  document.getElementById("levelDisplay").textContent = level;
+  document.getElementById("prestigeDisplay").textContent = prestigePoints;
+  
+  // クリックパワー価格表示を更新
+  document.getElementById("price10").textContent = clickPower10Price;
+  document.getElementById("price100").textContent = clickPower100Price;
+  document.getElementById("price1000").textContent = clickPower1000Price;
+
+  // 全銘柄（ページネーション対応）
+  const allCol = document.getElementById("allStocksCol");
+  allCol.innerHTML = "";
+  const filtered = stocks.filter(s => s.name.toLowerCase().includes(search) || s.ticker.toLowerCase().includes(search));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+  pageItems.forEach(s => allCol.appendChild(createRow(s)));
+  renderPagination("allStocksPage", currentPage, totalPages, (p) => { currentPage = p; render(); });
+
+  // 保有/お気に入り
+  const holdCol = document.getElementById("holdingsCol");
+  holdCol.innerHTML = "";
+  const holdSet = new Set(Object.keys(holdings));
+  const favOnly = [...favorites].filter(f => !holdSet.has(f));
+  const combined = [...holdSet, ...favOnly];
+  if (combined.length === 0) {
+    holdCol.innerHTML = '<div class="empty-msg">保有株・お気に入りはありません</div>';
+  } else {
+    combined.forEach(t => {
+      const s = stocks.find(x => x.ticker === t);
+      if (s) holdCol.appendChild(createRow(s));
+    });
+  }
+
+  // 急上昇
+  const surgeCol = document.getElementById("surgeCol");
+  surgeCol.innerHTML = "";
+  const sorted = [...stocks].sort((a, b) => b.changeRate - a.changeRate).slice(0, 15);
+  sorted.forEach(s => surgeCol.appendChild(createRow(s)));
+}
+
+function renderPagination(containerId, current, total, onChange) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  if (total <= 1) return;
+
+  const prev = document.createElement("button");
+  prev.textContent = "◀";
+  prev.disabled = current <= 1;
+  prev.onclick = () => onChange(current - 1);
+  container.appendChild(prev);
+
+  const maxButtons = 7;
+  let startPage = Math.max(1, current - Math.floor(maxButtons / 2));
+  let endPage = Math.min(total, startPage + maxButtons - 1);
+  if (endPage - startPage < maxButtons - 1) startPage = Math.max(1, endPage - maxButtons + 1);
+
+  if (startPage > 1) {
+    const first = document.createElement("button");
+    first.textContent = "1";
+    first.onclick = () => onChange(1);
+    container.appendChild(first);
+    if (startPage > 2) {
+      const dots = document.createElement("span");
+      dots.textContent = "…";
+      dots.style.color = "var(--subtext)";
+      dots.style.padding = "0 4px";
+      container.appendChild(dots);
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    if (i === current) btn.classList.add("active");
+    btn.onclick = () => onChange(i);
+    container.appendChild(btn);
+  }
+
+  if (endPage < total) {
+    if (endPage < total - 1) {
+      const dots = document.createElement("span");
+      dots.textContent = "…";
+      dots.style.color = "var(--subtext)";
+      dots.style.padding = "0 4px";
+      container.appendChild(dots);
+    }
+    const last = document.createElement("button");
+    last.textContent = total;
+    last.onclick = () => onChange(total);
+    container.appendChild(last);
+  }
+
+  const next = document.createElement("button");
+  next.textContent = "▶";
+  next.disabled = current >= total;
+  next.onclick = () => onChange(current + 1);
+  container.appendChild(next);
+
+  const info = document.createElement("span");
+  info.className = "page-info";
+  info.textContent = `${current}/${total}ページ`;
+  container.appendChild(info);
+}
+
+function getSparklineSVG(history) {
+  if (history.length < 2) return '';
+  const w = 60, h = 20;
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = max - min || 1;
+  const points = history.map((v, i) => {
+    const x = (i / (history.length - 1)) * w;
+    const y = h - ((v - min) / range) * h;
+    return `${x},${y}`;
+  }).join(' ');
+  const color = history[history.length-1] >= history[0] ? 'var(--up)' : 'var(--down)';
+  return `<svg width="${w}" height="${h}" class="sparkline" viewBox="0 0 ${w} ${h}"><polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
+}
+
+function createRow(s, noClick) {
+  const div = document.createElement("div");
+  div.className = "stock-row";
+  if (s.flash === 'up') { div.classList.add('flash-up'); s.flash = null; }
+  if (s.flash === 'down') { div.classList.add('flash-down'); s.flash = null; }
+  if (!noClick) div.onclick = () => openModal(s.ticker);
+  const up = s.changeRate >= 0;
+  const chg = (up ? "+" : "") + s.changeRate.toFixed(2) + "%";
+  let badges = "";
+  if (holdings[s.ticker]) badges += `<span class="hold-badge">保有 ${holdings[s.ticker]}株</span>`;
+  if (favorites.has(s.ticker)) badges += `<span class="fav-badge">★</span>`;
+  const playerShares = holdings[s.ticker] || 0;
+  const freeShares = Math.max(0, s.totalShares - s.cpuShares - playerShares);
+  const cpuPct = (s.cpuShares / s.totalShares) * 100;
+  const playerPct = (playerShares / s.totalShares) * 100;
+  const freePct = Math.max(0, 100 - cpuPct - playerPct);
+  const sparkline = getSparklineSVG(s.history);
+  div.innerHTML = `
+    <div class="stock-main">
+      <div class="stock-info">
+        <div class="stock-name">${s.name} ${badges}</div>
+        <div class="stock-ticker">${s.ticker}</div>
+      </div>
+      <div class="stock-price-area">
+        <div class="stock-price">$${s.price.toFixed(2)}</div>
+        <div class="stock-change ${up ? 'up' : 'down'}">${chg}</div>
+        ${sparkline}
+      </div>
+    </div>
+    <div class="gauge-area">
+      <div class="gauge-labels">
+        <span style="color:var(--gauge-cpu)">CPU: ${s.cpuShares.toLocaleString()}</span>
+        <span style="color:var(--gauge-player)">保有: ${playerShares.toLocaleString()}</span>
+        <span style="color:var(--gauge-free)">空き: ${freeShares.toLocaleString()}</span>
+      </div>
+      <div class="gauge-bar">
+        <div class="gauge-cpu" style="width:${cpuPct}%"></div>
+        <div class="gauge-player" style="width:${playerPct}%"></div>
+        <div class="gauge-free" style="width:${freePct}%"></div>
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+function openModal(ticker) {
+  if (modalAnimating) return;
+  modalAnimating = true;
+  const overlay = document.getElementById("modalOverlay");
+  selectedTicker = ticker;
+  const s = stocks.find(x => x.ticker === ticker);
+  if (!s) {
+    modalAnimating = false;
+    return;
+  }
+  
+  // カード領域をリセット
+  document.getElementById("modalCardArea").innerHTML = "";
+  
+  document.getElementById("modalTitle").textContent = s.name;
+  document.getElementById("modalTicker").textContent = s.ticker;
+  document.getElementById("modalPrice").textContent = "$" + s.price.toFixed(2);
+  const up = s.changeRate >= 0;
+  document.getElementById("modalChange").innerHTML = `<span class="${up ? 'up' : 'down'}">${(up ? "+" : "") + s.changeRate.toFixed(2)}%</span>`;
+  const playerShares = holdings[ticker] || 0;
+  document.getElementById("modalHold").textContent = playerShares;
+  document.getElementById("modalCpuHold").textContent = s.cpuShares.toLocaleString();
+  document.getElementById("modalTotal").textContent = s.totalShares.toLocaleString();
+  updateModalCard();
+  overlay.style.display = "flex";
+  requestAnimationFrame(() => {
+    overlay.classList.add("show");
+    modalAnimating = false;
+  });
+}
+
+function updateModalCard() {
+  if (!selectedTicker) return;
+  const s = stocks.find(x => x.ticker === selectedTicker);
+  if (!s) return;
+  const area = document.getElementById("modalCardArea");
+  
+  // 初回だけカード作成
+  if (area.children.length === 0) {
+    const card = createRow(s, true);
+    area.appendChild(card);
+  } else {
+    // 2回目以降は値だけ更新
+    const card = area.querySelector(".stock-row");
+    if (card) {
+      const priceEl = card.querySelector(".stock-price");
+      const changeEl = card.querySelector(".stock-change");
+      const playerShares = holdings[s.ticker] || 0;
+      const cpuLabels = card.querySelectorAll(".gauge-labels span");
+      
+      if (priceEl) priceEl.textContent = "$" + s.price.toFixed(2);
+      if (changeEl) {
+        const up = s.changeRate >= 0;
+        changeEl.className = "stock-change " + (up ? "up" : "down");
+        changeEl.textContent = (up ? "+" : "") + s.changeRate.toFixed(2) + "%";
+      }
+      
+      // ゲージ更新
+      const cpuPct = (s.cpuShares / s.totalShares) * 100;
+      const playerPct = (playerShares / s.totalShares) * 100;
+      const freePct = Math.max(0, 100 - cpuPct - playerPct);
+      const gauges = card.querySelectorAll(".gauge-bar div");
+      if (gauges[0]) gauges[0].style.width = cpuPct + "%";
+      if (gauges[1]) gauges[1].style.width = playerPct + "%";
+      if (gauges[2]) gauges[2].style.width = freePct + "%";
+      
+      // ラベル更新
+      if (cpuLabels[0]) cpuLabels[0].innerHTML = `<span style="color:var(--gauge-cpu)">● CPU ${s.cpuShares.toLocaleString()}株</span>`;
+      if (cpuLabels[1]) cpuLabels[1].innerHTML = `<span style="color:var(--gauge-player)">● あなた ${playerShares.toLocaleString()}株</span>`;
+      const freeShares = Math.max(0, s.totalShares - s.cpuShares - playerShares);
+      if (cpuLabels[2]) cpuLabels[2].innerHTML = `<span style="color:var(--gauge-free)">● 空き ${freeShares.toLocaleString()}株</span>`;
+    }
+  }
+  
+  // モーダル情報の更新（こちらは常に更新）
+  document.getElementById("modalPrice").textContent = "$" + s.price.toFixed(2);
+  const up = s.changeRate >= 0;
+  document.getElementById("modalChange").innerHTML = `<span class="${up ? 'up' : 'down'}">${(up ? "+" : "") + s.changeRate.toFixed(2)}%</span>`;
+  const playerShares = holdings[selectedTicker] || 0;
+  document.getElementById("modalHold").textContent = playerShares;
+  document.getElementById("modalCpuHold").textContent = s.cpuShares.toLocaleString();
+}
+
+function closeModal() { 
+  modalAnimating = true;
+  const overlay = document.getElementById("modalOverlay");
+  overlay.classList.remove("show");
+  setTimeout(() => { 
+    overlay.style.display = "none"; 
+    selectedTicker = null; 
+    modalAnimating = false;
+  }, 150);
+}
+
+function tradeQty(qty, type) {
+  if (!selectedTicker) return;
+  const s = stocks.find(x => x.ticker === selectedTicker);
+  if (qty === -1) {
+    if (type === 'buy') {
+      const maxQty = Math.floor(money / s.price);
+      if (maxQty <= 0) { showStatus("資金が不足しています！", true); return; }
+      qty = maxQty;
+    } else {
+      qty = holdings[selectedTicker] || 0;
+      if (qty <= 0) { showStatus("保有株が不足しています！", true); return; }
+    }
+  }
+  if (qty <= 0) return;
+  if (type === "buy") {
+    const cost = s.price * qty;
+    if (money >= cost) { 
+      money -= cost; 
+      holdings[selectedTicker] = (holdings[selectedTicker] || 0) + qty; 
+      showStatus(qty.toLocaleString() + "株を購入しました！"); 
+    } else { 
+      showStatus("資金が不足しています！", true); 
+      return; 
+    }
+  } else {
+    const hold = holdings[selectedTicker] || 0;
+    if (hold >= qty) { 
+      money += s.price * qty; 
+      holdings[selectedTicker] = hold - qty; 
+      if (holdings[selectedTicker] === 0) delete holdings[selectedTicker]; 
+      showStatus(qty.toLocaleString() + "株を売却しました！"); 
+    } else { 
+      showStatus("保有株が不足しています！", true); 
+      return; 
+    }
+  }
+  updateModalCard();
+  render(); 
+  autoSave();
+}
+
+function toggleFav() {
+  if (!selectedTicker) return;
+  if (favorites.has(selectedTicker)) { 
+    favorites.delete(selectedTicker); 
+    showStatus("お気に入りから削除しました"); 
+  } else { 
+    favorites.add(selectedTicker); 
+    showStatus("お気に入りに追加しました"); 
+  }
+  updateModalCard();
+  render(); 
+  autoSave();
+}
+
+function showStatus(msg, err) {
+  const el = document.getElementById("statusMsg"); 
+  el.textContent = msg; 
+  el.style.color = err ? "#ff5252" : "#00e676";
+  if (document.body.classList.contains("theme-classic")) {
+    el.style.color = err ? "#c00" : "#060";
+  }
+  setTimeout(() => { if (el.textContent === msg) el.textContent = ""; }, 3000);
+}
+
+function toggleTheme() {
+  const body = document.body;
+  if (body.classList.contains("theme-real")) {
+    body.classList.remove("theme-real");
+    body.classList.add("theme-classic");
+    safeLSSet("stockSim_theme", "classic");
+  } else {
+    body.classList.remove("theme-classic");
+    body.classList.add("theme-real");
+    safeLSSet("stockSim_theme", "real");
+  }
+}
+
+function initTheme() {
+  const t = safeLSGet("stockSim_theme") || "classic";
+  document.body.classList.add(t === "real" ? "theme-real" : "theme-classic");
+}
+
+function getSaveSlots() {
+  const raw = safeLSGet(SAVE_KEY);
+  if (raw) return JSON.parse(raw);
+  return { maxSlots: 2, slots: [{id:0, name:"データ 1", data:null, lastSave:null}, {id:1, name:"データ 2", data:null, lastSave:null}], activeSlot: null };
+}
+
+function setSaveSlots(obj) {
+  safeLSSet(SAVE_KEY, JSON.stringify(obj));
+}
+
+function getSaveData() {
+  return { 
+    money, 
+    holdings, 
+    favorites: [...favorites], 
+    stocks: stocks.map(s => ({
+      ticker: s.ticker, price: s.price, prevPrice: s.prevPrice,
+      history: s.history, totalShares: s.totalShares, cpuShares: s.cpuShares,
+      lastUpdate: s.lastUpdate, updateInterval: s.updateInterval
+    })), 
+    tickCount,
+    level,
+    prestigePoints,
+    autoClickerLevel,
+    x5PowerActive,
+    x5PowerEndTime,
+    autoClickerActive,
+    clickPower,
+    clickPower10Price,
+    clickPower100Price,
+    clickPower1000Price
+  };
+}
+
+function applySaveData(data) {
+  if (!data) return false;
+  money = data.money ?? INITIAL_MONEY;
+  holdings = data.holdings ?? {};
+  favorites = new Set(data.favorites ?? []);
+  tickCount = data.tickCount ?? 0;
+  level = data.level ?? 1;
+  prestigePoints = data.prestigePoints ?? 0;
+  autoClickerLevel = data.autoClickerLevel ?? 0;
+  x5PowerActive = data.x5PowerActive ?? false;
+  x5PowerEndTime = data.x5PowerEndTime ?? 0;
+  autoClickerActive = data.autoClickerActive ?? false;
+  clickPower = data.clickPower ?? 1;
+  clickPower10Price = data.clickPower10Price ?? 100;
+  clickPower100Price = data.clickPower100Price ?? 990;
+  clickPower1000Price = data.clickPower1000Price ?? 9980;
+  if (data.stocks) {
+    data.stocks.forEach(saved => {
+      const s = stocks.find(x => x.ticker === saved.ticker);
+      if (s) {
+        s.price = saved.price ?? s.price;
+        s.prevPrice = saved.prevPrice ?? s.price;
+        s.history = saved.history ?? [s.price];
+        s.totalShares = saved.totalShares ?? s.totalShares;
+        s.cpuShares = saved.cpuShares ?? s.cpuShares;
+        s.lastUpdate = saved.lastUpdate ?? Date.now();
+        s.updateInterval = saved.updateInterval ?? (1000 + Math.random() * 3000);
+        s.changeRate = ((s.price - s.prevPrice) / s.prevPrice * 100);
+      }
+    });
+  }
+  return true;
+}
+
+function ensureSlotCapacity() {
+  const saveObj = getSaveSlots();
+  const usedCount = saveObj.slots.filter(s => s.data !== null).length;
+  if (usedCount >= saveObj.maxSlots) {
+    const newId = saveObj.slots.length;
+    saveObj.maxSlots += 1;
+    saveObj.slots.push({ id: newId, name: `データ ${newId + 1}`, data: null, lastSave: null });
+    setSaveSlots(saveObj);
+    showStatus("新規スロットを解放しました！");
+  }
+}
+
+function autoSave() {
+  const saveObj = getSaveSlots();
+  const active = saveObj.activeSlot;
+  if (active !== null && saveObj.slots[active]) {
+    saveObj.slots[active].data = getSaveData();
+    saveObj.slots[active].lastSave = Date.now();
+    setSaveSlots(saveObj);
+  }
+}
+
+function saveGame() {
+  ensureSlotCapacity();
+  autoSave();
+  showStatus("セーブ完了！");
+}
+
+function loadGame() {
+  const saveObj = getSaveSlots();
+  const active = saveObj.activeSlot;
+  if (active !== null && saveObj.slots[active] && saveObj.slots[active].data) {
+    applySaveData(saveObj.slots[active].data);
+    showStatus("ロード完了！");
+    render();
+  } else {
+    showStatus("セーブデータがありません", true);
+  }
+}
+
+function resetGame() {
+  if (!confirm("本当にリセットしますか？現在のスロットのデータが初期状態に戻ります。")) return;
+  resetToInitial();
+  autoSave();
+  render();
+  showStatus("リセットしました");
+}
+
+function resetToInitial() {
+  money = INITIAL_MONEY;
+  holdings = {};
+  favorites = new Set();
+  clickPower = 1;
+  clickPower10Price = 100;
+  clickPower100Price = 990;
+  clickPower1000Price = 9980;
+  initStocks();
+}
+
+function switchSlot() {
+  autoSave();
+  showSlotModal();
+}
+
+function showSlotModal() {
+  renderSlots();
+  const overlay = document.getElementById("slotModalOverlay");
+  overlay.style.display = "flex";
+  requestAnimationFrame(() => overlay.classList.add("show"));
+}
+
+function closeSlotModal() {
+  const overlay = document.getElementById("slotModalOverlay");
+  overlay.classList.remove("show");
+  setTimeout(() => overlay.style.display = "none", 150);
+}
+
+function calculateEval(data) {
+  let evalVal = data.money ?? INITIAL_MONEY;
+  for (const [t, q] of Object.entries(data.holdings ?? {})) {
+    const s = stocks.find(x => x.ticker === t);
+    if (s) evalVal += s.price * q;
+  }
+  return evalVal;
+}
+
+function renderSlots() {
+  const grid = document.getElementById("slotGrid");
+  grid.innerHTML = "";
+  const saveObj = getSaveSlots();
+  saveObj.slots.forEach((slot, idx) => {
+    const card = document.createElement("div");
+    card.className = "slot-card" + (saveObj.activeSlot === idx ? " active" : "") + (slot.data ? "" : " empty");
+    if (slot.data) {
+      const evalVal = calculateEval(slot.data);
+      card.innerHTML = `
+        <div class="slot-name">${slot.name}</div>
+        <div class="slot-info">総資産: $${Math.floor(evalVal).toLocaleString()}</div>
+        <div class="slot-info">最終更新: ${slot.lastSave ? new Date(slot.lastSave).toLocaleString() : '-'}</div>
+        <button onclick="activateSlot(${idx})">このデータで開始</button>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="slot-name">${slot.name}</div>
+        <div class="slot-info">（空きスロット）</div>
+        <button onclick="activateSlot(${idx})">新規開始</button>
+      `;
+    }
+    grid.appendChild(card);
+  });
+}
+
+function activateSlot(idx) {
+  const saveObj = getSaveSlots();
+  const slot = saveObj.slots[idx];
+  if (slot.data) {
+    applySaveData(slot.data);
+    saveObj.activeSlot = idx;
+    setSaveSlots(saveObj);
+    closeSlotModal();
+    startGame();
+  } else {
+    resetToInitial();
+    saveObj.activeSlot = idx;
+    setSaveSlots(saveObj);
+    closeSlotModal();
+    startGame();
+  }
+}
+
+function loadFromSlot(idx) {
+  const saveObj = getSaveSlots();
+  const slot = saveObj.slots[idx];
+  if (slot && slot.data) {
+    applySaveData(slot.data);
+    saveObj.activeSlot = idx;
+    setSaveSlots(saveObj);
+    return true;
+  }
+  return false;
+}
+
+// クリッカー関連
+let clickPower = 1;
+let clickPower10Price = 100;
+let clickPower100Price = 990;
+let clickPower1000Price = 9980;
+let autoClickPrice = 0;
+
+function calculateAutoClickPrice(upgradeType) {
+  if (upgradeType === 10) return clickPower10Price * 5;
+  if (upgradeType === 100) return clickPower100Price * 5;
+  if (upgradeType === 1000) return clickPower1000Price * 5;
+  return 0;
+}
+
+function updatePrices() {
+  // 価格更新: price = price * 1.05 + 15
+  clickPower10Price = Math.floor(clickPower10Price * 1.05 + 15);
+  clickPower100Price = Math.floor(clickPower100Price * 1.05 + 15);
+  clickPower1000Price = Math.floor(clickPower1000Price * 1.05 + 15);
+}
+
+function buyClickPower(amount) {
+  let price = 0;
+  if (amount === 10) price = clickPower10Price;
+  else if (amount === 100) price = clickPower100Price;
+  else if (amount === 1000) price = clickPower1000Price;
+  
+  if (money >= price) {
+    money -= price;
+    clickPower += amount;
+    updatePrices();
+    render();
+    autoSave();
+    showStatus(`✨ クリックパワー+${amount}を購入！ (合計: +${clickPower})`);
+  } else {
+    showStatus(`💸 お金が足りません (必要: $${price})`);
+  }
+}
+
+function buyAutoClick(amount) {
+  const price = amount === 10 ? calculateAutoClickPrice(10) : 
+                amount === 100 ? calculateAutoClickPrice(100) :
+                amount === 1000 ? calculateAutoClickPrice(1000) : 0;
+  
+  if (money >= price) {
+    money -= price;
+    clickPower += amount;
+    updatePrices();
+    render();
+    autoSave();
+    showStatus(`🤖 オートクリック+${amount}を購入！`);
+  } else {
+    showStatus(`💸 お金が足りません (必要: $${price})`);
+  }
+}
+
+function clickerClick() {
+  money += clickPower;
+  render();
+  autoSave();
+  
+  // x5パワーアクティブ中なら5倍
+  if (x5PowerActive && Date.now() < x5PowerEndTime) {
+    money += clickPower * 4;
+    render();
+    autoSave();
+  }
+}
+
+function startAutoClicker() {
+  autoClickerActive = !autoClickerActive;
+  if (autoClickerActive) {
+    const interval = Math.max(100, 1000 - autoClickerLevel * 50);
+    setInterval(() => {
+      if (autoClickerActive) clickerClick();
+    }, interval);
+    showStatus("オートクリッカー ON");
+  } else {
+    showStatus("オートクリッカー OFF");
+  }
+}
+
+function activateX5Power() {
+  x5PowerActive = true;
+  x5PowerEndTime = Date.now() + 30000; // 30秒
+  showStatus("🔥 x5 パワー発動！30秒間");
+  setTimeout(() => {
+    x5PowerActive = false;
+    showStatus("🔥 x5 パワー終了");
+  }, 30000);
+}
+
+// 転生システム
+function showPrestigeModal() {
+  const prestigeGain = Math.floor(level * 0.1);
+  document.getElementById("prestigeCurrentLevel").textContent = level;
+  document.getElementById("prestigeGainPoints").textContent = prestigeGain;
+  document.getElementById("prestigeTotalPoints").textContent = prestigePoints + prestigeGain;
+  
+  const overlay = document.getElementById("prestigeOverlay");
+  overlay.style.display = "flex";
+  requestAnimationFrame(() => overlay.classList.add("show"));
+}
+
+function closePrestigeModal() {
+  const overlay = document.getElementById("prestigeOverlay");
+  overlay.classList.remove("show");
+  setTimeout(() => overlay.style.display = "none", 150);
+}
+
+function executePrestige() {
+  if (level < 10) {
+    showStatus("レベル10以上で転生できます", true);
+    return;
+  }
+  
+  const prestigeGain = Math.floor(level * 0.1);
+  prestigePoints += prestigeGain;
+  
+  // データをリセット
+  level = 1;
+  money = INITIAL_MONEY;
+  holdings = {};
+  favorites = new Set();
+  autoClickerLevel = 0;
+  autoClickerActive = false;
+  x5PowerActive = false;
+  clickPower = 1;
+  clickPower10Price = 100;
+  clickPower100Price = 990;
+  clickPower1000Price = 9980;
+  
+  render();
+  autoSave();
+  closePrestigeModal();
+  showStatus(`⭐ 転生完了！${prestigeGain}PPを獲得しました`);
+}
+
+// スキルツリー
+function showSkillTree() {
+  renderSkillTree();
+  const overlay = document.getElementById("skillTreeOverlay");
+  overlay.style.display = "flex";
+  requestAnimationFrame(() => overlay.classList.add("show"));
+}
+
+function closeSkillTree() {
+  const overlay = document.getElementById("skillTreeOverlay");
+  overlay.classList.remove("show");
+  setTimeout(() => overlay.style.display = "none", 150);
+}
+
+function renderSkillTree() {
+  const container = document.getElementById("skillTreeContainer");
+  container.innerHTML = `
+    <div class="skill-node" style="left: 50px; top: 50px;">
+      <div class="skill-name">🚀 オートクリック Lv${autoClickerLevel}</div>
+      <div class="skill-cost">コスト: ${5 * (autoClickerLevel + 1)} PP</div>
+      <div class="skill-desc">自動でクリック</div>
+      <button class="skill-btn" onclick="upgradeAutoClicker()" ${prestigePoints < 5 * (autoClickerLevel + 1) ? 'disabled' : ''}>
+        アップグレード
+      </button>
+    </div>
+    <div class="skill-node" style="left: 250px; top: 50px;">
+      <div class="skill-name">⚡ x5パワー</div>
+      <div class="skill-cost">コスト: 10 PP</div>
+      <div class="skill-desc">30秒間x5倍</div>
+      <button class="skill-btn" onclick="activateX5Power()" ${prestigePoints < 10 ? 'disabled' : ''}>
+        発動
+      </button>
+    </div>
+  `;
+}
+
+function upgradeAutoClicker() {
+  const cost = 5 * (autoClickerLevel + 1);
+  if (prestigePoints >= cost) {
+    prestigePoints -= cost;
+    autoClickerLevel += 1;
+    render();
+    autoSave();
+    renderSkillTree();
+    showStatus(`🚀 オートクリック レベル ${autoClickerLevel}`);
+  } else {
+    showStatus("PPが足りません", true);
+  }
+}
+
+function handleSkillTreeDrag(e) {
+  if (e.button === 2) { // 右クリック
+    skillTreeDragging = true;
+    skillTreeDragStart = { x: e.clientX, y: e.clientY };
+  }
+}
+
+function endSkillTreeDrag() {
+  skillTreeDragging = false;
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
