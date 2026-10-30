@@ -3,43 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        // 保存済みテーマ → なければ OS の設定。描画前に適用してちらつきを防ぐ
-        (function () {
-            var t = null;
-            try { t = localStorage.getItem('theme'); } catch (e) {}
-            if (t !== 'light' && t !== 'dark') {
-                t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-            }
-            document.documentElement.setAttribute('data-theme', t);
-        })();
-    </script>
     <title>Google</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=chat,close,dark_mode,light_mode,search,send,table_chart_view,timer_10_alt_1,trending_up&display=block">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search,table_chart_view,timer_10_alt_1,trending_up&display=block">
     <style>
-
-        /* テーマ用の色（ライト／ダーク）。[data-theme] で切り替え */
-        :root {
-            color-scheme: light;
-            --bg: #ffffff; --surface: #ffffff; --text: #202124;
-            --muted: #70757a; --muted2: #5f6368; --icon: #9aa0a6;
-            --border: #e0e0e0; --border2: #dadce0; --hover: #f1f3f4;
-            --btn-bg: #f8f9fa; --btn-text: #3c4043; --footer-bg: #f2f2f2;
-            --green: #188038; --green-bg: #e6f4ea;
-            --blue: #1a73e8; --on-blue: #ffffff; --danger: #d93025;
-        }
-        :root[data-theme="dark"] {
-            color-scheme: dark;
-            --bg: #202124; --surface: #303134; --text: #e8eaed;
-            --muted: #9aa0a6; --muted2: #bdc1c6; --icon: #9aa0a6;
-            --border: #5f6368; --border2: #3c4043; --hover: #3c4043;
-            --btn-bg: #303134; --btn-text: #e8eaed; --footer-bg: #171717;
-            --green: #81c995; --green-bg: #1e3a2a;
-            --blue: #8ab4f8; --on-blue: #202124; --danger: #f28b82;
-        }
-
         body {
             margin: 0;
             padding: 0;
@@ -47,8 +15,7 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            background-color: var(--bg);
-            color: var(--text);
+            background-color: #ffffff;
             overflow-x: hidden;
             position: relative;
         }
@@ -79,7 +46,7 @@
         }
 
         header a {
-            color: var(--text);
+            color: #000000;
             text-decoration: none;
             margin-left: 15px;
             opacity: 0.85;
@@ -118,12 +85,12 @@
         .search-box {
             display: flex;
             align-items: center;
-            border: 1px solid var(--border);
+            border: 1px solid #e0e0e0;
             border-radius: 24px;
             padding: 0 15px;
             height: 44px;
             transition: box-shadow 0.2s;
-            background: var(--surface);
+            background: #fff;
         }
 
         .search-box:hover, .search-box:focus-within {
@@ -131,10 +98,10 @@
             border-color: rgba(0,0,0,0);
         }
 
-        .search-icon.is-trend { color: var(--green); }
+        .search-icon.is-trend { color: #188038; }
 
         .search-icon {
-            color: var(--icon);
+            color: #9aa0a6;
             margin-right: 12px;
             font-size: 20px;
         }
@@ -144,7 +111,7 @@
             border: none;
             outline: none;
             font-size: 16px;
-            color: var(--text);
+            color: #000;
             background: transparent;
         }
 
@@ -156,10 +123,10 @@
         }
 
         .btn {
-            background-color: var(--btn-bg);
-            border: 1px solid var(--btn-bg);
+            background-color: #f8f9fa;
+            border: 1px solid #f8f9fa;
             border-radius: 4px;
-            color: var(--btn-text);
+            color: #3c4043;
             font-size: 14px;
             padding: 0 16px;
             height: 36px;
@@ -171,9 +138,9 @@
         }
 
         .btn:hover {
-            border: 1px solid var(--border2);
-            color: var(--text);
-            background-color: var(--btn-bg);
+            border: 1px solid #dadce0;
+            color: #202124;
+            background-color: #f8f9fa;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
 
@@ -196,7 +163,7 @@
             z-index: 20;
             max-height: min(360px, 48vh);
             overflow-y: auto;
-            background: var(--surface);
+            background: #fff;
             border-radius: 0 0 24px 24px;
             box-shadow: 0 4px 6px rgba(32,33,36,0.28);
             padding: 6px 0 10px;
@@ -213,15 +180,15 @@
             text-align: left;
         }
 
-        .suggest-item:hover, .suggest-item.active { background: var(--hover); }
+        .suggest-item:hover, .suggest-item.active { background: #f1f3f4; }
 
-        .suggest-icon { flex: none; font-size: 20px; color: var(--icon); }
+        .suggest-icon { flex: none; font-size: 20px; color: #9aa0a6; }
 
         .suggest-main { display: flex; flex-direction: column; min-width: 0; }
 
         .suggest-name {
             font-size: 15px;
-            color: var(--text);
+            color: #202124;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -229,7 +196,7 @@
 
         .suggest-tags {
             font-size: 12px;
-            color: var(--muted);
+            color: #70757a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -241,7 +208,7 @@
             padding: 8px 18px 4px;
             font-size: 13px;
             font-weight: 500;
-            color: var(--muted2);
+            color: #5f6368;
         }
 
         .suggest-head .material-symbols-outlined { font-size: 18px; margin-right: 6px; }
@@ -251,7 +218,7 @@
         .suggest-empty {
             padding: 12px 18px;
             font-size: 14px;
-            color: var(--muted);
+            color: #70757a;
         }
 
         /* 🎰 縦スクロールルーレット用のスタイル */
@@ -297,10 +264,10 @@
         }
 
         footer {
-            background-color: var(--footer-bg);
+            background-color: #f2f2f2;
             font-size: 14px;
-            color: var(--muted);
-            border-top: 1px solid var(--border2);
+            color: #70757a;
+            border-top: 1px solid #dadce0;
         }
 
         /* 📈 検索バーの中に出す急上昇ティッカー */
@@ -316,7 +283,7 @@
             align-items: center;
             pointer-events: none; /* クリックは入力欄へ通す */
             font-size: 16px;
-            color: var(--muted2);
+            color: #5f6368;
             white-space: nowrap;
             overflow: hidden;
         }
@@ -333,8 +300,8 @@
             border-radius: 11px;
             font-size: 12px;
             font-weight: 500;
-            color: var(--green);
-            background: var(--green-bg);
+            color: #188038;
+            background: #e6f4ea;
             font-variant-numeric: tabular-nums;
         }
 
@@ -346,7 +313,7 @@
             margin-left: auto;
             padding-left: 12px;
             font-size: 12px;
-            color: var(--muted2);
+            color: #5f6368;
             font-variant-numeric: tabular-nums;
         }
 
@@ -360,178 +327,10 @@
             margin-left: 8px;
         }
 
-        .suggest-counts .cnt.zero { color: var(--icon); }
+        .suggest-counts .cnt.zero { color: #9aa0a6; }
 
         .suggest-counts .material-symbols-outlined { font-size: 16px; margin-right: 3px; }
 
-        /* テーマ切り替えボタン */
-        .theme-toggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 15px;
-            padding: 0;
-            width: 28px;
-            height: 28px;
-            border: none;
-            border-radius: 50%;
-            background: transparent;
-            color: var(--text);
-            opacity: 0.85;
-            cursor: pointer;
-        }
-        .theme-toggle:hover { background: var(--hover); }
-        .theme-toggle .material-symbols-outlined { font-size: 20px; }
-        .theme-toggle:focus-visible, .chat-send:focus-visible {
-            outline: 2px solid var(--blue);
-            outline-offset: 2px;
-        }
-
-        /* 💬 チャット（検索フォームの下） */
-        .chat {
-            width: 100%;
-            max-width: 584px;
-            margin: 0;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            background: var(--surface);
-            overflow: hidden;
-        }
-        .chat-head {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--muted2);
-            border-bottom: 1px solid var(--border2);
-        }
-        .chat-head .material-symbols-outlined { font-size: 18px; }
-        .chat-status { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted); }
-        .chat-status.err { color: var(--danger); }
-        .chat-log {
-            height: min(50vh, 320px);
-            overflow-y: auto;
-            padding: 6px 16px;
-            font-size: 14px;
-        }
-        .chat-empty { padding: 10px 0; font-size: 13px; color: var(--muted); }
-        .chat-msg { padding: 5px 0; line-height: 1.5; word-break: break-word; }
-        .chat-meta { font-size: 12px; color: var(--muted); }
-        .chat-name { font-weight: 600; color: var(--text); margin-right: 4px; }
-        .chat-msg.mine .chat-name { color: var(--blue); }
-        .chat-uid { margin-right: 6px; font-variant-numeric: tabular-nums; }
-        .chat-body { color: var(--text); white-space: pre-wrap; }
-        .chat-form {
-            display: flex;
-            gap: 8px;
-            padding: 8px 12px;
-            border-top: 1px solid var(--border2);
-        }
-        .chat-form input {
-            min-width: 0;
-            height: 36px;
-            box-sizing: border-box;
-            padding: 0 14px;
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            outline: none;
-            background: transparent;
-            color: var(--text);
-            font-size: 16px; /* iOS で拡大されないように */
-        }
-        .chat-form input:focus { border-color: var(--blue); }
-        .chat-form .chat-name-input { flex: 0 0 96px; }
-        .chat-form .chat-text-input { flex: 1; }
-        .chat-send {
-            flex: none;
-            display: grid;
-            place-items: center;
-            width: 36px;
-            height: 36px;
-            border: none;
-            border-radius: 50%;
-            background: var(--blue);
-            color: var(--on-blue);
-            cursor: pointer;
-        }
-        .chat-send .material-symbols-outlined { font-size: 20px; }
-        .chat-send:disabled { opacity: 0.5; cursor: default; }
-
-        /* 固定メニュー（右下）。お知らせボタンを置くなら、この中のチャットボタンの上へ */
-        .fixed-menu {
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            z-index: 30;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-        .fixed-menu-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 44px;
-            padding: 0 18px 0 14px;
-            border: 1px solid var(--border);
-            border-radius: 22px;
-            background: var(--surface);
-            color: var(--text);
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
-        }
-        .fixed-menu-btn:hover { background: var(--hover); }
-        .fixed-menu-btn .material-symbols-outlined { font-size: 20px; }
-        .fixed-menu-btn:focus-visible, .modal-close:focus-visible {
-            outline: 2px solid var(--blue);
-            outline-offset: 2px;
-        }
-
-        /* モーダル：背景がふわっと出て、ダイアログが少し浮き上がり、そのあとチャットが表示される */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            background: rgba(0,0,0,0.45);
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        .modal.show { display: flex; }
-        .modal.visible { opacity: 1; }
-        .modal .chat {
-            max-width: 520px;
-            transform: translateY(12px) scale(0.98);
-            transition: transform 0.2s ease;
-        }
-        .modal.visible .chat { transform: none; }
-        .chat-content { opacity: 0; transition: opacity 0.25s ease; }
-        .chat-content.ready { opacity: 1; }
-        .modal-close {
-            display: inline-grid;
-            place-items: center;
-            margin-left: 8px;
-            width: 28px;
-            height: 28px;
-            padding: 0;
-            border: none;
-            border-radius: 50%;
-            background: transparent;
-            color: var(--muted2);
-            cursor: pointer;
-        }
-        .modal-close:hover { background: var(--hover); }
-        .modal-close .material-symbols-outlined { font-size: 20px; }
-        @media (prefers-reduced-motion: reduce) {
-            .modal, .modal .chat, .chat-content { transition: none; }
-        }
     </style>
 </head>
 <body>
@@ -539,9 +338,6 @@
     <header>
         <a href="#">Gmail</a>
         <a href="#">画像</a>
-        <button type="button" class="theme-toggle" id="themeToggle">
-            <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
-        </button>
     </header>
 
     <main>
@@ -577,40 +373,8 @@
     </main>
 
     <footer>
-        <div style="padding: 15px 30px; border-bottom: 1px solid var(--border2);">日本</div>
+        <div style="padding: 15px 30px; border-bottom: 1px solid #dadce0;">日本</div>
     </footer>
-
-    <!-- 固定メニュー（お知らせボタンがあるなら、その下にこのボタンを置く） -->
-    <nav class="fixed-menu" id="fixedMenu" aria-label="固定メニュー">
-        <button type="button" class="fixed-menu-btn" id="chatOpen" aria-haspopup="dialog">
-            <span class="material-symbols-outlined">chat</span>チャット
-        </button>
-    </nav>
-
-    <!-- チャットのモーダル -->
-    <div class="modal" id="chatModal" aria-hidden="true">
-        <section class="chat" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
-            <div class="chat-head">
-                <span class="material-symbols-outlined">chat</span><span id="chatTitle">チャット</span>
-                <span class="chat-status" id="chatStatus" role="status"></span>
-                <button type="button" class="modal-close" id="chatClose" aria-label="閉じる">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            <div class="chat-content" id="chatContent">
-                <div class="chat-log" id="chatLog" role="log" aria-live="polite">
-                    <div class="chat-empty">読み込み中…</div>
-                </div>
-                <form class="chat-form" id="chatForm" autocomplete="off">
-                    <input type="text" id="chatName" class="chat-name-input" maxlength="20" placeholder="名前（省略可）" aria-label="名前">
-                    <input type="text" id="chatText" class="chat-text-input" maxlength="200" placeholder="メッセージを入力" aria-label="メッセージ">
-                    <button type="submit" id="chatSend" class="chat-send" aria-label="送信">
-                        <span class="material-symbols-outlined">send</span>
-                    </button>
-                </form>
-            </div>
-        </section>
-    </div>
 
     <script>
         // 🎮 一覧（index.html の全30件。タグは付け直し済み）
@@ -869,7 +633,6 @@
             }
             box.classList.add('show');
             document.getElementById('searchBox').classList.add('open');
-            if (typeof renderTicker === 'function') renderTicker(); // 開いたら急上昇を出す
         }
 
         function suggestHead(box, text, iconName) {
@@ -889,7 +652,6 @@
             document.getElementById('suggest').classList.remove('show');
             document.getElementById('searchBox').classList.remove('open');
             activeIdx = -1;
-            if (typeof renderTicker === 'function') renderTicker(); // 閉じたら急上昇を隠す
         }
 
         function setActive(i) {
@@ -959,17 +721,12 @@
             } catch (e) {}
         }
 
-        // 検索バー（サジェスト）が開いているか
-        function isSearchOpen() {
-            return document.getElementById('suggest').classList.contains('show');
-        }
-
-        // 検索バーの中の急上昇ティッカー（検索バーを開いていて空欄のときだけ、数秒ごとに順番に表示）
+        // 🔎 検索バーの中の急上昇ティッカー（空欄のときだけ、数秒ごとに順番に表示）
         function renderTicker() {
             var el = document.getElementById('searchTicker');
             var items = trendItems();
             var icon = document.getElementById('searchIcon');
-            if (!isSearchOpen() || !items.length || document.getElementById('searchInput').value) {
+            if (!items.length || document.getElementById('searchInput').value) {
                 el.style.display = 'none';
                 icon.textContent = 'search';
                 icon.className = icon.className.replace(' is-trend', '');
@@ -1039,241 +796,6 @@
             loadStats();
             startPolling();
         });
-    </script>
-    <script>
-        // チャット（/api/chat を6秒ごとに差分取得）
-        (function () {
-            var POLL_MS = 6000;
-            var MAX_NODES = 100;
-            var lastId = 0;
-            var timer = null;
-            var loading = false;
-            var sending = false;
-            var firstDone = false;
-            var forceScroll = false;
-
-            var logEl = document.getElementById('chatLog');
-            var form = document.getElementById('chatForm');
-            var nameEl = document.getElementById('chatName');
-            var textEl = document.getElementById('chatText');
-            var sendEl = document.getElementById('chatSend');
-            var statusEl = document.getElementById('chatStatus');
-
-            function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-            function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-
-            // 端末ごとの匿名ID（自分の発言の色分けと、同名の区別に使う）
-            var myUid = lsGet('chatUid');
-            if (!/^[0-9a-f]{16}$/.test(myUid || '')) {
-                var a = new Uint8Array(8);
-                (window.crypto || window.msCrypto).getRandomValues(a);
-                myUid = Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
-                lsSet('chatUid', myUid);
-            }
-            nameEl.value = lsGet('chatName') || '';
-
-            function setStatus(text, isErr) {
-                statusEl.textContent = text;
-                statusEl.className = 'chat-status' + (isErr ? ' err' : '');
-            }
-
-            function fmtTime(ts) {
-                var d = new Date(ts), now = new Date();
-                var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-                return d.toDateString() === now.toDateString() ? hm : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hm;
-            }
-
-            function setEmpty(text) {
-                var e = logEl.querySelector('.chat-empty');
-                if (e) e.textContent = text;
-            }
-
-            function addMessages(list) {
-                var nearBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
-                var added = 0;
-                list.forEach(function (m) {
-                    if (m.id <= lastId) return;
-                    lastId = m.id;
-                    added++;
-                    var row = document.createElement('div');
-                    row.className = 'chat-msg' + (m.uid && m.uid === myUid ? ' mine' : '');
-                    var meta = document.createElement('div');
-                    meta.className = 'chat-meta';
-                    var name = document.createElement('span');
-                    name.className = 'chat-name';
-                    name.textContent = m.name;
-                    meta.appendChild(name);
-                    if (m.uid) {
-                        var id = document.createElement('span');
-                        id.className = 'chat-uid';
-                        id.textContent = '#' + m.uid.slice(0, 4);
-                        meta.appendChild(id);
-                    }
-                    meta.appendChild(document.createTextNode(fmtTime(m.ts)));
-                    var body = document.createElement('div');
-                    body.className = 'chat-body';
-                    body.textContent = m.body; // textContent なのでHTMLは解釈されない
-                    row.append(meta, body);
-                    logEl.appendChild(row);
-                });
-                if (added) {
-                    var e = logEl.querySelector('.chat-empty');
-                    if (e) e.remove();
-                }
-                var msgs = logEl.querySelectorAll('.chat-msg');
-                for (var i = 0; i < msgs.length - MAX_NODES; i++) msgs[i].remove();
-                if (added && (nearBottom || forceScroll || !firstDone)) logEl.scrollTop = logEl.scrollHeight;
-                forceScroll = false;
-            }
-
-            function loadChat() {
-                if (loading) return Promise.resolve();
-                loading = true;
-                return fetch('/api/chat' + (lastId ? '?after=' + lastId : ''), { cache: 'no-store' })
-                    .then(function (r) {
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
-                        return r.json();
-                    })
-                    .then(function (d) {
-                        setStatus('', false);
-                        addMessages(d.messages || []);
-                        if (!firstDone && !lastId) setEmpty('まだメッセージはありません');
-                        firstDone = true;
-                    })
-                    .catch(function () {
-                        setStatus('読み込めません', true);
-                        if (!firstDone) setEmpty('チャットを読み込めませんでした');
-                    })
-                    .then(function () { loading = false; });
-            }
-
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                var body = textEl.value.trim();
-                if (!body || sending) return;
-                sending = true;
-                sendEl.disabled = true;
-                var name = nameEl.value.trim();
-                lsSet('chatName', name);
-                fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name, body: body, uid: myUid })
-                })
-                    .then(function (r) {
-                        return r.json().catch(function () { return {}; }).then(function (d) {
-                            if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
-                        });
-                    })
-                    .then(function () {
-                        textEl.value = '';
-                        setStatus('', false);
-                        forceScroll = true;
-                        return loadChat();
-                    })
-                    .catch(function (err) { setStatus(err.message || '送信できませんでした', true); })
-                    .then(function () {
-                        sending = false;
-                        sendEl.disabled = false;
-                        textEl.focus();
-                    });
-            });
-
-            // チャットに入力するときは検索サジェストを閉じる
-            [nameEl, textEl].forEach(function (el) {
-                el.addEventListener('focus', function () {
-                    if (typeof closeSuggest === 'function') closeSuggest();
-                });
-            });
-
-            function startPolling() {
-                clearInterval(timer);
-                timer = setInterval(loadChat, POLL_MS);
-            }
-            // モーダルの開閉：開く → ふわっと表示 → そのあとチャットを表示して読み込み開始
-            var modal = document.getElementById('chatModal');
-            var content = document.getElementById('chatContent');
-            var openBtn = document.getElementById('chatOpen');
-            var closeBtn = document.getElementById('chatClose');
-            var isOpen = false;
-            var modalTimer = null;
-
-            function openChat() {
-                if (isOpen) return;
-                isOpen = true;
-                if (typeof closeSuggest === 'function') closeSuggest();
-                modal.classList.add('show');
-                modal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
-                void modal.offsetHeight; // 表示してからクラスを付けてアニメーションさせる
-                modal.classList.add('visible');
-                clearTimeout(modalTimer);
-                modalTimer = setTimeout(function () {
-                    content.classList.add('ready');
-                    forceScroll = true;
-                    loadChat();
-                    startPolling();
-                    textEl.focus();
-                }, 220);
-            }
-
-            function closeChat() {
-                if (!isOpen) return;
-                isOpen = false;
-                clearTimeout(modalTimer);
-                clearInterval(timer);
-                modal.classList.remove('visible');
-                content.classList.remove('ready');
-                modal.setAttribute('aria-hidden', 'true');
-                document.body.style.overflow = '';
-                modalTimer = setTimeout(function () { modal.classList.remove('show'); }, 200);
-                openBtn.focus();
-            }
-
-            openBtn.addEventListener('click', openChat);
-            closeBtn.addEventListener('click', closeChat);
-            modal.addEventListener('mousedown', function (e) {
-                if (e.target === modal) closeChat(); // 背景クリックで閉じる
-            });
-            document.addEventListener('keydown', function (e) {
-                if (!isOpen) return;
-                if (e.key === 'Escape') { closeChat(); return; }
-                if (e.key === 'Tab') { // フォーカスをモーダル内に留める
-                    var f = modal.querySelectorAll('button:not([disabled]), input');
-                    if (!f.length) return;
-                    var first = f[0], last = f[f.length - 1];
-                    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-                }
-            });
-
-            document.addEventListener('visibilitychange', function () {
-                if (!isOpen) return;
-                if (document.hidden) { clearInterval(timer); }
-                else { loadChat(); startPolling(); }
-            });
-        })();
-
-        // テーマ切り替え
-        (function () {
-            var btn = document.getElementById('themeToggle');
-            var icon = document.getElementById('themeIcon');
-            function current() {
-                return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-            }
-            function paint() {
-                var dark = current() === 'dark';
-                icon.textContent = dark ? 'light_mode' : 'dark_mode';
-                btn.setAttribute('aria-label', dark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え');
-            }
-            btn.addEventListener('click', function () {
-                var next = current() === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', next);
-                try { localStorage.setItem('theme', next); } catch (e) {}
-                paint();
-            });
-            paint();
-        })();
     </script>
 </body>
 </html>
