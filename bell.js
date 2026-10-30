@@ -2,6 +2,11 @@
 // date: 通知の日時 / title: 通知タイトル / body: 内容
 window.BELL_ITEMS = [
   {
+    "date": "2026-10-30 21:59",
+    "title": "チャット機能を追加",
+    "body": "チャット機能を追加しました。\n\n連投防止機能などは不明です。\n\nK-hub v1.0.2"
+  },
+  {
     "date": "2026-10-30 20:46",
     "title": "Github 公開",
     "body": "Githubへリポジトリを公開しました。\nUrlは下記の通りです。\nhttps://github.com/kiokucat/k-hub-dev-games-project"
