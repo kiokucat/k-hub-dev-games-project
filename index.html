@@ -6,7 +6,7 @@
     <title>Google</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=search,table_chart_view,timer_10_alt_1,trending_up&display=block">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,chat,close,notifications,search,send,table_chart_view,timer_10_alt_1,trending_up&display=block">
     <style>
         body {
             margin: 0;
@@ -161,15 +161,22 @@
             left: 0;
             right: 0;
             z-index: 20;
-            max-height: min(360px, 48vh);
-            overflow-y: auto;
+            max-height: min(380px, 52vh);
+            overflow: hidden; /* 角丸の外にはみ出さない。スクロールは .suggest-list 側 */
             background: #fff;
             border-radius: 0 0 24px 24px;
             box-shadow: 0 4px 6px rgba(32,33,36,0.28);
-            padding: 6px 0 10px;
+            padding: 0;
         }
 
-        .suggest.show { display: block; }
+        .suggest.show { display: flex; flex-direction: column; }
+
+        .suggest-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
 
         .suggest-item {
             display: flex;
@@ -331,6 +338,337 @@
 
         .suggest-counts .material-symbols-outlined { font-size: 16px; margin-right: 3px; }
 
+        /* 過去10分間にアクセスがあるものは緑で目立たせる */
+        .suggest-counts .cnt.live { color: #188038; font-weight: 500; }
+
+        /* 名前が潰れないよう、狭い画面では数字を詰める */
+        @media (max-width: 480px) {
+            .suggest-item { gap: 8px; padding: 8px 12px; }
+            .suggest-counts { padding-left: 6px; font-size: 11px; }
+            .suggest-counts .cnt { min-width: 0; margin-left: 6px; }
+            .suggest-counts .material-symbols-outlined { font-size: 14px; margin-right: 2px; }
+            .suggest-main { flex: 1; }
+        }
+
+
+        /* 🔔 お知らせ：サジェストの一番下に固定 */
+        .suggest-bell {
+            flex: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px 18px 12px;
+            border: 0;
+            border-top: 1px solid #e8eaed;
+            background: #fff;
+            font: inherit;
+            font-size: 14px;
+            color: #3c4043;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .suggest-bell[hidden] { display: none; }
+        .suggest-bell:hover { background: #f1f3f4; }
+        .suggest-bell:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .suggest-bell .material-symbols-outlined { font-size: 20px; color: #5f6368; }
+
+        .bell-badge {
+            margin-left: auto;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            background: #d93025;
+            color: #fff;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bell-badge[hidden] { display: none; }
+
+        /* お知らせモーダル：左に一覧、右に本文 */
+        .bell-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(32,33,36,0.5);
+        }
+
+        .bell-modal.show { display: flex; }
+
+        .bell-dialog {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 880px;
+            height: min(560px, 86vh);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(32,33,36,0.35);
+            overflow: hidden;
+        }
+
+        .bell-head {
+            flex: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 10px 10px 22px;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        .bell-head h2 {
+            flex: 1;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+        }
+
+        .bell-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #5f6368;
+            cursor: pointer;
+        }
+
+        .bell-icon-btn:hover { background: #f1f3f4; }
+        .bell-icon-btn:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .bell-back { display: none; margin-left: -12px; }
+
+        .bell-body { flex: 1; min-height: 0; display: flex; }
+
+        .bell-list {
+            flex: none;
+            width: 292px;
+            overflow-y: auto;
+            border-right: 1px solid #e8eaed;
+            padding: 6px 0;
+        }
+
+        .bell-row {
+            position: relative;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 18px 10px 26px;
+            border: 0;
+            border-left: 3px solid transparent;
+            background: transparent;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .bell-row:hover { background: #f8f9fa; }
+        .bell-row:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .bell-row[aria-current="true"] { background: #e8f0fe; border-left-color: #1a73e8; }
+
+        .bell-row .r-dot {
+            position: absolute;
+            left: 10px;
+            top: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d93025;
+            visibility: hidden;
+        }
+
+        .bell-row.unread .r-dot { visibility: visible; }
+
+        .bell-row .r-date {
+            display: block;
+            font-size: 12px;
+            color: #70757a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bell-row .r-title {
+            display: block;
+            margin-top: 2px;
+            font-size: 14px;
+            color: #202124;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bell-row.unread .r-title { font-weight: 600; }
+
+        .bell-view {
+            flex: 1;
+            min-width: 0;
+            overflow-y: auto;
+            padding: 24px 30px 30px;
+        }
+
+        .bell-view .v-date {
+            font-size: 12px;
+            color: #70757a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .bell-view h3 {
+            margin: 6px 0 18px;
+            font-size: 20px;
+            font-weight: 500;
+            line-height: 1.45;
+            color: #202124;
+            word-break: break-word;
+        }
+
+        .bell-view .v-text {
+            max-width: 62ch;
+            font-size: 15px;
+            line-height: 1.85;
+            color: #3c4043;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .bell-view .v-text a { color: #1a73e8; }
+
+        /* スマホ：一覧 → 本文 の2画面切り替え */
+        @media (max-width: 640px) {
+            .bell-modal { padding: 0; }
+            .bell-dialog { max-width: none; height: 100%; border-radius: 0; }
+            .bell-list { width: 100%; border-right: 0; }
+            .bell-view { display: none; padding: 20px 20px 28px; }
+            .bell-dialog.show-detail .bell-list { display: none; }
+            .bell-dialog.show-detail .bell-view { display: block; }
+            .bell-dialog.show-detail .bell-back { display: inline-flex; }
+        }
+
+        @media (max-width: 480px) {
+            .suggest-bell { padding: 11px 12px 12px; }
+        }
+
+        /* チャット：お知らせの下の固定メニュー + モーダル */
+        .suggest-chat { border-top-color: #f1f3f4; }
+
+        .chat-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(32,33,36,0.5);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .chat-modal.show { display: flex; }
+        .chat-modal.visible { opacity: 1; }
+
+        .chat-dialog {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 520px;
+            height: min(560px, 86vh);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(32,33,36,0.35);
+            overflow: hidden;
+            transform: translateY(12px) scale(0.98);
+            transition: transform 0.2s ease;
+        }
+        .chat-modal.visible .chat-dialog { transform: none; }
+
+        .chat-status { margin-right: 4px; font-size: 12px; color: #70757a; }
+        .chat-status.err { color: #d93025; }
+
+        /* モーダルが出たあとに、中身のチャットがふわっと表示される */
+        .chat-content {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .chat-content.ready { opacity: 1; }
+
+        .chat-log {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 8px 22px;
+            font-size: 14px;
+        }
+        .chat-empty { padding: 10px 0; font-size: 13px; color: #70757a; }
+        .chat-msg { padding: 5px 0; line-height: 1.5; word-break: break-word; }
+        .chat-meta { font-size: 12px; color: #70757a; }
+        .chat-name { margin-right: 4px; font-weight: 600; color: #202124; }
+        .chat-msg.mine .chat-name { color: #1a73e8; }
+        .chat-uid { margin-right: 6px; font-variant-numeric: tabular-nums; }
+        .chat-body { color: #202124; white-space: pre-wrap; }
+
+        .chat-form {
+            flex: none;
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px;
+            border-top: 1px solid #e8eaed;
+        }
+        .chat-form input {
+            min-width: 0;
+            height: 38px;
+            box-sizing: border-box;
+            padding: 0 14px;
+            border: 1px solid #dadce0;
+            border-radius: 19px;
+            outline: none;
+            background: #fff;
+            color: #202124;
+            font-size: 16px; /* iOS で拡大されないように */
+        }
+        .chat-form input:focus { border-color: #1a73e8; }
+        .chat-form .chat-name-input { flex: 0 0 96px; }
+        .chat-form .chat-text-input { flex: 1; }
+        .chat-send {
+            flex: none;
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: #1a73e8;
+            color: #fff;
+            cursor: pointer;
+        }
+        .chat-send .material-symbols-outlined { font-size: 20px; }
+        .chat-send:disabled { opacity: 0.5; cursor: default; }
+        .chat-send:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+
+        @media (max-width: 640px) {
+            .chat-modal { padding: 0; }
+            .chat-dialog { max-width: none; height: 100%; border-radius: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .chat-modal, .chat-dialog, .chat-content { transition: none; }
+        }
     </style>
 </head>
 <body>
@@ -353,7 +691,18 @@
                            oninput="renderSuggest()" onfocus="renderSuggest()" onkeydown="onSearchKey(event)">
                     <div class="search-ticker" id="searchTicker" aria-hidden="true"></div>
                 </div>
-                <div class="suggest" id="suggest"></div>
+                <div class="suggest" id="suggest">
+                    <div class="suggest-list" id="suggestList"></div>
+                    <button type="button" class="suggest-bell" id="suggestBell" hidden>
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span>お知らせ</span>
+                        <span class="bell-badge" id="bellBadge" hidden></span>
+                    </button>
+                    <button type="button" class="suggest-bell suggest-chat" id="chatOpen" aria-haspopup="dialog">
+                        <span class="material-symbols-outlined">chat</span>
+                        <span>チャット</span>
+                    </button>
+                </div>
             </div>
             
             <div class="button-container">
@@ -375,6 +724,50 @@
     <footer>
         <div style="padding: 15px 30px; border-bottom: 1px solid #dadce0;">日本</div>
     </footer>
+
+    <!-- 🔔 お知らせモーダル（中身は bell.js の BELL_ITEMS から作る） -->
+    <div class="bell-modal" id="bellModal" aria-hidden="true">
+        <div class="bell-dialog" id="bellDialog" role="dialog" aria-modal="true" aria-labelledby="bellHeading">
+            <div class="bell-head">
+                <button type="button" class="bell-icon-btn bell-back" id="bellBack" aria-label="一覧に戻る">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2 id="bellHeading">お知らせ</h2>
+                <button type="button" class="bell-icon-btn" id="bellClose" aria-label="閉じる">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="bell-body">
+                <div class="bell-list" id="bellList"></div>
+                <div class="bell-view" id="bellView"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- チャットのモーダル（開いたあとに中身が表示される。通信は functions/api/chat.js） -->
+    <div class="chat-modal" id="chatModal" aria-hidden="true">
+        <div class="chat-dialog" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+            <div class="bell-head">
+                <h2 id="chatTitle">チャット</h2>
+                <span class="chat-status" id="chatStatus" role="status"></span>
+                <button type="button" class="bell-icon-btn" id="chatClose" aria-label="閉じる">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="chat-content" id="chatContent">
+                <div class="chat-log" id="chatLog" role="log" aria-live="polite">
+                    <div class="chat-empty">読み込み中…</div>
+                </div>
+                <form class="chat-form" id="chatForm" autocomplete="off">
+                    <input type="text" id="chatName" class="chat-name-input" maxlength="20" placeholder="名前（省略可）" aria-label="名前">
+                    <input type="text" id="chatText" class="chat-text-input" maxlength="200" placeholder="メッセージを入力" aria-label="メッセージ">
+                    <button type="submit" id="chatSend" class="chat-send" aria-label="送信">
+                        <span class="material-symbols-outlined">send</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script>
         // 🎮 一覧（index.html の全30件。タグは付け直し済み）
@@ -461,7 +854,7 @@
                 ['table_chart_view', st.total, '総アクセス数']
             ].forEach(it => {
                 const c = document.createElement('span');
-                c.className = 'cnt' + (it[1] ? '' : ' zero');
+                c.className = 'cnt' + (it[1] ? (it[0] === 'timer_10_alt_1' ? ' live' : '') : ' zero');
                 c.title = it[2] + '：' + it[1] + '回';
                 c.setAttribute('aria-label', c.title);
                 const ic = document.createElement('span');
@@ -590,7 +983,7 @@
 
         function renderSuggest() {
             const input = document.getElementById('searchInput');
-            const box = document.getElementById('suggest');
+            const box = document.getElementById('suggestList');
             matches = searchGames(input.value);
             activeIdx = -1;
             box.innerHTML = '';
@@ -631,8 +1024,9 @@
                     box.appendChild(row);
                 });
             }
-            box.classList.add('show');
+            document.getElementById('suggest').classList.add('show');
             document.getElementById('searchBox').classList.add('open');
+            if (typeof renderTicker === 'function') renderTicker(); // 開いたら急上昇を出す
         }
 
         function suggestHead(box, text, iconName) {
@@ -652,6 +1046,7 @@
             document.getElementById('suggest').classList.remove('show');
             document.getElementById('searchBox').classList.remove('open');
             activeIdx = -1;
+            if (typeof renderTicker === 'function') renderTicker(); // 閉じたら急上昇を隠す
         }
 
         function setActive(i) {
@@ -721,12 +1116,17 @@
             } catch (e) {}
         }
 
-        // 🔎 検索バーの中の急上昇ティッカー（空欄のときだけ、数秒ごとに順番に表示）
+        // 検索バー（サジェスト）が開いているか
+        function isSearchOpen() {
+            return document.getElementById('suggest').classList.contains('show');
+        }
+
+        // 検索バーの中の急上昇ティッカー（検索バーを開いていて空欄のときだけ、数秒ごとに順番に表示）
         function renderTicker() {
             var el = document.getElementById('searchTicker');
             var items = trendItems();
             var icon = document.getElementById('searchIcon');
-            if (!items.length || document.getElementById('searchInput').value) {
+            if (!isSearchOpen() || !items.length || document.getElementById('searchInput').value) {
                 el.style.display = 'none';
                 icon.textContent = 'search';
                 icon.className = icon.className.replace(' is-trend', '');
@@ -757,10 +1157,11 @@
 
             // サジェストが開いていて操作中でなければ、数字の変化をそちらにも反映（スクロール位置は保つ）
             var box = document.getElementById('suggest');
+            var list = document.getElementById('suggestList');
             if (changed && activeIdx < 0 && box.classList.contains('show')) {
-                var top = box.scrollTop;
+                var top = list.scrollTop;
                 renderSuggest();
-                box.scrollTop = top;
+                list.scrollTop = top;
             }
         }
 
@@ -796,6 +1197,434 @@
             loadStats();
             startPolling();
         });
+    </script>
+    <script>
+        // 🔔 お知らせ：同じフォルダの bell.js（window.BELL_ITEMS）を読み込む。無ければお知らせ欄は出さない
+        (function () {
+            var SEEN_KEY = 'bellSeen';
+            var items = [];
+            var rows = [];
+            var sel = -1;
+            var seen = [];
+            var overlayDown = false;
+
+            var $ = function (id) { return document.getElementById(id); };
+            var isMobile = function () { return window.matchMedia('(max-width: 640px)').matches; };
+            var isOpen = function () { return $('bellModal').classList.contains('show'); };
+
+            function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+            function parseDate(s) {
+                var t = Date.parse(String(s || '').replace(/\//g, '-').replace(' ', 'T'));
+                return isNaN(t) ? 0 : t;
+            }
+
+            function fmtDate(s) {
+                var t = parseDate(s);
+                if (!t) return String(s || '');
+                var d = new Date(t);
+                var out = d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate());
+                return String(s).indexOf(':') < 0 ? out : out + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            }
+
+            function readSeen() {
+                try {
+                    var a = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+                    return Array.isArray(a) ? a : [];
+                } catch (e) { return []; }
+            }
+
+            function writeSeen() {
+                try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen.slice(-300))); } catch (e) {}
+            }
+
+            function isUnread(it) { return seen.indexOf(it.key) < 0; }
+
+            function loadItems() {
+                var raw = window.BELL_ITEMS;
+                if (!Array.isArray(raw)) return [];
+                return raw
+                    .filter(function (x) { return x && (x.title || x.body); })
+                    .map(function (x) {
+                        var o = { date: String(x.date || ''), title: String(x.title || ''), body: String(x.body || '') };
+                        o.key = o.date + '|' + o.title;
+                        o.time = parseDate(o.date);
+                        return o;
+                    })
+                    .sort(function (a, b) { return b.time - a.time; }); // 新しい順
+            }
+
+            // 本文：URL（http/https）だけリンクにして、あとは文字のまま出す
+            function appendText(el, text) {
+                text.split(/(https?:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&'()*+,;=%]+)/g).forEach(function (part, i) {
+                    if (i % 2 === 1) {
+                        var a = document.createElement('a');
+                        a.href = part;
+                        a.textContent = part;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        el.appendChild(a);
+                    } else if (part) {
+                        el.appendChild(document.createTextNode(part));
+                    }
+                });
+            }
+
+            function updateBar() {
+                var bar = $('suggestBell');
+                var badge = $('bellBadge');
+                bar.hidden = !items.length;
+                var n = items.filter(isUnread).length;
+                badge.hidden = n === 0;
+                badge.textContent = n > 9 ? '9+' : String(n);
+                bar.setAttribute('aria-label', 'お知らせ' + (n ? '（未読' + n + '件）' : ''));
+            }
+
+            function buildList() {
+                var list = $('bellList');
+                list.innerHTML = '';
+                rows = items.map(function (it, i) {
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'bell-row';
+                    var dot = document.createElement('span');
+                    dot.className = 'r-dot';
+                    var d = document.createElement('span');
+                    d.className = 'r-date';
+                    d.textContent = fmtDate(it.date);
+                    var t = document.createElement('span');
+                    t.className = 'r-title';
+                    t.textContent = it.title || '（無題）';
+                    b.append(dot, d, t);
+                    b.addEventListener('click', function () { select(i, true); });
+                    list.appendChild(b);
+                    return b;
+                });
+            }
+
+            function refreshRows() {
+                rows.forEach(function (b, i) {
+                    b.classList.toggle('unread', isUnread(items[i]));
+                    if (i === sel) b.setAttribute('aria-current', 'true');
+                    else b.removeAttribute('aria-current');
+                });
+            }
+
+            function renderView(it) {
+                var v = $('bellView');
+                v.innerHTML = '';
+                var d = document.createElement('div');
+                d.className = 'v-date';
+                d.textContent = fmtDate(it.date);
+                var h = document.createElement('h3');
+                h.textContent = it.title || '（無題）';
+                var p = document.createElement('div');
+                p.className = 'v-text';
+                appendText(p, it.body);
+                v.append(d, h, p);
+                v.scrollTop = 0;
+            }
+
+            // スマホで一覧だけが見えている間は「読んだ」扱いにしない
+            function select(i, fromTap) {
+                sel = i;
+                var it = items[i];
+                renderView(it);
+                var showDetail = !isMobile() || fromTap;
+                $('bellDialog').classList.toggle('show-detail', isMobile() && fromTap);
+                if (showDetail && isUnread(it)) {
+                    seen.push(it.key);
+                    writeSeen();
+                    updateBar();
+                }
+                refreshRows();
+                if (isMobile() && fromTap) $('bellBack').focus();
+            }
+
+            function openModal() {
+                if (!items.length) return;
+                if (typeof closeSuggest === 'function') closeSuggest();
+                seen = readSeen();
+                buildList();
+                var m = $('bellModal');
+                m.classList.add('show');
+                m.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                $('bellDialog').classList.remove('show-detail');
+                select(0, false);
+                $('bellClose').focus();
+            }
+
+            function closeModal() {
+                var m = $('bellModal');
+                m.classList.remove('show');
+                m.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            function focusables() {
+                return Array.prototype.filter.call(
+                    $('bellDialog').querySelectorAll('button, a[href]'),
+                    function (el) { return el.offsetParent !== null; }
+                );
+            }
+
+            function onKey(e) {
+                if (!isOpen()) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeModal();
+                } else if (e.key === 'Tab') {
+                    var f = focusables();
+                    if (!f.length) return;
+                    var first = f[0], last = f[f.length - 1];
+                    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+                } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.indexOf(document.activeElement) >= 0) {
+                    e.preventDefault();
+                    var next = rows.indexOf(document.activeElement) + (e.key === 'ArrowDown' ? 1 : -1);
+                    if (next >= 0 && next < rows.length) { select(next, false); rows[next].focus(); }
+                }
+            }
+
+            function init() {
+                items = loadItems();
+                seen = readSeen();
+                updateBar();
+                if (!items.length) return;
+                $('suggestBell').addEventListener('click', openModal);
+                $('bellClose').addEventListener('click', closeModal);
+                $('bellBack').addEventListener('click', function () {
+                    $('bellDialog').classList.remove('show-detail');
+                    if (rows[sel]) rows[sel].focus();
+                });
+                var m = $('bellModal');
+                m.addEventListener('mousedown', function (e) { overlayDown = e.target === m; });
+                m.addEventListener('click', function (e) { if (overlayDown && e.target === m) closeModal(); });
+                document.addEventListener('keydown', onKey);
+            }
+
+            // 毎回最新の bell.js を取りに行く（無ければ何もしない）
+            var sc = document.createElement('script');
+            sc.src = './bell.js?t=' + Date.now();
+            sc.onload = init;
+            sc.onerror = function () {};
+            document.head.appendChild(sc);
+        })();
+    </script>
+    <script>
+        // チャット（/api/chat を6秒ごとに差分取得）
+        (function () {
+            var POLL_MS = 6000;
+            var MAX_NODES = 100;
+            var lastId = 0;
+            var timer = null;
+            var loading = false;
+            var sending = false;
+            var firstDone = false;
+            var forceScroll = false;
+
+            var logEl = document.getElementById('chatLog');
+            var form = document.getElementById('chatForm');
+            var nameEl = document.getElementById('chatName');
+            var textEl = document.getElementById('chatText');
+            var sendEl = document.getElementById('chatSend');
+            var statusEl = document.getElementById('chatStatus');
+
+            function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+            function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+            // 端末ごとの匿名ID（自分の発言の色分けと、同名の区別に使う）
+            var myUid = lsGet('chatUid');
+            if (!/^[0-9a-f]{16}$/.test(myUid || '')) {
+                var a = new Uint8Array(8);
+                (window.crypto || window.msCrypto).getRandomValues(a);
+                myUid = Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+                lsSet('chatUid', myUid);
+            }
+            nameEl.value = lsGet('chatName') || '';
+
+            function setStatus(text, isErr) {
+                statusEl.textContent = text;
+                statusEl.className = 'chat-status' + (isErr ? ' err' : '');
+            }
+
+            function fmtTime(ts) {
+                var d = new Date(ts), now = new Date();
+                var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                return d.toDateString() === now.toDateString() ? hm : (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hm;
+            }
+
+            function setEmpty(text) {
+                var e = logEl.querySelector('.chat-empty');
+                if (e) e.textContent = text;
+            }
+
+            function addMessages(list) {
+                var nearBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
+                var added = 0;
+                list.forEach(function (m) {
+                    if (m.id <= lastId) return;
+                    lastId = m.id;
+                    added++;
+                    var row = document.createElement('div');
+                    row.className = 'chat-msg' + (m.uid && m.uid === myUid ? ' mine' : '');
+                    var meta = document.createElement('div');
+                    meta.className = 'chat-meta';
+                    var name = document.createElement('span');
+                    name.className = 'chat-name';
+                    name.textContent = m.name;
+                    meta.appendChild(name);
+                    if (m.uid) {
+                        var id = document.createElement('span');
+                        id.className = 'chat-uid';
+                        id.textContent = '#' + m.uid.slice(0, 4);
+                        meta.appendChild(id);
+                    }
+                    meta.appendChild(document.createTextNode(fmtTime(m.ts)));
+                    var body = document.createElement('div');
+                    body.className = 'chat-body';
+                    body.textContent = m.body; // textContent なのでHTMLは解釈されない
+                    row.append(meta, body);
+                    logEl.appendChild(row);
+                });
+                if (added) {
+                    var e = logEl.querySelector('.chat-empty');
+                    if (e) e.remove();
+                }
+                var msgs = logEl.querySelectorAll('.chat-msg');
+                for (var i = 0; i < msgs.length - MAX_NODES; i++) msgs[i].remove();
+                if (added && (nearBottom || forceScroll || !firstDone)) logEl.scrollTop = logEl.scrollHeight;
+                forceScroll = false;
+            }
+
+            function loadChat() {
+                if (loading) return Promise.resolve();
+                loading = true;
+                return fetch('/api/chat' + (lastId ? '?after=' + lastId : ''), { cache: 'no-store' })
+                    .then(function (r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    })
+                    .then(function (d) {
+                        setStatus('', false);
+                        addMessages(d.messages || []);
+                        if (!firstDone && !lastId) setEmpty('まだメッセージはありません');
+                        firstDone = true;
+                    })
+                    .catch(function () {
+                        setStatus('読み込めません', true);
+                        if (!firstDone) setEmpty('チャットを読み込めませんでした');
+                    })
+                    .then(function () { loading = false; });
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var body = textEl.value.trim();
+                if (!body || sending) return;
+                sending = true;
+                sendEl.disabled = true;
+                var name = nameEl.value.trim();
+                lsSet('chatName', name);
+                fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, body: body, uid: myUid })
+                })
+                    .then(function (r) {
+                        return r.json().catch(function () { return {}; }).then(function (d) {
+                            if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+                        });
+                    })
+                    .then(function () {
+                        textEl.value = '';
+                        setStatus('', false);
+                        forceScroll = true;
+                        return loadChat();
+                    })
+                    .catch(function (err) { setStatus(err.message || '送信できませんでした', true); })
+                    .then(function () {
+                        sending = false;
+                        sendEl.disabled = false;
+                        textEl.focus();
+                    });
+            });
+
+            // チャットに入力するときは検索サジェストを閉じる
+            [nameEl, textEl].forEach(function (el) {
+                el.addEventListener('focus', function () {
+                    if (typeof closeSuggest === 'function') closeSuggest();
+                });
+            });
+
+            function startPolling() {
+                clearInterval(timer);
+                timer = setInterval(loadChat, POLL_MS);
+            }
+            // モーダルの開閉：開く → ふわっと表示 → そのあとチャットを表示して読み込み開始
+            var modal = document.getElementById('chatModal');
+            var content = document.getElementById('chatContent');
+            var openBtn = document.getElementById('chatOpen');
+            var closeBtn = document.getElementById('chatClose');
+            var isOpen = false;
+            var modalTimer = null;
+
+            function openChat() {
+                if (isOpen) return;
+                isOpen = true;
+                if (typeof closeSuggest === 'function') closeSuggest();
+                modal.classList.add('show');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                void modal.offsetHeight; // 表示してからクラスを付けてアニメーションさせる
+                modal.classList.add('visible');
+                clearTimeout(modalTimer);
+                modalTimer = setTimeout(function () {
+                    content.classList.add('ready');
+                    forceScroll = true;
+                    loadChat();
+                    startPolling();
+                    textEl.focus();
+                }, 220);
+            }
+
+            function closeChat() {
+                if (!isOpen) return;
+                isOpen = false;
+                clearTimeout(modalTimer);
+                clearInterval(timer);
+                modal.classList.remove('visible');
+                content.classList.remove('ready');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                modalTimer = setTimeout(function () { modal.classList.remove('show'); }, 200);
+                openBtn.focus();
+            }
+
+            openBtn.addEventListener('click', openChat);
+            closeBtn.addEventListener('click', closeChat);
+            modal.addEventListener('mousedown', function (e) {
+                if (e.target === modal) closeChat(); // 背景クリックで閉じる
+            });
+            document.addEventListener('keydown', function (e) {
+                if (!isOpen) return;
+                if (e.key === 'Escape') { closeChat(); return; }
+                if (e.key === 'Tab') { // フォーカスをモーダル内に留める
+                    var f = modal.querySelectorAll('button:not([disabled]), input');
+                    if (!f.length) return;
+                    var first = f[0], last = f[f.length - 1];
+                    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            });
+
+            document.addEventListener('visibilitychange', function () {
+                if (!isOpen) return;
+                if (document.hidden) { clearInterval(timer); }
+                else { loadChat(); startPolling(); }
+            });
+        })();
     </script>
 </body>
 </html>
