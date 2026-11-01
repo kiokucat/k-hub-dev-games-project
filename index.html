@@ -6,7 +6,7 @@
     <title>Google</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=arrow_back,chat,close,notifications,search,send,table_chart_view,timer_10_alt_1,trending_up&display=block">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add,apps,arrow_back,auto_awesome,chat,close,mic,notifications,photo_camera,search,send,table_chart_view,timer_10_alt_1,trending_up&display=block">
     <style>
         body {
             margin: 0;
@@ -40,17 +40,48 @@
 
         header {
             display: flex;
-            justify-content: flex-end;
-            padding: 15px 30px;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 58px;
+            padding: 0 12px 0 16px;
             font-size: 13px;
         }
 
+        .hdr-left, .hdr-right { display: flex; align-items: center; }
+
         header a {
-            color: #000000;
+            color: #202124;
             text-decoration: none;
-            margin-left: 15px;
-            opacity: 0.85;
         }
+
+        .hdr-left a { padding: 6px 12px; }
+        .hdr-right a.hdr-link { padding: 6px 8px; }
+        header a.hdr-link:hover { text-decoration: underline; }
+
+        .apps-btn {
+            display: inline-grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: #5f6368 !important;
+        }
+        .apps-btn:hover { background: #f1f3f4; }
+        .apps-btn .material-symbols-outlined { font-size: 24px; }
+
+        .login-btn {
+            display: inline-flex;
+            align-items: center;
+            height: 40px;
+            margin-left: 8px;
+            padding: 0 14px;
+            border-radius: 20px;
+            background: #0b57d0;
+            color: #fff !important;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .login-btn:hover { background: #0a4cb3; box-shadow: 0 1px 3px rgba(32,33,36,0.35); }
 
         /* 縦中央寄せは .logo / .search-form の margin:auto で行う（内容が画面より高いときに上へはみ出さない）。
            下の padding は元の margin-top:-50px と同じ「少し上寄せ」の役割 */
@@ -78,17 +109,17 @@
 
         .search-form {
             width: 100%;
-            max-width: 584px;
+            max-width: 690px;
             margin-bottom: auto;
         }
 
         .search-box {
             display: flex;
             align-items: center;
-            border: 1px solid #e0e0e0;
-            border-radius: 24px;
-            padding: 0 15px;
-            height: 44px;
+            border: 1px solid #dfe1e5;
+            border-radius: 26px;
+            padding: 0 10px 0 14px;
+            height: 52px;
             transition: box-shadow 0.2s;
             background: #fff;
         }
@@ -101,13 +132,17 @@
         .search-icon.is-trend { color: #188038; }
 
         .search-icon {
-            color: #9aa0a6;
+            flex: none;
+            color: #202124;
             margin-right: 12px;
-            font-size: 20px;
+            font-size: 24px;
         }
 
         .search-input {
             flex: 1;
+            width: 100%;
+            min-width: 0;
+            height: 100%;
             border: none;
             outline: none;
             font-size: 16px;
@@ -119,20 +154,20 @@
             display: flex;
             justify-content: center;
             gap: 12px;
-            margin-top: 28px;
+            margin-top: 30px;
         }
 
         .btn {
             background-color: #f8f9fa;
             border: 1px solid #f8f9fa;
-            border-radius: 4px;
+            border-radius: 8px;
             color: #3c4043;
             font-size: 14px;
             padding: 0 16px;
             height: 36px;
             cursor: pointer;
             user-select: none;
-            min-width: 140px;
+            min-width: 0;
             text-align: center;
             box-sizing: border-box;
         }
@@ -149,7 +184,7 @@
         .search-wrap { position: relative; }
 
         .search-box.open {
-            border-radius: 24px 24px 0 0;
+            border-radius: 26px 26px 0 0;
             box-shadow: 0 1px 6px rgba(32,33,36,0.28);
             border-color: rgba(0,0,0,0);
         }
@@ -164,7 +199,7 @@
             max-height: min(380px, 52vh);
             overflow: hidden; /* 角丸の外にはみ出さない。スクロールは .suggest-list 側 */
             background: #fff;
-            border-radius: 0 0 24px 24px;
+            border-radius: 0 0 26px 26px;
             box-shadow: 0 4px 6px rgba(32,33,36,0.28);
             padding: 0;
         }
@@ -271,11 +306,22 @@
         }
 
         footer {
-            background-color: #f2f2f2;
+            background-color: #fff;
             font-size: 14px;
-            color: #70757a;
-            border-top: 1px solid #dadce0;
+            color: #202124;
         }
+
+        .foot-country { padding: 15px 30px; border-bottom: 1px solid #dadce0; }
+
+        .foot-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 0 22px;
+        }
+        .foot-links > div { display: flex; flex-wrap: wrap; }
+        .foot-links a { padding: 15px; color: #202124; text-decoration: none; }
+        .foot-links a:hover { text-decoration: underline; }
 
         /* 📈 検索バーの中に出す急上昇ティッカー */
         .search-box { position: relative; }
@@ -283,8 +329,8 @@
         .search-ticker {
             display: none;
             position: absolute;
-            left: 47px;
-            right: 15px;
+            left: 0;
+            right: 0;
             top: 0;
             bottom: 0;
             align-items: center;
@@ -669,13 +715,84 @@
         @media (prefers-reduced-motion: reduce) {
             .chat-modal, .chat-dialog, .chat-content { transition: none; }
         }
+
+        /* 検索バー：入力欄 + 右側（マイク／レンズ／AI モード） */
+        .search-field {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-actions { flex: none; display: flex; align-items: center; margin-left: 6px; }
+
+        .sa-btn {
+            display: inline-grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #202124;
+            cursor: pointer;
+        }
+        .sa-btn[hidden] { display: none; }
+        .sa-btn:hover { background: #f1f3f4; }
+        .sa-btn .material-symbols-outlined { font-size: 24px; }
+        .sa-btn.fill .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .sa-btn.listening { color: #d93025; background: #fce8e6; }
+
+        .ai-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 36px;
+            margin-left: 8px;
+            padding: 0 12px 0 10px;
+            border: 0;
+            border-radius: 18px;
+            background: #f0f4f9;
+            color: #202124;
+            font: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ai-btn:hover { background: #e3eaf4; }
+        .ai-btn .material-symbols-outlined { font-size: 20px; }
+
+        .sa-btn:focus-visible, .ai-btn:focus-visible, .apps-btn:focus-visible, .login-btn:focus-visible {
+            outline: 2px solid #1a73e8;
+            outline-offset: 1px;
+        }
+
+        @media (max-width: 520px) {
+            .hdr-left { display: none; }
+            header { justify-content: flex-end; }
+            #lensBtn, .ai-label { display: none; }
+            .ai-btn { padding: 0 8px; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <a href="#">Gmail</a>
-        <a href="#">画像</a>
+        <nav class="hdr-left" aria-label="Google について">
+            <a href="https://about.google/" class="hdr-link">Googleについて</a>
+            <a href="https://store.google.com/jp/" class="hdr-link">ストア</a>
+        </nav>
+        <nav class="hdr-right" aria-label="Google のサービス">
+            <a href="https://mail.google.com/mail/" class="hdr-link">Gmail</a>
+            <a href="https://www.google.com/imghp" class="hdr-link">画像</a>
+            <a href="https://about.google/products/" class="apps-btn" aria-label="Google アプリ">
+                <span class="material-symbols-outlined">apps</span>
+            </a>
+            <a href="https://accounts.google.com/" class="login-btn">ログイン</a>
+        </nav>
     </header>
 
     <main>
@@ -686,10 +803,23 @@
         <form class="search-form" onsubmit="handleSearch(event)">
             <div class="search-wrap">
                 <div class="search-box" id="searchBox">
-                    <span class="search-icon material-symbols-outlined" id="searchIcon">search</span>
-                    <input type="text" id="searchInput" class="search-input" autocomplete="off"
-                           oninput="renderSuggest()" onfocus="renderSuggest()" onkeydown="onSearchKey(event)">
-                    <div class="search-ticker" id="searchTicker" aria-hidden="true"></div>
+                    <span class="search-icon material-symbols-outlined" id="searchIcon">add</span>
+                    <div class="search-field">
+                        <input type="text" id="searchInput" class="search-input" autocomplete="off"
+                               oninput="renderSuggest()" onfocus="renderSuggest()" onkeydown="onSearchKey(event)">
+                        <div class="search-ticker" id="searchTicker" aria-hidden="true"></div>
+                    </div>
+                    <div class="search-actions">
+                        <button type="button" class="sa-btn fill" id="micBtn" aria-label="音声で検索">
+                            <span class="material-symbols-outlined">mic</span>
+                        </button>
+                        <button type="button" class="sa-btn" id="lensBtn" aria-label="画像で検索" onclick="openLens()">
+                            <span class="material-symbols-outlined">photo_camera</span>
+                        </button>
+                        <button type="button" class="ai-btn" id="aiBtn" onclick="aiModeSearch()">
+                            <span class="material-symbols-outlined">auto_awesome</span><span class="ai-label">AI モード</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="suggest" id="suggest">
                     <div class="suggest-list" id="suggestList"></div>
@@ -706,7 +836,7 @@
             </div>
             
             <div class="button-container">
-                <button type="submit" class="btn">Google 検索</button>
+                <button type="button" class="btn btn-google" onclick="googleSearch()">Google 検索</button>
                 
                 <!-- 🎰 縦に回転してピタッと止まるスロット風ボタン -->
                 <button type="button" id="luckyBtn" class="btn lucky-trigger-btn" onmouseenter="onLuckyEnter()" onmouseleave="onLuckyLeave()" onclick="onLuckyClick()">
@@ -722,7 +852,19 @@
     </main>
 
     <footer>
-        <div style="padding: 15px 30px; border-bottom: 1px solid #dadce0;">日本</div>
+        <div class="foot-country">日本</div>
+        <div class="foot-links">
+            <div>
+                <a href="https://ads.google.com/intl/ja_jp/home/">広告</a>
+                <a href="https://smallbusiness.withgoogle.com/">ビジネス</a>
+                <a href="https://www.google.com/search/howsearchworks/">検索の仕組み</a>
+            </div>
+            <div>
+                <a href="https://policies.google.com/privacy">プライバシー</a>
+                <a href="https://policies.google.com/terms">規約</a>
+                <a href="https://www.google.com/preferences">設定</a>
+            </div>
+        </div>
     </footer>
 
     <!-- 🔔 お知らせモーダル（中身は bell.js の BELL_ITEMS から作る） -->
@@ -1080,8 +1222,52 @@
             const q = document.getElementById('searchInput').value.trim();
             if (activeIdx >= 0 && matches[activeIdx]) return openGame(matches[activeIdx]);
             if (q && matches.length) return openGame(matches[0]);
+            if (q) return googleSearch(); // ゲームに一致しなければ Google で検索
             renderSuggest(); // 空ならゲーム一覧を表示
         }
+
+        // 🌐 本物の Google で検索（Google 検索ボタン）
+        function googleSearch() {
+            const input = document.getElementById('searchInput');
+            const q = input.value.trim();
+            if (!q) { input.focus(); renderSuggest(); return; }
+            window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(q);
+        }
+
+        // AI モード（Google の AI モードで検索）
+        function aiModeSearch() {
+            const q = document.getElementById('searchInput').value.trim();
+            window.location.href = 'https://www.google.com/search?udm=50&q=' + encodeURIComponent(q);
+        }
+
+        // 画像で検索（Google レンズ）
+        function openLens() {
+            window.open('https://lens.google.com/', '_blank', 'noopener');
+        }
+
+        // 🎤 音声入力（対応ブラウザのみ。非対応ならマイクを隠す）
+        (function () {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const mic = document.getElementById('micBtn');
+            if (!SR) { mic.hidden = true; return; }
+            let rec = null, listening = false;
+            mic.addEventListener('click', function () {
+                if (listening && rec) { rec.stop(); return; }
+                rec = new SR();
+                rec.lang = 'ja-JP';
+                rec.interimResults = true;
+                const input = document.getElementById('searchInput');
+                rec.onstart = function () { listening = true; mic.classList.add('listening'); };
+                rec.onresult = function (e) {
+                    let t = '';
+                    for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+                    input.value = t;
+                    renderSuggest();
+                };
+                rec.onerror = rec.onend = function () { listening = false; mic.classList.remove('listening'); };
+                try { rec.start(); } catch (e) {}
+            });
+        })();
 
         // 🚀 ルーレットで決定されたゲームに移動する処理
         function goToGame() {
@@ -1128,7 +1314,7 @@
             var icon = document.getElementById('searchIcon');
             if (!isSearchOpen() || !items.length || document.getElementById('searchInput').value) {
                 el.style.display = 'none';
-                icon.textContent = 'search';
+                icon.textContent = 'add';
                 icon.className = icon.className.replace(' is-trend', '');
                 return;
             }
