@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Star Clicker</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#03040c;--fg:#eaf2ff;--dim:#8fa1cc;--h:35;--ac:hsl(var(--h) 100% 66%);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;height:100%;display:flex;flex-direction:column;overflow:hidden;color:var(--fg);font:600 14px Orbitron,"Hiragino Sans","Yu Gothic UI",Meiryo,system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;background:radial-gradient(ellipse at 22% 12%,hsl(var(--h) 80% 20%/.6),transparent 60%),radial-gradient(ellipse at 85% 90%,hsl(calc(var(--h) + 70) 80% 18%/.55),transparent 55%),var(--bg)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at center,transparent 55%,#0009)}
+canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+#st{position:relative;flex:1;min-height:0;z-index:1}
+#hud{position:absolute;top:2.5vh;left:0;right:0;text-align:center;pointer-events:none}
+#en{font-weight:800;font-size:clamp(32px,6vw,60px);line-height:1.1;color:#fff;text-shadow:0 0 18px var(--ac),0 0 50px var(--ac)}
+#en small{font-size:.36em;margin-left:.5em;letter-spacing:.2em;color:var(--ac)}
+#sub{margin-top:4px;color:var(--dim);font-size:clamp(11px,1.4vw,14px);letter-spacing:.05em}
+#stg{margin:10px auto 0;width:min(340px,72%)}
+#pnm{display:block;font-size:17px;letter-spacing:.15em;color:#fff;text-shadow:0 0 12px var(--ac)}
+#bar{height:5px;margin-top:6px;border-radius:9px;background:#ffffff1a;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ac),#fff);box-shadow:0 0 12px var(--ac)}
+#nx{display:block;margin-top:4px;font-size:11px;color:var(--dim)}
+#cb,#ts,#bn{position:absolute;left:0;right:0;text-align:center;pointer-events:none;color:#fff;font-weight:800;text-shadow:0 0 14px var(--ac)}
+#cb{bottom:5%;font-size:clamp(18px,3vw,28px);opacity:0;transition:opacity .3s}
+#ts{bottom:15%;font-size:clamp(12px,1.8vw,15px);opacity:0}
+#ts.on{animation:ts 3.2s ease-out}
+@keyframes ts{0%{opacity:0;transform:translateY(10px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+#bn{top:30%;font-size:clamp(24px,5vw,52px);text-shadow:0 0 20px var(--ac),0 0 60px var(--ac);opacity:0}
+#bn.on{animation:bn 3.4s ease-out}
+@keyframes bn{0%{opacity:0;transform:scale(.6);letter-spacing:.5em}15%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:scale(1.12);letter-spacing:.2em}}
+#dock{z-index:2;flex:none;margin:0 auto 8px;width:min(1100px,calc(100% - 16px));border-radius:22px;border:1px solid #ffffff24;background:linear-gradient(160deg,#ffffff18,#ffffff06),#05081899;backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);box-shadow:0 0 50px hsl(var(--h) 100% 50%/.18),inset 0 1px #ffffff30}
+#tabs{display:flex;gap:6px;padding:8px}
+#tabs button{flex:1;font:inherit;letter-spacing:.12em;color:var(--dim);background:#ffffff0d;border:1px solid transparent;border-radius:14px;padding:11px 6px;cursor:pointer;transition:.25s}
+#tabs button.on{color:#fff;border-color:hsl(var(--h) 100% 66%/.8);box-shadow:0 0 16px hsl(var(--h) 100% 55%/.35),inset 0 0 14px hsl(var(--h) 100% 55%/.15)}
+#pn{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:9px;padding:0 10px 10px;max-height:34vh;overflow-y:auto;scrollbar-width:thin}
+#pn[hidden],.u[hidden]{display:none}
+.u{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;text-align:left;font:inherit;color:inherit;padding:9px 12px;border-radius:15px;border:1px solid #ffffff1a;background:#080d2099;cursor:pointer;transition:transform .2s,box-shadow .3s,opacity .3s,border-color .3s}
+.ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:18px;font-weight:800;color:#fff;background:radial-gradient(circle at 35% 28%,#fff7,transparent 58%),hsl(var(--ih) 85% 42%);box-shadow:0 0 16px hsl(var(--ih) 100% 55%/.6)}
+.u small{color:var(--dim);font-size:10.5px;font-weight:400;line-height:1.5}
+.n{text-align:right;line-height:1.5}
+.ct{font-size:10.5px;color:var(--dim)}
+.co{font-size:14px;color:hsl(var(--ih) 100% 80%)}
+.u:not(.can):not(.ow){opacity:.5}
+.u.lk{border-style:dashed;opacity:.4}
+.u.ow{border-color:hsl(var(--ih) 100% 65%/.65);background:hsl(var(--ih) 60% 20%/.35)}
+.u.can{border-color:hsl(var(--ih) 100% 68%/.85);box-shadow:0 0 20px hsl(var(--ih) 100% 55%/.4),inset 0 0 22px hsl(var(--ih) 100% 55%/.14)}
+.u.can:active{transform:scale(.97)}
+@media(max-width:760px){#pn{grid-template-columns:1fr;max-height:34vh}}
+</style>
+</head>
+<body>
+<canvas></canvas>
+<div id="st"><div id="hud"><div id="en"><span id="ev">0</span><small>SP</small></div><div id="sub"></div><div id="stg"><b id="pnm"></b><div id="bar"><i></i></div><small id="nx"></small></div></div><div id="bn"></div><div id="ts"></div><div id="cb"></div></div>
+<div id="dock"><div id="tabs"><button class="on" data-t="0">強化</button><button data-t="1">アイテム</button><button data-t="2">惑星</button></div><div id="pn"></div></div>
+<script>
+const $=s=>document.querySelector(s),cv=$('canvas'),g=cv.getContext('2d'),st=$('#st'),pn=$('#pn'),root=document.documentElement,
+PL=[
+['水星','太陽に最も近い、クレーターだらけの岩石惑星',28,8,52,0,16,0,0,35,0],
+['金星','分厚い硫酸の雲に覆われた灼熱の惑星',42,70,66,5,3,10,0,45,250],
+['地球','海と大陸、そして生命をたたえた青い惑星',215,70,48,0,9,-95,0,205,2e3],
+['火星','酸化鉄の赤い大地をもつ砂漠の惑星',14,65,45,0,10,-8,0,20,1.6e4],
+['木星','最大のガス惑星。大赤斑の嵐が渦巻く',30,55,60,9,2,-12,0,32,1.2e5],
+['土星','氷と岩の壮麗な環をまとったガス惑星',44,45,66,6,0,0,1,44,9e5],
+['天王星','横倒しで自転する淡い青緑の氷の巨星',180,50,64,2,0,0,0,185,6e6],
+['海王星','超音速の風が吹き荒れる深い青の氷の巨星',225,75,50,3,3,10,0,225,4.5e7],
+['冥王星','ハート形の氷原が広がる準惑星',20,25,60,0,6,10,0,210,3.5e8],
+['プロキシマb','最も近い恒星を回る赤い系外惑星',5,70,40,2,6,15,0,10,3e9],
+['ケプラー452b','地球の従兄弟と呼ばれる系外惑星',100,50,45,0,8,60,0,110,2.5e10],
+['TRAPPIST-1e','七つ子の惑星系にひそむ温帯の世界',190,40,55,1,7,40,0,190,2e11],
+['HD 189733b','ガラスの雨が横殴りに降る青いホットジュピター',230,85,45,4,0,0,0,225,1.8e12],
+['かに座55番e','溶岩の海が広がるダイヤモンド惑星',10,95,45,0,12,35,0,15,1.6e13]
+].map((a,i)=>({n:a[0],d:a[1],h:a[2],s:a[3],l:a[4],b:a[5],k:a[6],sh:a[7],rg:a[8],at:a[9],c:a[10],cl:i>0&&i<4?1:0,inc:a[10]?a[10]/100:.5})),
+UP=[
+['タップ強化','1タップ +1',15,1,0,0],
+['精密タップ','1タップ +8',400,8,0,['k',40]],
+['重力グローブ','1タップ +60',6e3,60,0,['t',4e3]],
+['恒星ハンマー','1タップ +500',9e4,500,0,['p',5]],
+['銀河インパクト','1タップ +6000',2e7,6e3,0,['p',9]],
+['小型衛星','毎秒 +1',60,0,1,['k',10]],
+['観測ステーション','毎秒 +9',700,0,9,['o',5,3]],
+['採掘ドローン','毎秒 +60',9e3,0,60,['p',3]],
+['恒星炉','毎秒 +450',8e4,0,450,['t',5e4]],
+['ダイソン球','毎秒 +3500',9e5,0,3500,['p',7]],
+['超新星炉','毎秒 +28000',9e6,0,28e3,['o',9,4]],
+['銀河中枢コア','毎秒 +240000',1.2e8,0,24e4,['p',11]],
+['ブラックホール炉','毎秒 +2000000',1.5e9,0,2e6,['p',13]],
+['クエーサー機関','毎秒 +20000000',2e10,0,2e7,['o',12,3]]
+].map(a=>({n:a[0],d:a[1],b:a[2],ck:a[3],au:a[4],cd:a[5]})),
+IT=[
+['自動タップ装置','毎秒2回、自動でタップする',3e3],
+['彗星レーダー','彗星が倍の頻度で現れ、報酬も2倍',2e4],
+['星図アーカイブ','すべての獲得SPが1.25倍',1.5e5],
+['軌道エンジン','惑星の自動収入が2倍',1.2e6],
+['長期航行ログ','不在中の加算上限を12時間に拡大',8e6],
+['ダークマター触媒','タップで得るSPが2倍',6e7],
+['時空安定装置','すべての獲得SPが2倍',5e9]
+].map(a=>({n:a[0],d:a[1],c:a[2]})),
+P=[],SW=[],FT=[],CARDS=[],KEY='starclicker.v1',
+SS=Array.from({length:150},()=>({x:Math.random(),y:Math.random(),z:.2+Math.random()*.8,p:Math.random()*6.3})),
+UN=['','万','億','兆','京','垓'],
+f=n=>{if(n<1e4)return Math.floor(n)+'';const i=Math.min(5,Math.floor(Math.log10(n)/4));return (n/1e4**i).toFixed(2)+UN[i]},
+set=(e,v)=>{if(e._v!==v){e.textContent=v;e._v=v}};
+PL.forEach((p,i)=>{let s=i*97+13;const r=()=>(s=s*16807%2147483647)/2147483647;p.sp=Array.from({length:p.k},()=>({o:r()*6.283,a:(r()-.5)*2.2,z:.1+r()*.16,v:r()*24-12,w:r()}))});
+let E=0,tot=0,clk=0,ps=0,pc=1,sel=0,own=UP.map(()=>0),it=IT.map(()=>0),pu=PL.map((_,i)=>i?0:1),wall=Date.now(),tab=0,open=true,combo=0,cT=0,kick=0,shake=0,flash=0,wp=0,T=0,Lt=0,fire=0,ut=0,mx=0,my=0,ptx=0,pty=0,ap=0,hue,lh=-9,W,H,dpr,cx,cy,R,tcx,tcy,tR,cm=null,cmT=22,rdy=0,ulk;
+const np=()=>pu.reduce((a,b)=>a+b,0),
+cost=i=>Math.ceil(UP[i].b*1.15**own[i]),
+ok=c=>!c||(c[0]=='t'?tot>=c[1]:c[0]=='k'?clk>=c[1]:c[0]=='p'?np()>=c[1]:own[c[1]]>=c[2]),
+cdt=c=>c[0]=='t'?`累計 ${f(c[1])} SP を獲得`:c[0]=='k'?`${c[1]} 回タップ`:c[0]=='p'?`惑星を ${c[1]} つ解禁`:`${UP[c[1]].n} を Lv ${c[2]} にする`;
+function rc(){let a=0,c=1;UP.forEach((u,i)=>{a+=u.au*own[i];c+=u.ck*own[i]});PL.forEach((p,i)=>{if(pu[i])a+=p.inc*(it[3]?2:1)});const m=(it[2]?1.25:1)*(it[6]?2:1);pc=c*(it[5]?2:1)*m;ps=a*m+(it[0]?pc*2:0)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({E,tot,clk,own,it,pu,sel,t:wall}))}catch(e){}}
+try{const d=JSON.parse(localStorage.getItem(KEY));if(d){E=d.E||0;tot=d.tot||0;clk=d.clk||0;own=UP.map((_,i)=>d.own[i]||0);it=IT.map((_,i)=>d.it[i]||0);pu=PL.map((_,i)=>i?(d.pu[i]||0):1);sel=pu[d.sel]?d.sel:0;wall=d.t||Date.now()}}catch(e){}
+hue=PL[sel].at;rc();ulk=UP.map(u=>!!ok(u.cd));rdy=1;
+function mk(t,i,h){const b=document.createElement('button');b.className='u';b.dataset.t=t;b.dataset.i=i;b.style.setProperty('--ih',h);b.innerHTML='<span class="ic"></span><span><b class="nm"></b><br><small class="ds"></small></span><span class="n"><span class="ct"></span><br><b class="co"></b></span>';b.e=[...b.querySelectorAll('.ic,.nm,.ds,.ct,.co')];pn.append(b);CARDS.push(b)}
+UP.forEach((_,i)=>mk(0,i,(200+i*23)%360));IT.forEach((_,i)=>mk(1,i,(30+i*41)%360));PL.forEach((p,i)=>mk(2,i,p.at));
+function toast(s){const t=$('#ts');t.textContent=s;t.classList.remove('on');void t.offsetWidth;t.classList.add('on')}
+function upd(){
+ const n=np();
+ for(const b of CARDS){const t=+b.dataset.t,i=+b.dataset.i;b.hidden=!open||t!==tab;if(b.hidden)continue;
+  let lk=0,cn=0,ow=0,o;
+  if(t==0){const u=UP[i],c=cost(i);lk=!ok(u.cd);cn=!lk&&E>=c;o=lk?['？','？？？','解禁条件　'+cdt(u.cd),'','']:[u.n[0],u.n,u.d,'Lv '+own[i],f(c)]}
+  else if(t==1){const u=IT[i];ow=it[i];cn=!ow&&E>=u.c;o=[u.n[0],u.n,u.d,ow?'導入済み':'買い切り',ow?'':f(u.c)]}
+  else{const p=PL[i];ow=sel==i;lk=!pu[i]&&i>n;cn=!pu[i]&&i==n&&E>=p.c;o=lk?['？','？？？','前の惑星を解禁すると現れます','','']:[p.n[0],p.n,p.d,pu[i]?(ow?'表示中':'タップで表示'):'解禁',pu[i]?'':f(p.c)]}
+  b.e.forEach((e,k)=>set(e,o[k]));b.classList.toggle('lk',!!lk);b.classList.toggle('can',!!cn);b.classList.toggle('ow',!!ow)}
+ UP.forEach((u,i)=>{if(!ulk[i]&&ok(u.cd)){ulk[i]=1;if(rdy)toast('強化が解禁されました　'+u.n)}});
+ set($('#sub'),`毎秒 +${f(ps)}　タップ +${f(pc)}`);set($('#pnm'),PL[sel].n);
+ const x=PL[n];$('#bar i').style.width=(x?Math.min(100,E/x.c*100):100)+'%';set($('#nx'),x?`次の解禁　${x.n}　${f(x.c)} SP`:'すべての惑星を解禁しました');
+ const cb=$('#cb');set(cb,combo>1?`コンボ ×${combo}`:'惑星をタップ');cb.style.opacity=combo>1||clk<5?1:0}
+function rs(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;const r=st.getBoundingClientRect();tcx=r.left+r.width/2;tcy=r.top+r.height*.58;tR=Math.max(24,Math.min(r.width*.115,r.height*.2,110));if(R===undefined){cx=tcx;cy=tcy;R=tR}}
+addEventListener('resize',rs);addEventListener('load',rs);new ResizeObserver(rs).observe(st);rs();
+const sw=(x,y,r,v,h,w,a=1)=>SW.push({x,y,r,v,h,w,a});
+function burst(x,y,n,h,v,a0,sp){for(let i=0;i<n&&P.length<600;i++){const a=a0==null?Math.random()*6.283:a0+(Math.random()-.5)*sp,s=v*(.4+Math.random()*.8);P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:.8,m:.8,s:1.5+Math.random()*2.5,h:h+Math.random()*40-20,d:.96})}}
+function tap(dx,dy){const d=Math.hypot(dx,dy)||1,gain=pc*(1+combo*.02),nx=dx/d,ny=dy/d,x=cx+nx*R,y=cy+ny*R;
+ E+=gain;tot+=gain;clk++;combo=Math.min(combo+1,99);cT=1.1;kick=1;shake=Math.min(shake+2.5,8);
+ burst(x,y,8+(Math.min(combo,40)>>1),hue,380,Math.atan2(ny,nx),2.4);sw(cx,cy,R*.95,300+combo*4,hue,5);
+ FT.push({x:x+nx*26,y:y+ny*26,t:'+'+f(gain),l:1,h:hue})}
+function setSel(i){sel=i;ap=0;kick=.6;sw(cx,cy,R,380,PL[i].at,6)}
+function unlockFx(i){flash=1;shake=12;wp=2.5;for(let k=0;k<3;k++)sw(cx,cy,R,260+k*200,PL[i].at+k*15,8);burst(cx,cy,90,PL[i].at,700);const b=$('#bn');b.textContent='惑星解禁　'+PL[i].n;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
+addEventListener('pointermove',e=>{ptx=(e.clientX/innerWidth-.5)*2;pty=(e.clientY/innerHeight-.5)*2});
+addEventListener('pointerdown',e=>{
+ if(e.target.closest('#dock'))return;
+ const x=e.clientX,y=e.clientY;
+ if(cm&&Math.hypot(x-cm.x,y-cm.y)<60){const rw=Math.max(ps*60,pc*60)*(it[1]?2:1);E+=rw;tot+=rw;burst(cm.x,cm.y,50,46,520);sw(cm.x,cm.y,10,500,46,6);FT.push({x:cm.x,y:cm.y,t:'彗星ボーナス +'+f(rw),l:1.6,h:46});shake=8;cm=null;cmT=(25+Math.random()*25)*(it[1]?.5:1);return}
+ const dx=x-cx,dy=y-cy;
+ if(Math.hypot(dx,dy)<Math.max(R*1.5,70))tap(dx,dy);else sw(x,y,6,200,hue,2,.5)});
+addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventDefault();tap(0,-1)}});
+pn.onclick=e=>{const b=e.target.closest('.u');if(!b)return;const t=+b.dataset.t,i=+b.dataset.i;
+ if(t==0){if(!ok(UP[i].cd)||E<cost(i))return;E-=cost(i);own[i]++;sw(cx,cy,R,480,hue,7);burst(cx,cy,30,hue,420)}
+ else if(t==1){if(it[i]||E<IT[i].c)return;E-=IT[i].c;it[i]=1;sw(cx,cy,R,480,hue,7);burst(cx,cy,30,hue,420)}
+ else if(pu[i]){setSel(i)}
+ else{if(i!==np()||E<PL[i].c)return;E-=PL[i].c;pu[i]=1;setSel(i);unlockFx(i)}
+ rc();upd();save()};
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;const t=+b.dataset.t;if(t===tab&&open)open=false;else{tab=t;open=true}pn.hidden=!open;[...$('#tabs').children].forEach(x=>x.classList.toggle('on',open&&+x.dataset.t===tab));upd()};
+function ring(p,r,fr){if(!p.rg)return;const s=fr?0:Math.PI,e=fr?Math.PI:6.283;for(const a of[[1.95,.26,.5],[2.35,.12,.38],[1.6,.1,.3]]){g.beginPath();g.ellipse(0,0,r*a[0],r*a[0]*.27,-.38,s,e);g.strokeStyle=`hsla(${p.h},40%,74%,${a[2]})`;g.lineWidth=r*a[1];g.stroke()}}
+function minis(fr){let k=0;for(let i=0;i<PL.length;i++){if(!pu[i]||i===sel)continue;const p=PL[i],rx=R*(2.7+.13*k),ry=rx*.3,rt=-.28,a=T*.5/Math.sqrt(1+k*.6)+i*2.1,lx=Math.cos(a)*rx,ly=Math.sin(a)*ry,x=lx*Math.cos(rt)-ly*Math.sin(rt),y=lx*Math.sin(rt)+ly*Math.cos(rt),d=Math.sin(a);k++;
+ if(!fr){g.beginPath();g.ellipse(0,0,rx,ry,rt,0,6.283);g.strokeStyle='rgba(180,200,255,.1)';g.lineWidth=1;g.stroke()}
+ if((d>0)!==!!fr)continue;
+ const m=R*(.07+(p.b>3?.06:p.b?.02:0))*(1+d*.25),q=g.createRadialGradient(x-m*.4,y-m*.4,m*.1,x,y,m);
+ q.addColorStop(0,`hsl(${p.h},${p.s}%,${Math.min(90,p.l+28)}%)`);q.addColorStop(.6,`hsl(${p.h},${p.s}%,${p.l-6}%)`);q.addColorStop(1,`hsl(${p.h},${p.s}%,${p.l-34}%)`);
+ g.fillStyle=q;g.beginPath();g.arc(x,y,m,0,6.283);g.fill()}}
+function body(p,r){
+ g.globalCompositeOperation='lighter';
+ let q=g.createRadialGradient(0,0,r*.8,0,0,r*1.8);q.addColorStop(0,`hsla(${p.at},90%,60%,.5)`);q.addColorStop(.4,`hsla(${p.at},90%,55%,.15)`);q.addColorStop(1,`hsla(${p.at},90%,50%,0)`);g.fillStyle=q;g.fillRect(-r*1.8,-r*1.8,r*3.6,r*3.6);
+ g.globalCompositeOperation='source-over';
+ minis(0);ring(p,r,0);
+ g.save();g.beginPath();g.arc(0,0,r,0,6.283);g.clip();
+ g.fillStyle=`hsl(${p.h},${p.s}%,${p.l}%)`;g.fillRect(-r,-r,2*r,2*r);
+ for(let j=0;j<p.b;j++){const y=-r+j/p.b*2*r+Math.sin(T*.4+j)*r*.025;g.fillStyle=`hsla(${p.h+(j%2?10:-8)},${p.s}%,${p.l+((j*37)%5-2)*6}%,.6)`;g.fillRect(-r,y,2*r,2*r/p.b*.7)}
+ for(const s of p.sp){const a=s.o+T*.12,c=Math.cos(a);if(c<=0)continue;g.fillStyle=`hsla(${p.h+p.sh+s.v},${Math.min(100,p.s+15)}%,${p.l+(s.w-.4)*30}%,.8)`;g.beginPath();g.ellipse(Math.sin(a)*Math.cos(s.a)*r,Math.sin(s.a)*r,s.z*r*(.25+c*.75),s.z*r*.85,0,0,6.283);g.fill()}
+ if(p.cl){g.fillStyle='rgba(255,255,255,.28)';for(const s of p.sp){const a=s.o*2.3+T*.2,c=Math.cos(a);if(c<=0)continue;g.beginPath();g.ellipse(Math.sin(a)*Math.cos(s.a)*r,Math.sin(s.a*1.1)*r,r*.3*(.25+c*.75),r*.06,0,0,6.283);g.fill()}}
+ q=g.createRadialGradient(-r*.45,-r*.45,r*.1,-r*.1,-r*.1,r*1.2);q.addColorStop(0,'rgba(255,255,255,.3)');q.addColorStop(.4,'rgba(0,0,0,0)');q.addColorStop(1,'rgba(0,0,16,.9)');g.fillStyle=q;g.fillRect(-r,-r,2*r,2*r);
+ g.restore();
+ ring(p,r,1);minis(1);
+ g.globalCompositeOperation='lighter';
+ q=g.createRadialGradient(0,0,r*.92,0,0,r*1.12);q.addColorStop(0,`hsla(${p.at},95%,70%,0)`);q.addColorStop(.5,`hsla(${p.at},95%,70%,${.5+kick*.4})`);q.addColorStop(1,`hsla(${p.at},95%,70%,0)`);g.fillStyle=q;g.beginPath();g.arc(0,0,r*1.12,0,6.283);g.fill()}
+function loop(now){
+ const dt=Math.min(.05,(now-Lt)/1e3||.016);Lt=now;T+=dt;
+ const nw=Date.now(),real=Math.min(Math.max(0,(nw-wall)/1e3),it[4]?43200:10800);wall=nw;
+ if(real>20)toast('不在中に +'+f(ps*real)+' SP を獲得しました');
+ E+=ps*real;tot+=ps*real;
+ cT-=dt;if(cT<=0)combo=0;
+ kick*=1-Math.min(1,dt*9);shake*=1-Math.min(1,dt*8);flash=Math.max(0,flash-dt*1.1);ap=Math.min(1,ap+dt*1.1);
+ wp+=(Math.min(combo/40,1)-wp)*Math.min(1,dt*2.5);mx+=(ptx-mx)*Math.min(1,dt*3);my+=(pty-my)*Math.min(1,dt*3);
+ const k=Math.min(1,dt*8);cx+=(tcx-cx)*k;cy+=(tcy-cy)*k;R+=(tR-R)*k;
+ const p=PL[sel];hue+=(p.at-hue)*Math.min(1,dt*1.6);if(Math.abs(hue-lh)>.4){lh=hue;root.style.setProperty('--h',hue.toFixed(1))}
+ fire+=dt*Math.min(2+Math.log10(ps+1)*3,24);
+ if(fire>=1){fire-=1;const a=Math.random()*6.283,rr=R*(2.4+Math.random()*1.8),x=Math.cos(a)*rr,y=Math.sin(a)*rr*.3;P.push({x:cx+x,y:cy+y,vx:-x*.72/.45,vy:-y*.72/.45,l:.45,m:.45,s:3,h:hue+Math.random()*60-30,d:1})}
+ cmT-=dt;if(cmT<0&&!cm){const d=Math.random()<.5?1:-1;cm={x:d>0?-40:W+40,y:H*(.08+Math.random()*.25),vx:d*W/6,vy:H*.1,tr:[]};cmT=1e9}
+ g.setTransform(dpr,0,0,dpr,0,0);
+ g.globalCompositeOperation='destination-out';g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,0,W,H);
+ g.globalCompositeOperation='lighter';
+ let q=g.createRadialGradient(cx-R*3,cy-R*3,0,cx-R*3,cy-R*3,R*8);q.addColorStop(0,'hsla(42,100%,75%,.17)');q.addColorStop(1,'hsla(42,100%,60%,0)');g.fillStyle=q;g.fillRect(0,0,W,H);
+ for(const s of SS){s.x=(s.x+dt*s.z*(.006+wp*.08))%1;const x=((s.x*W-mx*22*s.z)%W+W)%W,y=((s.y*H-my*22*s.z)%H+H)%H,z=s.z*1.6+.4;
+  g.fillStyle=`hsla(${hue+(s.p*10)%40-20},70%,85%,${(.35+.65*Math.abs(Math.sin(T*s.z*1.3+s.p)))*s.z})`;g.fillRect(x,y,z+wp*s.z*26,z)}
+ for(let i=SW.length;i--;){const w=SW[i];w.r+=w.v*dt;w.a-=dt*1.3;if(w.a<=0){SW[i]=SW[SW.length-1];SW.pop();continue}
+  g.beginPath();g.arc(w.x,w.y,w.r,0,6.283);g.strokeStyle=`hsla(${w.h},100%,70%,${w.a*.8})`;g.lineWidth=w.w*w.a;g.stroke()}
+ const r=R*(1+kick*.06)*(1-Math.pow(1-ap,3));
+ g.save();g.translate(cx+(Math.random()-.5)*shake*2,cy+(Math.random()-.5)*shake*2);if(r>1)body(p,r);g.restore();
+ g.globalCompositeOperation='lighter';
+ if(cm){cm.x+=cm.vx*dt;cm.y+=cm.vy*dt;cm.tr.unshift([cm.x,cm.y]);if(cm.tr.length>28)cm.tr.pop();
+  if(Math.random()<.6)P.push({x:cm.x,y:cm.y,vx:(Math.random()-.5)*60,vy:(Math.random()-.5)*60,l:.6,m:.6,s:2.5,h:46,d:.96});
+  for(let j=cm.tr.length;j--;){const a=1-j/28;g.fillStyle=`hsla(46,100%,${55+a*35}%,${a*.75})`;g.beginPath();g.arc(cm.tr[j][0],cm.tr[j][1],(j?10:15)*a+1,0,6.283);g.fill()}
+  if(cm.x<-90||cm.x>W+90||cm.y>H+90){cm=null;cmT=(25+Math.random()*25)*(it[1]?.5:1)}}
+ for(let i=P.length;i--;){const o=P[i];o.l-=dt;if(o.l<=0){P[i]=P[P.length-1];P.pop();continue}
+  o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=o.d;o.vy*=o.d;const a=o.l/o.m;
+  g.fillStyle=`hsla(${o.h},100%,${60+a*30}%,${a})`;g.beginPath();g.arc(o.x,o.y,o.s*a+.6,0,6.283);g.fill()}
+ if(flash>0){g.fillStyle=`rgba(255,240,230,${flash*.55})`;g.fillRect(0,0,W,H)}
+ g.globalCompositeOperation='source-over';g.textAlign='center';g.font='800 22px Orbitron,"Hiragino Sans",sans-serif';
+ for(let i=FT.length;i--;){const t=FT[i];t.y-=dt*60;t.l-=dt*1.1;if(t.l<=0){FT.splice(i,1);continue}
+  g.globalAlpha=Math.min(1,t.l*1.6);g.fillStyle=`hsl(${t.h},100%,88%)`;g.shadowColor=`hsl(${t.h},100%,55%)`;g.shadowBlur=14;g.fillText(t.t,t.x,t.y)}
+ g.globalAlpha=1;g.shadowBlur=0;
+ set($('#ev'),f(E));
+ ut+=dt;if(ut>.12){ut=0;upd()}
+ requestAnimationFrame(loop)}
+setInterval(save,5000);addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+upd();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
