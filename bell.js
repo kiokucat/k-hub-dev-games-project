@@ -2,6 +2,11 @@
 // date: 通知の日時 / title: 通知タイトル / body: 内容
 window.BELL_ITEMS = [
   {
+    "date": "2026-11-03 13:16",
+    "title": "fpsを追加",
+    "body": "FPS風ゲームを追加しました。"
+  },
+  {
     "date": "2026-11-01 17:14",
     "title": "chat-2chを追加",
     "body": "https://chat-2ch-ai.pages.dev/\nというサイトを公開し、ハブに追加しました。\n\nレトロなチャットができるサイトになっているのでぜひチャットしてください!"
