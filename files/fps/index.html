@@ -598,7 +598,8 @@ $('go').addEventListener('click', () => {
 
 // ================= マップ読み込み =================
 const loader = new THREE.GLTFLoader();
-loader.load('model_1.glb', gltf => {
+const glbBuf = Uint8Array.from(atob(GLB_B64), c => c.charCodeAt(0)).buffer;
+loader.parse(glbBuf, '', gltf => {
   mapRoot = gltf.scene;
   scene.add(mapRoot);
   // 約90単位の幅に正規化し、最小点を原点へ
@@ -625,8 +626,6 @@ loader.load('model_1.glb', gltf => {
   $('ovMsg').textContent = 'マップ読み込み完了。出撃してください。';
   $('goTxt').textContent = '出撃';
   $('go').disabled = false;
-}, xhr => {
-  if (xhr.total) $('ovMsg').textContent = 'マップを読み込み中… ' + Math.round(xhr.loaded / xhr.total * 100) + '%';
 }, err => {
   $('ovMsg').textContent = 'model_1.glb を読み込めませんでした。index.html と同じフォルダに置き、ローカルサーバー経由で開いてください。';
   console.error(err);
