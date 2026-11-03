@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>マネークリッカー</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23f2b42a' stroke='%23b9780c' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block">
+<style>
+:root{box-sizing:border-box;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);color-scheme:light;--bg:#e6ebf4;--p1:#f4f7fc;--p2:#fff;--tx:#141d36;--mu:#5a6684;--ln:#cfd7e8;--gold:#d99a06;--gt:#8a5a00;--rose:#d93a64;--jade:#0e9f6e;--vio:#7c4ddb;--sky:#0b84c6;--glow:rgba(217,154,6,.4);--ring:rgba(176,116,0,.2)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0a0f1d;--p1:#111a30;--p2:#18233f;--tx:#eaf0ff;--mu:#93a1c4;--ln:#26335c;--gold:#ffcf4d;--gt:#ffd970;--rose:#ff7096;--jade:#46e0a0;--vio:#b894ff;--sky:#55c9ff;--glow:rgba(255,200,60,.3);--ring:rgba(255,207,77,.14)}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0a0f1d;--p1:#111a30;--p2:#18233f;--tx:#eaf0ff;--mu:#93a1c4;--ln:#26335c;--gold:#ffcf4d;--gt:#ffd970;--rose:#ff7096;--jade:#46e0a0;--vio:#b894ff;--sky:#55c9ff;--glow:rgba(255,200,60,.3);--ring:rgba(255,207,77,.14)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--tx);font:500 14px/1.5 'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;line-height:1;display:inline-block;width:1em;overflow:hidden;white-space:nowrap;direction:ltr;font-feature-settings:'liga';flex:none}
+em{font-style:normal;color:var(--mu);font-weight:500;font-size:12px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.col{position:relative;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--p1);border-right:1px solid var(--ln)}
+.col:last-child{border:0}
+#c0{background:var(--p1);background:radial-gradient(110% 65% at 50% 48%,color-mix(in srgb,var(--gold) 15%,var(--p1)),var(--p1) 72%)}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.top{text-align:center;padding:22px 12px 0;display:flex;flex-direction:column;gap:2px}
+.top small{color:var(--mu);font-weight:700}
+#coins{font:400 clamp(30px,3.6vw,54px)/1.15 'Dela Gothic One',sans-serif;color:var(--gt);letter-spacing:.02em}
+.stage{--cs:min(22vw,40vh);position:relative;flex:1;min-height:0;display:grid;place-items:center}
+.rings{position:absolute;left:50%;top:50%;translate:-50% -50%;width:calc(var(--cs)*1.9);aspect-ratio:1;border-radius:50%;background:repeating-radial-gradient(circle,transparent 0 13px,var(--ring) 13px 14px);-webkit-mask:radial-gradient(circle,#000 28%,transparent 70%);mask:radial-gradient(circle,#000 28%,transparent 70%)}
+.rings.pop{animation:pp .35s}
+@keyframes pp{40%{scale:1.08}}
+.coin{position:relative;width:var(--cs);aspect-ratio:1;border:0;padding:0;border-radius:50%;cursor:pointer;display:grid;place-items:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s;background:radial-gradient(circle at 34% 28%,#fff7cf,#ffd860 24%,#eba91d 60%,#a9680b);box-shadow:0 0 0 9px #c98a0c,0 0 0 11px #ffe28a,inset 0 -14px 26px rgba(120,60,0,.5),inset 0 10px 18px rgba(255,255,255,.55),0 24px 70px var(--glow)}
+.coin:active{transform:scale(.95)}
+.coin:focus-visible{outline-offset:14px}
+.coin::before{content:"";position:absolute;inset:10%;border-radius:50%;border:3px dashed rgba(122,70,0,.4)}
+.coin::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(transparent 0 30%,rgba(255,255,255,.6) 38%,transparent 46% 80%,rgba(255,255,255,.35) 88%,transparent);mix-blend-mode:soft-light;animation:sp 7s linear infinite}
+@keyframes sp{to{transform:rotate(1turn)}}
+.coin .ms{position:relative;z-index:1;font-size:calc(var(--cs)*.5);color:rgba(130,75,0,.78);text-shadow:0 2px 0 rgba(255,244,190,.7)}
+.hint{margin:0 0 18px;text-align:center;color:var(--mu);font-size:12px}
+.fl{position:absolute;pointer-events:none;white-space:nowrap;z-index:3;font:400 clamp(18px,2vw,28px) 'Dela Gothic One',sans-serif;color:var(--gt);text-shadow:0 2px 0 var(--bg);animation:up .9s ease-out forwards}
+.fl.cr{color:var(--rose);font-size:clamp(24px,2.6vw,36px)}
+.fl.jp{color:var(--sky);font-size:clamp(26px,3vw,40px)}
+@keyframes up{from{transform:translate(-50%,-50%)}to{transform:translate(-50%,-190%);opacity:0}}
+.hd{display:flex;align-items:center;gap:8px;padding:16px 16px 10px}
+.hd h2{margin:0;flex:1;font:400 22px 'Dela Gothic One',sans-serif}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--ln);background:var(--p2);cursor:pointer;display:grid;place-items:center;font-size:20px}
+.ib:hover{border-color:var(--gold)}
+.ib.arm{border-color:var(--rose);color:var(--rose)}
+.sc{overflow:auto;padding:4px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.gr2{flex:none;height:130px;border:1px solid var(--ln);border-radius:14px;background:var(--p2);overflow:hidden}
+#chart{display:block;width:100%;height:100%}
+.lg{background:var(--p2);border:1px solid var(--ln);border-left:4px double var(--rose);border-radius:4px 14px 14px 4px;padding:4px 14px}
+.st{display:flex;align-items:center;gap:8px;padding:11px 0;border-bottom:1px dashed var(--ln)}
+.st:last-child{border:0}
+.st span{display:flex;align-items:center;gap:8px;flex:1;color:var(--mu)}
+.st .ms{color:var(--gt);font-size:20px}
+.st b{font-variant-numeric:tabular-nums;font-size:15px}
+.tabs{display:flex;gap:4px;padding:12px 12px 0;border-bottom:1px solid var(--ln)}
+.tabs button{flex:1;display:flex;gap:6px;align-items:center;justify-content:center;background:none;border:0;border-bottom:3px solid transparent;color:var(--mu);font-weight:700;font-size:13px;padding:10px 2px;cursor:pointer}
+.tabs button.on{color:var(--tx);border-color:var(--gold)}
+.pane{display:none;flex:1;min-height:0}
+.pane.on{display:flex;flex-direction:column}
+.list.on{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:8px;padding:12px;overflow:auto}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:var(--p2);border:1px solid var(--ln);border-radius:12px;padding:10px 12px;cursor:pointer}
+.row .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:24px;color:var(--c);background:var(--p1);background:color-mix(in srgb,var(--c) 16%,transparent)}
+.row b{display:block}
+.row small{display:block;color:var(--mu);font-size:12px}
+.pr{display:flex;align-items:center;gap:4px;color:var(--gt);font-weight:700;font-variant-numeric:tabular-nums}
+.row:not(.dis):hover{border-color:var(--c)}
+.row.dis{opacity:.5;cursor:not-allowed}
+.row.own{border-color:var(--jade);opacity:1;cursor:default}
+.row.own .pr{color:var(--jade)}
+.gh{margin:6px 0 0;text-align:center;color:var(--mu);font-size:12px}
+.chips{display:flex;gap:6px;padding:10px 12px;overflow-x:auto;flex:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--ln);background:var(--p2);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.chip i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.tv{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;cursor:grab;background:radial-gradient(var(--ln) 1.2px,transparent 1.4px) 0 0/22px 22px}
+.tv.gr{cursor:grabbing}
+.world{position:absolute;left:50%;top:50%;width:0;height:0}
+.world.an{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.ln{position:absolute;left:0;top:0;overflow:visible}
+.ln line{stroke:var(--ln);stroke-width:5;stroke-linecap:round}
+.ln line.on{stroke:var(--c)}
+.root{position:absolute;width:72px;height:72px;translate:-50% -50%;border-radius:50%;display:grid;place-items:center;font-size:36px;color:#7a4600;background:radial-gradient(circle at 35% 30%,#fff3b0,#f2b42a 60%,#b9780c);box-shadow:0 0 28px var(--glow)}
+.nd{position:absolute;width:58px;height:58px;translate:-50% -50%;padding:0;border-radius:var(--r,50%);border:3px solid var(--c);background:var(--p2);color:var(--c);display:grid;place-items:center;font-size:26px;cursor:pointer}
+.nd .lv{position:absolute;bottom:-10px;left:50%;translate:-50% 0;font:700 10px/1 'Zen Kaku Gothic New',sans-serif;font-style:normal;color:var(--tx);background:var(--p1);border:1px solid var(--c);border-radius:99px;padding:2px 6px;white-space:nowrap}
+.nd.lock{border-color:var(--ln);color:var(--mu);opacity:.55;filter:grayscale(.7)}
+.nd.can{box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 28%,transparent),0 0 18px color-mix(in srgb,var(--c) 55%,transparent)}
+.nd.max{background:var(--c);color:var(--p1)}
+.nd.sel{outline:2px solid var(--tx);outline-offset:4px}
+.info{flex:none;min-height:84px;padding:12px 16px;border-top:1px solid var(--ln);background:var(--p1)}
+.info{display:flex;align-items:center;gap:12px}.info>div{flex:1;min-width:0}.info b{font-size:15px}
+.info p{margin:2px 0 0;color:var(--mu)}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);translate:-50% 0;z-index:9;display:flex;gap:8px;align-items:center;background:var(--p2);color:var(--tx);border:1px solid var(--gold);border-radius:12px;padding:10px 16px;font-weight:700;animation:tt 3s forwards}
+.toast .ms{color:var(--gt)}
+@keyframes tt{0%{opacity:0;translate:-50% -10px}10%,85%{opacity:1;translate:-50% 0}100%{opacity:0}}
+#bt{display:none;border-top:1px solid var(--ln);background:var(--p1)}
+#bt button{flex:1;border:0;background:none;color:var(--mu);padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;cursor:pointer}
+#bt button.on{color:var(--gt)}
+#bt .ms{font-size:24px}
+@media(max-width:720px){main{display:block}.col{border:0}.col:not(.on){display:none}.col.on{height:100%}#bt{display:flex}.stage{--cs:min(68vw,38vh)}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}.coin::after{animation:none}.bag.go{animation-duration:4s!important}.nf{animation-duration:4.5s!important}}
+.tabs button{font-size:12px;gap:4px}
+#ac{gap:8px}
+.rb{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--ln)}
+.rb div{flex:1}
+.rb b{font:400 20px 'Dela Gothic One',sans-serif;color:var(--gt)}
+.rb small{display:block;color:var(--mu);font-size:12px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--gold);color:#2a1a00}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.arm{background:var(--rose);color:#fff}
+.bag{position:absolute;z-index:4;width:68px;height:68px;translate:-50% -50%;border:0;border-radius:50%;cursor:pointer;display:grid;place-items:center;font-size:36px;color:#7a4600;background:radial-gradient(circle at 35% 30%,#fff3b0,#f2b42a 60%,#b9780c);box-shadow:0 0 26px var(--glow);opacity:0}
+.bag:not(.go){display:none}
+.bag.go{animation:bg 4s linear forwards}
+@keyframes bg{0%{opacity:0}25%,75%{opacity:1}100%{opacity:0}}
+#nt{position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:8;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.nf{max-width:230px;padding:6px 10px;border:1px solid var(--ln);border-left:3px solid var(--gold);border-radius:8px;background:var(--p2);opacity:0;animation:tn 4.5s forwards}
+.nf b{display:block;font-size:12px}
+.nf small{display:block;font-size:10px;color:var(--mu)}
+.nf small:last-child{color:var(--gt)}
+@keyframes tn{0%{opacity:0;translate:-10px 0}8%,85%{opacity:.92;translate:0 0}100%{opacity:0}}
+</style>
+</head>
+<body>
+<main>
+<section class="col on" id="c0">
+<canvas id="fx"></canvas>
+<div class="top"><small>所持コイン</small><b id="coins">0</b><small id="cps"></small></div>
+<div class="stage"><div class="rings"></div><button class="coin" id="coin" aria-label="コインをタップして稼ぐ"><span class="ms">currency_yen</span></button></div>
+<p class="hint">コインをタップして稼ごう</p>
+<button class="bag" id="bag" aria-label="ボーナスコインの袋"><span class="ms">shopping_bag</span></button>
+</section>
+<section class="col" id="c1">
+<div class="hd"><h2>統計</h2><button class="ib" id="th" aria-label="テーマを切り替える"></button><button class="ib" id="rs" aria-label="セーブデータを消去"><span class="ms">restart_alt</span></button></div>
+<div class="tabs"><button class="on"><span class="ms">monitoring</span>統計</button><button><span class="ms">emoji_events</span>実績</button></div>
+<div class="pane sc on"><div class="gr2"><canvas id="chart"></canvas></div><div class="lg" id="sb"></div></div>
+<div class="pane sc" id="ac"></div>
+</section>
+<section class="col" id="c2">
+<div class="tabs"><button class="on"><span class="ms">trending_up</span>強化</button><button><span class="ms">inventory_2</span>所持品</button><button><span class="ms">account_tree</span>スキル</button><button><span class="ms">cyclone</span>転生</button></div>
+<div class="pane list on" id="p0"></div>
+<div class="pane list" id="p1"></div>
+<div class="pane" id="p2"></div>
+<div class="pane" id="p3"><div class="rb"><div><b id="bp">0 BP</b><small id="bpn"></small></div><button class="btn" id="rbb">転生</button></div></div>
+</section>
+</main>
+<div id="nt"></div><nav id="bt"><button class="on"><span class="ms">toll</span>コイン</button><button><span class="ms">bar_chart</span>統計</button><button><span class="ms">upgrade</span>強化</button></nav>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],E=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e},I=n=>`<span class="ms">${n}</span>`,R=document.documentElement;
+const U=[...'万億兆京垓秭穣溝澗正載'];
+const fmt=(n,d=0)=>{if(n<1e4)return n.toLocaleString('ja-JP',{maximumFractionDigits:d});const i=Math.min(U.length,Math.floor(Math.log10(n)/4));return(n/1e4**i).toFixed(2)+U[i-1]};
+const EF={cf:v=>`クリック +${v}`,cm:v=>`クリック収入 +${v}%`,af:v=>`毎秒 +${v}`,am:v=>`自動収入 +${v}%`,cc:v=>`クリティカル率 +${v}%`,cd:v=>`クリティカル倍率 +${v}`,jp:v=>`大当たり率 +${v}%(25倍)`,dc:v=>`強化コスト -${v}%`,gm:v=>`全収入 +${v}%`,cp:v=>`クリックに毎秒収入の${v}%を加算`,ic:v=>`クリック収入 ×${v}`,ia:v=>`自動収入 ×${v}`,ig:v=>`全収入 ×${v}`};
+/* 通常アップグレード: id,名前,アイコン,基本コスト,上昇率,種別,効果量 */
+const UP=[['tap','指先トレーニング','touch_app',15,1.25,'click',1],['piggy','貯金箱','savings',60,1.15,'cps',1],['tap2','黄金の指圧','pan_tool_alt',3000,1.3,'click',12],['shop','露店','storefront',700,1.16,'cps',8],['bank','銀行','account_balance',8000,1.17,'cps',60],['mine','金鉱山','diamond',9e4,1.18,'cps',480],['tap3','爆裂タップ','flare',4e5,1.32,'click',300],['mint','造幣所','factory',1.1e6,1.19,'cps',3600],['port','貿易港','sailing',1.4e7,1.2,'cps',28000],['lab','研究所','science',2e8,1.2,'cps',2.2e5],['space','宇宙港','rocket',3e9,1.2,'cps',1.8e6],['time','時間機械','hourglass_top',5e10,1.2,'cps',1.5e7],['alch','錬金炉','experiment',8e11,1.2,'cps',1.3e8],['cosmos','星の泉','blur_on',1.5e13,1.2,'cps',1.2e9]];
+/* 所持品(買い切り): id,名前,アイコン,価格,解放条件の説明,条件,種別,効果量 */
+const IT=[['wallet','幸運の財布','wallet',800,'クリック50回',s=>s.clicks>=50,'ic',1.5],['watch','懐中時計','watch',3000,'プレイ時間2分',s=>s.time>=120,'ia',1.25],['glove','金の手袋','back_hand',6000,'指先トレーニングLv10',s=>s.up.tap>=10,'ic',2],['scale','商人の天秤','balance',3e4,'露店Lv5',s=>s.up.shop>=5,'ia',1.5],['lens','虫眼鏡','search',4e4,'累計5万コイン',s=>s.total>=5e4,'cc',5],['cat','招き猫','pets',2e5,'クリック1000回',s=>s.clicks>=1e3,'ic',2],['ring','ダイヤの指輪','workspace_premium',1.2e6,'累計200万コイン',s=>s.total>=2e6,'ig',1.5],['vault','王家の金庫','castle',1.2e7,'スキルLv合計15',s=>sk()>=15,'ig',2],['coat','商人のコート','checkroom',2e4,'毎秒100コイン',s=>C.cps>=100,'ia',1.3],['pen','黄金の万年筆','edit',8e4,'指先トレーニングLv20',s=>s.up.tap>=20,'ic',1.5],['clover','四つ葉のお守り','eco',1.5e5,'累計20万コイン',s=>s.total>=2e5,'cc',4],['abacus','そろばん','calculate',3e5,'貯金箱Lv10',s=>s.up.piggy>=10,'ia',1.5],['bell','幸運の鈴','notifications',6e5,'クリック3000回',s=>s.clicks>=3e3,'cc',5],['crown','金の王冠','stars',2.5e6,'累計500万コイン',s=>s.total>=5e6,'ig',1.3],['map','古い宝の地図','map',5e6,'金鉱山Lv5',s=>s.up.mine>=5,'ia',2],['sand','永遠の砂時計','hourglass_top',3e7,'プレイ時間30分',s=>s.time>=1800,'ia',1.5],['lamp','魔法のランプ','emoji_objects',1e8,'累計1億コイン',s=>s.total>=1e8,'ig',1.5],['dice','運命のサイコロ','casino',1.5e8,'ボーナス袋を3回取る',s=>s.bags>=3,'cc',8],['tree','黄金の木','forest',1e9,'スキルLv合計40',s=>sk()>=40,'ig',2],['orb','星のオーブ','blur_on',2e10,'累計1000億コイン',s=>s.total>=1e11,'ig',2],['crystal','時の結晶','diamond',5e11,'転生する',s=>s.reb>=1,'ig',3]];
+/* スキルツリー5カテゴリ: 名前,色,効果キー1,基準値1,効果キー2,基準値2,ノード(名前:アイコン)x10。値は段階が進むほど増える */
+const CAT=[['クリック','--rose','cf',2,'cm',20,'指ならし:touch_app 剛腕:fitness_center 連打の鼓動:bolt 拳の稲妻:flash_on 千手観音:stars ダブルタップ:ads_click 百烈拳:sports_martial_arts ミダスの手:front_hand 神の指:auto_fix_high 鉄拳制裁:gavel'],
+['自動','--jade','af',1,'am',15,'貯蓄の習慣:savings 複利:trending_up 副業:work 残業:schedule 自動化:speed 外注:groups ロケット経営:rocket_launch 無人化:smart_toy 全自動工場:precision_manufacturing 永久機関:all_inclusive'],
+['幸運','--vio','cc',2,'cd',.5,'四つ葉:eco 賭け師:casino 流れ星:star 直感:crisis_alert 大当たり:celebration 虹の橋:looks 黄金律:auto_awesome 女神の微笑:favorite 奇跡:diamond 運命の輪:cyclone'],
+['経済','--gold','dc',3,'gm',4,'節約術:sell 投資:monitoring 値切り:price_check 財テク:account_balance_wallet 資産運用:public 株主総会:corporate_fare 王者の財:emoji_events 市場支配:storefront 金本位:balance 錬金経済:science'],
+['相乗','--sky','cp',1,'am',10,'つながり:link ハブ:hub 重なり:join_inner 好循環:all_inclusive チームワーク:diversity_3 共鳴:graphic_eq 閃き:psychology 連鎖反応:account_tree 融合:merge 特異点:blur_on']];
+/* 枝分かれの形: [親, 段, 横位置] */
+const SK=[[-1,1,0],[0,2,-.8],[0,2,.8],[1,3,-1.6],[1,3,-.55],[2,3,.55],[2,3,1.6],[3,4,-1.6],[6,4,1.6],[4,4,-.55]],RSH=[[-1,1,0],[0,2,-.6],[0,2,.6],[1,3,-1.5],[1,3,-.5],[2,3,.5],[2,3,1.5],[3,4,-1.5],[6,4,1.5]];
+const SHP=['50%','14px','50% 12% 50% 12%','30%','12% 50%'],SHR=[...SHP,'50% 50% 12% 12%','8px','40% 60% 40% 60%','20% 50% 20% 50%','2px 50%'];
+const sv=(b,t)=>Math.round(b*(1+.8*(t-1))*10)/10;
+const SKC=CAT.map((c,i)=>({n:c[0],c:c[1],r:SHP[i],nodes:c[6].split(' ').map((q,j)=>{const[n,ic]=q.split(':'),t=SK[j][1];return{n,ic,k:j%2?c[4]:c[2],v:sv(j%2?c[5]:c[3],t)}})}));
+/* 転生ツリー10カテゴリ(カテゴリごとに効果キー・形・色が違う) */
+const KEYS=['cf','cm','af','am','cc','cd','jp','dc','gm','cp'],RV=[60,20,120,20,3,.7,.4,3,12,1.5];
+const RN=[['指先','--rose','touch_app'],['剛力','--vio','fitness_center'],['蓄財','--jade','savings'],['複利','--sky','trending_up'],['幸運','--gold','casino'],['会心','--rose','flash_on'],['大当たり','--vio','celebration'],['節約','--jade','sell'],['繁栄','--gold','emoji_events'],['共鳴','--sky','hub']],RS=['の目覚め','の加護','の奔流','の極意','の祝福','の覇道','の深淵','の真理','の彼方'];
+const RB=RN.map((c,i)=>({n:c[0],c:c[1],r:SHR[i],nodes:RS.map((x,j)=>({n:c[0]+x,ic:c[2],k:KEYS[i],v:Math.round(RV[i]*(1+.5*(RSH[j][1]-1))*10)/10}))}));
+const fresh=()=>({coins:0,total:0,clicks:0,best:0,time:0,bags:0,bp:0,reb:0,pk:{},ach:{},up:{},items:{},sk:{}});
+let S=fresh(),C,seen={},ready=false,inc=0,hist=[],sel=null,CL={};
+const KEY='moneyclicker.v1';
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+try{const d=JSON.parse(localStorage.getItem(KEY));if(d)Object.assign(S,d)}catch(e){}
+const sk=()=>Object.values(S.sk).reduce((a,b)=>a+b,0);
+const ucost=u=>Math.ceil(u[3]*u[4]**(S.up[u[0]]||0)*(1-C.dc));
+function calc(){const a={cf:0,cm:0,af:0,am:0,cc:0,cd:0,jp:0,dc:0,gm:0,cp:0},m={ic:1,ia:1,ig:1,cc:0};
+T1.N.forEach(n=>a[n.k]+=n.v*T1.lv(n.id));T2.N.forEach(n=>a[n.k]+=n.v*T2.lv(n.id));ACH.forEach(x=>{if(S.ach[x[0]]&&x[5]=='g')a.gm+=x[6]});
+IT.forEach(i=>{if(S.items[i[0]]){const t=i[6];t=='cc'?m.cc+=i[7]:m[t]*=i[7]}});
+let cl=1,cp=0;UP.forEach(u=>{const L=S.up[u[0]]||0;u[5]=='click'?cl+=L*u[6]:cp+=L*u[6]});
+const g=(1+a.gm/100)*m.ig,ps=(cp+a.af)*(1+a.am/100)*m.ia*g;
+return{click:(cl+a.cf)*(1+a.cm/100)*m.ic*g+ps*a.cp/100,cps:ps,cc:Math.min(.8,(a.cc+m.cc)/100),cd:3+a.cd,jp:Math.min(.3,a.jp/100),dc:Math.min(.5,a.dc/100)}}
+const gain=v=>{S.coins+=v;S.total+=v;inc+=v};
+function toast(m,i='lock_open'){const t=E('div','toast',I(i)+m);t.onanimationend=()=>t.remove();document.body.appendChild(t)}
+/* ---- 演出(パーティクル・数字) ---- */
+const cv=$('#fx'),cx=cv.getContext('2d');let P=[],W=0,H=0;
+function fit(){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)}
+new ResizeObserver(fit).observe($('#c0'));
+function cols(){const s=getComputedStyle(R),g=n=>s.getPropertyValue(n).trim();CL={gold:g('--gold'),cr:g('--rose'),jp:g('--sky')}}
+function fx(x,y,v,k){const r=cv.getBoundingClientRect(),X=x-r.left,Y=y-r.top;
+for(let i=0;i<(k?16:5);i++){const a=Math.random()*6.28,s=2+Math.random()*(k?7:4);P.push({x:X,y:Y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,l:1,k})}
+const f=E('div','fl '+k,(k=='jp'?'大当たり ':k=='cr'?'会心 ':'')+'+'+fmt(v,v<10?1:0));f.style.left=X+'px';f.style.top=Y+'px';f.onanimationend=()=>f.remove();cv.parentNode.appendChild(f)}
+function draw(){cx.clearRect(0,0,W,H);P=P.filter(p=>p.l>0);for(const p of P){p.x+=p.vx;p.y+=p.vy;p.vy+=.25;p.l-=.018;cx.globalAlpha=Math.max(0,p.l);cx.fillStyle=CL[p.k]||CL.gold;cx.strokeStyle='rgba(120,70,0,.6)';cx.beginPath();cx.arc(p.x,p.y,p.k?5:4,0,6.28);cx.fill();cx.stroke()}cx.globalAlpha=1}
+/* ---- クリック ---- */
+const head=()=>{$('#coins').textContent=fmt(Math.floor(S.coins));$('#cps').textContent='毎秒 +'+fmt(C.cps,1)};
+function tap(x,y){let v=C.click,k='';const r=Math.random();if(r<C.jp){v*=25;k='jp'}else if(r<C.jp+C.cc){v*=C.cd;k='cr'}
+gain(v);S.clicks++;if(v>S.best)S.best=v;head();fx(x,y,v,k);const g=$('.rings');g.classList.remove('pop');void g.offsetWidth;g.classList.add('pop')}
+const coin=$('#coin');
+coin.addEventListener('pointerdown',e=>{if(e.button>0)return;tap(e.clientX,e.clientY)});
+coin.addEventListener('keydown',e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();const r=coin.getBoundingClientRect();tap(r.left+r.width*(.3+Math.random()*.4),r.top+r.height*.4)}});
+coin.addEventListener('contextmenu',e=>e.preventDefault());
+/* ---- 統計 ---- */
+const tm=s=>s>=3600?`${Math.floor(s/3600)}時間${Math.floor(s%3600/60)}分`:`${Math.floor(s/60)}分${Math.floor(s%60)}秒`;
+const ST=[['touch_app','クリック1回',()=>fmt(C.click,1)],['trending_up','毎秒収入',()=>fmt(C.cps,1)],['casino','クリティカル',()=>`${(C.cc*100).toFixed(0)}% / ×${C.cd.toFixed(1)}`],['celebration','大当たり率',()=>(C.jp*100).toFixed(1)+'%'],['paid','累計獲得(今回)',()=>fmt(Math.floor(S.total))],['ads_click','累計クリック',()=>fmt(S.clicks)],['military_tech','最大1回の獲得',()=>fmt(S.best,1)],['schedule','プレイ時間',()=>tm(S.time)],['upgrade','強化レベル合計',()=>fmt(Object.values(S.up).reduce((a,b)=>a+b,0))],['account_tree','スキルレベル合計',()=>sk()],['inventory_2','所持品',()=>Object.keys(S.items).length+' / '+IT.length],['cyclone','転生回数',()=>S.reb],['toll','所持BP',()=>S.bp],['shopping_bag','取ったボーナス袋',()=>S.bags]];
+ST.forEach(s=>{const r=E('div','st',`<span>${I(s[0])}${s[1]}</span><b></b>`);s.e=r.lastChild;$('#sb').appendChild(r)});
+function chart(){const c=$('#chart'),w=c.clientWidth,h=c.clientHeight;if(!w)return;const d=devicePixelRatio||1,W2=Math.round(w*d);if(c.width!=W2){c.width=W2;c.height=Math.round(h*d)}
+const x=c.getContext('2d'),s=getComputedStyle(R),g=n=>s.getPropertyValue(n).trim(),jd=g('--jade'),m=Math.max(1,...hist);x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);
+x.strokeStyle=g('--ln');x.lineWidth=1;for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke()}
+x.fillStyle=g('--mu');x.font='700 11px "Zen Kaku Gothic New",sans-serif';x.fillText('毎秒の収入(直近60秒) 最大 '+fmt(m,1),10,16);
+const pts=hist.map((v,i)=>[w-(hist.length-1-i)*(w/59),h-8-(v/m)*(h-34)]);if(pts.length<2)return;
+x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.strokeStyle=jd;x.lineWidth=2.5;x.lineJoin='round';x.stroke();
+x.lineTo(w,h);x.lineTo(pts[0][0],h);const gr=x.createLinearGradient(0,0,0,h);gr.addColorStop(0,jd+'66');gr.addColorStop(1,jd+'00');x.fillStyle=gr;x.fill()}
+/* ---- 通常アップグレード ---- */
+const lu=$('#p0'),PAL=['--sky','--jade','--vio','--rose','--gold','--sky'];
+UP.forEach((u,i)=>{const r=E('button','row',`<span class="ic">${I(u[2])}</span><span><b>${u[1]} <em></em></b><small>${u[5]=='click'?'クリック +'+u[6]:'毎秒 +'+fmt(u[6])}</small></span><span class="pr"></span>`);r.style.setProperty('--c',`var(${PAL[i%6]})`);r.onclick=()=>{const c=ucost(u);if(S.coins<c)return;S.coins-=c;S.up[u[0]]=(S.up[u[0]]||0)+1;C=calc();ui()};u.r=r;u.e=r.querySelector('em');u.v=r.querySelector('.pr');lu.appendChild(r)});
+/* ---- 所持品(解放条件を満たすまで非表示) ---- */
+const li=$('#p1'),gh=E('p','gh');
+IT.forEach(t=>{const r=E('button','row',`<span class="ic">${I(t[2])}</span><span><b>${t[1]}</b><small>${EF[t[6]](t[7])}</small><small>解放: ${t[4]}</small></span><span class="pr"></span>`);r.hidden=true;r.style.setProperty('--c','var(--vio)');r.onclick=()=>{if(S.items[t[0]]||S.coins<t[3])return;S.coins-=t[3];S.items[t[0]]=1;C=calc();ui()};t.r=r;t.v=r.querySelector('.pr');li.appendChild(r)});
+li.appendChild(gh);
+/* ---- ツリー共通部品(スキルツリーと転生ツリーで使用) ---- */
+function mkTree(el,o){
+el.insertAdjacentHTML('beforeend','<div class="chips"></div><div class="tv"><div class="world"></div></div><div class="info"></div>');
+const{cats,sh,base,step,u,L,mx,cost,cur,sp,ri,pm,unit}=o,ch=el.querySelector('.chips'),vw=el.querySelector('.tv'),wd=el.querySelector('.world'),inf=el.querySelector('.info'),N=[],M={},cn=cats.length,lv=id=>L()[id]||0,open=n=>!n.p||lv(n.p)>0;let px=0,py=0,dg=null,sel=null,lt=0;
+cats.forEach((c,i)=>{const a=(-90+360/cn*i)*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a);c.nodes.forEach((d,j)=>{const[p,t,l]=sh[j],r=base+(t-1)*step,n={...d,id:i+'_'+j,ci:i,t,p:p<0?null:i+'_'+p,x:dx*r-dy*l*u,y:dy*r+dx*l*u};N.push(n);M[n.id]=n})});
+wd.innerHTML=`<svg class="ln" width="1" height="1">${N.map(n=>{const p=n.p?M[n.p]:{x:0,y:0};return`<line x1="${p.x}" y1="${p.y}" x2="${n.x}" y2="${n.y}" style="--c:var(${cats[n.ci].c})"/>`}).join('')}</svg><div class="root">${I(ri)}</div>`;
+const ls=wd.querySelectorAll('line');
+N.forEach((n,i)=>{const b=E('button','nd',`${I(n.ic)}<i class="lv"></i>`);b.style.cssText=`left:${n.x}px;top:${n.y}px;--c:var(${cats[n.ci].c});--r:${cats[n.ci].r}`;b.dataset.id=n.id;n.b=b;n.l=b.lastChild;n.e=ls[i];wd.appendChild(b)});
+ch.innerHTML=`<button class="chip" data-i="-1">${I('my_location')}中央</button>`+cats.map((c,i)=>`<button class="chip" data-i="${i}" style="--c:var(${c.c})"><i></i>${c.n}</button>`).join('');
+const pan=(x,y)=>{px=Math.max(-pm,Math.min(pm,x));py=Math.max(-pm,Math.min(pm,y));wd.style.transform=`translate(${px}px,${py}px)`};
+const go=(x,y)=>{wd.classList.add('an');pan(x,y);setTimeout(()=>wd.classList.remove('an'),450)};
+ch.onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const i=+b.dataset.i;if(i<0)return go(0,0);const a=(-90+360/cn*i)*Math.PI/180,r=base+step*1.5;go(-Math.cos(a)*r,-Math.sin(a)*r)};
+function buy(id){const n=M[id],c=cost(n,lv(id));if(open(n)&&lv(id)<mx(n)&&cur()>=c){sp(c);L()[id]=lv(id)+1;C=calc()}}
+function pick(id){const t=performance.now(),dbl=sel==id&&t-lt<450;lt=t;sel=id;if(dbl)buy(id);ui()}
+vw.addEventListener('pointerdown',e=>{dg={x:e.clientX,y:e.clientY,px,py,m:0,t:e.target.closest('.nd')}});
+addEventListener('pointermove',e=>{if(!dg)return;const dx=e.clientX-dg.x,dy=e.clientY-dg.y;if(Math.hypot(dx,dy)>6)dg.m=1;if(dg.m){pan(dg.px+dx,dg.py+dy);vw.classList.add('gr')}});
+addEventListener('pointerup',()=>{if(dg&&!dg.m&&dg.t)pick(dg.t.dataset.id);dg=null;vw.classList.remove('gr')});
+addEventListener('pointercancel',()=>{dg=null});
+vw.addEventListener('click',e=>{if(e.detail===0){const b=e.target.closest('.nd');if(b)pick(b.dataset.id)}});
+function upd(){N.forEach(n=>{const l=lv(n.id),op=open(n);n.b.className='nd'+(op?'':' lock')+(l>=mx(n)?' max':op&&cur()>=cost(n,l)?' can':'')+(sel==n.id?' sel':'');n.l.textContent=l+'/'+mx(n);n.e.classList.toggle('on',op)});
+const n=M[sel];let h;if(!n)h='<div><b>タップで選択、ダブルタップか強化ボタンで強化</b><p>ドラッグで移動。直前の枝を強化すると先へ進めます。</p></div>';else{const l=lv(n.id);const ok=open(n)&&l<mx(n)&&cur()>=cost(n,l);h=`<div><b>${n.n} <em>${cats[n.ci].n} / Lv ${l}/${mx(n)}</em></b><p>${EF[n.k](n.v)}(1Lvごと)</p><p>${l>=mx(n)?'最大レベルです':open(n)?'次のコスト '+fmt(cost(n,l))+' '+unit:'直前のスキルを強化すると解放'}</p></div><button class="btn"${ok?'':' disabled'}>強化</button>`}
+if(inf.dataset.h!=h){inf.innerHTML=h;inf.dataset.h=h}}
+inf.onclick=e=>{if(e.target.closest('.btn')&&sel){buy(sel);ui()}};return{N,lv,upd}}
+const T1=mkTree($('#p2'),{cats:SKC,sh:SK,base:110,step:100,u:66,L:()=>S.sk,mx:n=>n.t>3?3:5,cost:(n,l)=>Math.ceil([150,1200,12000,150000][n.t-1]*1.8**l),cur:()=>S.coins,sp:c=>{S.coins-=c},ri:'paid',pm:560,unit:'コイン'});
+const T2=mkTree($('#p3'),{cats:RB,sh:RSH,base:160,step:130,u:62,L:()=>S.pk,mx:()=>3,cost:(n,l)=>n.t+l,cur:()=>S.bp,sp:c=>{S.bp-=c},ri:'cyclone',pm:700,unit:'BP'});
+/* ---- 実績 ---- */
+const ACH=[['a1','はじめの一歩','flag','クリック1回',s=>s.clicks>=1,'s',1],['a2','指が止まらない','touch_app','クリック100回',s=>s.clicks>=100,'g',1],['a3','連打職人','bolt','クリック1000回',s=>s.clicks>=1e3,'g',2],['a4','小金持ち','savings','累計1000コイン',s=>s.total>=1e3,'s',2],['a5','貯金家','paid','累計10万コイン',s=>s.total>=1e5,'g',1],['a6','百万長者','diamond','累計100万コイン',s=>s.total>=1e6,'g',2],['a7','億万長者','workspace_premium','累計1億コイン',s=>s.total>=1e8,'g',5],['a8','兆の世界','public','累計1兆コイン',s=>s.total>=1e12,'g',10],['a9','自動化の始まり','schedule','毎秒10コイン',s=>C.cps>=10,'s',2],['a10','不労所得','trending_up','毎秒1000コイン',s=>C.cps>=1e3,'g',2],['a11','経済圏','account_balance','毎秒100万コイン',s=>C.cps>=1e6,'g',5],['a12','コレクター','inventory_2','所持品4個',s=>Object.keys(s.items).length>=4,'g',2],['a13','コンプリート','castle','所持品8個',s=>Object.keys(s.items).length>=8,'g',5],['a14','枝を伸ばす','account_tree','スキルLv合計10',s=>sk()>=10,'g',2],['a15','大樹','forest','スキルLv合計50',s=>sk()>=50,'g',5],['a16','一撃必殺','military_tech','1回で100万コイン獲得',s=>s.best>=1e6,'g',3],['a17','幸運の袋','shopping_bag','ボーナス袋を取る',s=>s.bags>=1,'s',3],['a18','転生者','cyclone','転生する',s=>s.reb>=1,'g',5]];
+const rw=x=>x[5]=='g'?`全収入 +${x[6]}%`:`${x[6]}分ぶんの収入`;
+const ac=$('#ac'),ah=E('p','gh');ac.appendChild(ah);
+ACH.forEach(x=>{const r=E('div','row dis',`<span class="ic">${I(x[2])}</span><span><b>${x[1]}</b><small>${x[3]}</small></span><span class="pr" style="font-size:12px">${rw(x)}</span>`);r.style.setProperty('--c','var(--gold)');x.r=r;ac.insertBefore(r,ah)});
+function note(x){const t=E('div','nf',`<b>${x[1]}</b><small>実績を達成しました</small><small>報酬: ${rw(x)}</small>`);t.onanimationend=()=>t.remove();$('#nt').appendChild(t)}
+/* ---- 転生 ---- */
+const bpGain=()=>Math.floor(S.total/1e8);let arm2=0;
+$('#rbb').onclick=function(){const g=bpGain();if(g<1)return;if(!arm2){arm2=1;this.classList.add('arm');toast('もう一度タップで転生(コイン・強化・所持品・実績・スキルが初期化)','warning');setTimeout(()=>{arm2=0;this.classList.remove('arm')},3500);return}
+arm2=0;this.classList.remove('arm');S=Object.assign(fresh(),{clicks:S.clicks,best:S.best,time:S.time,bags:S.bags,bp:S.bp+g,reb:S.reb+1,pk:S.pk});C=calc();seen={};ui();toast('転生した。+'+g+' BP','cyclone');save()};
+/* ---- ボーナス袋(1秒で出現、2秒維持、1秒で消える) ---- */
+const bag=$('#bag'),later=()=>setTimeout(spawn,(40+Math.random()*60)*1e3);
+function spawn(){bag.style.left=(14+Math.random()*72)+'%';bag.style.top=(28+Math.random()*44)+'%';bag.classList.remove('go');void bag.offsetWidth;bag.classList.add('go')}
+bag.onanimationend=()=>{bag.classList.remove('go');later()};
+bag.addEventListener('pointerdown',e=>{if(!bag.classList.contains('go'))return;const v=Math.max(50,C.cps*45+C.click*30);gain(v);S.bags++;fx(e.clientX,e.clientY,v,'jp');bag.classList.remove('go');later();ui()});
+setTimeout(spawn,(20+Math.random()*20)*1e3);
+C=calc();
+/* ---- 画面更新 ---- */
+function ui(){head();ST.forEach(s=>s.e.textContent=s[2]());
+UP.forEach(u=>{const c=ucost(u);u.e.textContent='Lv '+(S.up[u[0]]||0);u.v.innerHTML=I('toll')+fmt(c);u.r.classList.toggle('dis',S.coins<c)});
+let hid=0;IT.forEach(t=>{const own=S.items[t[0]],vis=own||t[5](S);if(vis&&!seen[t[0]]){seen[t[0]]=1;if(ready)toast('所持品が解放された: '+t[1])}if(!vis)hid++;t.r.hidden=!vis;t.r.classList.toggle('own',!!own);t.r.classList.toggle('dis',!own&&S.coins<t[3]);t.v.innerHTML=own?I('check_circle')+'所持':I('toll')+fmt(t[3])});
+gh.textContent=hid?`まだ見ぬ所持品が ${hid} 個眠っている`:'すべての所持品を解放した';
+ACH.forEach(x=>{if(!S.ach[x[0]]&&x[4](S)){S.ach[x[0]]=1;if(x[5]=='s')S.coins+=Math.max(50,C.cps*60*x[6]);else C=calc();if(ready)note(x)}x.r.classList.toggle('own',!!S.ach[x[0]]);x.r.classList.toggle('dis',!S.ach[x[0]])});
+ah.textContent=`達成 ${Object.keys(S.ach).length} / ${ACH.length}`;
+const g=bpGain();$('#bp').textContent=S.bp+' BP';$('#bpn').textContent=g?`転生すると +${g} BP`:`1億コイン到達で転生できます(今回 ${fmt(Math.floor(S.total))})`;$('#rbb').disabled=!g;
+T1.upd();T2.upd()}
+/* ---- タブ・テーマ・リセット ---- */
+$$('.tabs').forEach(tb=>{const bs=[...tb.children],ps=[...tb.parentNode.children].filter(e=>e.classList.contains('pane'));bs.forEach((b,i)=>b.onclick=()=>{bs.forEach((x,j)=>x.classList.toggle('on',i==j));ps.forEach((x,j)=>x.classList.toggle('on',i==j));chart()})});
+const BT=$$('#bt button'),CO=$$('.col');BT.forEach((b,i)=>b.onclick=()=>{BT.forEach((x,j)=>x.classList.toggle('on',i==j));CO.forEach((x,j)=>x.classList.toggle('on',i==j));fit();chart()});
+function theme(t,p){R.dataset.theme=t;$('#th').innerHTML=I(t=='dark'?'light_mode':'dark_mode');if(p)try{localStorage.setItem('mc.theme',t)}catch(e){}cols();chart()}
+let t0;try{t0=localStorage.getItem('mc.theme')}catch(e){}
+theme(t0||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+$('#th').onclick=()=>theme(R.dataset.theme=='dark'?'light':'dark',1);
+let arm=0;$('#rs').onclick=function(){if(!arm){arm=1;this.classList.add('arm');toast('もう一度タップで全データを消去','warning');setTimeout(()=>{arm=0;this.classList.remove('arm')},3000);return}
+arm=0;this.classList.remove('arm');S=fresh();C=calc();seen={};ready=false;hist=[];sel=null;ui();ready=true;save()};
+/* ---- メインループ ---- */
+let last=performance.now(),acc=0;
+function loop(t){const dt=Math.min(1,(t-last)/1e3);last=t;S.time+=dt;gain(C.cps*dt);acc+=dt;if(acc>.2){acc=0;ui()}draw();requestAnimationFrame(loop)}
+setInterval(()=>{hist.push(inc);inc=0;if(hist.length>60)hist.shift();chart()},1000);
+setInterval(save,5000);addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+ui();ready=true;requestAnimationFrame(loop);
+</script>
+</body>
+</html>
