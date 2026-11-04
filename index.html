@@ -789,6 +789,7 @@
             user-select: none;
         }
         .site-count[hidden] { display: none; }
+        .search-box:not(.open) .site-count { display: none; } /* 検索窓を開いたときだけ表示 */
         .site-count .material-symbols-outlined { font-size: 16px; }
         .site-count .sc-label { color: #70757a; }
         @media (max-width: 520px) { .site-count .sc-label { display: none; } }
