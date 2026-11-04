@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>詠唱の魔導士 ― 声で撃つ魔法</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#07050f;--fg:#f1ebff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07050f;--fg:#f1ebff}}
+:root[data-theme="dark"]{--bg:#07050f;--fg:#f1ebff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--fg);font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;-webkit-user-select:none;user-select:none}
+input{-webkit-user-select:text;user-select:text}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#hud>*{position:fixed;pointer-events:none}
+#top{left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));display:flex;justify-content:space-between;align-items:center;gap:14px;letter-spacing:.1em;text-shadow:0 0 8px #000}
+.bar{flex:0 1 260px;height:12px;border:1px solid #fff7;border-radius:8px;background:#0009;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff4d6d,#ffa66a);transition:width .25s}
+#red{inset:0;background:radial-gradient(transparent 35%,#ff0030cc);opacity:0;transition:opacity .45s}
+#pop{left:0;right:0;top:26%;text-align:center;font-size:clamp(28px,7vw,64px);font-weight:700;letter-spacing:.15em;opacity:0;text-shadow:0 0 18px currentColor,0 0 44px currentColor}
+#pop.on{animation:pop 1s ease-out}
+@keyframes pop{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.08)}100%{opacity:0;transform:scale(1)}}
+.dn{position:fixed;transform:translate(-50%,-50%);font-weight:700;font-size:20px;color:#fff;text-shadow:0 0 8px #a58cff;animation:rise .9s ease-out forwards;pointer-events:none}
+.dn.w{font-size:28px;color:#ffd24a}
+@keyframes rise{to{transform:translate(-50%,-190%);opacity:0}}
+#hear{left:50%;transform:translateX(-50%);bottom:calc(104px + env(safe-area-inset-bottom,0px));width:min(380px,86vw);text-align:center;font-size:15px;color:#d6ccff;text-shadow:0 0 8px #000;pointer-events:auto!important}
+#lv{height:5px;background:#fff2;border-radius:3px;overflow:hidden;margin-bottom:6px}
+#lv i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fd8ff,#ff6a1a)}
+#tx{min-height:1.5em}
+#typ{margin-top:4px;width:100%;box-sizing:border-box;padding:6px 10px;border-radius:14px;border:1px solid #fff4;background:#0008;color:#fff;font:inherit;font-size:13px;text-align:center}
+#spells{left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;pointer-events:auto!important}
+#spells button{position:relative;overflow:hidden;width:min(18vw,112px);padding:8px 2px 6px;border:1px solid var(--c);border-radius:10px;background:#120c24d9;color:#fff;font:inherit;cursor:pointer;box-shadow:0 0 12px var(--c)}
+#spells b{display:block;font-size:14px;color:var(--c)}
+#spells small{display:block;font-size:10px;opacity:.7}
+#spells em{position:absolute;top:1px;right:5px;font-size:10px;opacity:.6;font-style:normal}
+#spells u{position:absolute;left:0;right:0;bottom:0;height:0;background:#000c}
+#talk{left:50%;transform:translateX(-50%);top:calc(48px + env(safe-area-inset-top,0px));width:min(620px,92vw);box-sizing:border-box;padding:10px 18px 12px;border:1px solid #cdb8ff66;border-radius:12px;background:linear-gradient(180deg,#1a1035ea,#0b0618ea);box-shadow:0 0 28px #6a4dff55;line-height:1.8;font-size:clamp(14px,3.8vw,17px);opacity:0;transition:opacity .4s;pointer-events:auto!important;cursor:pointer}
+#talk.on{opacity:1}
+#sv{top:calc(30px + env(safe-area-inset-top,0px));right:14px;font-size:13px;color:#bfe8ff;opacity:0;text-shadow:0 0 8px #000}
+#sv.on{animation:sv 2.2s ease-out}
+@keyframes sv{0%{opacity:0}10%,80%{opacity:1}100%{opacity:0}}
+#talk b{display:block;font-size:12px;color:var(--sc,#b48cff)}
+#start,#over{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;box-sizing:border-box;background:radial-gradient(#150c2e88,#02010add)}
+#over{display:none}
+.card{max-width:660px}
+h1{font-size:clamp(34px,8vw,72px);margin:0 0 8px;letter-spacing:.2em;background:linear-gradient(180deg,#fff,#b48cff 60%,#6a4dff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px #8a5cff)}
+.card p{margin:.5em 0;line-height:1.8}
+.sp{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;margin:14px 0;font-size:14px}
+.sp span{color:var(--c)}
+.btn{margin:6px;padding:12px 26px;font:inherit;font-size:17px;color:#fff;background:linear-gradient(180deg,#7a4dff,#4b2cc4);border:1px solid #cdb8ff;border-radius:30px;cursor:pointer;box-shadow:0 0 22px #7a4dff}
+.btn.s{background:#ffffff18;box-shadow:none;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#cr{position:fixed;inset:0;z-index:6;display:none;text-align:center;padding:16px;box-sizing:border-box;background:radial-gradient(#150c2ef2,#02010af8);overflow:auto}
+#cr .card{margin:auto}
+#crt{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+#crt button{padding:6px 10px;border-radius:8px;border:1px solid var(--c);background:#120c24d9;color:#fff;font:inherit;font-size:13px;cursor:pointer}
+#crt button.on{background:var(--c);color:#000}
+.fm{display:grid;gap:8px;text-align:left;max-width:460px;margin:12px auto;font-size:14px}
+.fm label{display:grid;grid-template-columns:9em 1fr;align-items:center;gap:8px}
+.fm input,.fm select{box-sizing:border-box;width:100%;padding:6px 8px;border-radius:8px;border:1px solid #fff4;background:#000a;color:#fff;font:inherit}
+.fm input[type=range]{padding:0}
+</style></head><body>
+<div id="hud">
+<div id="top"><div class="bar"><i id="hp"></i></div><div>第<b id="wv">1</b>波　得点<b id="sc">0</b></div></div>
+<div id="red"></div><div id="pop"></div><div id="talk"></div><div id="sv"></div>
+<div id="hear"><div id="lv"><i></i></div><div id="tx"></div><input id="typ" placeholder="マイクなしならここに呪文を入力 → Enter" autocomplete="off"></div>
+<div id="spells"></div>
+</div>
+<div id="start"><div class="card">
+<h1>詠唱の魔導士</h1>
+<p style="font-size:15px;opacity:.9">千年の封印が、いま緩む。<br>声を喰らう「沈黙の王」を、あなたの声でもう一度闇へ還せ。</p><p>マイクに向かって<b>本当に呪文を唱えて</b>撃て。声が大きいほど威力アップ。</p>
+<div class="sp" id="sl"></div>
+<p style="font-size:13px;opacity:.85">赤い敵にはサンダー、青い敵にはファイア、紫の敵にはアイスが2倍効く。<br>「燃えろ、ファイア！」のように文の中に混ぜてもOK。</p>
+<p id="rcd" style="font-size:13px;opacity:.85"></p><button class="btn" id="ct" style="display:none"></button><button class="btn" id="go">マイクを許可して始める</button><button class="btn s" id="cm"></button><button class="btn s" id="md">モード：物語</button><button class="btn s" id="go2">マイクなしで遊ぶ</button>
+</div></div>
+<div id="cr"><div class="card"><h1>魔法工房</h1>
+<p style="font-size:13px;opacity:.85">5つのスロットに自分だけの魔法を設計して、そのままエンドレスへ出撃。<br>言葉はひらがな・カタカナ推奨。複数は「,」で区切る。言葉が重ならないように。</p>
+<div id="crt"></div>
+<div class="fm">
+<label><span>魔法の名前</span><input id="cn" maxlength="12"></label>
+<label><span>唱える言葉</span><input id="cw" maxlength="30"></label>
+<label><span>属性</span><select id="ce"><option value="fire">炎（火球）</option><option value="ice">氷（氷の矢・凍結）</option><option value="thunder">雷（連鎖）</option><option value="meteor">隕石（全体爆発）</option><option value="heal">癒し（HP回復）</option></select></label>
+<label><span>強さ <b id="pv"></b></span><input id="cp" type="range" min="5" max="300" step="5"></label>
+<label><span>クールタイム <b id="cv"></b>秒</span><input id="cc" type="range" min="3" max="300"></label>
+</div>
+<p id="crm" style="color:#ffd24a;min-height:1.4em;font-size:13px"></p>
+<button class="btn" id="cgo">この魔法で出撃</button><button class="btn s" id="crs">標準に戻す</button><button class="btn s" id="crb">保存してもどる</button>
+</div></div>
+<div id="over"><div class="card"><h1 id="oh">力尽きた…</h1><p id="res"></p><p id="nr" style="color:#ffd24a"></p><button class="btn" id="ld" style="display:none">セーブ地点から再開</button><button class="btn" id="en" style="display:none">エンドレスで続ける</button><button class="btn s" id="tt">タイトルへ</button><button class="btn" id="re">もう一度</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+"use strict";
+const $=i=>document.getElementById(i),rnd=(a,b)=>a+Math.random()*(b-a),V=(x,y,z)=>new THREE.Vector3(x,y,z),hx=c=>'#'+c.toString(16).padStart(6,'0');
+const SP={
+fire:{n:'ファイアボール',k:'ファイア',ds:'炎の弾',re:/ふぁいあ|ふぁいや|ほのお|炎|火球|fire/,c:0xff6a1a,cd:.9,d:30,key:'1'},
+ice:{n:'アイスシャード',k:'アイス',ds:'氷の矢・凍結',re:/あいす|こおり|氷|ふぶき|吹雪|ぶりざ|ice/,c:0x7fd8ff,cd:1.4,d:24,key:'2'},
+thunder:{n:'サンダーボルト',k:'サンダー',ds:'連鎖する雷',re:/さんだ|かみなり|雷|いかづち|らいとにんぐ|thunder/,c:0xd0b8ff,cd:2,d:48,key:'3'},
+meteor:{n:'メテオストライク',k:'メテオ',ds:'全体大爆発',re:/めてお|めてえ|いんせき|隕石|meteor/,c:0xff3b2e,cd:10,d:95,key:'4'},
+heal:{n:'ヒーリング',k:'ヒール',ds:'HP回復',re:/ひーる|ひいる|かいふく|回復|いやし|癒|heal/,c:0x66ff9a,cd:7,d:0,key:'5'}};
+const BEAT={fire:'ice',ice:'thunder',thunder:'fire'};
+const TY=[{hp:55,sp:5.2,s:1,d:12,sc:100},{hp:34,sp:9.5,s:.7,d:9,sc:150},{hp:170,sp:3.2,s:1.9,d:26,sc:300},{b:1,hp:900,sp:1.7,s:3.4,d:18,sc:5000}];
+const cd={fire:0,ice:0,thunder:0,meteor:0,heal:0};
+for(const k in SP){const s=SP[k];const b=document.createElement('button');b.style.setProperty('--c',hx(s.c));b.innerHTML=`<u></u><em>${s.key}</em><b>${s.k}</b><small>${s.ds}</small>`;b.onclick=()=>cast(k,1);$('spells').appendChild(b);s.b=b;
+const sp=document.createElement('span');sp.style.setProperty('--c',hx(s.c));sp.textContent=`「${s.k}」${s.ds}`;$('sl').appendChild(sp)}
+
+/* ---------- renderer / post ---------- */
+const pr=Math.min(devicePixelRatio||1,2);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0x05030c);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x0d0a1f,.016);
+const cam=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,700);cam.rotation.order='YXZ';cam.position.set(0,1.7,0);scene.add(cam);
+let comp,bloom,fp;
+if(THREE.EffectComposer&&THREE.UnrealBloomPass&&THREE.RenderPass&&THREE.ShaderPass){
+const rt=renderer.capabilities.isWebGL2?new THREE.WebGLMultisampleRenderTarget(innerWidth*pr,innerHeight*pr):undefined;
+comp=new THREE.EffectComposer(renderer,rt);comp.setPixelRatio(pr);comp.setSize(innerWidth,innerHeight);
+comp.addPass(new THREE.RenderPass(scene,cam));
+bloom=new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),1,.7,.18);comp.addPass(bloom);
+fp=new THREE.ShaderPass({uniforms:{tDiffuse:{value:null},t:{value:0}},
+vertexShader:`varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+fragmentShader:`uniform sampler2D tDiffuse;uniform float t;varying vec2 v;
+float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+t)*43758.5453);}
+void main(){vec2 d=v-.5;float r=dot(d,d);
+vec3 c=vec3(texture2D(tDiffuse,v+d*r*.02).r,texture2D(tDiffuse,v).g,texture2D(tDiffuse,v-d*r*.02).b);
+c*=1.2;c=(c*(2.51*c+.03))/(c*(2.43*c+.59)+.14);c=pow(c,vec3(.62));
+c*=1.-smoothstep(.2,.55,r)*.8;c+=(h(v*800.)-.5)*.03;gl_FragColor=vec4(c,1.);}`});
+comp.addPass(fp);
+}else{renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding}
+
+/* ---------- textures ---------- */
+const glow=new THREE.CanvasTexture((()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,'rgba(255,255,255,.5)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,128,128);return c})());
+const spr=(col,s,o=1)=>{const m=new THREE.Sprite(new THREE.SpriteMaterial({map:glow,color:col,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:o,fog:false}));m.scale.set(s,s,1);return m};
+const circ=(()=>{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');g.translate(256,256);g.strokeStyle='#fff';g.fillStyle='#fff';
+const R=(r,w)=>{g.lineWidth=w;g.beginPath();g.arc(0,0,r,0,6.283);g.stroke()};R(250,7);R(238,2);R(190,4);R(130,3);R(60,3);
+g.lineWidth=3;for(let k=0;k<2;k++){g.beginPath();for(let i=0;i<=3;i++){const a=k*1.0472+i*2.0944-1.5708;g.lineTo(Math.cos(a)*190,Math.sin(a)*190)}g.stroke()}
+for(let i=0;i<72;i++){const a=i/72*6.283,l=i%6?8:18;g.lineWidth=2;g.beginPath();g.moveTo(Math.cos(a)*238,Math.sin(a)*238);g.lineTo(Math.cos(a)*(238-l),Math.sin(a)*(238-l));g.stroke()}
+for(let i=0;i<12;i++){const a=i/12*6.283;g.lineWidth=3;g.beginPath();g.arc(Math.cos(a)*160,Math.sin(a)*160,10,a,a+3.5);g.stroke();g.beginPath();g.arc(Math.cos(a)*100,Math.sin(a)*100,4,0,6.283);g.fill()}
+return new THREE.CanvasTexture(c)})();
+function mkStone(rx,ry){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#4b4763';g.fillRect(0,0,256,256);
+for(let i=0;i<3000;i++){const v=Math.random()*50|0;g.fillStyle=`rgba(${v+50},${v+46},${v+85},.4)`;g.fillRect(Math.random()*256,Math.random()*256,rnd(1,6),rnd(1,6))}
+g.strokeStyle='rgba(8,6,20,.8)';g.lineWidth=3;g.beginPath();for(let i=0;i<=256;i+=64){g.moveTo(i,0);g.lineTo(i,256);g.moveTo(0,i);g.lineTo(256,i)}g.stroke();
+const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.anisotropy=8;return t}
+
+/* ---------- world ---------- */
+const skyU={fl:{value:0}};
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(400,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:skyU,
+vertexShader:`varying vec3 p;void main(){p=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+fragmentShader:`varying vec3 p;uniform float fl;void main(){float h=clamp(p.y,0.,1.);vec3 c=mix(vec3(.10,.06,.20),vec3(.01,.01,.06),pow(h,.5));c+=vec3(.25,.12,.30)*pow(1.-h,6.);gl_FragColor=vec4(c+fl*vec3(.5,.45,.8),1.);}`})));
+{const n=1800,p=new Float32Array(n*3),c=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*6.283,v=Math.acos(Math.random()*.96+.04);p.set([Math.cos(a)*Math.sin(v)*380,Math.cos(v)*380,Math.sin(a)*Math.sin(v)*380],i*3);const t=rnd(.6,1);c.set([t,t*rnd(.8,1),1],i*3)}
+const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
+scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:2.2,sizeAttenuation:false,vertexColors:true,fog:false,transparent:true,depthWrite:false})))}
+const moon=new THREE.Mesh(new THREE.SphereGeometry(16,32,16),new THREE.MeshBasicMaterial({color:0xdfe6ff,fog:false}));moon.position.set(-130,150,-300);scene.add(moon);
+const mg=spr(0x8fa4ff,150,.55);mg.position.copy(moon.position);scene.add(mg);
+
+scene.add(new THREE.HemisphereLight(0x7a64c8,0x1a1230,.9));
+const moonL=new THREE.DirectionalLight(0xa8bcff,1.1);moonL.position.set(-30,70,-55);moonL.target.position.set(0,0,-28);scene.add(moonL.target);
+moonL.castShadow=true;moonL.shadow.mapSize.set(2048,2048);Object.assign(moonL.shadow.camera,{left:-60,right:60,top:60,bottom:-60,near:1,far:200});moonL.shadow.camera.updateProjectionMatrix();moonL.shadow.bias=-.0005;scene.add(moonL);
+const plt=new THREE.PointLight(0x9a6bff,1.5,24);plt.position.set(.5,2.2,-1.5);scene.add(plt);
+const fxl=new THREE.PointLight(0xffffff,0,60);scene.add(fxl);
+const ptl=new THREE.PointLight(0x8a4cff,3,80);ptl.position.set(0,7,-52);scene.add(ptl);
+
+const gnd=new THREE.Mesh(new THREE.CircleGeometry(200,64),new THREE.MeshStandardMaterial({map:mkStone(40,40),color:0x9890b8,roughness:.9,metalness:.05}));gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);
+const mc=new THREE.Mesh(new THREE.PlaneGeometry(46,46),new THREE.MeshBasicMaterial({map:circ,color:0x9a6bff,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));mc.rotation.x=-Math.PI/2;mc.position.y=.04;scene.add(mc);
+
+{const M=new THREE.MeshStandardMaterial({map:mkStone(1,3),color:0x8e86a8,roughness:.95,flatShading:true});
+const add=(x,z,h,r,br)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r*.85,r,h,8),M);m.position.set(x,h/2,z);m.castShadow=m.receiveShadow=true;
+if(br)m.rotation.z=rnd(-.08,.08);else{const c=new THREE.Mesh(new THREE.BoxGeometry(r*2.6,.6,r*2.6),M);c.position.set(x,h+.3,z);c.castShadow=true;scene.add(c)}scene.add(m)};
+for(let i=0;i<9;i++){const z=-8-i*6;add(-9,z,rnd(7,11),.9,i>5&&Math.random()<.6);add(9,z,rnd(7,11),.9,Math.random()<.4)}
+for(let i=0;i<40;i++){const a=rnd(Math.PI*1.05,Math.PI*1.95),r=rnd(12,60),s=rnd(.4,1.6),m=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),M);m.position.set(Math.cos(a)*r,s*.4,Math.sin(a)*r);m.rotation.set(rnd(0,3),rnd(0,3),rnd(0,3));m.castShadow=m.receiveShadow=true;scene.add(m)}
+for(let i=0;i<14;i++){const x=rnd(-32,32);if(Math.abs(x)<6)continue;const col=[0x6a9bff,0x9a6bff,0x4fe0ff][i%3],g=new THREE.Group(),mt=new THREE.MeshBasicMaterial({color:col});
+for(let j=0;j<3;j++){const c=new THREE.Mesh(new THREE.OctahedronGeometry(1),mt);c.scale.set(.5,rnd(1.4,2.6),.5);c.position.set(rnd(-.8,.8),c.scale.y*.8,rnd(-.8,.8));c.rotation.set(rnd(-.3,.3),rnd(0,3),rnd(-.3,.3));g.add(c)}
+const s=spr(col,7,.5);s.position.y=1.2;g.add(s);g.position.set(x,0,rnd(-52,-8));scene.add(g)}}
+
+const pg=new THREE.Group();pg.position.set(0,7,-58);scene.add(pg);
+pg.add(new THREE.Mesh(new THREE.TorusGeometry(7,.6,12,64),new THREE.MeshStandardMaterial({color:0x2a1a4a,emissive:0x6a2cff,emissiveIntensity:1.2,roughness:.4})));
+const pdm=()=>new THREE.MeshBasicMaterial({map:circ,color:0x9a5cff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const pd1=new THREE.Mesh(new THREE.CircleGeometry(6.6,48),pdm()),pd2=new THREE.Mesh(new THREE.CircleGeometry(4.2,48),pdm());pd2.position.z=.1;pg.add(pd1,pd2,spr(0x7a3cff,44,.7));
+
+/* ---------- staff ---------- */
+const staff=new THREE.Group();cam.add(staff);staff.position.set(.42,-.46,-.9);staff.rotation.set(.25,0,-.22);
+const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.026,1.5,8),new THREE.MeshStandardMaterial({color:0x4a3624,roughness:.7}));shaft.position.y=-.1;
+const rg0=new THREE.Mesh(new THREE.TorusGeometry(.07,.012,8,24),new THREE.MeshStandardMaterial({color:0xd8b45a,metalness:.9,roughness:.25}));rg0.position.y=.68;rg0.rotation.x=1.2;
+const orbM=new THREE.Mesh(new THREE.SphereGeometry(.055,16,12),new THREE.MeshBasicMaterial({color:0x9a6bff}));orbM.position.y=.68;
+const orbG=spr(0x9a6bff,.7,.9);orbM.add(orbG);staff.add(shaft,rg0,orbM);
+
+/* ---------- particles ---------- */
+const NP=3000,pp=new Float32Array(NP*3),pc=new Float32Array(NP*3),ps=new Float32Array(NP),pa=new Float32Array(NP),pv=new Float32Array(NP*3),PL=new Float32Array(NP),PM=new Float32Array(NP),PG=new Float32Array(NP);let pi=0;
+const pgeo=new THREE.BufferGeometry();
+pgeo.setAttribute('position',new THREE.BufferAttribute(pp,3));pgeo.setAttribute('color',new THREE.BufferAttribute(pc,3));pgeo.setAttribute('size',new THREE.BufferAttribute(ps,1));pgeo.setAttribute('alpha',new THREE.BufferAttribute(pa,1));
+const pmat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{sc:{value:renderer.domElement.height*.7}},
+vertexShader:`attribute float size;attribute float alpha;attribute vec3 color;varying vec3 c;varying float a;uniform float sc;void main(){c=color;a=alpha;vec4 m=modelViewMatrix*vec4(position,1.);gl_PointSize=size*sc/-m.z;gl_Position=projectionMatrix*m;}`,
+fragmentShader:`varying vec3 c;varying float a;void main(){float k=smoothstep(.5,0.,length(gl_PointCoord-.5));gl_FragColor=vec4(c*k*a,k*a);}`});
+const pts=new THREE.Points(pgeo,pmat);pts.frustumCulled=false;scene.add(pts);
+function emit(p,n,col,sp,life,size,grav=0){const c=new THREE.Color(col);for(let k=0;k<n;k++){const i=pi=(pi+1)%NP,j=i*3,th=rnd(0,6.283),ph=Math.acos(rnd(-1,1)),s=sp*rnd(.3,1),t=rnd(.6,1.2);
+pp[j]=p.x;pp[j+1]=p.y;pp[j+2]=p.z;pv[j]=Math.sin(ph)*Math.cos(th)*s;pv[j+1]=Math.cos(ph)*s;pv[j+2]=Math.sin(ph)*Math.sin(th)*s;
+pc[j]=c.r*t;pc[j+1]=c.g*t;pc[j+2]=c.b*t;PL[i]=PM[i]=life*rnd(.6,1.2);ps[i]=size*rnd(.6,1.3);PG[i]=grav}}
+function upP(dt){for(let i=0;i<NP;i++){if(PL[i]<=0)continue;PL[i]-=dt;const j=i*3;if(PL[i]<=0){pa[i]=0;ps[i]=0;continue}
+const d=Math.max(0,1-1.2*dt);pv[j]*=d;pv[j+1]=pv[j+1]*d-PG[i]*dt;pv[j+2]*=d;pp[j]+=pv[j]*dt;pp[j+1]+=pv[j+1]*dt;pp[j+2]+=pv[j+2]*dt;
+if(pp[j+1]<.05&&PG[i]>0){pp[j+1]=.05;pv[j+1]*=-.3}pa[i]=Math.min(1,(PM[i]-PL[i])*8)*(PL[i]/PM[i])}
+for(const k of['position','color','size','alpha'])pgeo.attributes[k].needsUpdate=true}
+
+/* ---------- audio ---------- */
+let ac;const AC=window.AudioContext||window.webkitAudioContext;
+function noise(d,f,g,t){if(!ac)return;const n=ac.sampleRate*d|0,b=ac.createBuffer(1,n,ac.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),gn=ac.createGain();s.buffer=b;fl.type=t||'lowpass';fl.frequency.value=f;gn.gain.value=g;s.connect(fl);fl.connect(gn);gn.connect(ac.destination);s.start()}
+function tone(f1,f2,d,g,t){if(!ac)return;const o=ac.createOscillator(),gn=ac.createGain(),n=ac.currentTime;o.type=t||'sine';o.frequency.setValueAtTime(f1,n);o.frequency.exponentialRampToValueAtTime(f2,n+d);gn.gain.setValueAtTime(g,n);gn.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(gn);gn.connect(ac.destination);o.start();o.stop(n+d)}
+function sfx(k,s=1){const m=Math.min(s,2);({fire:()=>{noise(.5,1500,.35);tone(400,90,.4,.18,'sawtooth')},ice:()=>{tone(2000,700,.35,.12,'triangle');noise(.3,7000,.12,'highpass')},thunder:()=>{noise(.9,3500,.5);tone(110,35,.8,.4,'sawtooth')},meteor:()=>{tone(70,25,1.8,.5);noise(1.2,600,.45)},heal:()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,f*1.01,.5,.12),i*90)),boom:()=>{noise(.3+.25*s,800,.3*m);tone(140,40,.35,.25*m)}})[k]()}
+
+/* ---------- voice ---------- */
+let rec,an,vb,vol=0,peak=0,micFail=false,micOn=false,seen={};
+const say=t=>{$('tx').textContent=t};
+const norm=t=>t.toLowerCase().replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96)).replace(/[\s、。,.!！?？]/g,'');
+const RES=Object.keys(SP).map(k=>[k,new RegExp(SP[k].re.source,'g')]);
+function scan(t){t=norm(t);if(thx&&/ありがと|さんきゅ|thank/.test(t)){thx=0;setTimeout(trueEnd,0)}const r=[];for(const[k,re]of RES){re.lastIndex=0;let m;while((m=re.exec(t)))r.push([m.index,k])}return r.sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+const gain=()=>an?0.8+Math.min(1,peak*2.4)*.9:1;
+function startRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R)return false;
+rec=new R();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;
+rec.onstart=()=>{seen={}};
+rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];let best=[];for(let a=0;a<r.length;a++){const m=scan(r[a].transcript);if(m.length>best.length)best=m}
+say('🎤 '+r[0].transcript);const s=seen[i]||0;for(let j=s;j<best.length;j++)cast(best[j],gain());seen[i]=Math.max(s,best.length)}};
+rec.onerror=e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){micFail=true;say('⚠ マイクが使えません。下の入力欄・ボタン・数字キー1〜5で撃てます（公開リンクを新しいタブで開くと通ることがあります）')}};
+rec.onend=()=>{if(micOn&&!micFail)setTimeout(()=>{try{rec.start()}catch(_){}},250)};
+try{rec.start();say('🎤 聞き取り中… 呪文を唱えよ！');return true}catch(_){return false}}
+async function startVol(){try{const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true}});const src=ac.createMediaStreamSource(st);an=ac.createAnalyser();an.fftSize=512;vb=new Uint8Array(512);src.connect(an)}catch(_){}}
+
+/* ---------- game ---------- */
+const enemies=[],pj=[],rg=[],bolts=[],sig=[];
+let state=0,hp=100,score=0,wave=0,toSpawn=0,spawnT=0,gap=1,T=0,shk=0,kick=0,flashSky=0,lastCol=0x9a6bff,mx=0,my=0;
+const cc=new THREE.Color(0x9a6bff),ct=new THREE.Color();
+const near=p=>{let b=null,d=1e9;for(const e of enemies){const k=e.g.position.distanceTo(p);if(k<d){d=k;b=e}}return b};
+const shake=v=>{shk=Math.max(shk,v)},fl=(p,c,i)=>{fxl.position.copy(p);fxl.color.setHex(c);fxl.intensity=i};
+function pop(t,c){const p=$('pop');p.textContent=t;p.style.color=c;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')}
+function dmgNum(p,t,w){const v=p.clone().project(cam);if(v.z>1)return;const d=document.createElement('div');d.className='dn'+(w?' w':'');d.textContent=t;d.style.left=(v.x*.5+.5)*innerWidth+'px';d.style.top=(-v.y*.5+.5)*innerHeight+'px';$('hud').appendChild(d);setTimeout(()=>d.remove(),900)}
+function ring(p,c,r,dur){const m=new THREE.Mesh(new THREE.RingGeometry(.9,1,48),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.copy(p);scene.add(m);rg.push({m,t:0,dur,r})}
+function boom(p,c,s){emit(p,Math.round(45*s),c,11*s,.9,.9,3);emit(p,Math.round(16*s),0xffffff,7*s,.5,.5);ring(p.clone(),c,3.5*s,.5);fl(p,c,35*s);shake(.2*s);sfx('boom',s)}
+function sigil(c){for(const d of[1,-1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:circ,color:c,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));m.position.set(0,.05,-3.4);cam.add(m);sig.push({m,t:0,d})}}
+function bolt(a,b,r,life){const pts=[a.clone()],d=b.clone().sub(a);for(let i=1;i<14;i++){const t=i/14,j=(1-t)*Math.min(8,d.length()*.12)+.2;pts.push(a.clone().addScaledVector(d,t).add(V(rnd(-j,j),rnd(-j,j)*.3,rnd(-j,j))))}pts.push(b.clone());
+const cv=new THREE.CatmullRomCurve3(pts),g=new THREE.Group();
+g.add(new THREE.Mesh(new THREE.TubeGeometry(cv,60,r,5),new THREE.MeshBasicMaterial({color:0xffffff,fog:false})),new THREE.Mesh(new THREE.TubeGeometry(cv,60,r*4,6),new THREE.MeshBasicMaterial({color:0xa27bff,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false,fog:false})));scene.add(g);bolts.push({g,t:0,life})}
+function hurt(e,d,el){if(e.dead)return;let m=1;if(BEAT[el]===e.el)m=2;else if(el===e.el)m=.5;d=Math.round(d*m);e.hp-=d;e.ht=.15;if(el==='ice')e.fz=2.5;if(e.boss&&!e.half&&e.hp<e.max*.5){e.half=1;tell('h')}
+const p=e.g.position.clone();p.y+=2.2*e.g.scale.x;dmgNum(p,(m>1?'弱点 ':'')+d,m>1);emit(e.g.position,8,SP[el].c,6,.5,.35,5);if(e.hp<=0)kill(e)}
+function rm(e){e.dead=true;scene.remove(e.g);const i=enemies.indexOf(e);if(i>=0)enemies.splice(i,1)}
+function kill(e){score+=e.sc;boom(e.g.position.clone(),SP[e.el].c,e.boss?3:1.3);emit(e.g.position,25,0x6a3cff,7,1.2,.6);rm(e);if(e.boss){for(const x of enemies.slice())kill(x);for(const q of pj)scene.remove(q.m);pj.length=0;if(endless){hp=Math.min(100,hp+40);if(wave>=15&&!tru){thx=1;say('「ありがとう」と声に出して伝えよ（入力でも可）');tell('t')}else tell('d')}else{state=3;tell('e')}}}
+function lightning(tg,d){const p=tg?tg.g.position.clone():V(0,1.5,-24);bolt(V(p.x+rnd(-8,8),120,p.z+rnd(-8,8)),p,.2,.45);flashSky=1;boom(p,0xc7a6ff,1.2);if(tg)hurt(tg,d,'thunder');
+let from=p,c=0;for(const e of enemies.slice()){if(e===tg||e.dead||c>=2)continue;if(e.g.position.distanceTo(p)<16){bolt(from.clone(),e.g.position.clone(),.09,.4);boom(e.g.position.clone(),0xc7a6ff,.6);hurt(e,d*.5,'thunder');from=e.g.position.clone();c++}}}
+function shot(o){o.t=0;o.side=V(rnd(-1,1),rnd(-.4,1),rnd(-1,1)).normalize();o.end=o.end||(o.tg?o.tg.g.position.clone():V(0,2,-30));o.m.position.copy(o.a);scene.add(o.m);pj.push(o)}
+function cast(id,pw=1){if(state!==1||cd[id]>0)return;const s=SP[id];P.rec.ca++;cd[id]=s.cd;lastCol=s.c;kick=1;id=s.fx||id;
+pop(s.n+(pw>1.5?'！！':pw>1.2?'！':''),hx(s.c));sigil(s.c);sfx(id);
+const o=V(0,0,0);orbM.getWorldPosition(o);const tg=near(cam.position),dd=s.d*pw,far=tg?tg.g.position.distanceTo(o):30;
+if(id==='fire'){const m=new THREE.Group();m.add(new THREE.Mesh(new THREE.SphereGeometry(.3,12,10),new THREE.MeshBasicMaterial({color:0xfff0c0})),spr(0xff6a1a,3.6,.9));shot({k:id,m,a:o,tg,dur:Math.max(.25,far/48),amp:0,d:dd})}
+else if(id==='ice'){for(let i=0;i<5;i++){const g=new THREE.ConeGeometry(.16,1.3,6);g.rotateX(Math.PI/2);const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xc8f2ff}));m.add(spr(0x5fc8ff,1.8,.8));shot({k:id,m,a:o.clone(),tg,dur:.4+i*.05+far/160,amp:3.5,d:dd/5})}}
+else if(id==='thunder')lightning(tg,dd);
+else if(id==='meteor'){const e=tg?tg.g.position.clone():V(0,0,-28),m=new THREE.Group();m.add(new THREE.Mesh(new THREE.IcosahedronGeometry(2.2,1),new THREE.MeshStandardMaterial({color:0x2a1a14,emissive:0xff4a10,emissiveIntensity:1.6,flatShading:true})),spr(0xff7a2a,16,.9));shot({k:id,m,a:e.clone().add(V(-30,95,-40)),end:e,tg:null,dur:1.2,amp:0,d:dd})}
+else{hp=Math.min(100,hp+(s.d||32)*Math.min(pw,1.4));for(let i=0;i<70;i++){const a=rnd(0,6.283),r=rnd(1,3.5);emit(V(Math.cos(a)*r,rnd(0,.5),Math.sin(a)*r-1),1,0x66ff9a,.3,1.6,.3,-3)}ring(V(0,.1,-1),0x66ff9a,5,.9);fl(V(0,2,-1),0x66ff9a,10)}}
+function impact(p){const pos=p.m.position.clone();
+if(p.k==='fire'){boom(pos,0xff6a1a,1);if(p.tg)hurt(p.tg,p.d,'fire');for(const e of enemies.slice())if(e!==p.tg&&e.g.position.distanceTo(pos)<5)hurt(e,p.d*.4,'fire')}
+else if(p.k==='ice'){emit(pos,22,0x9fe4ff,8,.8,.4,4);emit(pos,6,0xffffff,5,.5,.5);fl(pos,0x7fd8ff,14);shake(.12);if(p.tg)hurt(p.tg,p.d,'ice')}
+else{boom(pos,0xff4a1a,2.6);ring(pos.clone().setY(.2),0xffd080,8,.7);flashSky=.5;shake(1.2);for(const e of enemies.slice()){const d=Math.hypot(e.g.position.x-pos.x,e.g.position.z-pos.z);if(d<11)hurt(e,p.d*(1.15-d/11),'fire')}}}
+function spawn(b){const r=Math.random(),t=b?TY[3]:wave>=2&&r<.28?TY[1]:wave>=3&&r>.86?TY[2]:TY[0],el=b?'fire':EL[Math.random()*3|0],col=SP[el].c,mat=o=>new THREE.MeshBasicMaterial(o),g=new THREE.Group();
+const body=new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshStandardMaterial({color:0x1a1426,roughness:.4,metalness:.5,flatShading:true,emissive:col,emissiveIntensity:.3}));body.castShadow=true;
+const core=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12),mat({color:col})),ring=new THREE.Mesh(new THREE.TorusGeometry(1.55,.05,8,48),mat({color:col}));ring.rotation.x=1.2;
+const orb=new THREE.Group();for(let i=0;i<4;i++){const s=new THREE.Mesh(new THREE.OctahedronGeometry(.24),mat({color:col})),a=i*1.571;s.position.set(Math.cos(a)*2,Math.sin(a*2)*.3,Math.sin(a)*2);orb.add(s)}
+const bar=new THREE.Group(),bg=new THREE.Mesh(new THREE.PlaneGeometry(2,.18),mat({color:0,transparent:true,opacity:.6,depthTest:false})),f=new THREE.Mesh(new THREE.PlaneGeometry(2,.18),mat({color:col,depthTest:false}));
+f.position.z=.01;bg.renderOrder=10;f.renderOrder=11;bar.add(bg,f);bar.position.y=2.9;
+const halo=spr(col,6,.7);g.add(body,core,ring,orb,halo,bar);g.scale.setScalar(t.s);const mx=t.b?t.hp*(1+Math.max(0,wave-5)*.25):t.hp*(1+(wave-1)*.2);g.position.set(t.b?0:rnd(-18,18),t.b?5:2.2*t.s+1,rnd(-54,-46));scene.add(g);
+enemies.push({g,body,core,ring,orb,bar,fl:f,hp:mx,max:mx,sp:t.sp*(1+wave*.03),el,d:t.d,sc:t.sc,fz:0,ht:0,ph:rnd(0,6.28),y0:g.position.y,dead:false,boss:!!t.b,rot:7,atk:1,mats:[core.material,ring.material,f.material,halo.material,...orb.children.map(s=>s.material)]});emit(g.position,40,0x8a4cff,8,1,.7)}
+const EL=['fire','ice','thunder'],SQ=[];let told=0,sqT=0,dawn=0;
+const SPK={n:['',0xd6ccff],r:['老賢者ロウ',0x9fd8ff],m:['あなた',0xffe08a],k:['沈黙の王',0xc86bff]};
+const ST={
+0:['n|千年前、世界から「声」を喰らう闇があった。その名は、沈黙の王。','n|言霊の民は己の声を鎖とし、王を闇の門の向こうへ封じた。','r|来たか、最後の言霊の末裔よ。わしは封印の番人、ロウじゃ。','r|人々が声を失い、鎖は錆びた。見よ、門から影が溢れ出すぞ！','r|唱えるのじゃ。おぬしの声こそが、剣であり盾じゃ！'],
+1:['r|見事じゃ！ 影は声に怯む。じゃが、これは王の尖兵にすぎん。','r|色を読め。赤には雷、青には炎、紫には氷が効くぞい。'],
+2:['m|声を出すたび、胸の奥が熱くなる……誰かが一緒に唱えているみたいだ。','r|それが言霊の血じゃ。おぬしは、独りではない。'],
+3:['r|巨躯の影が混ざり始めた。王が近づいておる証じゃ。','k|……ウルサイ……。静まれ……すべて、静まれ……。'],
+4:['r|門が開くぞ！ 沈黙の王のお出ましじゃ。','r|腹に力を込めて叫べ。声が大きいほど、鎖は強く輝く！'],
+b:['k|我は静寂。声なき世こそ、安らぎ――。','r|王の属性は揺らぐ。色が変わるたび、呪文を変えるのじゃ！'],
+x:['r|色が変わったぞ！ 弱点を突き直せ！'],
+h:['k|黙れ、黙れ、黙れ――！','r|ひるんだ！ 今じゃ、メテオを唱えよ！'],
+e:['k|……ああ……これが、声……。うるさくて……あたたかい……。','r|終わったのう。門は閉じ、新しい鎖が紡がれた。','r|声は魔法じゃ。人が語らい、笑い、歌う限り、封印は消えぬ。','n|夜が明ける。遠い村から、誰かの歌声が聞こえてきた。']};
+let endless=false,thx=0,tru=0;SPK.e=['残響の王',0xff7ad9];
+Object.assign(ST,{
+w1:['m|あれが影……足がすくむ。でも、声は出る。'],
+w2:['r|素早いのが混ざるぞ。慌てず色を読め！'],
+w3:['r|大物じゃ！ メテオなら一撃かもしれんぞい。','k|……ミツケタ……声ノ……末裔……'],
+w4:['m|王の気配が、すぐそこまで来ている。','r|恐れるな。おぬしの声は千年前の民より強いかもしれんぞ。'],
+5:['r|……おかしいのう。門が、まだ鳴いておる。','r|王の名はノア。千年前、最初に声を失った歌い手じゃ。','r|誰にも届かなかった歌が積もり、「沈黙」になったのじゃよ。','m|なら全部聞く。夜が明けるまで、唱え続ける。'],
+7:['r|影の中に懐かしい声が混ざっておる。ノアの歌の欠片じゃ。'],
+9:['m|倒すたびに、遠くで誰かが歌っている気がする。'],
+12:['r|村の歌声が、少しずつ増えておる。'],
+20:['r|おぬしの声は、もう封印そのものじゃ。無理はするなよ。'],
+30:['r|ここまで来るとは……千年でおぬしだけじゃ。'],
+c:['e|我は残響。語られなかった言葉の、成れの果て……。','r|ただ倒すのではない。聞き届けてやるのじゃ！'],
+d:['e|……届いた……。','r|また一つ、声が還ったのう。'],
+t:['e|……ボクノ……歌……ダレカ……','r|ノアの歌が、ようやく届く時じゃ。一言でいい、伝えてやれ！','r|「ありがとう」と声に出すのじゃ！'],
+z:['m|聞こえたよ、ノア。ありがとう。','k|……ああ。ボクは、ひとりじゃなかったんだ。','n|門の向こうで、少年の歌が静かに響いた。','n|千年続いた夜が、ほどけるように明けていく。']});
+function trueEnd(){if(state!==1)return;tru=1;for(const x of enemies.slice()){x.boss=false;kill(x)}for(const q of pj)scene.remove(q.m);pj.length=0;SQ.length=0;sqT=0;state=3;tell('z')}
+function victory2(){state=4;$('en').style.display='inline-block';P.save={w:wave+1,sc:score,hp:100,en:1,tr:1,ts:Date.now()};endRec(1);$('oh').textContent='真・封印完了';$('res').innerHTML='ノアの歌は、千年の時を越えて届いた。<br>夜が明け、世界に歌声が満ちていく。<br>得点 '+score;$('over').style.display='flex'}
+let DB=null,P,wantLoad=0,pt=0;
+const LS={g(){try{return JSON.parse(localStorage.getItem('vm_p'))}catch(_){return null}},s(v){try{localStorage.setItem('vm_p',JSON.stringify(v))}catch(_){}}};
+const R0={bs:0,bw:0,pl:0,cl:0,tr:0,ca:0};
+const mergeP=(a,b)=>{a=a||{};b=b||{};const rec={};for(const k in R0)rec[k]=Math.max((a.rec||{})[k]||0,(b.rec||{})[k]||0);return{rec,cu:[a.cu,b.cu].filter(Boolean).sort((x,y)=>y.ts-x.ts)[0]||null,save:[a.save,b.save].filter(Boolean).sort((x,y)=>y.ts-x.ts)[0]||null}};
+P=mergeP(LS.g(),null);
+function showRec(){const r=P.rec,s=P.save,ok=s&&s.w>=1,c=$('ct');$('rcd').innerHTML='最高得点 '+r.bs+'　最高到達波 '+r.bw+'　クリア '+r.cl+'回　真エンド '+(r.tr?'達成':'未')+'<br>'+(DB?'☁ アカウントに保存':'💾 この端末に保存');c.style.display=ok?'inline-block':'none';const cb=$('cm'),un=r.cl>=1;cb.disabled=!un;cb.textContent=un?'✦ クリエイトモード':'🔒 クリエイトモード（本編クリアで解放）';if(ok)c.textContent='つづきから（第'+s.w+'波・'+(s.en?'エンドレス':'物語')+'）'}
+function persist(){LS.s(P);showRec();clearTimeout(pt);pt=setTimeout(()=>{if(DB)DB.set(P).catch(()=>{})},500)}
+function toast(t){const e=$('sv');e.textContent=t;e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
+function recUp(){if(cmode)return;const r=P.rec;r.bs=Math.max(r.bs,score);r.bw=Math.max(r.bw,wave)}
+function saveCk(){P.save={w:wave,sc:score,hp:Math.round(hp),en:endless?1:0,cm:cmode,tr:tru,ts:Date.now()};recUp();persist();toast('💾 セーブ：第'+wave+'波')}
+function applySave(){const s=P.save;if(!s||!(s.w>=1))return;endless=!!s.en;wave=s.w-1;score=s.sc;hp=Math.max(40,s.hp);tru=s.tr||0;cmode=s.cm||0;useLoadout();told=1;gap=.8;$('md').textContent='モード：'+(endless?'エンドレス':'物語');toast('💾 第'+s.w+'波から再開')}
+function endRec(win){const r=P.rec,nb=!cmode&&score>r.bs,nw=!cmode&&wave>r.bw;recUp();if(win&&++r.cl===1)setTimeout(()=>{$('nr').textContent+=' ✦ クリエイトモード解放！'},0);if(tru)r.tr=1;$('nr').textContent=(nb?'★最高得点を更新！ ':'')+(nw?'★最高到達波を更新！':'');persist();$('ld').style.display=P.save&&P.save.w>=1?'inline-block':'none'}
+showRec();
+(async()=>{try{if(typeof claude==='undefined')return;const d=await claude.use('db'),u=await claude.use('user');if(!d||!u)return;const ref=d.doc('data/users/'+await u.id()+'/vm'),sn=await ref.get();DB=ref;P=mergeP(P,sn.exists?sn.data():null);LS.s(P);showRec();ref.set(P).catch(()=>{})}catch(_){}})();
+const DEF={};for(const k in SP){const s=SP[k];DEF[k]={n:s.n,k:s.k,ds:s.ds,re:s.re,c:s.c,cd:s.cd,d:s.d}}
+let cs=0,CL=null,cwant=0,cmode=0;
+const EL2={fire:'炎',ice:'氷',thunder:'雷',meteor:'隕石',heal:'癒し'};
+const cuDef=()=>Object.keys(DEF).map(k=>({n:DEF[k].n,w:DEF[k].k,e:k,p:DEF[k].d||32,c:DEF[k].cd}));
+const mkRe=w=>new RegExp(w.split(/[,、，;；]+/).map(x=>norm(x).replace(/[^\p{L}\p{N}]/gu,'')).filter(Boolean).join('|')||'(?!)');
+function applyLoadout(l){const ids=Object.keys(SP);ids.forEach((id,i)=>{const s=SP[id],c=l&&l[i];if(c)Object.assign(s,{n:c.n,k:c.w.split(/[,、，;；]/)[0].trim(),ds:EL2[c.e]+' '+c.p,re:mkRe(c.w),c:DEF[c.e].c,cd:c.c,d:c.p,fx:c.e});else Object.assign(s,DEF[id],{fx:id});s.b.style.setProperty('--c',hx(s.c));s.b.innerHTML='<u></u><em>'+s.key+'</em><b>'+s.k+'</b><small>'+s.ds+'</small>'});RES.length=0;ids.forEach(k=>RES.push([k,new RegExp(SP[k].re.source,'g')]))}
+const useLoadout=()=>applyLoadout(cmode&&P.cu?P.cu.l:null);
+const crV=()=>{$('pv').textContent=$('cp').value;$('cv').textContent=($('cc').value/10).toFixed(1)};
+function crTabs(){const t=$('crt');t.innerHTML='';CL.forEach((c,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'. '+c.n;b.style.setProperty('--c',hx(DEF[c.e].c));if(i===cs)b.className='on';b.onclick=()=>{crSave();cs=i;crTabs();crLoad()};t.appendChild(b)})}
+function crLoad(){const c=CL[cs];$('cn').value=c.n;$('cw').value=c.w;$('ce').value=c.e;$('cp').max=c.e==='heal'?100:300;$('cp').value=c.p;$('cc').value=Math.round(c.c*10);crV()}
+function crSave(){const e=$('ce').value,w=$('cw').value.trim(),bad=norm(w).length<2;$('crm').textContent=bad?'言葉は2文字以上にしてください（標準の言葉に戻しました）':'';CL[cs]={n:$('cn').value.trim()||DEF[e].n,w:bad?DEF[e].k:w,e,p:Math.min(+$('cp').value,e==='heal'?100:300),c:+$('cc').value/10}}
+function crOpen(){CL=JSON.parse(JSON.stringify(P.cu?P.cu.l:cuDef()));cs=0;crTabs();crLoad();$('start').style.display='none';$('cr').style.display='flex'}
+function crClose(go){crSave();P.cu={ts:Date.now(),l:CL};persist();$('cr').style.display='none';if(go){cwant=1;$('go').click()}else $('start').style.display='flex'}
+function toTitle(){for(const e of enemies)scene.remove(e.g);enemies.length=0;for(const p of pj)scene.remove(p.m);pj.length=0;state=0;cmode=0;useLoadout();$('over').style.display='none';$('start').style.display='flex';showRec()}
+$('cp').oninput=$('cc').oninput=crV;$('ce').onchange=()=>{const m=$('ce').value==='heal'?100:300;$('cp').max=m;if(+$('cp').value>m)$('cp').value=m;crV()};
+$('cm').onclick=crOpen;$('cgo').onclick=()=>crClose(1);$('crb').onclick=()=>crClose(0);$('crs').onclick=()=>{CL=cuDef();cs=0;crTabs();crLoad()};$('tt').onclick=toTitle;showRec();
+const tell=k=>{if(cmode)return;for(const s of ST[k]||[])SQ.push(s)},busy=()=>SQ.length>0||sqT>0;
+function storyTick(dt){if(sqT>0)sqT-=dt;if(sqT<=0){if(SQ.length){const s=SQ.shift(),sp=SPK[s[0]],t=s.slice(2),b=$('talk');b.innerHTML=(sp[0]?'<b>'+sp[0]+'</b>':'')+t;b.style.setProperty('--sc',hx(sp[1]));b.classList.add('on');sqT=Math.max(2.8,t.length*.15)}else $('talk').classList.remove('on')}if(state===3&&!busy())tru?victory2():victory()}
+function victory(){state=4;$('en').style.display='inline-block';P.save={w:wave+1,sc:score,hp:100,en:1,tr:tru,ts:Date.now()};endRec(1);$('oh').textContent='封印、完了';$('res').innerHTML='鎖は新たに紡がれ、沈黙の王は闇の彼方へ還った。<br>声は、いまも世界を守っている。<br>得点 '+score;$('over').style.display='flex'}
+$('talk').onclick=()=>{sqT=0};
+function reset(){for(const e of enemies)scene.remove(e.g);enemies.length=0;for(const p of pj)scene.remove(p.m);pj.length=0;hp=100;score=0;wave=0;toSpawn=0;gap=1;told=0;SQ.length=0;sqT=0;thx=0;tru=0;$('talk').classList.remove('on');for(const k in cd)cd[k]=0;state=1;$('over').style.display='none';$('start').style.display='none'}
+function gameOver(){state=2;$('en').style.display='none';endRec(0);$('oh').textContent='力尽きた…';$('res').innerHTML='老賢者「立て……声が途切れぬ限り、鎖はまだ切れておらん」<br>'+`第${wave}波まで到達　得点 ${score}`;$('over').style.display='flex'}
+
+function update(dt){
+mc.rotation.z+=dt*.05;pd1.rotation.z+=dt*.4;pd2.rotation.z-=dt*.7;
+if(Math.random()<dt*30)emit(V(rnd(-30,30),rnd(.3,7),rnd(-55,6)),1,Math.random()<.5?0x8a6cff:0xffb870,.3,8,.16,-.02);
+cc.lerp(ct.setHex(lastCol),Math.min(1,dt*5));orbM.material.color.copy(cc);orbG.material.color.copy(cc);plt.color.copy(cc);mc.material.color.copy(cc);
+kick=Math.max(0,kick-dt*3);plt.intensity=1.2+kick*3+vol*3;orbG.scale.setScalar(.7+vol*1.2+kick*.6);
+staff.position.z=-.9+kick*.12;staff.rotation.x=.25-kick*.3;staff.rotation.z=-.22+Math.sin(T*1.3)*.03;
+if(an){an.getByteTimeDomainData(vb);let m=0;for(let i=0;i<512;i++)m=Math.max(m,Math.abs(vb[i]-128));vol=m/128;peak=Math.max(vol,peak-dt*.4);$('lv').firstChild.style.width=Math.min(100,vol*200)+'%'}
+if(state===0)mx=Math.sin(T*.15)*.4;
+cam.rotation.y+=(-mx*.25-cam.rotation.y)*Math.min(1,dt*3);cam.rotation.x+=(-my*.12-cam.rotation.x)*Math.min(1,dt*3);
+cam.position.set(rnd(-1,1)*shk*.25,1.7+rnd(-1,1)*shk*.25+Math.sin(T*1.2)*.015,rnd(-1,1)*shk*.2);shk*=Math.exp(-5*dt);
+fxl.intensity*=Math.exp(-5*dt);flashSky*=Math.exp(-8*dt);dawn=state>=3?Math.min(.5,dawn+dt*.06):0;skyU.fl.value=flashSky+dawn;
+if(bloom)bloom.strength=1+flashSky*1.5+kick*.3;if(fp)fp.uniforms.t.value=T%10;
+for(let i=sig.length-1;i>=0;i--){const s=sig[i];s.t+=dt/.8;const t=Math.min(1,s.t);s.m.scale.setScalar((s.d>0?1:.6)*(1+t*2.6));s.m.rotation.z+=s.d*dt*3;s.m.material.opacity=Math.pow(1-t,1.5)*.9;if(s.t>=1){cam.remove(s.m);s.m.geometry.dispose();s.m.material.dispose();sig.splice(i,1)}}
+for(let i=rg.length-1;i>=0;i--){const r=rg[i];r.t+=dt/r.dur;const t=Math.min(1,r.t);r.m.scale.setScalar(1+r.r*(1-(1-t)*(1-t)));r.m.material.opacity=.9*(1-t);if(r.t>=1){scene.remove(r.m);r.m.geometry.dispose();r.m.material.dispose();rg.splice(i,1)}}
+for(let i=bolts.length-1;i>=0;i--){const b=bolts[i];b.t+=dt/b.life;b.g.visible=b.t>.5||Math.random()>.25;b.g.children[1].material.opacity=.45*(1-Math.min(1,b.t));if(b.t>=1){scene.remove(b.g);b.g.children.forEach(c=>{c.geometry.dispose();c.material.dispose()});bolts.splice(i,1)}}
+upP(dt);storyTick(dt);
+if(state!==1)return;
+for(const k in cd){cd[k]=Math.max(0,cd[k]-dt);SP[k].b.firstChild.style.height=(cd[k]/SP[k].cd*100)+'%'}
+if(toSpawn>0){spawnT-=dt;if(spawnT<=0){spawn();toSpawn--;spawnT=Math.max(1.1,3-wave*.25)}}
+else if(!enemies.length){if(!told){told=1;tell(wave)}if(!busy()){gap-=dt;if(gap<=0){wave++;told=0;gap=1.5;saveCk();if(wave>1)hp=Math.min(100,hp+12);if(wave%5===0&&(endless||wave===5)){toSpawn=3;spawnT=4;spawn(1);tell(wave>5?'c':'b');pop(wave>5?'残響の王':'沈黙の王','#c86bff')}else{toSpawn=Math.min(32,3+wave*2);spawnT=1.5;tell('w'+wave);pop('第'+wave+'波','#fff')}}}}
+for(let i=pj.length-1;i>=0;i--){const p=pj[i];p.t+=dt/p.dur;if(p.tg){if(p.tg.dead)p.tg=null;else p.end.copy(p.tg.g.position)}
+const t=Math.min(1,p.k==='meteor'?p.t*p.t:p.t),prev=p.m.position.clone();
+p.m.position.copy(p.a).lerp(p.end,t).addScaledVector(p.side,Math.sin(Math.PI*Math.min(1,p.t))*p.amp);const ps2=p.m.position;
+if(p.k==='fire'){emit(ps2,2,0xff8a2a,1.5,.5,.55,-1);fl(ps2,0xff7a2a,8)}
+else if(p.k==='ice'){emit(ps2,1,0xaee8ff,.6,.45,.28);const dv=ps2.clone().sub(prev);if(dv.lengthSq()>1e-6)p.m.lookAt(ps2.clone().add(dv))}
+else{emit(ps2,6,0xff5a1a,4,1,1.4,-1);emit(ps2,3,0xffd080,3,.6,.9);p.m.rotation.x+=dt*2;fl(ps2,0xff6a2a,30)}
+if(p.t>=1){impact(p);scene.remove(p.m);pj.splice(i,1)}}
+for(let i=enemies.length-1;i>=0;i--){const e=enemies[i],p=e.g.position,dist=Math.max(.01,Math.hypot(p.x,p.z)),k=(e.boss&&dist<6?0:e.sp*(e.fz>0?.25:1))*dt/dist;e.fz-=dt;e.ht-=dt;if(e.boss){e.rot-=dt;if(e.rot<=0){e.rot=7;e.el=EL[(EL.indexOf(e.el)+1)%3];const c=SP[e.el].c;e.mats.forEach(m=>m.color.setHex(c));e.body.material.emissive.setHex(c);ring(p.clone(),c,7,.7);emit(p,30,c,9,.8,.7);if(!e.said){e.said=1;tell('x')}}}
+p.x-=p.x*k;p.z-=p.z*k;p.y=e.y0+Math.sin(T*2+e.ph)*.5;
+e.body.rotation.y+=dt;e.body.rotation.x+=dt*.6;e.ring.rotation.z+=dt*2;e.orb.rotation.y+=dt*1.5;e.core.scale.setScalar(1+Math.sin(T*6+e.ph)*.15);
+e.body.material.emissiveIntensity=.3+Math.max(0,e.ht)*8;e.body.material.color.setHex(e.fz>0?0x3a5a80:0x1a1426);
+e.bar.quaternion.copy(cam.quaternion);const r=Math.max(.001,e.hp/e.max);e.fl.scale.x=r;e.fl.position.x=-(1-r);
+if(dist<(e.boss?7:3.4)){if(e.boss){e.atk-=dt;if(e.atk>0)continue;e.atk=1.3}hp-=e.d;shake(.7);$('red').style.opacity=.9;setTimeout(()=>$('red').style.opacity=0,70);boom(p.clone(),0xff2040,1);if(!e.boss)rm(e);if(hp<=0)gameOver()}}
+$('hp').style.width=Math.max(0,hp)+'%';$('wv').textContent=wave;$('sc').textContent=score}
+
+/* ---------- input / boot ---------- */
+function begin(){ac=ac||new AC();if(ac.resume)ac.resume();reset();P.rec.pl++;cmode=cwant;cwant=0;if(cmode){endless=true;toast('✦ クリエイトモード')}useLoadout();if(wantLoad){wantLoad=0;applySave()}}
+$('go').onclick=()=>{begin();micOn=true;if(rec||startRec()){if(!an)startVol()}else say('⚠ このブラウザは音声認識に未対応です。入力欄・ボタン・数字キー1〜5で撃てます')};
+$('go2').onclick=()=>{begin();say('マイクなしモード：ボタン／数字キー1〜5／入力欄で詠唱')};
+$('re').onclick=()=>{reset();P.rec.pl++};$('ld').onclick=()=>{reset();applySave()};$('ct').onclick=()=>{wantLoad=1;$('go').click()};$('md').onclick=()=>{endless=!endless;$('md').textContent='モード：'+(endless?'エンドレス':'物語')};$('en').onclick=()=>{endless=true;state=1;hp=100;told=0;$('over').style.display='none'};
+$('typ').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){const t=e.target.value;say('⌨ '+t);scan(t).forEach(n=>cast(n,1));e.target.value=''}});
+addEventListener('keydown',e=>{const k=Object.keys(SP).find(x=>SP[x].key===e.key);if(k)cast(k,1)});
+addEventListener('pointermove',e=>{if(state!==0){mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5}});
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(comp)comp.setSize(innerWidth,innerHeight);pmat.uniforms.sc.value=renderer.domElement.height*.7});
+const clock=new THREE.Clock();
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);T+=dt;update(dt);if(comp)comp.render();else renderer.render(scene,cam)})();
+</script></body></html>

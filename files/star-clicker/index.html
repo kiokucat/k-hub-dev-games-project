@@ -48,30 +48,95 @@ canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0}
 .u.can{border-color:hsl(var(--ih) 100% 68%/.85);box-shadow:0 0 20px hsl(var(--ih) 100% 55%/.4),inset 0 0 22px hsl(var(--ih) 100% 55%/.14)}
 .u.can:active{transform:scale(.97)}
 @media(max-width:760px){#pn{grid-template-columns:1fr;max-height:34vh}}
+
+#tr{position:fixed;z-index:4;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;display:flex;gap:6px}
+#tr button{font:inherit;font-size:12px;letter-spacing:.06em;color:#fff;background:#050818aa;border:1px solid #ffffff30;border-radius:12px;padding:7px 10px;min-width:64px;cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2}
+#tr button small{font-size:10px;color:var(--dim);font-weight:400}
+#tr button:active{transform:scale(.96)}
+#pr.rdy{border-color:hsl(var(--h) 100% 66%/.9);box-shadow:0 0 18px hsl(var(--h) 100% 55%/.55),inset 0 0 12px hsl(var(--h) 100% 55%/.2);animation:pl 1.6s ease-in-out infinite}
+#pr.rdy small{color:#fff}
+@keyframes pl{50%{box-shadow:0 0 30px hsl(var(--h) 100% 55%/.8),inset 0 0 16px hsl(var(--h) 100% 55%/.3)}}
+.md{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);background:#02030acc;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.md.on{display:flex}
+.mp{width:min(980px,100%);max-height:100%;display:flex;flex-direction:column;border-radius:22px;border:1px solid #ffffff28;background:linear-gradient(160deg,#ffffff14,#ffffff05),#050818ee;box-shadow:0 0 60px hsl(var(--h) 100% 50%/.25);overflow:hidden}
+.mh{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #ffffff14}
+.mh h2{margin:0;flex:1;font-size:15px;letter-spacing:.14em}
+.mh h2 span{color:hsl(var(--h) 100% 78%);margin-left:.6em}
+.x,.mf button{font:inherit;color:#fff;background:#ffffff12;border:1px solid #ffffff2a;border-radius:11px;padding:7px 12px;cursor:pointer}
+.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:12px;overflow-y:auto;scrollbar-width:thin}
+.a{padding:9px 12px;border-radius:14px;border:1px solid #ffffff1a;background:#080d2099;opacity:.45}
+.a.dn{opacity:1;border-color:hsl(var(--h) 100% 66%/.7);background:hsl(var(--h) 60% 20%/.35)}
+.a b{display:block;font-size:12.5px}.a small{display:block;margin-top:2px;color:var(--dim);font-size:10.5px;font-weight:400;line-height:1.4}
+#ct{display:flex;gap:6px;padding:10px 12px 4px;overflow-x:auto;scrollbar-width:thin;flex:none}
+#ct button{flex:none;font:inherit;font-size:12px;letter-spacing:.08em;color:var(--dim);background:#ffffff0d;border:1px solid transparent;border-radius:12px;padding:9px 12px;cursor:pointer}
+#ct button.on{color:#fff;border-color:hsl(var(--h) 100% 66%/.8);box-shadow:0 0 14px hsl(var(--h) 100% 55%/.35)}
+#ti{padding:2px 16px 6px;color:var(--dim);font-size:11px;font-weight:400;flex:none}
+#tv{position:relative;overflow:auto;padding:8px 10px 14px;flex:1;min-height:150px;scrollbar-width:thin}
+.tree{position:relative;width:760px;height:270px;margin:0 auto}
+.tree[hidden]{display:none}
+.tree svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tree path{fill:none;stroke:#ffffff26;stroke-width:3;stroke-linecap:round}
+.tree path.on{stroke:hsl(var(--h) 100% 68%);filter:drop-shadow(0 0 4px hsl(var(--h) 100% 60%))}
+.nd{position:absolute;width:132px;height:68px;font:inherit;color:inherit;text-align:left;padding:7px 9px;border-radius:14px;border:1px solid #ffffff22;background:#080d20dd;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.nd i{position:absolute;right:8px;top:7px;font-style:normal;font-size:11px;color:hsl(var(--h) 100% 80%)}
+.nd b{font-size:11.5px;line-height:1.25;padding-right:36px}
+.nd small{font-size:10px;color:var(--dim);font-weight:400;line-height:1.3}
+.nd.lk{opacity:.38;border-style:dashed}.nd.av{opacity:.7}
+.nd.own{opacity:1;border-color:hsl(var(--h) 100% 65%/.7);background:hsl(var(--h) 60% 22%/.55)}
+.nd.can{opacity:1;border-color:hsl(var(--h) 100% 70%/.9);box-shadow:0 0 18px hsl(var(--h) 100% 55%/.45),inset 0 0 18px hsl(var(--h) 100% 55%/.15)}
+.nd.can:active{transform:scale(.96)}
+#cbody{padding:14px 16px;font-size:12.5px;line-height:1.8;font-weight:400}
+#cbody b{color:hsl(var(--h) 100% 80%)}
+.mf{display:flex;gap:8px;justify-content:flex-end;padding:0 14px 14px}
+.mf button:disabled{opacity:.4;cursor:default}
+#cy:not(:disabled){border-color:hsl(var(--h) 100% 66%/.9);box-shadow:0 0 16px hsl(var(--h) 100% 55%/.5)}
+@media(max-width:560px){#tr{flex-direction:column;gap:5px}#tr button{min-width:60px;padding:6px 8px}#hud{padding:0 76px}}
 </style>
 </head>
 <body>
 <canvas></canvas>
 <div id="st"><div id="hud"><div id="en"><span id="ev">0</span><small>SP</small></div><div id="sub"></div><div id="stg"><b id="pnm"></b><div id="bar"><i></i></div><small id="nx"></small></div></div><div id="bn"></div><div id="ts"></div><div id="cb"></div></div>
 <div id="dock"><div id="tabs"><button class="on" data-t="0">強化</button><button data-t="1">アイテム</button><button data-t="2">惑星</button></div><div id="pn"></div></div>
+<div id="tr"><button id="ba">実績<small id="bas"></small></button><button id="bt">転生ツリー<small id="bts"></small></button><button id="pr">転生<small id="prs"></small></button></div>
+<div class="md" id="ma"><div class="mp"><div class="mh"><h2>実績<span id="mas"></span></h2><button class="x" data-x>✕</button></div><div class="ag" id="ag"></div></div></div>
+<div class="md" id="mt"><div class="mp"><div class="mh"><h2>転生ツリー<span id="mpp"></span></h2><button class="x" data-x>✕</button></div><div id="ct"></div><div id="ti"></div><div id="tv"></div></div></div>
+<div class="md" id="mc"><div class="mp" style="max-width:480px"><div class="mh"><h2>転生</h2><button class="x" data-x>✕</button></div><div id="cbody"></div><div class="mf"><button id="cn">キャンセル</button><button id="cy">転生する</button></div></div></div>
 <script>
 const $=s=>document.querySelector(s),cv=$('canvas'),g=cv.getContext('2d'),st=$('#st'),pn=$('#pn'),root=document.documentElement,
 PL=[
-['水星','太陽に最も近い、クレーターだらけの岩石惑星',28,8,52,0,16,0,0,35,0],
-['金星','分厚い硫酸の雲に覆われた灼熱の惑星',42,70,66,5,3,10,0,45,250],
-['地球','海と大陸、そして生命をたたえた青い惑星',215,70,48,0,9,-95,0,205,2e3],
-['火星','酸化鉄の赤い大地をもつ砂漠の惑星',14,65,45,0,10,-8,0,20,1.6e4],
-['木星','最大のガス惑星。大赤斑の嵐が渦巻く',30,55,60,9,2,-12,0,32,1.2e5],
-['土星','氷と岩の壮麗な環をまとったガス惑星',44,45,66,6,0,0,1,44,9e5],
-['天王星','横倒しで自転する淡い青緑の氷の巨星',180,50,64,2,0,0,0,185,6e6],
-['海王星','超音速の風が吹き荒れる深い青の氷の巨星',225,75,50,3,3,10,0,225,4.5e7],
-['冥王星','ハート形の氷原が広がる準惑星',20,25,60,0,6,10,0,210,3.5e8],
-['プロキシマb','最も近い恒星を回る赤い系外惑星',5,70,40,2,6,15,0,10,3e9],
-['ケプラー452b','地球の従兄弟と呼ばれる系外惑星',100,50,45,0,8,60,0,110,2.5e10],
-['TRAPPIST-1e','七つ子の惑星系にひそむ温帯の世界',190,40,55,1,7,40,0,190,2e11],
-['HD 189733b','ガラスの雨が横殴りに降る青いホットジュピター',230,85,45,4,0,0,0,225,1.8e12],
-['かに座55番e','溶岩の海が広がるダイヤモンド惑星',10,95,45,0,12,35,0,15,1.6e13]
-].map((a,i)=>({n:a[0],d:a[1],h:a[2],s:a[3],l:a[4],b:a[5],k:a[6],sh:a[7],rg:a[8],at:a[9],c:a[10],cl:i>0&&i<4?1:0,inc:a[10]?a[10]/100:.5})),
+['エンケラドス','氷の間欠泉を噴き上げる真っ白な衛星',195,40,85,0,4,0,0,190,0],
+['ケレス','小惑星帯に浮かぶ最大の準惑星',25,10,45,0,12,0,0,30,250],
+['冥王星','ハート形の氷原が広がる準惑星',20,25,60,0,6,10,0,210,2e3],
+['エウロパ','ひび割れた氷殻の下に海が眠る木星の衛星',190,25,78,0,10,0,0,195,1.6e4],
+['イオ','火山が絶えず噴火する硫黄色の衛星',55,90,56,0,18,20,0,50,1.2e5],
+['水星','太陽に最も近い、クレーターだらけの岩石惑星',28,8,52,0,16,0,0,35,9e5],
+['タイタン','オレンジ色の霞とメタンの湖をもつ土星の衛星',38,85,52,2,5,0,0,40,6e6],
+['ガニメデ','太陽系最大の衛星。磁場をもつ氷と岩の世界',28,14,50,0,14,-5,0,32,4.5e7],
+['火星','酸化鉄の赤い大地をもつ砂漠の惑星',14,65,45,0,10,-8,0,20,3.5e8],
+['金星','分厚い硫酸の雲に覆われた灼熱の惑星',42,70,66,5,3,10,0,45,3e9],
+['TRAPPIST-1e','七つ子の惑星系にひそむ温帯の世界',190,40,55,1,7,40,0,190,2.5e10],
+['地球','海と大陸、そして生命をたたえた青い惑星',215,70,48,0,9,-95,0,205,2e11],
+['プロキシマb','最も近い恒星を回る赤い系外惑星',5,70,40,2,6,15,0,10,1.8e12],
+['グリーゼ581g','ハビタブルゾーンにあるとされた幻の岩石惑星',140,40,42,3,8,20,0,145,1.6e13],
+['ケプラー452b','地球の従兄弟と呼ばれる系外惑星',100,50,45,0,8,60,0,110,8e13],
+['かに座55番e','溶岩の海が広がるダイヤモンド惑星',10,95,45,0,12,35,0,15,4.8e14],
+['海王星','超音速の風が吹き荒れる深い青の氷の巨星',225,75,50,3,3,10,0,225,2.88e15],
+['天王星','横倒しで自転する淡い青緑の氷の巨星',180,50,64,2,0,0,0,185,1.73e16],
+['ケプラー16b','ふたつの太陽を巡る「タトゥイーン」型の惑星',35,70,55,4,6,10,0,30,1.04e17],
+['土星','氷と岩の壮麗な環をまとったガス惑星',44,45,66,6,0,0,1,44,6.22e17],
+['木星','最大のガス惑星。大赤斑の嵐が渦巻く',30,55,60,9,2,-12,0,32,3.73e18],
+['HD 189733b','ガラスの雨が横殴りに降る青いホットジュピター',230,85,45,4,0,0,0,225,2.24e19],
+['HD 209458b','大気が蒸発し続ける、彗星のような惑星',205,80,50,5,4,0,0,200,1.34e20],
+['WASP-12b','恒星に引き伸ばされた卵形の漆黒のホットジュピター',0,8,14,2,3,0,0,12,8.06e20],
+['リング世界','ひとつの恒星を取り巻く人工の巨大環状世界',160,50,55,0,10,0,1,165,4.84e21],
+['白色矮星シリウスB','燃え尽きた恒星の、角砂糖ひとつで数トンの芯',210,30,92,0,0,0,0,210,2.9e22],
+['中性子星','1秒間に何百回も回転する、極限まで潰れた星',200,60,88,0,0,0,0,190,1.74e23],
+['マグネター','最強の磁場で星震を起こす紫の死星',290,90,55,2,2,0,0,300,1.04e24],
+['ブラックホール降着円盤','光さえ逃さない闇と、燃え盛る円盤',25,100,8,0,0,0,1,28,6.27e24],
+['赤色巨星アルデバラン','膨れ上がって赤く輝く老いた巨星',12,90,45,3,10,0,0,10,3.76e25],
+['青色超巨星リゲル','太陽の数万倍の光を放つ青白い超巨星',215,95,62,6,5,0,0,215,2.26e26],
+['太陽','私たちの母なる恒星。すべての始まりの光',48,100,58,4,12,0,0,48,1.35e27]
+].map((a,i)=>({n:a[0],d:a[1],h:a[2],s:a[3],l:a[4],b:a[5],k:a[6],sh:a[7],rg:a[8],at:a[9],c:a[10],cl:['金星','地球','火星','グリーゼ581g','HD 209458b','タイタン'].includes(a[0])?1:0,inc:a[10]?a[10]/[100.0, 103.0, 112.0, 127.0, 148.0, 175.0, 487.3, 487.3, 487.3, 487.3, 487.3, 487.3, 487.3, 539.7, 1807.7, 4771.9, 13804.5, 35842.7, 49356.9, 69684.7, 80246.6, 136744.8, 182275.1, 210812.8, 214221.1, 335207.1, 420543.4, 509237.5, 620256.8, 714000.0, 961280.1, 1398685.2][i]:.5})),
 UP=[
 ['タップ強化','1タップ +1',15,1,0,0],
 ['精密タップ','1タップ +8',400,8,0,['k',40]],
@@ -95,23 +160,74 @@ IT=[
 ['軌道エンジン','惑星の自動収入が2倍',1.2e6],
 ['長期航行ログ','不在中の加算上限を12時間に拡大',8e6],
 ['ダークマター触媒','タップで得るSPが2倍',6e7],
-['時空安定装置','すべての獲得SPが2倍',5e9]
+['時空安定装置','すべての獲得SPが2倍',5e9],
+['超高速自動タップ','自動タップが毎秒10回に強化される',4e05],
+['コンボブースター','コンボ1あたりのボーナスが2倍',5e05],
+['コンボ延長コイル','コンボが途切れるまでの時間が2倍',8e05],
+['幸運の星','タップ時 5% の確率で会心（×10）',3e06],
+['彗星ビーコン','彗星の報酬が3倍、さらに出現しやすくなる',4e07],
+['銀河ネットワーク','解禁した惑星1つにつき全収入 +1%',2.2e+10],
+['エネルギー結晶','タップで得るSPが2倍',2e09],
+['クリティカルレンズ','会心率 +10%、会心が ×20 になる',1.5e10],
+['量子コンピュータ','強化による自動収入が1.3倍',1.8e+11],
+['惑星共鳴炉','惑星の自動収入が1.25倍',1.6e+12],
+['時間加速器','不在中の加算が2倍',1.4e+13],
+['多元宇宙アンプ','すべての獲得SPが1.25倍',4.3e+14],
+['ブラックホール航行ログ','不在中の加算上限を48時間に拡大',2.6e+15],
+['星屑の錬金術','タップで得るSPが1.5倍',9.3e+16],
+['宇宙の叡智','すべての獲得SPが1.5倍',1.2e+20],
+['創世の種','すべての獲得SPが1.5倍',5.6e+24],
+['自動彗星キャッチャー','画面に入った彗星を自動で回収する',6e06]
 ].map(a=>({n:a[0],d:a[1],c:a[2]})),
-P=[],SW=[],FT=[],CARDS=[],KEY='starclicker.v1',
+P=[],SW=[],FT=[],CARDS=[],KEY='starclicker.v2',
 SS=Array.from({length:150},()=>({x:Math.random(),y:Math.random(),z:.2+Math.random()*.8,p:Math.random()*6.3})),
-UN=['','万','億','兆','京','垓'],
-f=n=>{if(n<1e4)return Math.floor(n)+'';const i=Math.min(5,Math.floor(Math.log10(n)/4));return (n/1e4**i).toFixed(2)+UN[i]},
+UN=['','万','億','兆','京','垓','秭','穣','溝','澗'],
+f=n=>{if(n<1e4)return Math.floor(n)+'';const i=Math.min(9,Math.floor(Math.log10(n)/4));return (n/1e4**i).toFixed(2)+UN[i]},
 set=(e,v)=>{if(e._v!==v){e.textContent=v;e._v=v}};
+const NU=(n,b,ck,au,cd)=>UP.push({n,d:ck?'1タップ +'+f(ck):'毎秒 +'+f(au),b,ck,au,cd}),
+PC=i=>PL[i].c;
+[['連打グローブ',2.5e3,25,0,['k',150]],['ナノブレード',3e4,200,0,['t',2e4]],['反物質インパクト',3e8,1.5e4,0,['p',10]],['パルサータップ',4e9,12e4,0,['p',12]],['ビッグバンナックル',3e10,1e6,0,['p',13]],
+['自動採掘ビーコン',250,0,4,['k',20]],['軌道ファクトリー',2.5e4,0,180,['p',4]],['月面基地',2.5e5,0,1200,['t',2e5]],['惑星改造プラント',2.5e6,0,1e4,['p',6]],['恒星間輸送網',2e7,0,7e4,['p',8]],['ワープゲート',4e8,0,8e5,['p',10]],['重力波収集機',3e9,0,6e6,['p',12]],['ダークエネルギー炉',3e10,0,5e7,['t',5e10]],['時空織機',2.5e11,0,4e8,['p',14]]].forEach(a=>NU(a[0],a[1],a[2],a[3],a[4]));
+const TN=['ネオン・ストライク','グラビトン拳','クォークフィスト','時間停止タップ','事象の地平拳','特異点ストライク','次元断裂パンチ','多元宇宙ハンマー','星砕きの一撃','銀河割りハンマー','創世のひと撫で','宇宙の鼓動','終末のタップ','因果を穿つ指','無限連打','真理の指先','神々の拳','全能のタップ'],
+AN=['重力レンズ網','星間ゲートウェイ','ワームホール航路','恒星採掘艦隊','ダークマター精製所','宇宙ネットワーク','多元宇宙リアクター','創造の泉','因果律エンジン','ビッグクランチ炉','無限の書庫','銀河文明連合','神々の工房','終焉の太陽','時の砂時計','宇宙の心臓','全能の演算機','万物理論炉'];
+for(let k=15;k<=32;k++){const c=PC(k-1),r=x=>+x.toPrecision(2);NU(TN[k-15],r(c/10),r(c/10/(2500+800*(k-15))),0,['p',k]);NU(AN[k-15],r(c/4),0,r(c/4/(600+250*(k-15))),['p',k])}
+
+function ld(){let d=JSON.parse(localStorage.getItem(KEY));if(d)return d;d=JSON.parse(localStorage.getItem('starclicker.v1'));if(d){const OLD=['水星','金星','地球','火星','木星','土星','天王星','海王星','冥王星','プロキシマb','ケプラー452b','TRAPPIST-1e','HD 189733b','かに座55番e','グリーゼ581g','ケプラー16b','WASP-12b','HD 209458b','ガニメデ','タイタン','エウロパ','エンケラドス','イオ','ケレス','白色矮星シリウスB','赤色巨星アルデバラン','太陽','青色超巨星リゲル','中性子星','マグネター','ブラックホール降着円盤','リング世界'],c=(d.pu||[]).reduce((x,y)=>x+(y?1:0),0),nm=OLD[d.sel];d.pu=PL.map((_,i)=>i<c?1:0);d.sel=Math.max(0,PL.findIndex(p=>p.n==nm))}return d}
+
+const g2=v=>f(v).replace(/\.0+(?=\D|$)/,''),
+CATS=[["タップ", [["指ならし", "tapFlat", 1], ["指の力", "tapFlat", 2], ["強いタップ", "tapPct", 1], ["連打の心得", "tapFlat", 3], ["軽いタップ", "tapPct", 1], ["指先の熟練", "tapFlat", 3], ["鉄の指", "tapFlat", 5], ["閃光の指", "tapPct", 2], ["星を叩く者", "tapFlat", 10], ["指圧の極み", "tapPct", 3]]], ["自動", [["見習い工員", "autoFlat", 1], ["小さな歯車", "autoFlat", 2], ["省エネ回路", "autoPct", 1], ["夜勤シフト", "autoFlat", 3], ["潤滑油", "autoPct", 1], ["自動化の芽", "autoFlat", 4], ["小型炉", "autoFlat", 6], ["効率改善", "autoPct", 2], ["無人工場", "autoFlat", 10], ["永久機関", "autoPct", 3]]], ["強化", [["値引き交渉", "upCostPct", 1], ["まとめ買い", "upCostPct", 1], ["見積もり精査", "upCostPct", 1], ["部品の共通化", "upCostPct", 1], ["倉庫整理", "upCostPct", 1], ["長期契約", "upCostPct", 2], ["職人の目", "upCostPct", 2], ["量産体制", "upCostPct", 2], ["商談上手", "upCostPct", 2], ["流通革命", "upCostPct", 3]]], ["惑星", [["星の恵み", "planetPct", 1], ["軌道調整", "planetPct", 1], ["開拓計画", "planetCostPct", 1], ["資源調査", "planetPct", 1], ["調査団派遣", "planetCostPct", 1], ["惑星観測", "planetPct", 2], ["入植計画", "planetCostPct", 2], ["軌道エレベーター", "planetPct", 2], ["星間交易", "planetCostPct", 2], ["星の祝福", "planetPct", 3]]], ["アイテム", [["倉庫の整理", "itemCostPct", 1], ["中古市場", "itemCostPct", 1], ["部品調達", "itemCostPct", 1], ["工具の修理", "itemCostPct", 1], ["道具の手入れ", "itemCostPct", 1], ["職人の割引", "itemCostPct", 2], ["業者の紹介", "itemCostPct", 2], ["蒐集家の目", "itemCostPct", 2], ["卸売契約", "itemCostPct", 2], ["星の市場", "itemCostPct", 3]]], ["彗星", [["彗星の知らせ", "cometPct", 3], ["望遠鏡の調整", "cometFreq", 2], ["尾の観察", "cometPct", 3], ["軌道計算", "cometFreq", 2], ["彗星の予報", "cometPct", 5], ["見張り台", "cometFreq", 3], ["尾を掴む手", "cometPct", 5], ["星屑のレーダー", "cometFreq", 3], ["彗星の使者", "cometPct", 8], ["流星群の祝福", "cometFreq", 5]]], ["コンボ", [["コンボ入門", "comboPer", 0.05], ["リズム感", "comboTime", 0.1], ["集中力", "comboPer", 0.05], ["持久力", "comboTime", 0.1], ["調子づく", "comboPer", 0.1], ["粘り強さ", "comboTime", 0.1], ["流れに乗る", "comboPer", 0.1], ["不屈", "comboTime", 0.2], ["ゾーン", "comboPer", 0.15], ["無我の境地", "comboTime", 0.2]]], ["会心", [["運試し", "critChance", 1], ["ひらめき", "critMult", 1], ["勝負勘", "critChance", 1], ["一点集中", "critMult", 1], ["幸運の予感", "critChance", 1], ["急所を突く", "critMult", 2], ["強運", "critChance", 2], ["渾身の一撃", "critMult", 2], ["星の導き", "critChance", 2], ["運命の一閃", "critMult", 3]]], ["不在", [["留守番", "offCapH", 1], ["省電力", "offPct", 2], ["長旅の準備", "offCapH", 1], ["自動運転", "offPct", 2], ["保存食", "offCapH", 2], ["無人運用", "offPct", 3], ["長期航行", "offCapH", 2], ["夜間稼働", "offPct", 3], ["大いなる眠り", "offCapH", 4], ["眠れる巨人", "offPct", 5]]], ["転生", [["魂の欠片", "ppPct", 1], ["前世の記憶", "startSP", 1000], ["輪廻の入口", "ppPct", 1], ["蓄えの知恵", "startSP", 10000.0], ["転生の心得", "ppPct", 2], ["引き継ぎの荷物", "startSP", 100000.0], ["悟り", "ppPct", 2], ["来世への貯金", "startSP", 1000000.0], ["輪廻の環", "ppPct", 3], ["永遠の旅人", "allPct", 2]]]],
+KD={tapFlat:['1タップ +',''],autoFlat:['毎秒 +',''],tapPct:['タップSP +','%'],autoPct:['自動収入 +','%'],allPct:['全SP +','%'],upCostPct:['強化コスト −','%'],itemCostPct:['アイテムコスト −','%'],planetPct:['惑星の自動収入 +','%'],planetCostPct:['惑星の解禁コスト −','%'],cometPct:['彗星の報酬 +','%'],cometFreq:['彗星の出現間隔 −','%'],comboPer:['コンボ1あたり +','%'],comboTime:['コンボ猶予 +','秒'],critChance:['会心率 +','%'],critMult:['会心倍率 +','倍'],offCapH:['不在の上限 +','時間'],offPct:['不在の報酬 +','%'],ppPct:['転生P獲得 +','%'],startSP:['転生後の初期SP +','']},
+PAR=[-1,0,0,1,1,2,3,5,6,7],DEP=[0,1,1,2,2,2,3,3,4,4],POS=[[0,1.4],[1,.5],[1,2.3],[2,0],[2,1],[2,2.3],[3,0],[3,2.3],[4,0],[4,2.3]],NW=132,NH=68,
+SK=[],AC=[],NI=[["星屑ブレンド", "tapPct", 10, 810000.0], ["精密歯車", "autoPct", 10, 5400000.0], ["磁気レール", "planetPct", 10, 40000000.0], ["値引きクーポン", "upCostPct", 3, 320000000.0], ["彗星レンズ", "cometPct", 25, 2700000000.0], ["幸運のコイン", "critChance", 2, 2700000000.0], ["リズムメトロノーム", "comboPer", 0.1, 22000000000.0], ["工具箱", "tapPct", 15, 180000000000.0], ["オートメーション盤", "autoPct", 15, 1600000000000.0], ["軌道クレーン", "planetPct", 15, 14000000000000.0], ["開拓者の旗", "planetCostPct", 3, 72000000000000.0], ["流星観測所", "cometFreq", 8, 72000000000000.0], ["スターチャート", "allPct", 8, 430000000000000.0], ["コンボの鐘", "comboTime", 0.3, 2600000000000000.0], ["ダークマター燃料", "autoPct", 20, 1.6e+16], ["星の羅針盤", "planetPct", 20, 9.3e+16], ["銀河の鍵", "tapPct", 20, 5.6e+17], ["星雲ステーション", "allPct", 10, 3.4e+18], ["時間の砂", "offPct", 25, 2e+19], ["虹の彗星", "cometPct", 50, 1.2e+20], ["幸運のダイス", "critChance", 3, 7.3e+20], ["空間圧縮炉", "autoPct", 25, 4.4e+21], ["星海の航路図", "planetPct", 25, 1.6e+23], ["宇宙の設計図", "allPct", 15, 5.6e+24]];
+CATS.forEach((c,ci)=>c[1].forEach((n,j)=>SK.push({c:ci,j,n:n[0],k:n[1],v:n[2],p:PAR[j]<0?-1:ci*10+PAR[j],cost:1+2*DEP[j],d:KD[n[1]][0]+(n[1]=='startSP'?g2(n[2]):n[2])+KD[n[1]][1]})));
+NI.forEach(a=>IT.push({n:a[0],d:KD[a[1]][0]+a[2]+KD[a[1]][1],c:a[3],k:a[1],v:a[2]}));
+const A=(n,d,fn)=>AC.push({n,d,f:fn}),sum=a=>a.reduce((x,y)=>x+y,0);
+[1,100,1e3,1e4,1e5,1e6].forEach(v=>A(v==1?'はじめの一歩':g2(v)+'回タップ','惑星を '+g2(v)+' 回タップする',()=>clk>=v));
+[1e4,1e6,1e8,1e12,1e16,1e20,1e24,1e28].forEach(v=>A('累計 '+g2(v)+' SP','累計 '+g2(v)+' SP を獲得する',()=>tot>=v));
+[3,8,14,20,26,32].forEach(n=>A(n+'つの星','星を '+n+' つ解禁する',()=>np()>=n));
+A('太陽へ到達','最後の星「太陽」を解禁する',()=>!!pu[PL.length-1]);
+[10,100,500,1500].forEach(n=>A('強化 Lv'+n,'強化の合計レベルを '+n+' にする',()=>sum(own)>=n));
+A('強化コンプリート','すべての強化を1回以上購入する',()=>own.every(x=>x>0));
+A('アイテム収集家','アイテムを 12 個導入する',()=>sum(it)>=12);
+A('アイテム全種','すべてのアイテムを導入する',()=>it.every(x=>x));
+[1,10,50].forEach(n=>A('彗星キャッチ '+n,'彗星を '+n+' 回回収する',()=>cmc>=n));
+[1,100,1000].forEach(n=>A('会心 '+n,'会心を '+n+' 回出す',()=>crc>=n));
+[20,50,99].forEach(n=>A('コンボ '+n,'コンボを '+n+' にする',()=>combo>=n));
+[1,5,10,25].forEach(n=>A('転生 '+n+' 回','転生を '+n+' 回行う',()=>pr>=n));
+[1,10,100,1000].forEach(n=>A('転生P '+n,'転生Pを累計 '+n+' 獲得する',()=>ppAll>=n));
+[1,10,30,60,100].forEach(n=>A('スキル '+n,'転生スキルを '+n+' 個解放する',()=>sum(sk)>=n));
+A('カテゴリ制覇','転生ツリーのカテゴリを1つ完成させる',()=>CATS.some((_,ci)=>sk.slice(ci*10,ci*10+10).every(x=>x)));
 PL.forEach((p,i)=>{let s=i*97+13;const r=()=>(s=s*16807%2147483647)/2147483647;p.sp=Array.from({length:p.k},()=>({o:r()*6.283,a:(r()-.5)*2.2,z:.1+r()*.16,v:r()*24-12,w:r()}))});
-let E=0,tot=0,clk=0,ps=0,pc=1,sel=0,own=UP.map(()=>0),it=IT.map(()=>0),pu=PL.map((_,i)=>i?0:1),wall=Date.now(),tab=0,open=true,combo=0,cT=0,kick=0,shake=0,flash=0,wp=0,T=0,Lt=0,fire=0,ut=0,mx=0,my=0,ptx=0,pty=0,ap=0,hue,lh=-9,W,H,dpr,cx,cy,R,tcx,tcy,tR,cm=null,cmT=22,rdy=0,ulk;
+let pp=0,ppAll=0,pr=0,base=0,sk=SK.map(()=>0),ach=AC.map(()=>0),cmc=0,crc=0,S={},E=0,tot=0,clk=0,ps=0,pc=1,sel=0,own=UP.map(()=>0),it=IT.map(()=>0),pu=PL.map((_,i)=>i?0:1),wall=Date.now(),tab=0,open=true,combo=0,cT=0,kick=0,shake=0,flash=0,wp=0,T=0,Lt=0,fire=0,ut=0,mx=0,my=0,ptx=0,pty=0,ap=0,hue,lh=-9,W,H,dpr,cx,cy,R,tcx,tcy,tR,cm=null,cmT=22,rdy=0,ulk;
 const np=()=>pu.reduce((a,b)=>a+b,0),
-cost=i=>Math.ceil(UP[i].b*1.15**own[i]),
+cost=i=>Math.ceil(UP[i].b*1.15**own[i]*(1-Math.min(S.upCostPct,60)/100)),icost=i=>Math.ceil(IT[i].c*(1-Math.min(S.itemCostPct,60)/100)),pcost=i=>Math.ceil(PL[i].c*(1-Math.min(S.planetCostPct,60)/100)),ppGain=()=>Math.floor(Math.max(0,tot-base)/1e16*(1+S.ppPct/100)),
 ok=c=>!c||(c[0]=='t'?tot>=c[1]:c[0]=='k'?clk>=c[1]:c[0]=='p'?np()>=c[1]:own[c[1]]>=c[2]),
 cdt=c=>c[0]=='t'?`累計 ${f(c[1])} SP を獲得`:c[0]=='k'?`${c[1]} 回タップ`:c[0]=='p'?`惑星を ${c[1]} つ解禁`:`${UP[c[1]].n} を Lv ${c[2]} にする`;
-function rc(){let a=0,c=1;UP.forEach((u,i)=>{a+=u.au*own[i];c+=u.ck*own[i]});PL.forEach((p,i)=>{if(pu[i])a+=p.inc*(it[3]?2:1)});const m=(it[2]?1.25:1)*(it[6]?2:1);pc=c*(it[5]?2:1)*m;ps=a*m+(it[0]?pc*2:0)}
-function save(){try{localStorage.setItem(KEY,JSON.stringify({E,tot,clk,own,it,pu,sel,t:wall}))}catch(e){}}
-try{const d=JSON.parse(localStorage.getItem(KEY));if(d){E=d.E||0;tot=d.tot||0;clk=d.clk||0;own=UP.map((_,i)=>d.own[i]||0);it=IT.map((_,i)=>d.it[i]||0);pu=PL.map((_,i)=>i?(d.pu[i]||0):1);sel=pu[d.sel]?d.sel:0;wall=d.t||Date.now()}}catch(e){}
-hue=PL[sel].at;rc();ulk=UP.map(u=>!!ok(u.cd));rdy=1;
+function skS(){S={};for(const k in KD)S[k]=0;SK.forEach((n,i)=>{if(sk[i])S[n.k]+=n.v});IT.forEach((n,i)=>{if(it[i]&&n.k)S[n.k]+=n.v})}
+function rc(){skS();let a=0,c=1+S.tapFlat;UP.forEach((u,i)=>{a+=u.au*own[i]*(it[15]?1.3:1);c+=u.ck*own[i]});PL.forEach((p,i)=>{if(pu[i])a+=p.inc*(it[3]?2:1)*(it[16]?1.25:1)*(1+S.planetPct/100)});a+=S.autoFlat;a*=1+S.autoPct/100;const m=(it[2]?1.25:1)*(it[6]?2:1)*(it[18]?1.25:1)*(it[21]?1.5:1)*(it[22]?1.5:1)*(it[12]?1+np()*0.01:1)*(1+S.allPct/100);pc=c*(it[5]?2:1)*(it[13]?2:1)*(it[20]?1.5:1)*(1+S.tapPct/100)*m;ps=a*m+(it[0]?pc*2:0)+(it[7]?pc*8:0)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({E,tot,clk,own,it,pu,sel,t:wall,pp,ppAll,pr,base,sk,ach,cmc,crc}))}catch(e){}}
+try{const d=ld();if(d){E=d.E||0;tot=d.tot||0;clk=d.clk||0;own=UP.map((_,i)=>d.own[i]||0);it=IT.map((_,i)=>d.it[i]||0);pu=PL.map((_,i)=>i?(d.pu[i]||0):1);sel=pu[d.sel]?d.sel:0;wall=d.t||Date.now();pp=d.pp||0;ppAll=d.ppAll||0;pr=d.pr||0;base=d.base||0;cmc=d.cmc||0;crc=d.crc||0;sk=SK.map((_,i)=>d.sk&&d.sk[i]?1:0);ach=AC.map((_,i)=>d.ach&&d.ach[i]?1:0)}}catch(e){}
+hue=PL[sel].at;rc();ulk=UP.map(u=>!!ok(u.cd));chk(1);rdy=1;
 function mk(t,i,h){const b=document.createElement('button');b.className='u';b.dataset.t=t;b.dataset.i=i;b.style.setProperty('--ih',h);b.innerHTML='<span class="ic"></span><span><b class="nm"></b><br><small class="ds"></small></span><span class="n"><span class="ct"></span><br><b class="co"></b></span>';b.e=[...b.querySelectorAll('.ic,.nm,.ds,.ct,.co')];pn.append(b);CARDS.push(b)}
 UP.forEach((_,i)=>mk(0,i,(200+i*23)%360));IT.forEach((_,i)=>mk(1,i,(30+i*41)%360));PL.forEach((p,i)=>mk(2,i,p.at));
 function toast(s){const t=$('#ts');t.textContent=s;t.classList.remove('on');void t.offsetWidth;t.classList.add('on')}
@@ -120,40 +236,42 @@ function upd(){
  for(const b of CARDS){const t=+b.dataset.t,i=+b.dataset.i;b.hidden=!open||t!==tab;if(b.hidden)continue;
   let lk=0,cn=0,ow=0,o;
   if(t==0){const u=UP[i],c=cost(i);lk=!ok(u.cd);cn=!lk&&E>=c;o=lk?['？','？？？','解禁条件　'+cdt(u.cd),'','']:[u.n[0],u.n,u.d,'Lv '+own[i],f(c)]}
-  else if(t==1){const u=IT[i];ow=it[i];cn=!ow&&E>=u.c;o=[u.n[0],u.n,u.d,ow?'導入済み':'買い切り',ow?'':f(u.c)]}
-  else{const p=PL[i];ow=sel==i;lk=!pu[i]&&i>n;cn=!pu[i]&&i==n&&E>=p.c;o=lk?['？','？？？','前の惑星を解禁すると現れます','','']:[p.n[0],p.n,p.d,pu[i]?(ow?'表示中':'タップで表示'):'解禁',pu[i]?'':f(p.c)]}
+  else if(t==1){const u=IT[i];ow=it[i];cn=!ow&&E>=icost(i);o=[u.n[0],u.n,u.d,ow?'導入済み':'買い切り',ow?'':f(icost(i))]}
+  else{const p=PL[i];ow=sel==i;lk=!pu[i]&&i>n;cn=!pu[i]&&i==n&&E>=pcost(i);o=lk?['？','？？？','前の惑星を解禁すると現れます','','']:[p.n[0],p.n,p.d,pu[i]?(ow?'表示中':'タップで表示'):'解禁',pu[i]?'':f(pcost(i))]}
   b.e.forEach((e,k)=>set(e,o[k]));b.classList.toggle('lk',!!lk);b.classList.toggle('can',!!cn);b.classList.toggle('ow',!!ow)}
  UP.forEach((u,i)=>{if(!ulk[i]&&ok(u.cd)){ulk[i]=1;if(rdy)toast('強化が解禁されました　'+u.n)}});
  set($('#sub'),`毎秒 +${f(ps)}　タップ +${f(pc)}`);set($('#pnm'),PL[sel].n);
- const x=PL[n];$('#bar i').style.width=(x?Math.min(100,E/x.c*100):100)+'%';set($('#nx'),x?`次の解禁　${x.n}　${f(x.c)} SP`:'すべての惑星を解禁しました');
- const cb=$('#cb');set(cb,combo>1?`コンボ ×${combo}`:'惑星をタップ');cb.style.opacity=combo>1||clk<5?1:0}
+ const x=PL[n];$('#bar i').style.width=(x?Math.min(100,E/pcost(n)*100):100)+'%';set($('#nx'),x?`次の解禁　${x.n}　${f(pcost(n))} SP`:'すべての惑星を解禁しました');
+ const cb=$('#cb');set(cb,combo>1?`コンボ ×${combo}`:'惑星をタップ');cb.style.opacity=combo>1||clk<5?1:0;uiX()}
 function rs(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;const r=st.getBoundingClientRect();tcx=r.left+r.width/2;tcy=r.top+r.height*.58;tR=Math.max(24,Math.min(r.width*.115,r.height*.2,110));if(R===undefined){cx=tcx;cy=tcy;R=tR}}
 addEventListener('resize',rs);addEventListener('load',rs);new ResizeObserver(rs).observe(st);rs();
 const sw=(x,y,r,v,h,w,a=1)=>SW.push({x,y,r,v,h,w,a});
 function burst(x,y,n,h,v,a0,sp){for(let i=0;i<n&&P.length<600;i++){const a=a0==null?Math.random()*6.283:a0+(Math.random()-.5)*sp,s=v*(.4+Math.random()*.8);P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:.8,m:.8,s:1.5+Math.random()*2.5,h:h+Math.random()*40-20,d:.96})}}
-function tap(dx,dy){const d=Math.hypot(dx,dy)||1,gain=pc*(1+combo*.02),nx=dx/d,ny=dy/d,x=cx+nx*R,y=cy+ny*R;
- E+=gain;tot+=gain;clk++;combo=Math.min(combo+1,99);cT=1.1;kick=1;shake=Math.min(shake+2.5,8);
+function tap(dx,dy){const d=Math.hypot(dx,dy)||1,crit=Math.random()<(it[10]?.05:0)+(it[14]?.1:0)+Math.min(S.critChance,50)/100,gain=pc*(1+combo*((it[8]?.04:.02)+S.comboPer/100))*(crit?(it[14]?20:10)+S.critMult:1),nx=dx/d,ny=dy/d,x=cx+nx*R,y=cy+ny*R;
+ E+=gain;tot+=gain;clk++;combo=Math.min(combo+1,99);cT=(it[9]?2.2:1.1)+S.comboTime;kick=1;shake=Math.min(shake+2.5,8);
  burst(x,y,8+(Math.min(combo,40)>>1),hue,380,Math.atan2(ny,nx),2.4);sw(cx,cy,R*.95,300+combo*4,hue,5);
- FT.push({x:x+nx*26,y:y+ny*26,t:'+'+f(gain),l:1,h:hue})}
+ FT.push({x:x+nx*26,y:y+ny*26,t:(crit?'会心！ +':'+')+f(gain),l:crit?1.5:1,h:crit?50:hue});if(crit){crc++;shake=10;sw(cx,cy,R,520,50,7);burst(x,y,24,50,520)}}
+function cmGap(){return(25+Math.random()*25)*(it[1]?.5:1)*(it[11]?.6:1)*(1-Math.min(S.cometFreq,60)/100)}
+function catchComet(){const rw=Math.max(ps*60,pc*60)*(it[1]?2:1)*(it[11]?3:1)*(1+S.cometPct/100);cmc++;E+=rw;tot+=rw;burst(cm.x,cm.y,50,46,520);sw(cm.x,cm.y,10,500,46,6);FT.push({x:cm.x,y:cm.y,t:'彗星ボーナス +'+f(rw),l:1.6,h:46});shake=8;cm=null;cmT=cmGap()}
 function setSel(i){sel=i;ap=0;kick=.6;sw(cx,cy,R,380,PL[i].at,6)}
 function unlockFx(i){flash=1;shake=12;wp=2.5;for(let k=0;k<3;k++)sw(cx,cy,R,260+k*200,PL[i].at+k*15,8);burst(cx,cy,90,PL[i].at,700);const b=$('#bn');b.textContent='惑星解禁　'+PL[i].n;b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
 addEventListener('pointermove',e=>{ptx=(e.clientX/innerWidth-.5)*2;pty=(e.clientY/innerHeight-.5)*2});
 addEventListener('pointerdown',e=>{
- if(e.target.closest('#dock'))return;
+ if(e.target.closest('#dock,#tr,.md'))return;
  const x=e.clientX,y=e.clientY;
- if(cm&&Math.hypot(x-cm.x,y-cm.y)<60){const rw=Math.max(ps*60,pc*60)*(it[1]?2:1);E+=rw;tot+=rw;burst(cm.x,cm.y,50,46,520);sw(cm.x,cm.y,10,500,46,6);FT.push({x:cm.x,y:cm.y,t:'彗星ボーナス +'+f(rw),l:1.6,h:46});shake=8;cm=null;cmT=(25+Math.random()*25)*(it[1]?.5:1);return}
+ if(cm&&Math.hypot(x-cm.x,y-cm.y)<60){catchComet();return}
  const dx=x-cx,dy=y-cy;
  if(Math.hypot(dx,dy)<Math.max(R*1.5,70))tap(dx,dy);else sw(x,y,6,200,hue,2,.5)});
-addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventDefault();tap(0,-1)}});
+addEventListener('keydown',e=>{if(e.code==='Escape')document.querySelectorAll('.md.on').forEach(m=>m.classList.remove('on'));if(e.code==='Space'&&!e.repeat&&!document.querySelector('.md.on')){e.preventDefault();tap(0,-1)}});
 pn.onclick=e=>{const b=e.target.closest('.u');if(!b)return;const t=+b.dataset.t,i=+b.dataset.i;
  if(t==0){if(!ok(UP[i].cd)||E<cost(i))return;E-=cost(i);own[i]++;sw(cx,cy,R,480,hue,7);burst(cx,cy,30,hue,420)}
- else if(t==1){if(it[i]||E<IT[i].c)return;E-=IT[i].c;it[i]=1;sw(cx,cy,R,480,hue,7);burst(cx,cy,30,hue,420)}
+ else if(t==1){if(it[i]||E<icost(i))return;E-=icost(i);it[i]=1;sw(cx,cy,R,480,hue,7);burst(cx,cy,30,hue,420)}
  else if(pu[i]){setSel(i)}
- else{if(i!==np()||E<PL[i].c)return;E-=PL[i].c;pu[i]=1;setSel(i);unlockFx(i)}
+ else{if(i!==np()||E<pcost(i))return;E-=pcost(i);pu[i]=1;setSel(i);unlockFx(i)}
  rc();upd();save()};
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;const t=+b.dataset.t;if(t===tab&&open)open=false;else{tab=t;open=true}pn.hidden=!open;[...$('#tabs').children].forEach(x=>x.classList.toggle('on',open&&+x.dataset.t===tab));upd()};
 function ring(p,r,fr){if(!p.rg)return;const s=fr?0:Math.PI,e=fr?Math.PI:6.283;for(const a of[[1.95,.26,.5],[2.35,.12,.38],[1.6,.1,.3]]){g.beginPath();g.ellipse(0,0,r*a[0],r*a[0]*.27,-.38,s,e);g.strokeStyle=`hsla(${p.h},40%,74%,${a[2]})`;g.lineWidth=r*a[1];g.stroke()}}
-function minis(fr){let k=0;for(let i=0;i<PL.length;i++){if(!pu[i]||i===sel)continue;const p=PL[i],rx=R*(2.7+.13*k),ry=rx*.3,rt=-.28,a=T*.5/Math.sqrt(1+k*.6)+i*2.1,lx=Math.cos(a)*rx,ly=Math.sin(a)*ry,x=lx*Math.cos(rt)-ly*Math.sin(rt),y=lx*Math.sin(rt)+ly*Math.cos(rt),d=Math.sin(a);k++;
+function minis(fr){let k=0;for(let i=0;i<PL.length;i++){if(!pu[i]||i===sel)continue;const p=PL[i],rx=R*(2.7+1.9*(1-Math.exp(-k/8))),ry=rx*.3,rt=-.28,a=T*.5/Math.sqrt(1+k*.6)+i*2.1,lx=Math.cos(a)*rx,ly=Math.sin(a)*ry,x=lx*Math.cos(rt)-ly*Math.sin(rt),y=lx*Math.sin(rt)+ly*Math.cos(rt),d=Math.sin(a);k++;
  if(!fr){g.beginPath();g.ellipse(0,0,rx,ry,rt,0,6.283);g.strokeStyle='rgba(180,200,255,.1)';g.lineWidth=1;g.stroke()}
  if((d>0)!==!!fr)continue;
  const m=R*(.07+(p.b>3?.06:p.b?.02:0))*(1+d*.25),q=g.createRadialGradient(x-m*.4,y-m*.4,m*.1,x,y,m);
@@ -176,9 +294,9 @@ function body(p,r){
  q=g.createRadialGradient(0,0,r*.92,0,0,r*1.12);q.addColorStop(0,`hsla(${p.at},95%,70%,0)`);q.addColorStop(.5,`hsla(${p.at},95%,70%,${.5+kick*.4})`);q.addColorStop(1,`hsla(${p.at},95%,70%,0)`);g.fillStyle=q;g.beginPath();g.arc(0,0,r*1.12,0,6.283);g.fill()}
 function loop(now){
  const dt=Math.min(.05,(now-Lt)/1e3||.016);Lt=now;T+=dt;
- const nw=Date.now(),real=Math.min(Math.max(0,(nw-wall)/1e3),it[4]?43200:10800);wall=nw;
- if(real>20)toast('不在中に +'+f(ps*real)+' SP を獲得しました');
- E+=ps*real;tot+=ps*real;
+ const nw=Date.now(),real=Math.min(Math.max(0,(nw-wall)/1e3),(it[19]?172800:it[4]?43200:10800)+S.offCapH*3600),om=real>20?(it[17]?2:1)*(1+S.offPct/100):1;wall=nw;
+ if(real>20)toast('不在中に +'+f(ps*real*om)+' SP を獲得しました');
+ E+=ps*real*om;tot+=ps*real*om;
  cT-=dt;if(cT<=0)combo=0;
  kick*=1-Math.min(1,dt*9);shake*=1-Math.min(1,dt*8);flash=Math.max(0,flash-dt*1.1);ap=Math.min(1,ap+dt*1.1);
  wp+=(Math.min(combo/40,1)-wp)*Math.min(1,dt*2.5);mx+=(ptx-mx)*Math.min(1,dt*3);my+=(pty-my)*Math.min(1,dt*3);
@@ -201,7 +319,7 @@ function loop(now){
  if(cm){cm.x+=cm.vx*dt;cm.y+=cm.vy*dt;cm.tr.unshift([cm.x,cm.y]);if(cm.tr.length>28)cm.tr.pop();
   if(Math.random()<.6)P.push({x:cm.x,y:cm.y,vx:(Math.random()-.5)*60,vy:(Math.random()-.5)*60,l:.6,m:.6,s:2.5,h:46,d:.96});
   for(let j=cm.tr.length;j--;){const a=1-j/28;g.fillStyle=`hsla(46,100%,${55+a*35}%,${a*.75})`;g.beginPath();g.arc(cm.tr[j][0],cm.tr[j][1],(j?10:15)*a+1,0,6.283);g.fill()}
-  if(cm.x<-90||cm.x>W+90||cm.y>H+90){cm=null;cmT=(25+Math.random()*25)*(it[1]?.5:1)}}
+  if(cm.x<-90||cm.x>W+90||cm.y>H+90){cm=null;cmT=cmGap()}else if(it[23]&&cm.x>20&&cm.x<W-20&&cm.y>20&&cm.y<H-20&&Math.random()<dt*1.5)catchComet()}
  for(let i=P.length;i--;){const o=P[i];o.l-=dt;if(o.l<=0){P[i]=P[P.length-1];P.pop();continue}
   o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=o.d;o.vy*=o.d;const a=o.l/o.m;
   g.fillStyle=`hsla(${o.h},100%,${60+a*30}%,${a})`;g.beginPath();g.arc(o.x,o.y,o.s*a+.6,0,6.283);g.fill()}
@@ -214,7 +332,48 @@ function loop(now){
  ut+=dt;if(ut>.12){ut=0;upd()}
  requestAnimationFrame(loop)}
 setInterval(save,5000);addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
-upd();requestAnimationFrame(loop);
+
+let tabc=0;const ND=[],TR=[],CT=[],TT=[],AD=[];
+const pos=j=>({x:10+POS[j][0]*148,y:8+POS[j][1]*82});
+function chk(q){AC.forEach((a,i)=>{if(!ach[i]&&a.f()){ach[i]=1;if(!q)toast('実績解除　'+a.n)}})}
+function buildUI(){
+ const ct=$('#ct'),tv=$('#tv'),ag=$('#ag');
+ CATS.forEach((c,ci)=>{const bt=document.createElement('button');bt.dataset.c=ci;ct.append(bt);CT.push(bt);
+  const t=document.createElement('div');t.className='tree';t.hidden=ci!==tabc;
+  let svg='<svg viewBox="0 0 760 270" preserveAspectRatio="none">';
+  for(let j=1;j<10;j++){const a=pos(j),p=pos(PAR[j]),x1=p.x+NW,y1=p.y+NH/2,x2=a.x,y2=a.y+NH/2,m=(x1+x2)/2;svg+='<path d="M'+x1+' '+y1+'C'+m+' '+y1+' '+m+' '+y2+' '+x2+' '+y2+'"/>'}
+  t.innerHTML=svg+'</svg>';
+  const ps2=t.querySelectorAll('path');
+  for(let j=0;j<10;j++){const i=ci*10+j,n=SK[i],q=pos(j),b=document.createElement('button');b.className='nd';b.dataset.i=i;b.style.left=q.x+'px';b.style.top=q.y+'px';b.innerHTML='<i></i><b>'+n.n+'</b><small>'+n.d+'</small>';t.append(b);ND[i]=b;if(j)TR[i]=ps2[j-1]}
+  tv.append(t);TT.push(t)});
+ AC.forEach(a=>{const d=document.createElement('div');d.className='a';d.innerHTML='<b>'+a.n+'</b><small>'+a.d+'</small>';ag.append(d);AD.push(d)});
+ ct.onclick=e=>{const b=e.target.closest('button');if(!b)return;tabc=+b.dataset.c;TT.forEach((t,i)=>t.hidden=i!==tabc);updTree()};
+ tv.onclick=e=>{const b=e.target.closest('.nd');if(b)buySk(+b.dataset.i)};
+ $('#ba').onclick=()=>{$('#ma').classList.add('on');updAch()};
+ $('#bt').onclick=()=>{$('#mt').classList.add('on');updTree()};
+ $('#pr').onclick=()=>{$('#mc').classList.add('on');updConf()};
+ $('#cn').onclick=()=>$('#mc').classList.remove('on');
+ $('#cy').onclick=()=>{doPrestige();$('#mc').classList.remove('on')};
+ document.addEventListener('click',e=>{const m=e.target.closest('.md');if(m&&(e.target===m||e.target.closest('[data-x]')))m.classList.remove('on')})}
+function buySk(i){const n=SK[i];if(sk[i]||(n.p>=0&&!sk[n.p])||pp<n.cost)return;pp-=n.cost;sk[i]=1;rc();upd();updTree();save()}
+function updTree(){
+ CATS.forEach((c,ci)=>{let cnt=0;for(let j=0;j<10;j++){const i=ci*10+j,n=SK[i],b=ND[i],o=sk[i],par=n.p<0||sk[n.p],can=!o&&par&&pp>=n.cost;if(o)cnt++;
+  b.classList.toggle('own',!!o);b.classList.toggle('can',can);b.classList.toggle('av',!o&&par&&!can);b.classList.toggle('lk',!o&&!par);set(b.firstChild,o?'✓':n.cost+' P');
+  if(TR[i])TR[i].classList.toggle('on',!!o)}
+  set(CT[ci],c[0]+' '+cnt+'/10');CT[ci].classList.toggle('on',ci===tabc)});
+ set($('#mpp'),'所持 '+f(pp)+' P');
+ const c=CATS[tabc];set($('#ti'),c[0]+'　根元から順に解放　コスト 1 → 3 → 5 → 7 → 9 P　転生してもツリーは残ります')}
+function updAch(){AD.forEach((d,i)=>d.classList.toggle('dn',!!ach[i]));set($('#mas'),sum(ach)+' / '+AC.length)}
+function updConf(){const gn=ppGain(),r=tot-base,need=Math.max(0,Math.ceil(1e16/(1+S.ppPct/100)*(gn+1)-r));
+ const h='今回の累計SP　<b>'+f(r)+'</b><br>獲得できる転生P　<b>+'+f(gn)+' P</b>　（1京 SP ごとに 1 P）<br>'+(gn<1?'あと <b>'+f(need)+' SP</b> で 1 P 獲得できます':'あと <b>'+f(need)+' SP</b> で次の 1 P')+'<br><br>リセットされるもの　SP・強化・アイテム・星（毎秒も0に戻ります）<br>残るもの　転生ツリー・転生P・実績';
+ if($('#cbody')._v!==h){$('#cbody').innerHTML=h;$('#cbody')._v=h}$('#cy').disabled=gn<1}
+function doPrestige(){const gn=ppGain();if(gn<1)return;pp+=gn;ppAll+=gn;pr++;E=S.startSP;own=UP.map(()=>0);it=IT.map(()=>0);pu=PL.map((_,i)=>i?0:1);setSel(0);base=tot;combo=0;cm=null;cmT=cmGap();rc();ulk=UP.map(u=>!!ok(u.cd));
+ flash=1;shake=14;wp=2.5;for(let k=0;k<3;k++)sw(cx,cy,R,260+k*200,hue+k*20,8);burst(cx,cy,90,hue,700);
+ const b=$('#bn');b.textContent='転生　+'+f(gn)+' P';b.classList.remove('on');void b.offsetWidth;b.classList.add('on');
+ upd();save()}
+function uiX(){chk();const gn=ppGain();set($('#prs'),'+'+f(gn)+' P');$('#pr').classList.toggle('rdy',gn>=1);set($('#bts'),f(pp)+' P');set($('#bas'),sum(ach)+'/'+AC.length);
+ if($('#mt').classList.contains('on'))updTree();if($('#ma').classList.contains('on'))updAch();if($('#mc').classList.contains('on'))updConf()}
+buildUI();upd();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
