@@ -57,11 +57,12 @@ h1{font-size:clamp(34px,8vw,72px);margin:0 0 8px;letter-spacing:.2em;background:
 .fm label{display:grid;grid-template-columns:9em 1fr;align-items:center;gap:8px}
 .fm input,.fm select{box-sizing:border-box;width:100%;padding:6px 8px;border-radius:8px;border:1px solid #fff4;background:#000a;color:#fff;font:inherit}
 .fm input[type=range]{padding:0}
-</style>
-<link rel="icon" href="icon.png" type="image/png">
-</head><body>
+#gear{pointer-events:auto;background:#0009;color:#fff;border:1px solid #fff5;border-radius:8px;font-size:16px;padding:2px 8px;cursor:pointer}
+#set{position:fixed;inset:0;z-index:8;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;text-align:center}
+#set .card{background:#120c24ee;border:1px solid #cdb8ff55;border-radius:14px;padding:18px;width:min(440px,92vw)}
+</style></head><body>
 <div id="hud">
-<div id="top"><div class="bar"><i id="hp"></i></div><div>第<b id="wv">1</b>波　得点<b id="sc">0</b></div></div>
+<div id="top"><div class="bar"><i id="hp"></i></div><div>第<b id="wv">1</b>波　得点<b id="sc">0</b></div><button id="gear" aria-label="設定">⚙</button></div>
 <div id="red"></div><div id="pop"></div><div id="talk"></div><div id="sv"></div>
 <div id="hear"><div id="lv"><i></i></div><div id="tx"></div><input id="typ" placeholder="マイクなしならここに呪文を入力 → Enter" autocomplete="off"></div>
 <div id="spells"></div>
@@ -71,7 +72,7 @@ h1{font-size:clamp(34px,8vw,72px);margin:0 0 8px;letter-spacing:.2em;background:
 <p style="font-size:15px;opacity:.9">千年の封印が、いま緩む。<br>声を喰らう「沈黙の王」を、あなたの声でもう一度闇へ還せ。</p><p>マイクに向かって<b>本当に呪文を唱えて</b>撃て。声が大きいほど威力アップ。</p>
 <div class="sp" id="sl"></div>
 <p style="font-size:13px;opacity:.85">赤い敵にはサンダー、青い敵にはファイア、紫の敵にはアイスが2倍効く。<br>「燃えろ、ファイア！」のように文の中に混ぜてもOK。</p>
-<p id="rcd" style="font-size:13px;opacity:.85"></p><button class="btn" id="ct" style="display:none"></button><button class="btn" id="go">マイクを許可して始める</button><button class="btn s" id="cm"></button><button class="btn s" id="md">モード：物語</button><button class="btn s" id="go2">マイクなしで遊ぶ</button>
+<p id="rcd" style="font-size:13px;opacity:.85"></p><button class="btn" id="ct" style="display:none"></button><button class="btn" id="go">マイクを許可して始める</button><button class="btn s" id="cm"></button><button class="btn s" id="md">モード：物語</button><button class="btn s" id="gs">⚙ 表示設定</button><button class="btn s" id="go2">マイクなしで遊ぶ</button>
 </div></div>
 <div id="cr"><div class="card"><h1>魔法工房</h1>
 <p style="font-size:13px;opacity:.85">5つのスロットに自分だけの魔法を設計して、そのままエンドレスへ出撃。<br>言葉はひらがな・カタカナ推奨。複数は「,」で区切る。言葉が重ならないように。</p>
@@ -86,6 +87,15 @@ h1{font-size:clamp(34px,8vw,72px);margin:0 0 8px;letter-spacing:.2em;background:
 <p id="crm" style="color:#ffd24a;min-height:1.4em;font-size:13px"></p>
 <button class="btn" id="cgo">この魔法で出撃</button><button class="btn s" id="crs">標準に戻す</button><button class="btn s" id="crb">保存してもどる</button>
 </div></div>
+<div id="set"><div class="card"><h1 style="font-size:32px">表示設定</h1>
+<div class="fm">
+<label><span>彩度 <b id="ssv"></b></span><input id="ss" type="range" min="0" max="150"></label>
+<label><span>発光の強さ <b id="sgv"></b></span><input id="sg" type="range" min="0" max="150"></label>
+<label><span>明るさ <b id="sbv"></b></span><input id="sb" type="range" min="50" max="120"></label>
+<label><span>効果音 <b id="svv"></b></span><input id="sv" type="range" min="0" max="150"></label>
+<label><span>BGM <b id="smv"></b></span><input id="sm" type="range" min="0" max="150"></label>
+</div>
+<button class="btn s" id="setr">初期値に戻す</button><button class="btn" id="setc">閉じる</button></div></div>
 <div id="over"><div class="card"><h1 id="oh">力尽きた…</h1><p id="res"></p><p id="nr" style="color:#ffd24a"></p><button class="btn" id="ld" style="display:none">セーブ地点から再開</button><button class="btn" id="en" style="display:none">エンドレスで続ける</button><button class="btn s" id="tt">タイトルへ</button><button class="btn" id="re">もう一度</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
@@ -208,25 +218,28 @@ for(const k of['position','color','size','alpha'])pgeo.attributes[k].needsUpdate
 
 /* ---------- audio ---------- */
 let ac;const AC=window.AudioContext||window.webkitAudioContext;
-function noise(d,f,g,t){if(!ac)return;const n=ac.sampleRate*d|0,b=ac.createBuffer(1,n,ac.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),gn=ac.createGain();s.buffer=b;fl.type=t||'lowpass';fl.frequency.value=f;gn.gain.value=g;s.connect(fl);fl.connect(gn);gn.connect(ac.destination);s.start()}
-function tone(f1,f2,d,g,t){if(!ac)return;const o=ac.createOscillator(),gn=ac.createGain(),n=ac.currentTime;o.type=t||'sine';o.frequency.setValueAtTime(f1,n);o.frequency.exponentialRampToValueAtTime(f2,n+d);gn.gain.setValueAtTime(g,n);gn.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(gn);gn.connect(ac.destination);o.start();o.stop(n+d)}
-function sfx(k,s=1){const m=Math.min(s,2);({fire:()=>{noise(.5,1500,.35);tone(400,90,.4,.18,'sawtooth')},ice:()=>{tone(2000,700,.35,.12,'triangle');noise(.3,7000,.12,'highpass')},thunder:()=>{noise(.9,3500,.5);tone(110,35,.8,.4,'sawtooth')},meteor:()=>{tone(70,25,1.8,.5);noise(1.2,600,.45)},heal:()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,f*1.01,.5,.12),i*90)),boom:()=>{noise(.3+.25*s,800,.3*m);tone(140,40,.35,.25*m)}})[k]()}
+function noise(d,f,g,t){if(!ac)return;const n=ac.sampleRate*d|0,b=ac.createBuffer(1,n,ac.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),gn=ac.createGain();s.buffer=b;fl.type=t||'lowpass';fl.frequency.value=f;gn.gain.value=g;s.connect(fl);fl.connect(gn);gn.connect(out||ac.destination);s.start()}
+function tone(f1,f2,d,g,t){if(!ac)return;const o=ac.createOscillator(),gn=ac.createGain(),n=ac.currentTime;o.type=t||'sine';o.frequency.setValueAtTime(f1,n);o.frequency.exponentialRampToValueAtTime(f2,n+d);gn.gain.setValueAtTime(g,n);gn.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(gn);gn.connect(out||ac.destination);o.start();o.stop(n+d)}
+function sfx(k,s=1){if(SFX[k]){SFX[k](s);return}sfxOld(k,s)}
+function sfxOld(k,s=1){const m=Math.min(s,2);({fire:()=>{noise(.5,1500,.35);tone(400,90,.4,.18,'sawtooth')},ice:()=>{tone(2000,700,.35,.12,'triangle');noise(.3,7000,.12,'highpass')},thunder:()=>{noise(.9,3500,.5);tone(110,35,.8,.4,'sawtooth')},meteor:()=>{tone(70,25,1.8,.5);noise(1.2,600,.45)},heal:()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,f*1.01,.5,.12),i*90)),boom:()=>{noise(.3+.25*s,800,.3*m);tone(140,40,.35,.25*m)}})[k]()}
 
 /* ---------- voice ---------- */
-let rec,an,vb,vol=0,peak=0,micFail=false,micOn=false,seen={};
+let LOC=0,rec,an,vb,vol=0,peak=0,micFail=false,micOn=false,seen={};
 const say=t=>{$('tx').textContent=t};
 const norm=t=>t.toLowerCase().replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96)).replace(/[\s、。,.!！?？]/g,'');
 const RES=Object.keys(SP).map(k=>[k,new RegExp(SP[k].re.source,'g')]);
 function scan(t){t=norm(t);if(thx&&/ありがと|さんきゅ|thank/.test(t)){thx=0;setTimeout(trueEnd,0)}const r=[];for(const[k,re]of RES){re.lastIndex=0;let m;while((m=re.exec(t)))r.push([m.index,k])}return r.sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
 const gain=()=>an?0.8+Math.min(1,peak*2.4)*.9:1;
+async function probe(R){try{if(!R.available)return;const o={langs:['ja-JP'],processLocally:true},a=await R.available(o);if(a==='unavailable')return;if(a!=='available'){say('⚡ 高速音声認識を準備中…');if(!(await R.install(o)))return}LOC=1;try{rec.stop()}catch(_){}}catch(_){}}
 function startRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R)return false;
-rec=new R();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=3;
+rec=new R();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
+const loc=()=>{try{if(LOC){rec.processLocally=true;if(window.SpeechRecognitionPhrase)rec.phrases=Object.keys(SP).map(k=>new SpeechRecognitionPhrase(SP[k].k,6))}}catch(_){}};loc();
 rec.onstart=()=>{seen={}};
 rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];let best=[];for(let a=0;a<r.length;a++){const m=scan(r[a].transcript);if(m.length>best.length)best=m}
 say('🎤 '+r[0].transcript);const s=seen[i]||0;for(let j=s;j<best.length;j++)cast(best[j],gain());seen[i]=Math.max(s,best.length)}};
-rec.onerror=e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){micFail=true;say('⚠ マイクが使えません。下の入力欄・ボタン・数字キー1〜5で撃てます（公開リンクを新しいタブで開くと通ることがあります）')}};
-rec.onend=()=>{if(micOn&&!micFail)setTimeout(()=>{try{rec.start()}catch(_){}},250)};
-try{rec.start();say('🎤 聞き取り中… 呪文を唱えよ！');return true}catch(_){return false}}
+rec.onerror=e=>{if(/not-supported/.test(e.error))LOC=0;if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){micFail=true;say('⚠ マイクが使えません。下の入力欄・ボタン・数字キー1〜5で撃てます（公開リンクを新しいタブで開くと通ることがあります）')}};
+rec.onend=()=>{if(micOn&&!micFail)setTimeout(()=>{loc();try{rec.start()}catch(_){}},40)};
+try{rec.start();say('🎤 聞き取り中… 呪文を唱えよ！');probe(R);return true}catch(_){return false}}
 async function startVol(){try{const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true}});const src=ac.createMediaStreamSource(st);an=ac.createAnalyser();an.fftSize=512;vb=new Uint8Array(512);src.connect(an)}catch(_){}}
 
 /* ---------- game ---------- */
@@ -238,25 +251,25 @@ const shake=v=>{shk=Math.max(shk,v)},fl=(p,c,i)=>{fxl.position.copy(p);fxl.color
 function pop(t,c){const p=$('pop');p.textContent=t;p.style.color=c;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')}
 function dmgNum(p,t,w){const v=p.clone().project(cam);if(v.z>1)return;const d=document.createElement('div');d.className='dn'+(w?' w':'');d.textContent=t;d.style.left=(v.x*.5+.5)*innerWidth+'px';d.style.top=(-v.y*.5+.5)*innerHeight+'px';$('hud').appendChild(d);setTimeout(()=>d.remove(),900)}
 function ring(p,c,r,dur){const m=new THREE.Mesh(new THREE.RingGeometry(.9,1,48),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.copy(p);scene.add(m);rg.push({m,t:0,dur,r})}
-function boom(p,c,s){emit(p,Math.round(45*s),c,11*s,.9,.9,3);emit(p,Math.round(16*s),0xffffff,7*s,.5,.5);ring(p.clone(),c,3.5*s,.5);fl(p,c,35*s);shake(.2*s);sfx('boom',s)}
+function boom(p,c,s){decal(p,c,s);emit(p,Math.round(45*s),c,11*s,.9,.9,3);emit(p,Math.round(16*s),0xffffff,7*s,.5,.5);ring(p.clone(),c,3.5*s,.5);fl(p,c,35*s);shake(.2*s);sfx('boom',s)}
 function sigil(c){for(const d of[1,-1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:circ,color:c,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));m.position.set(0,.05,-3.4);cam.add(m);sig.push({m,t:0,d})}}
 function bolt(a,b,r,life){const pts=[a.clone()],d=b.clone().sub(a);for(let i=1;i<14;i++){const t=i/14,j=(1-t)*Math.min(8,d.length()*.12)+.2;pts.push(a.clone().addScaledVector(d,t).add(V(rnd(-j,j),rnd(-j,j)*.3,rnd(-j,j))))}pts.push(b.clone());
 const cv=new THREE.CatmullRomCurve3(pts),g=new THREE.Group();
 g.add(new THREE.Mesh(new THREE.TubeGeometry(cv,60,r,5),new THREE.MeshBasicMaterial({color:0xffffff,fog:false})),new THREE.Mesh(new THREE.TubeGeometry(cv,60,r*4,6),new THREE.MeshBasicMaterial({color:0xa27bff,transparent:true,opacity:.45,blending:THREE.AdditiveBlending,depthWrite:false,fog:false})));scene.add(g);bolts.push({g,t:0,life})}
-function hurt(e,d,el){if(e.dead)return;let m=1;if(BEAT[el]===e.el)m=2;else if(el===e.el)m=.5;d=Math.round(d*m);e.hp-=d;e.ht=.15;if(el==='ice')e.fz=2.5;if(e.boss&&!e.half&&e.hp<e.max*.5){e.half=1;tell('h')}
+function hurt(e,d,el){if(e.dead)return;let m=1;if(BEAT[el]===e.el){m=2;ev('vw')}else if(el===e.el)m=.5;d=Math.round(d*m);e.hp-=d;sfx(m>1?'weak':'hit');e.ht=.15;if(el==='ice')e.fz=2.5;if(e.boss&&!e.half&&e.hp<e.max*.5){e.half=1;tell('h')}
 const p=e.g.position.clone();p.y+=2.2*e.g.scale.x;dmgNum(p,(m>1?'弱点 ':'')+d,m>1);emit(e.g.position,8,SP[el].c,6,.5,.35,5);if(e.hp<=0)kill(e)}
 function rm(e){e.dead=true;scene.remove(e.g);const i=enemies.indexOf(e);if(i>=0)enemies.splice(i,1)}
-function kill(e){score+=e.sc;boom(e.g.position.clone(),SP[e.el].c,e.boss?3:1.3);emit(e.g.position,25,0x6a3cff,7,1.2,.6);rm(e);if(e.boss){for(const x of enemies.slice())kill(x);for(const q of pj)scene.remove(q.m);pj.length=0;if(endless){hp=Math.min(100,hp+40);if(wave>=15&&!tru){thx=1;say('「ありがとう」と声に出して伝えよ（入力でも可）');tell('t')}else tell('d')}else{state=3;tell('e')}}}
-function lightning(tg,d){const p=tg?tg.g.position.clone():V(0,1.5,-24);bolt(V(p.x+rnd(-8,8),120,p.z+rnd(-8,8)),p,.2,.45);flashSky=1;boom(p,0xc7a6ff,1.2);if(tg)hurt(tg,d,'thunder');
+function kill(e){sfx('kill',e.boss?3:1);emit(e.g.position,14,0xffffff,2,1.4,.4,-2);score+=e.sc;boom(e.g.position.clone(),SP[e.el].c,e.boss?3:1.3);emit(e.g.position,25,0x6a3cff,7,1.2,.6);rm(e);if(e.boss){for(const x of enemies.slice())kill(x);for(const q of pj)scene.remove(q.m);pj.length=0;if(endless){hp=Math.min(100,hp+40);tell('m'+wave);if(wave>=15&&!tru){thx=1;say('「ありがとう」と声に出して伝えよ（入力でも可）');tell('t')}else tell('d')}else{state=3;tell('e')}}}
+function lightning(tg,d){const p=tg?tg.g.position.clone():V(0,1.5,-24);bolt(V(p.x+rnd(-8,8),120,p.z+rnd(-8,8)),p,.2,.45);for(let i=0;i<2;i++)bolt(p.clone().add(V(rnd(-12,12),rnd(25,60),rnd(-12,12))),p.clone().add(V(rnd(-3,3),0,rnd(-3,3))),.07,.35);flashSky=1;boom(p,0xc7a6ff,1.2);if(tg)hurt(tg,d,'thunder');
 let from=p,c=0;for(const e of enemies.slice()){if(e===tg||e.dead||c>=2)continue;if(e.g.position.distanceTo(p)<16){bolt(from.clone(),e.g.position.clone(),.09,.4);boom(e.g.position.clone(),0xc7a6ff,.6);hurt(e,d*.5,'thunder');from=e.g.position.clone();c++}}}
 function shot(o){o.t=0;o.side=V(rnd(-1,1),rnd(-.4,1),rnd(-1,1)).normalize();o.end=o.end||(o.tg?o.tg.g.position.clone():V(0,2,-30));o.m.position.copy(o.a);scene.add(o.m);pj.push(o)}
-function cast(id,pw=1){if(state!==1||cd[id]>0)return;const s=SP[id];P.rec.ca++;cd[id]=s.cd;lastCol=s.c;kick=1;id=s.fx||id;
+function cast(id,pw=1){if(state!==1)return;if(cd[id]>0){if(cd[id]<.45)qd[id]=pw;return}const s=SP[id];P.rec.ca++;cd[id]=s.cd;lastCol=s.c;kick=1;id=s.fx||id;ev('v1');ev('v'+id[0]);
 pop(s.n+(pw>1.5?'！！':pw>1.2?'！':''),hx(s.c));sigil(s.c);sfx(id);
-const o=V(0,0,0);orbM.getWorldPosition(o);const tg=near(cam.position),dd=s.d*pw,far=tg?tg.g.position.distanceTo(o):30;
-if(id==='fire'){const m=new THREE.Group();m.add(new THREE.Mesh(new THREE.SphereGeometry(.3,12,10),new THREE.MeshBasicMaterial({color:0xfff0c0})),spr(0xff6a1a,3.6,.9));shot({k:id,m,a:o,tg,dur:Math.max(.25,far/48),amp:0,d:dd})}
-else if(id==='ice'){for(let i=0;i<5;i++){const g=new THREE.ConeGeometry(.16,1.3,6);g.rotateX(Math.PI/2);const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xc8f2ff}));m.add(spr(0x5fc8ff,1.8,.8));shot({k:id,m,a:o.clone(),tg,dur:.4+i*.05+far/160,amp:3.5,d:dd/5})}}
+const o=V(0,0,0);orbM.getWorldPosition(o);emit(o,26,s.c,5,.5,.35);ring(o.clone().setY(1.2),s.c,2.2,.35);const tg=near(cam.position),dd=s.d*pw,far=tg?tg.g.position.distanceTo(o):30;
+if(id==='fire'){const m=new THREE.Group();m.add(new THREE.Mesh(new THREE.SphereGeometry(.3,12,10),new THREE.MeshBasicMaterial({color:0xfff0c0})),spr(0xff6a1a,3.6,.9));shot({k:id,m,a:o,tg,dur:Math.max(.12,far/110),amp:0,d:dd})}
+else if(id==='ice'){for(let i=0;i<5;i++){const g=new THREE.ConeGeometry(.16,1.3,6);g.rotateX(Math.PI/2);const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xc8f2ff}));m.add(spr(0x5fc8ff,1.8,.8));shot({k:id,m,a:o.clone(),tg,dur:.2+i*.04+far/280,amp:3.5,d:dd/5})}}
 else if(id==='thunder')lightning(tg,dd);
-else if(id==='meteor'){const e=tg?tg.g.position.clone():V(0,0,-28),m=new THREE.Group();m.add(new THREE.Mesh(new THREE.IcosahedronGeometry(2.2,1),new THREE.MeshStandardMaterial({color:0x2a1a14,emissive:0xff4a10,emissiveIntensity:1.6,flatShading:true})),spr(0xff7a2a,16,.9));shot({k:id,m,a:e.clone().add(V(-30,95,-40)),end:e,tg:null,dur:1.2,amp:0,d:dd})}
+else if(id==='meteor'){const e=tg?tg.g.position.clone():V(0,0,-28),m=new THREE.Group();m.add(new THREE.Mesh(new THREE.IcosahedronGeometry(2.2,1),new THREE.MeshStandardMaterial({color:0x2a1a14,emissive:0xff4a10,emissiveIntensity:1.6,flatShading:true})),spr(0xff7a2a,16,.9));shot({k:id,m,a:e.clone().add(V(-30,95,-40)),end:e,tg:null,dur:.8,amp:0,d:dd})}
 else{hp=Math.min(100,hp+(s.d||32)*Math.min(pw,1.4));for(let i=0;i<70;i++){const a=rnd(0,6.283),r=rnd(1,3.5);emit(V(Math.cos(a)*r,rnd(0,.5),Math.sin(a)*r-1),1,0x66ff9a,.3,1.6,.3,-3)}ring(V(0,.1,-1),0x66ff9a,5,.9);fl(V(0,2,-1),0x66ff9a,10)}}
 function impact(p){const pos=p.m.position.clone();
 if(p.k==='fire'){boom(pos,0xff6a1a,1);if(p.tg)hurt(p.tg,p.d,'fire');for(const e of enemies.slice())if(e!==p.tg&&e.g.position.distanceTo(pos)<5)hurt(e,p.d*.4,'fire')}
@@ -269,7 +282,7 @@ const orb=new THREE.Group();for(let i=0;i<4;i++){const s=new THREE.Mesh(new THRE
 const bar=new THREE.Group(),bg=new THREE.Mesh(new THREE.PlaneGeometry(2,.18),mat({color:0,transparent:true,opacity:.6,depthTest:false})),f=new THREE.Mesh(new THREE.PlaneGeometry(2,.18),mat({color:col,depthTest:false}));
 f.position.z=.01;bg.renderOrder=10;f.renderOrder=11;bar.add(bg,f);bar.position.y=2.9;
 const halo=spr(col,6,.7);g.add(body,core,ring,orb,halo,bar);g.scale.setScalar(t.s);const mx=t.b?t.hp*(1+Math.max(0,wave-5)*.25):t.hp*(1+(wave-1)*.2);g.position.set(t.b?0:rnd(-18,18),t.b?5:2.2*t.s+1,rnd(-54,-46));scene.add(g);
-enemies.push({g,body,core,ring,orb,bar,fl:f,hp:mx,max:mx,sp:t.sp*(1+wave*.03),el,d:t.d,sc:t.sc,fz:0,ht:0,ph:rnd(0,6.28),y0:g.position.y,dead:false,boss:!!t.b,rot:7,atk:1,mats:[core.material,ring.material,f.material,halo.material,...orb.children.map(s=>s.material)]});emit(g.position,40,0x8a4cff,8,1,.7)}
+enemies.push({g,body,core,ring,orb,bar,fl:f,hp:mx,max:mx,sp:t.sp*(1+wave*.03),el,d:t.d,sc:t.sc,fz:0,ht:0,ph:rnd(0,6.28),y0:g.position.y,dead:false,boss:!!t.b,rot:7,atk:1,mats:[core.material,ring.material,f.material,halo.material,...orb.children.map(s=>s.material)]});emit(g.position,40,0x8a4cff,8,1,.7);sfx('spawn')}
 const EL=['fire','ice','thunder'],SQ=[];let told=0,sqT=0,dawn=0;
 const SPK={n:['',0xd6ccff],r:['老賢者ロウ',0x9fd8ff],m:['あなた',0xffe08a],k:['沈黙の王',0xc86bff]};
 const ST={
@@ -298,8 +311,50 @@ c:['e|我は残響。語られなかった言葉の、成れの果て……。',
 d:['e|……届いた……。','r|また一つ、声が還ったのう。'],
 t:['e|……ボクノ……歌……ダレカ……','r|ノアの歌が、ようやく届く時じゃ。一言でいい、伝えてやれ！','r|「ありがとう」と声に出すのじゃ！'],
 z:['m|聞こえたよ、ノア。ありがとう。','k|……ああ。ボクは、ひとりじゃなかったんだ。','n|門の向こうで、少年の歌が静かに響いた。','n|千年続いた夜が、ほどけるように明けていく。']});
+SPK.i=['少女ミオ',0xffb3d1];let EV={};
+ST[0].splice(3,0,'n|ここは〈響きの墓所〉。言霊の民が最後に立てこもった、声の遺跡。','r|おぬしの祖たちは、千年のあいだ歌い続け、王を眠らせてきたのじゃ。','m|……その歌を継げるのは、もう私ひとり。');
+ST[1].push('n|そのころ、遠い村。眠れない少女ミオが、ふと夜空を見上げた。','i|……いま、お星さまが歌った気がする。');
+ST[2].push('r|影は声を喰らい、喰らうほどに王の孤独は深まるのじゃ。','n|ミオは布団の中で、こっそり小さく口ずさんだ。何年ぶりの歌だろう。');
+ST[3].push('r|……王はただ怒っておるのではない。泣いておるのじゃ。','m|泣いている……？ 千年も、ずっと？');
+ST[4].push('m|怖い。でも、不思議と足は震えない。','r|恐れを声に変える。それが言霊の民の戦じゃ。');
+ST.b.unshift('n|門の闇が、巨大な王の姿となって立ち上がった。');
+ST.h.push('k|ウタ……ナゼ……ダレモ……キイテクレナカッタ……','m|……やっぱり、泣いてる。');
+ST.e.push('n|その夜、世界じゅうの村で、人々が久しぶりに声を出して笑った。','i|おかあさん、きいて！ わたしも歌えたよ！','r|……ミオ、か。千年ぶりの、新しい歌い手じゃな。','n|だが、封じた門の奥では、まだ何かが小さく鳴っている――。');
+Object.assign(ST,{
+6:['m|ノア……あなたの歌を、聞かせて。'],
+8:['r|影が語りかけておるのが聞こえるか。あれは言い残された言葉たちじゃ。','m|なら聞こう。ぜんぶ。'],
+10:['n|百の影を越え、あなたの声は墓所の隅々まで響くようになった。','r|おぬしの声が石に染み込み、千年の鎖がまた光り始めたぞ。'],
+11:['i|ミオだよ。きょうね、むらのみんなと歌ったの。','i|おじいちゃんが泣いてた。うれしくて泣いてたの。'],
+13:['r|おぬしの声はもはや武器ではない。祈りに近いのう。'],
+14:['m|ロウは、ノアのことをよく知っているのね。','r|……もうすぐ話す。もうすぐじゃ。'],
+16:['m|ロウは悪くない。きっとノアも分かってる。','r|……優しい子じゃな、おぬしは。'],
+17:['n|夢のように、遠い村の少女の声が墓所へ届いた。','i|ロウおじいちゃん、「ごめんね」って、ちゃんと言えばいいんだよ。','r|……ミオ。そうじゃな。言葉は、言うためにあるのじゃった。'],
+18:['r|ノアに届く言葉を、探しておるのじゃ。','m|私も一緒に探す。'],
+22:['m|ノアの歌を、少しずつ思い出してきた気がする。','r|歌の欠片がおぬしに流れ込んでおるのじゃ。'],
+25:['n|二十五の夜を越えた。世界の半分で、歌声が戻りつつある。'],
+35:['r|もう、わしが教えることはない。','m|ううん。まだ聞きたい。ロウの昔の歌も。'],
+w6:['r|門の奥の気配が変わった。気を抜くな！'],
+w8:['m|影が、泣き声みたいに聞こえる……'],
+w11:['r|声を喰らう影が、声を覚え始めておる。'],
+w13:['n|墓所の空気が、歌うように震え始めた。'],
+m5:['n|【記憶 ― はじまりの歌】','e|…コレハ…ボクノ…ハジメテノ…歌…'],
+m10:['n|【記憶 ― 麓の村】','e|ボクハ…歌ガ スキダッタ。','e|畑ノ アゼデ、ヒトリ歌ッタ。ソレダケデ、ウレシカッタ。'],
+m15:['n|【記憶 ― 千年前の村】','r|ノアの歌を「うるさい」と退け、扉を閉めたのは……若き日のわしじゃ。','r|黙れと言われた少年は、やがて誰とも話さなくなった。','r|わしが封印の番人となったのは、償いのつもりでな……。'],
+m20:['n|【記憶 ― 閉ざされた扉】','e|ミンナ…ボクノ歌ヲ…聞イテクレナイ…','e|ダカラ…コエヲ…ステタ…。'],
+m25:['n|【記憶 ― 母の子守唄】','e|オカアサンダケガ…ボクノ歌ヲ…ホメテクレタ…','e|ソノ人モ…ツメタクナッテ…ヒトリニナッタ…'],
+m30:['n|【記憶 ― 最後の歌】','e|ダレカニ…トドクト…シンジテ…ウタッタ…','e|デモ…返事ハ…ナカッタ…。'],
+m35:['n|【記憶 ― 小さな願い】','e|「ウルサイ」デモ…イイ…','e|ボクノ歌ヲ…聞イテ…ソレダケ…デ…'],
+v1:['r|おお、声が届いたぞ！ その調子じゃ。'],
+vf:['r|炎の弾じゃ。素直で扱いやすい、言霊の基本よ。'],
+vi:['r|氷の矢は影を凍てつかせる。止まった敵は的も同然じゃ。'],
+vt:['r|雷は連なって跳ぶ。群れには雷が効くぞい。'],
+vm:['r|隕石を呼んだか……！ 千年前でも、使える者は数えるほどじゃった。'],
+vh:['m|あたたかい……。声には、癒す力もあるんだ。'],
+vw:['r|弱点を突いたな！ 属性を読む目は確かじゃ。'],
+vl:['r|傷が深いぞ！ ヒールの言葉を忘れるな！']});
+const ev=k=>{if(!EV[k]&&ST[k]){EV[k]=1;tell(k)}};
 function trueEnd(){if(state!==1)return;tru=1;for(const x of enemies.slice()){x.boss=false;kill(x)}for(const q of pj)scene.remove(q.m);pj.length=0;SQ.length=0;sqT=0;state=3;tell('z')}
-function victory2(){state=4;$('en').style.display='inline-block';P.save={w:wave+1,sc:score,hp:100,en:1,tr:1,ts:Date.now()};endRec(1);$('oh').textContent='真・封印完了';$('res').innerHTML='ノアの歌は、千年の時を越えて届いた。<br>夜が明け、世界に歌声が満ちていく。<br>得点 '+score;$('over').style.display='flex'}
+function victory2(){state=4;sfx('win');$('en').style.display='inline-block';P.save={w:wave+1,sc:score,hp:100,en:1,tr:1,ts:Date.now()};endRec(1);$('oh').textContent='真・封印完了';$('res').innerHTML='ノアの歌は、千年の時を越えて届いた。<br>夜が明け、世界に歌声が満ちていく。<br>得点 '+score;$('over').style.display='flex'}
 let DB=null,P,wantLoad=0,pt=0;
 const LS={g(){try{return JSON.parse(localStorage.getItem('vm_p'))}catch(_){return null}},s(v){try{localStorage.setItem('vm_p',JSON.stringify(v))}catch(_){}}};
 const R0={bs:0,bw:0,pl:0,cl:0,tr:0,ca:0};
@@ -332,31 +387,32 @@ $('cp').oninput=$('cc').oninput=crV;$('ce').onchange=()=>{const m=$('ce').value=
 $('cm').onclick=crOpen;$('cgo').onclick=()=>crClose(1);$('crb').onclick=()=>crClose(0);$('crs').onclick=()=>{CL=cuDef();cs=0;crTabs();crLoad()};$('tt').onclick=toTitle;showRec();
 const tell=k=>{if(cmode)return;for(const s of ST[k]||[])SQ.push(s)},busy=()=>SQ.length>0||sqT>0;
 function storyTick(dt){if(sqT>0)sqT-=dt;if(sqT<=0){if(SQ.length){const s=SQ.shift(),sp=SPK[s[0]],t=s.slice(2),b=$('talk');b.innerHTML=(sp[0]?'<b>'+sp[0]+'</b>':'')+t;b.style.setProperty('--sc',hx(sp[1]));b.classList.add('on');sqT=Math.max(2.8,t.length*.15)}else $('talk').classList.remove('on')}if(state===3&&!busy())tru?victory2():victory()}
-function victory(){state=4;$('en').style.display='inline-block';P.save={w:wave+1,sc:score,hp:100,en:1,tr:tru,ts:Date.now()};endRec(1);$('oh').textContent='封印、完了';$('res').innerHTML='鎖は新たに紡がれ、沈黙の王は闇の彼方へ還った。<br>声は、いまも世界を守っている。<br>得点 '+score;$('over').style.display='flex'}
+function victory(){state=4;sfx('win');$('en').style.display='inline-block';P.save={w:wave+1,sc:score,hp:100,en:1,tr:tru,ts:Date.now()};endRec(1);$('oh').textContent='封印、完了';$('res').innerHTML='鎖は新たに紡がれ、沈黙の王は闇の彼方へ還った。<br>声は、いまも世界を守っている。<br>得点 '+score;$('over').style.display='flex'}
 $('talk').onclick=()=>{sqT=0};
-function reset(){for(const e of enemies)scene.remove(e.g);enemies.length=0;for(const p of pj)scene.remove(p.m);pj.length=0;hp=100;score=0;wave=0;toSpawn=0;gap=1;told=0;SQ.length=0;sqT=0;thx=0;tru=0;$('talk').classList.remove('on');for(const k in cd)cd[k]=0;state=1;$('over').style.display='none';$('start').style.display='none'}
-function gameOver(){state=2;$('en').style.display='none';endRec(0);$('oh').textContent='力尽きた…';$('res').innerHTML='老賢者「立て……声が途切れぬ限り、鎖はまだ切れておらん」<br>'+`第${wave}波まで到達　得点 ${score}`;$('over').style.display='flex'}
+function reset(){for(const e of enemies)scene.remove(e.g);enemies.length=0;for(const p of pj)scene.remove(p.m);pj.length=0;hp=100;score=0;wave=0;toSpawn=0;gap=1;told=0;SQ.length=0;sqT=0;thx=0;tru=0;EV={};$('talk').classList.remove('on');for(const k in cd)cd[k]=0;state=1;$('over').style.display='none';$('start').style.display='none'}
+function gameOver(){state=2;$('en').style.display='none';endRec(0);sfx('over');$('oh').textContent='力尽きた…';$('res').innerHTML='老賢者「立て……声が途切れぬ限り、鎖はまだ切れておらん」<br>'+`第${wave}波まで到達　得点 ${score}`;$('over').style.display='flex'}
 
 function update(dt){
 mc.rotation.z+=dt*.05;pd1.rotation.z+=dt*.4;pd2.rotation.z-=dt*.7;
 if(Math.random()<dt*30)emit(V(rnd(-30,30),rnd(.3,7),rnd(-55,6)),1,Math.random()<.5?0x8a6cff:0xffb870,.3,8,.16,-.02);
 cc.lerp(ct.setHex(lastCol),Math.min(1,dt*5));orbM.material.color.copy(cc);orbG.material.color.copy(cc);plt.color.copy(cc);mc.material.color.copy(cc);
-kick=Math.max(0,kick-dt*3);plt.intensity=1.2+kick*3+vol*3;orbG.scale.setScalar(.7+vol*1.2+kick*.6);
+kick=Math.max(0,kick-dt*3);cam.fov=68+kick*2.5+Math.min(shk,1.5)*3;cam.updateProjectionMatrix();plt.intensity=1.2+kick*3+vol*3;orbG.scale.setScalar(.7+vol*1.2+kick*.6);
 staff.position.z=-.9+kick*.12;staff.rotation.x=.25-kick*.3;staff.rotation.z=-.22+Math.sin(T*1.3)*.03;
 if(an){an.getByteTimeDomainData(vb);let m=0;for(let i=0;i<512;i++)m=Math.max(m,Math.abs(vb[i]-128));vol=m/128;peak=Math.max(vol,peak-dt*.4);$('lv').firstChild.style.width=Math.min(100,vol*200)+'%'}
+if(vol>.12&&state===1){const q=V(0,0,0);orbM.getWorldPosition(q);emit(q,2,lastCol,1.5,.5,.22,-1)}
 if(state===0)mx=Math.sin(T*.15)*.4;
 cam.rotation.y+=(-mx*.25-cam.rotation.y)*Math.min(1,dt*3);cam.rotation.x+=(-my*.12-cam.rotation.x)*Math.min(1,dt*3);
 cam.position.set(rnd(-1,1)*shk*.25,1.7+rnd(-1,1)*shk*.25+Math.sin(T*1.2)*.015,rnd(-1,1)*shk*.2);shk*=Math.exp(-5*dt);
-fxl.intensity*=Math.exp(-5*dt);flashSky*=Math.exp(-8*dt);dawn=state>=3?Math.min(.5,dawn+dt*.06):0;skyU.fl.value=flashSky+dawn;
-if(bloom)bloom.strength=1+flashSky*1.5+kick*.3;if(fp)fp.uniforms.t.value=T%10;
+fxl.intensity*=Math.exp(-5*dt);flashSky*=Math.exp(-8*dt);dawn=state>=3?Math.min(.5,dawn+dt*.06):0;skyU.fl.value=(flashSky+dawn)*CFG.gl/100;
+if(bloom)bloom.strength=(1+flashSky*1.5+kick*.3)*CFG.gl/100;if(fp)fp.uniforms.t.value=T%10;
 for(let i=sig.length-1;i>=0;i--){const s=sig[i];s.t+=dt/.8;const t=Math.min(1,s.t);s.m.scale.setScalar((s.d>0?1:.6)*(1+t*2.6));s.m.rotation.z+=s.d*dt*3;s.m.material.opacity=Math.pow(1-t,1.5)*.9;if(s.t>=1){cam.remove(s.m);s.m.geometry.dispose();s.m.material.dispose();sig.splice(i,1)}}
 for(let i=rg.length-1;i>=0;i--){const r=rg[i];r.t+=dt/r.dur;const t=Math.min(1,r.t);r.m.scale.setScalar(1+r.r*(1-(1-t)*(1-t)));r.m.material.opacity=.9*(1-t);if(r.t>=1){scene.remove(r.m);r.m.geometry.dispose();r.m.material.dispose();rg.splice(i,1)}}
 for(let i=bolts.length-1;i>=0;i--){const b=bolts[i];b.t+=dt/b.life;b.g.visible=b.t>.5||Math.random()>.25;b.g.children[1].material.opacity=.45*(1-Math.min(1,b.t));if(b.t>=1){scene.remove(b.g);b.g.children.forEach(c=>{c.geometry.dispose();c.material.dispose()});bolts.splice(i,1)}}
 upP(dt);storyTick(dt);
 if(state!==1)return;
-for(const k in cd){cd[k]=Math.max(0,cd[k]-dt);SP[k].b.firstChild.style.height=(cd[k]/SP[k].cd*100)+'%'}
+for(const k in cd){cd[k]=Math.max(0,cd[k]-dt);if(!cd[k]&&qd[k]){const q=qd[k];qd[k]=0;cast(k,q)}SP[k].b.firstChild.style.height=(cd[k]/SP[k].cd*100)+'%'}
 if(toSpawn>0){spawnT-=dt;if(spawnT<=0){spawn();toSpawn--;spawnT=Math.max(1.1,3-wave*.25)}}
-else if(!enemies.length){if(!told){told=1;tell(wave)}if(!busy()){gap-=dt;if(gap<=0){wave++;told=0;gap=1.5;saveCk();if(wave>1)hp=Math.min(100,hp+12);if(wave%5===0&&(endless||wave===5)){toSpawn=3;spawnT=4;spawn(1);tell(wave>5?'c':'b');pop(wave>5?'残響の王':'沈黙の王','#c86bff')}else{toSpawn=Math.min(32,3+wave*2);spawnT=1.5;tell('w'+wave);pop('第'+wave+'波','#fff')}}}}
+else if(!enemies.length){if(!told){told=1;tell(wave)}if(!busy()){gap-=dt;if(gap<=0){wave++;told=0;gap=1.5;saveCk();sfx(wave%5===0&&(endless||wave===5)?'boss':'wave');if(wave>1)hp=Math.min(100,hp+12);if(wave%5===0&&(endless||wave===5)){toSpawn=3;spawnT=4;spawn(1);tell(wave>5?'c':'b');pop(wave>5?'残響の王':'沈黙の王','#c86bff')}else{toSpawn=Math.min(32,3+wave*2);spawnT=1.5;tell('w'+wave);pop('第'+wave+'波','#fff')}}}}
 for(let i=pj.length-1;i>=0;i--){const p=pj[i];p.t+=dt/p.dur;if(p.tg){if(p.tg.dead)p.tg=null;else p.end.copy(p.tg.g.position)}
 const t=Math.min(1,p.k==='meteor'?p.t*p.t:p.t),prev=p.m.position.clone();
 p.m.position.copy(p.a).lerp(p.end,t).addScaledVector(p.side,Math.sin(Math.PI*Math.min(1,p.t))*p.amp);const ps2=p.m.position;
@@ -366,14 +422,15 @@ else{emit(ps2,6,0xff5a1a,4,1,1.4,-1);emit(ps2,3,0xffd080,3,.6,.9);p.m.rotation.x
 if(p.t>=1){impact(p);scene.remove(p.m);pj.splice(i,1)}}
 for(let i=enemies.length-1;i>=0;i--){const e=enemies[i],p=e.g.position,dist=Math.max(.01,Math.hypot(p.x,p.z)),k=(e.boss&&dist<6?0:e.sp*(e.fz>0?.25:1))*dt/dist;e.fz-=dt;e.ht-=dt;if(e.boss){e.rot-=dt;if(e.rot<=0){e.rot=7;e.el=EL[(EL.indexOf(e.el)+1)%3];const c=SP[e.el].c;e.mats.forEach(m=>m.color.setHex(c));e.body.material.emissive.setHex(c);ring(p.clone(),c,7,.7);emit(p,30,c,9,.8,.7);if(!e.said){e.said=1;tell('x')}}}
 p.x-=p.x*k;p.z-=p.z*k;p.y=e.y0+Math.sin(T*2+e.ph)*.5;
-e.body.rotation.y+=dt;e.body.rotation.x+=dt*.6;e.ring.rotation.z+=dt*2;e.orb.rotation.y+=dt*1.5;e.core.scale.setScalar(1+Math.sin(T*6+e.ph)*.15);
+e.body.rotation.y+=dt;e.body.rotation.x+=dt*.6;e.ring.rotation.z+=dt*2;e.orb.rotation.y+=dt*1.5;e.core.scale.setScalar(1+Math.sin(T*6+e.ph)*.15);if(Math.random()<dt*14*e.g.scale.x)emit(p,1,SP[e.el].c,1.2,.8,.3*Math.sqrt(e.g.scale.x),-.4);
 e.body.material.emissiveIntensity=.3+Math.max(0,e.ht)*8;e.body.material.color.setHex(e.fz>0?0x3a5a80:0x1a1426);
 e.bar.quaternion.copy(cam.quaternion);const r=Math.max(.001,e.hp/e.max);e.fl.scale.x=r;e.fl.position.x=-(1-r);
-if(dist<(e.boss?7:3.4)){if(e.boss){e.atk-=dt;if(e.atk>0)continue;e.atk=1.3}hp-=e.d;shake(.7);$('red').style.opacity=.9;setTimeout(()=>$('red').style.opacity=0,70);boom(p.clone(),0xff2040,1);if(!e.boss)rm(e);if(hp<=0)gameOver()}}
-$('hp').style.width=Math.max(0,hp)+'%';$('wv').textContent=wave;$('sc').textContent=score}
+if(dist<(e.boss?7:3.4)){if(e.boss){e.atk-=dt;if(e.atk>0)continue;e.atk=1.3}hp-=e.d;sfx('hurt');shake(.7);$('red').style.opacity=.9;setTimeout(()=>$('red').style.opacity=0,70);boom(p.clone(),0xff2040,1);if(!e.boss)rm(e);if(hp<=0)gameOver()}}
+if(hp<35&&hp>0)ev('vl');
+if(state===1&&hp<30){hb-=dt;$('red').style.opacity=.22+.15*Math.sin(T*7);lowf=1;if(hb<=0){hb=.85;tone(60,38,.22,.5);setTimeout(()=>tone(52,35,.2,.35),190)}}else if(lowf){lowf=0;$('red').style.opacity=0}$('hp').style.width=Math.max(0,hp)+'%';$('wv').textContent=wave;$('sc').textContent=score}
 
 /* ---------- input / boot ---------- */
-function begin(){ac=ac||new AC();if(ac.resume)ac.resume();reset();P.rec.pl++;cmode=cwant;cwant=0;if(cmode){endless=true;toast('✦ クリエイトモード')}useLoadout();if(wantLoad){wantLoad=0;applySave()}}
+function begin(){ac=ac||new AC();if(!out)mkOut();bgm();if(ac.resume)ac.resume();reset();P.rec.pl++;cmode=cwant;cwant=0;if(cmode){endless=true;toast('✦ クリエイトモード')}useLoadout();if(wantLoad){wantLoad=0;applySave()}}
 $('go').onclick=()=>{begin();micOn=true;if(rec||startRec()){if(!an)startVol()}else say('⚠ このブラウザは音声認識に未対応です。入力欄・ボタン・数字キー1〜5で撃てます')};
 $('go2').onclick=()=>{begin();say('マイクなしモード：ボタン／数字キー1〜5／入力欄で詠唱')};
 $('re').onclick=()=>{reset();P.rec.pl++};$('ld').onclick=()=>{reset();applySave()};$('ct').onclick=()=>{wantLoad=1;$('go').click()};$('md').onclick=()=>{endless=!endless;$('md').textContent='モード：'+(endless?'エンドレス':'物語')};$('en').onclick=()=>{endless=true;state=1;hp=100;told=0;$('over').style.display='none'};
@@ -381,6 +438,43 @@ $('typ').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&
 addEventListener('keydown',e=>{const k=Object.keys(SP).find(x=>SP[x].key===e.key);if(k)cast(k,1)});
 addEventListener('pointermove',e=>{if(state!==0){mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5}});
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(comp)comp.setSize(innerWidth,innerHeight);pmat.uniforms.sc.value=renderer.domElement.height*.7});
-const clock=new THREE.Clock();
+const qd={};
+function warm(){const B=THREE.MeshBasicMaterial,A=THREE.AdditiveBlending,g=new THREE.Group(),bx=new THREE.BoxGeometry(.01,.01,.01),add=m=>g.add(new THREE.Mesh(bx,m));
+add(new B({color:1}));add(new B({color:1,fog:false}));add(new B({color:1,transparent:true,opacity:.5,blending:A,depthWrite:false,fog:false}));
+add(new B({color:1,transparent:true,blending:A,depthWrite:false,side:THREE.DoubleSide}));
+add(new B({map:circ,transparent:true,blending:A,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+add(new B({color:1,transparent:true,opacity:.6,depthTest:false}));
+add(new B({map:glow,transparent:true,blending:A,depthWrite:false}));add(new THREE.MeshStandardMaterial({color:1,emissive:1,emissiveIntensity:1,flatShading:true}));
+g.position.set(0,-50,0);scene.add(g);try{renderer.compile(scene,cam)}catch(_){}scene.remove(g)}
+const DEFC={sat:85,gl:70,br:100,se:100,bm:100};
+let out,bg=0,bgG,hb=0,lowf=0;
+function mkOut(){const c=ac.createDynamicsCompressor(),g=ac.createGain(),cv=ac.createConvolver(),w=ac.createGain(),n=ac.sampleRate*1.8|0,b=ac.createBuffer(2,n,ac.sampleRate);for(let h=0;h<2;h++){const a=b.getChannelData(h);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/n,3)}cv.buffer=b;w.gain.value=.35;g.gain.value=.9*CFG.se/100;g.connect(c);g.connect(cv);cv.connect(w);w.connect(c);c.connect(ac.destination);out=g}
+function sw(d,f1,f2,g,t,q){if(!ac)return;const n=ac.sampleRate*d|0,b=ac.createBuffer(1,n,ac.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;const s=ac.createBufferSource(),f=ac.createBiquadFilter(),gn=ac.createGain(),t0=ac.currentTime;s.buffer=b;f.type=t||'bandpass';f.Q.value=q||1;f.frequency.setValueAtTime(f1,t0);f.frequency.exponentialRampToValueAtTime(f2,t0+d);gn.gain.setValueAtTime(g,t0);gn.gain.exponentialRampToValueAtTime(.001,t0+d);s.connect(f);f.connect(gn);gn.connect(out||ac.destination);s.start()}
+const SFX={
+fire:()=>{sw(.5,400,2500,.4,'bandpass',1.2);tone(220,60,.35,.25,'sawtooth');sw(.25,3000,800,.15,'highpass')},
+ice:()=>{[1568,2093,2637].forEach((f,i)=>setTimeout(()=>tone(f,f*.98,.5,.07),i*45));sw(.3,8000,3000,.12,'highpass')},
+thunder:()=>{sw(.12,6000,1200,.7,'highpass');sw(1.1,900,90,.6,'lowpass');tone(140,30,.9,.45,'sawtooth');setTimeout(()=>sw(.9,500,60,.35,'lowpass'),120)},
+meteor:()=>{sw(1.1,200,900,.5,'lowpass');tone(50,100,1,.35,'sawtooth');setTimeout(()=>{tone(60,20,1.2,.7);sw(1.4,700,60,.7,'lowpass')},750)},
+heal:()=>[523,659,784,988,1319].forEach((f,i)=>setTimeout(()=>{tone(f,f*1.003,.7,.1);tone(f*2,f*2,.5,.04)},i*80)),
+boom:s=>{const m=Math.min(s,2.5),v=Math.min(m,1.6);sw(.35+.3*m,1400,70,.45*v,'lowpass');tone(150,35,.4+.1*m,.35*v)},
+hit:()=>{const t=performance.now();if(t-(SFX.last||0)<70)return;SFX.last=t;tone(700,300,.07,.08,'square')},
+weak:()=>{tone(1200,1800,.12,.1,'triangle');tone(900,1350,.18,.07)},
+kill:s=>{tone(380,70,.4,.2,'sawtooth');sw(.35,2000,300,.2,'bandpass',2);if(s>1)tone(90,25,1.5,.5)},
+hurt:()=>{tone(110,45,.35,.5,'sawtooth');sw(.3,500,80,.5,'lowpass');tone(233,220,.3,.15,'square')},
+wave:()=>{tone(220,220,.6,.14,'sawtooth');setTimeout(()=>tone(330,330,.9,.14,'sawtooth'),280)},
+boss:()=>{tone(70,40,2,.5,'sawtooth');tone(73,38,2,.4,'sawtooth');sw(2,300,60,.4,'lowpass')},
+spawn:()=>sw(.5,300,1200,.06,'bandpass',3),
+win:()=>[523,659,784,1046,1319].forEach((f,i)=>setTimeout(()=>tone(f,f,.9,.12),i*160)),
+over:()=>{tone(220,55,1.4,.35,'sawtooth');sw(1.2,800,60,.4,'lowpass')}};
+function bgm(){if(!ac||bg)return;bg=1;const g=ac.createGain(),f=ac.createBiquadFilter(),lf=ac.createOscillator(),lg=ac.createGain();bgG=g;g.gain.value=.05*CFG.bm/100;f.type='lowpass';f.frequency.value=420;lf.frequency.value=.07;lg.gain.value=220;lf.connect(lg);lg.connect(f.frequency);lf.start();
+[55,82.4,110.3,164.9].forEach((fr,i)=>{const o=ac.createOscillator();o.type=i%2?'sawtooth':'triangle';o.frequency.value=fr;o.detune.value=i*5-8;o.connect(f);o.start()});f.connect(g);g.connect(out||ac.destination);
+const N=[330,392,440,494,587,659,784];setInterval(()=>{if(state===1&&Math.random()<.6)tone(N[Math.random()*7|0],N[Math.random()*7|0]*.999,2.5,.035)},3200)}
+function decal(p,c,s){const m=new THREE.Mesh(new THREE.CircleGeometry(2.4*s,24),new THREE.MeshBasicMaterial({map:glow,color:c,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(p.x,.06,p.z);scene.add(m);rg.push({m,t:0,dur:2.5+s,r:0})}
+let CFG=Object.assign({},DEFC,(()=>{try{return JSON.parse(localStorage.getItem('vm_cfg'))||{}}catch(_){return{}}})());
+function applyCfg(){if(out)out.gain.value=.9*CFG.se/100;if(bgG)bgG.gain.value=.05*CFG.bm/100;renderer.domElement.style.filter='saturate('+CFG.sat+'%) brightness('+CFG.br+'%)';try{localStorage.setItem('vm_cfg',JSON.stringify(CFG))}catch(_){}}
+function cfgUI(){for(const[k,i]of[['sat','ss'],['gl','sg'],['br','sb'],['se','sv'],['bm','sm']]){const e=$(i);e.value=CFG[k];$(i+'v').textContent=CFG[k]+'%';e.oninput=()=>{CFG[k]=+e.value;$(i+'v').textContent=e.value+'%';applyCfg()}}}
+$('gear').onclick=$('gs').onclick=()=>{$('set').style.display='flex'};$('setc').onclick=()=>{$('set').style.display='none'};$('setr').onclick=()=>{CFG=Object.assign({},DEFC);cfgUI();applyCfg()};
+cfgUI();applyCfg();
+warm();const clock=new THREE.Clock();
 (function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);T+=dt;update(dt);if(comp)comp.render();else renderer.render(scene,cam)})();
 </script></body></html>
