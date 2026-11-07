@@ -61,9 +61,65 @@ button:hover,button:focus{background:var(--yl);color:#000;outline:none}
 button:active{border-color:var(--lo) var(--hi) var(--hi) var(--lo)}
 button.cta{background:var(--ac);color:#fff}
 button.cta:hover,button.cta:focus{background:var(--yl);color:#000}
+/* ダメージ集計: HUD(#dm) / ラウンド終了パネル(#rr) / 結果表(.tb) */
+.dg{display:none;grid-template-columns:auto auto auto;align-items:baseline;white-space:nowrap}
+.dg .h{color:#b8b8c8;text-align:right}
+.dg .d,.dg .t,.tb .n{text-align:right;font-family:var(--fh);font-size:.85em;font-variant-numeric:tabular-nums}
+.dg .d,.tb .d{color:var(--ok)}
+.dg .t,.tb .t{color:#ff7a6a}
+#dm{left:14px;top:calc(12px + 2.6em);padding:4px 10px;gap:1px 1em;font-size:.8em}
+#rr{left:50%;top:47%;transform:translateX(-50%);padding:8px 18px;gap:4px 1.6em;font-size:1.05em}
+.tb{display:grid;grid-template-columns:auto auto auto auto;gap:3px 1.6em;align-items:baseline;text-align:left;padding:10px 16px;background:var(--pn);border:3px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo);box-shadow:0 0 0 2px #000;max-height:38vh;overflow:auto;max-width:92vw}
+.tb .h{color:#b8b8c8;font-size:.8em}
+.tb .s{border-top:2px solid var(--hi);padding-top:5px;margin-top:3px}
+/* HP: めくれるフリップカード（上半分が倒れ、下半分が起き上がる） */
+#bar #hv{left:-3px;bottom:calc(100% + 9px);display:flex;align-items:flex-end;gap:.7em;font:400 1em var(--fh);letter-spacing:0;color:var(--yl)}
+#hv .hl{font-size:.8em;padding-bottom:.35em;letter-spacing:.06em}
+#hv .hc{display:flex;gap:3px}
+#hv .hw{display:none;font-size:.7em;padding:.4em .6em;margin-bottom:.4em;background:var(--ac);color:#fff;box-shadow:2px 2px 0 #000;animation:bl .35s steps(1) infinite alternate}
+#hv.lo .hw{display:block}
+.fd{position:relative;display:block;width:1.15em;height:1.8em;font:400 1.3em/1 var(--fh);color:var(--ok);box-shadow:0 0 0 2px #000,0 3px 0 2px #000}
+#hv.mid .fd{color:var(--yl)}
+#hv.lo .fd,#hv.dead .fd{color:#ff6a5a}
+.fd::after{content:"";position:absolute;left:0;right:0;top:calc(50% - 1px);height:2px;background:#000;z-index:6}
+.fd .fh{position:absolute;left:0;right:0;height:50%;overflow:hidden;backface-visibility:hidden}
+.fd .fh>span{position:absolute;left:0;right:0;height:200%;display:flex;align-items:center;justify-content:center;text-shadow:2px 2px 0 #000}
+.fd .fu,.fd .ft{top:0;background:linear-gradient(#3c3c4a,#262631)}
+.fd .fl,.fd .fb{bottom:0;background:linear-gradient(#1a1a22,#2c2c38)}
+.fd .fu>span,.fd .ft>span{top:0}
+.fd .fl>span,.fd .fb>span{bottom:0}
+.fd .fu,.fd .fl{z-index:1}
+.fd .ft,.fd .fb{z-index:3;visibility:hidden}
+.fd .ft{transform-origin:50% 100%}
+.fd .fb{transform-origin:50% 0}
+.fd.go .ft,.fd.go .fb{visibility:visible;animation-fill-mode:both}
+.fd.go .ft{animation:ftf .15s cubic-bezier(.55,.05,.9,.55) var(--dl,0s)}
+.fd.go .fb{animation:fbf .24s cubic-bezier(.2,.8,.35,1.4) calc(var(--dl,0s) + .15s)}
+@keyframes ftf{from{transform:perspective(240px) rotateX(0);filter:brightness(1)}to{transform:perspective(240px) rotateX(-90deg);filter:brightness(.5)}}
+@keyframes fbf{from{transform:perspective(240px) rotateX(90deg);filter:brightness(.5)}to{transform:perspective(240px) rotateX(0);filter:brightness(1)}}
+#hv.hurt .hc{animation:hsk .36s steps(1)}
+@keyframes hsk{0%{transform:translate(-5px,2px)}17%{transform:translate(5px,-2px)}34%{transform:translate(-4px,0)}51%{transform:translate(3px,2px)}68%{transform:translate(-2px,-1px)}85%{transform:translate(1px,0)}100%{transform:none}}
+/* HP警告: 画面端の赤い脈動 */
+#vg{inset:0;opacity:0;box-shadow:inset 0 0 9cqw 1cqw rgba(232,56,42,.8)}
+#vg.on{animation:vgp .95s ease-in-out infinite}
+@keyframes vgp{0%,100%{opacity:.12}50%{opacity:1}}
+/* ダメージポップ: カードがめくれて現れ、浮き上がって裏返り消える */
+#fx{inset:0;overflow:hidden}
+.pp{position:absolute;left:50%;top:50%;padding:.3em .6em;font:400 1.35em/1 var(--fh);white-space:nowrap;background:linear-gradient(#3c3c4a 50%,#262631 50%);border:3px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);box-shadow:0 0 0 2px #000;text-shadow:2px 2px 0 #000;animation:ppf 1.1s both;will-change:transform}
+.pp.d{color:var(--yl)}
+.pp.k{color:#ff9a3c;font-size:1.7em}
+.pp.t{color:#ff6a5a;left:calc(14px + 4.2em);top:auto;bottom:calc(53px + 4.5em)}
+@keyframes ppf{
+0%{opacity:0;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px))) perspective(320px) rotateX(-95deg) scale(.7)}
+12%{opacity:1;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px) - 12px)) perspective(320px) rotateX(14deg) scale(1.18)}
+22%{transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px) - 16px)) perspective(320px) rotateX(0) scale(1)}
+70%{opacity:1;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px) - 38px)) perspective(320px) rotateX(0) scale(1)}
+100%{opacity:0;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px) - 58px)) perspective(320px) rotateX(92deg) scale(.9)}}
+@keyframes ppr{0%,100%{opacity:0;transform:translate(-50%,-50%)}15%,80%{opacity:1;transform:translate(-50%,-50%)}}
+@media (prefers-reduced-motion:reduce){.pp{animation-name:ppr}#vg.on{animation:none;opacity:.6}.fd.go .ft,.fd.go .fb{animation:none}#hv.hurt .hc{animation:none}}
 </style></head><body>
 <div id="w"><div id="fr"><canvas id="g3"></canvas><canvas id="c"></canvas>
-<div id="hud"><div id="top" class="px"></div><div id="net" class="px"></div><div id="fc" class="px"></div><div id="mid"></div><div id="bar"><i id="gh"></i><i id="hp"></i><b id="hv"></b></div><div id="rt"></div><div id="am"></div><div id="bm" class="px"></div></div></div>
+<div id="hud"><div id="vg"></div><div id="top" class="px"></div><div id="net" class="px"></div><div id="fc" class="px"></div><div id="mid"></div><div id="bar"><i id="gh"></i><i id="hp"></i><b id="hv"></b></div><div id="rt"></div><div id="am"></div><div id="bm" class="px"></div><div id="dm" class="px dg"></div><div id="rr" class="px dg"></div><div id="fx"></div></div></div>
 <div id="ov"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -72,11 +128,73 @@ C.width=W;C.height=H;try{Object.assign(CFG,JSON.parse(localStorage.cfg))}catch(e
 function setFov(){FOV=CFG.fov*Math.PI/180;PD=W/2/Math.tan(FOV/2);for(let i=0;i<W;i++)RA[i]=Math.atan((i+.5-W/2)/PD)}setFov();
 let N=51,M=[];let sd=20261024;const rn=()=>{sd=sd*1664525+1013904223>>>0;return sd/4294967296};
 // マップ生成: n=サイズ(奇数) cx=複雑さ(0=広場〜10=完全迷路, 5=従来) seed=乱数の種
-function genMap(n,cx,seed){N=n;sd=seed>>>0;M=Array.from({length:N},()=>Array(N).fill(1));
+function genMaze(n,cx,seed){N=n;sd=seed>>>0;M=Array.from({length:N},()=>Array(N).fill(1));
 {const st=[[1,1]];M[1][1]=0;while(st.length){const[x,y]=st[st.length-1],d=[[2,0],[-2,0],[0,2],[0,-2]].filter(([a,b])=>x+a>0&&y+b>0&&x+a<N-1&&y+b<N-1&&M[y+b][x+a]);if(!d.length){st.pop();continue}const[a,b]=d[rn()*d.length|0];M[y+b/2][x+a/2]=0;M[y+b][x+a]=0;st.push([x+a,y+b])}
  for(let i=0,L=N*N*(10-cx)/30;i<L;i++){const x=1+(rn()*(N-2)|0),y=1+(rn()*(N-2)|0);if(M[y][x]&&((x&1)!=(y&1)))M[y][x]=0}
  if(cx<5)for(let y=2;y<N-2;y+=2)for(let x=2;x<N-2;x+=2)if(M[y][x]&&(!M[y-1][x]||!M[y+1][x]||!M[y][x-1]||!M[y][x+1])&&rn()<(5-cx)*.12)M[y][x]=0;
  for(const[cx,cy,r]of[[2,2,1],[N-3,N-3,1],[(N>>1)|0,(N>>1)|0,3],[(N>>2)|1,(N>>1)|0,1],[(N*3>>2)|1,(N>>1)|0,1],[(N>>1)|0,(N>>2)|1,1],[(N>>1)|0,(N*3>>2)|1,1]])for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++)M[y][x]=0}}
+// ---- マップ プリセット（町・闘技場・倉庫・森）---- seed固定のrn()だけで生成するので、オンラインでも全員同じ地形になる
+const PRN=['迷路(従来)','町(昼)','町(夜)','闘技場','倉庫','森'];
+let PR=0,MT=[],MC=[],FK=[];// MT=壁の種類 MC=色番号 FK=床の種類
+const hs=(a,b)=>((a*73856093)^(b*19349663))>>>0,ri=n=>rn()*n|0,mkA=()=>Array.from({length:N},()=>new Uint8Array(N));
+function putW(x,y,t,c){if(x>0&&y>0&&x<N-1&&y<N-1){M[y][x]=1;MT[y][x]=t;MC[y][x]=c|0}}
+function putO(x,y,f){if(x>0&&y>0&&x<N-1&&y<N-1){M[y][x]=0;MT[y][x]=1;FK[y][x]=f|0}}
+function rectW(x0,y0,w,h,t,c){for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)putW(x,y,t,c)}
+function rectO(x0,y0,w,h,f){for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)putO(x,y,f)}
+// 外周を壁にし、中央から到達できない空きセルを壁で埋める（敵CPUが行けない場所を作らない）
+function finishMap(bt,fillT){
+ for(let i=0;i<N;i++)for(const[x,y]of[[i,0],[i,N-1],[0,i],[N-1,i]]){M[y][x]=1;MT[y][x]=bt;MC[y][x]=hs(x,y)&7}
+ let sx=N>>1,sy=N>>1,f=0;
+ for(let r=0;r<N&&!f;r++)for(let y=sy-r;y<=sy+r&&!f;y++)for(let x=sx-r;x<=sx+r;x++)if(x>0&&y>0&&x<N-1&&y<N-1&&!M[y][x]){sx=x;sy=y;f=1;break}
+ const D=bfsFrom(sx,sy);for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++)if(!M[y][x]&&D[y*N+x]<0)putW(x,y,fillT,hs(x,y)&7)}
+// 壁の種類: 1煉瓦 2〜4建物(階数) 5生け垣 6石 7木箱 8棚 9木 10石柱 11車 12コンクリ 13コンテナ
+function genTown(){
+ const S=4,B=5,P=S+B,k=Math.max(1,((N-2-S)/P)|0),used=k*P+S,sh=1+((N-2-used)>>1),inter=(x,y)=>(x-sh)%P<S&&(y-sh)%P<S;
+ for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++)putW(x,y,2+hs(x>>2,y>>2)%3,hs(x>>2,y>>2)>>3&7);
+ for(let y=sh;y<sh+used;y++)for(let x=sh;x<sh+used;x++){const px=(x-sh)%P,py=(y-sh)%P,ix=px<S,iy=py<S;
+  if(ix&&iy)putO(x,y,(px==0||px==S-1)&&(py==0||py==S-1)?2:1);
+  else if(iy)putO(x,y,py==0||py==S-1?2:1);
+  else if(ix)putO(x,y,px==0||px==S-1?2:1)}
+ const cb=k>>1;
+ for(let bj=0;bj<k;bj++)for(let bi=0;bi<k;bi++){const bx=sh+S+bi*P,by=sh+S+bj*P,r=rn(),col=ri(8);
+  if(bi==cb&&bj==cb&&k>=3){rectO(bx,by,B,B,3);rectW(bx+1,by+1,3,3,6,0);for(const[a,b]of[[0,0],[B-1,0],[0,B-1],[B-1,B-1]])putW(bx+a,by+b,5,0)}
+  else if(r<.13){rectO(bx,by,B,B,4);for(let i=0;i<4;i++)putW(bx+ri(B),by+ri(B),5,0);putW(bx+2,by+2,9,0)}
+  else if(r<.28){rectW(bx,by,2,B,2+ri(3),col);rectW(bx+3,by,2,B,2+ri(3),ri(8));rectO(bx+2,by,1,B,5)}
+  else if(r<.43){rectW(bx,by,2,2,2+ri(3),col);rectW(bx+3,by,2,2,2+ri(3),ri(8));rectW(bx,by+3,2,2,2+ri(3),ri(8));rectW(bx+3,by+3,2,2,2+ri(3),ri(8));rectO(bx+2,by,1,B,5);rectO(bx,by+2,B,1,5)}
+  else rectW(bx,by,B,B,2+ri(3),col)}
+ for(let y=sh;y<sh+used;y++)for(let x=sh;x<sh+used;x++){const r=rn();if(M[y][x])continue;const f=FK[y][x];
+  if(f==1&&r<.05&&!inter(x,y)){const vz=(x-sh)%P<S,x2=vz?x:x+1,y2=vz?y+1:y;
+   if(x2<sh+used&&y2<sh+used&&!M[y2][x2]&&FK[y2][x2]==1&&!inter(x2,y2)){const ci=ri(8);putW(x,y,11,ci);putW(x2,y2,11,ci)}}
+  else if(f==2&&!inter(x,y)&&r>.94)putW(x,y,9,0);
+  else if(f==2&&inter(x,y)&&r<.4)putW(x,y,7,0)}
+ finishMap(3,2)}
+function genArena(){
+ const c=(N-1)/2,ci=c|0,R=c-1.2,r1=R*.52;
+ for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){const d=Math.hypot(x-c,y-c);if(d>R)putW(x,y,6,hs(x,y)&7);else putO(x,y,d>R-1.6?2:1)}
+ for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){const dx=x-c,dy=y-c;if(Math.abs(Math.hypot(dx,dy)-r1)<.75){const a=Math.atan2(dy,dx);let gt=0;for(let q=0;q<4;q++){let df=Math.abs(a-q*Math.PI/2);df=Math.min(df,2*Math.PI-df);if(df<2.1/r1)gt=1}if(!gt)putW(x,y,6,0)}}
+ const pn=Math.max(8,(Math.PI*2*R*.8/3.5)|0);for(let i=0;i<pn;i++){const a=i/pn*Math.PI*2;putW(Math.round(c+Math.cos(a)*R*.8),Math.round(c+Math.sin(a)*R*.8),10,0)}
+ rectO(ci-2,ci-2,5,5,2);rectW(ci-1,ci-1,3,3,6,0);for(const[a,b]of[[3,0],[-3,0],[0,3],[0,-3]])putW(ci+a,ci+b,7,0);
+ for(let i=0,n=N>>1;i<n;i++){const x=1+ri(N-2),y=1+ri(N-2),d=Math.hypot(x-c,y-c);if(!M[y][x]&&d>r1+2&&d<R-2.5)putW(x,y,rn()<.5?6:7,0)}
+ finishMap(6,6)}
+function genWare(){
+ for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++)putO(x,y,0);
+ const c=N>>1,zr=Math.min(6,(N/6)|0);
+ for(let y=2;y<N-2;y++){if((y-2)%5<3)continue;for(let x=2;x<N-2;x++){if((x-2)%10>=8)continue;if(Math.abs(x-c)<=zr+1&&Math.abs(y-c)<=zr+1)continue;putW(x,y,8,0)}}
+ for(let y=c-zr;y<=c+zr;y++)for(let x=c-zr;x<=c+zr;x++)putO(x,y,Math.abs(x-c)==zr||Math.abs(y-c)==zr?2:1);
+ for(const[sx,sy]of[[-1,-1],[1,-1],[-1,1],[1,1]]){const w=ri(2)?4:2,h=w==4?2:4;rectW(sx<0?c-zr+1:c+zr-w,sy<0?c-zr+1:c+zr-h,w,h,13,ri(8))}
+ for(let y=7;y<N-6;y+=10)for(let x=7;x<N-6;x+=10)if(!M[y][x])putW(x,y,12,0);
+ for(let y=2;y<N-2;y++)for(let x=2;x<N-2;x++)if(!M[y][x]&&FK[y][x]==0&&rn()<.025){const s=ri(3)?1:2;if(s==1||(!M[y][x+1]&&!M[y+1][x]&&!M[y+1][x+1]&&FK[y][x+1]==0&&FK[y+1][x]==0&&FK[y+1][x+1]==0))rectW(x,y,s,s,7,0)}
+ finishMap(12,12)}
+function genForest(){
+ let g=mkA();for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++)g[y][x]=rn()<.43?1:0;
+ for(let it=0;it<4;it++){const h=mkA();for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){let n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)n+=(y+dy<=0||x+dx<=0||y+dy>=N-1||x+dx>=N-1)?1:g[y+dy][x+dx];h[y][x]=n>=5?1:n<=3?0:g[y][x]}g=h}
+ const c=N>>1,cr=Math.max(4,(N*.1)|0);
+ for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++)if(Math.hypot(x-c,y-c)<cr)g[y][x]=0;
+ for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){if(g[y][x]){const inner=g[y-1][x]&&g[y+1][x]&&g[y][x-1]&&g[y][x+1];putW(x,y,inner?9:(rn()<.15?6:5),0)}else putO(x,y,rn()<.07?2:1)}
+ for(let i=0;i<8;i++){const a=i*Math.PI/4;putW(Math.round(c+Math.cos(a)*3),Math.round(c+Math.sin(a)*3),10,0)}putW(c,c,6,0);
+ finishMap(9,9)}
+function genMap(n,cx,seed,pr){pr=pr|0;const f=[0,genTown,genTown,genArena,genWare,genForest][pr];if(!f){PR=0;return genMaze(n,cx,seed)}
+ PR=pr;N=n;sd=seed>>>0;M=Array.from({length:N},()=>Array(N).fill(1));MT=mkA();MC=mkA();FK=mkA();f()}
 genMap(51,5,20261024);
 const zb=new Float32Array(W),K={},$=id=>document.getElementById(id),ov=$('ov');
 const BG=X.createLinearGradient(0,0,0,H);BG.addColorStop(0,'#202a40');BG.addColorStop(.5,'#080b12');BG.addColorStop(.5,'#1c1915');BG.addColorStop(1,'#443c31');
@@ -115,16 +233,88 @@ RN.setPixelRatio(1);RN.setSize(480,270,false);CM.rotation.order='YXZ';SC.add(CM)
 function tex(f,n){const c=document.createElement('canvas');c.width=c.height=64;f(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.magFilter=THREE.NearestFilter;t.wrapS=t.wrapT=THREE.RepeatWrapping;if(n)t.repeat.set(n,n);return t}
 const wallTex=tex(g=>{g.fillStyle='#4a3028';g.fillRect(0,0,64,64);for(let r=0;r<4;r++)for(let c=0;c<3;c++){const o=r&1?16:0;g.fillStyle=`hsl(${12+(r*7+c*5)%9},38%,${36+(r*13+c*11)%10}%)`;g.fillRect(c*32+o-16+1,r*16+1,30,14)}}),
  ft=tex(g=>{g.fillStyle='#2a2823';g.fillRect(0,0,64,64);g.fillStyle='#36332b';g.fillRect(0,0,32,32);g.fillRect(32,32,32,32)},N);
-let WM,WALLS,FLR;const WIX=new Map();
-function buildScene(){if(WALLS){SC.remove(WALLS,FLR,CE);for(const o of[WALLS,FLR,CE])o.geometry.dispose()}
- WIX.clear();ft.repeat.set(N,N);CM.far=Math.max(80,N*2);CM.updateProjectionMatrix();const cells=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(M[y][x])cells.push([x,y]);
- const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,WL,1),new THREE.MeshLambertMaterial({map:wallTex}),cells.length),d=new THREE.Object3D(),col=new THREE.Color();
- cells.forEach(([x,y],i)=>{WIX.set(y*N+x,i);d.position.set(x+.5,WL/2,y+.5);d.updateMatrix();im.setMatrixAt(i,d.matrix);const s=.75+((x*7+y*13)%5)*.07;im.setColorAt(i,col.setRGB(s,s,s))});SC.add(im);WM=WALLS=im;
- const fl=FLR=new THREE.Mesh(new THREE.PlaneGeometry(N,N),new THREE.MeshLambertMaterial({map:ft}));fl.rotation.x=-Math.PI/2;fl.position.set(N/2,0,N/2);SC.add(fl);
- CE=new THREE.Mesh(new THREE.PlaneGeometry(N,N),new THREE.MeshBasicMaterial({color:0x10131a}));CE.rotation.x=Math.PI/2;CE.position.set(N/2,WL,N/2);SC.add(CE)}
+const WIX=new Map();
+// ---- マップの見た目（プリセットごとの空・霧・光・壁/床テクスチャ）----
+const TH0={bg:0x07090f,fog:0x07090f,fd:.08,fdFc:.012,am:0x8fa0c0,ami:.55,amiFc:1.1,pl:1.15,plFc:.6,pc:0xffe2b8,ce:1,ceil:1.6,cc:0x10131a,sun:null,night:0},th=o=>Object.assign({},TH0,o),
+ THM=[TH0,
+  th({bg:0x9ccbf0,fog:0xb4d4ee,fd:.03,fdFc:.007,am:0xe0e8ff,ami:.62,amiFc:.9,pl:.2,plFc:.1,ce:0,sun:[0xfff0d0,.75,[.45,1,.3]]}),
+  th({bg:0x070b18,fog:0x0b1020,fd:.05,fdFc:.012,am:0x7686b8,ami:.5,amiFc:.8,pl:1,plFc:.3,ce:0,night:1,sun:[0x8a9ad0,.3,[-.4,1,.25]]}),
+  th({bg:0xf0b07a,fog:0xe8b088,fd:.026,fdFc:.007,am:0xffd8b0,ami:.6,amiFc:.9,pl:.2,plFc:.1,ce:0,sun:[0xffb070,.8,[-.6,.7,.4]]}),
+  th({bg:0x0a0b0d,fog:0x0c0d10,fd:.045,fdFc:.012,am:0xa0a8b8,ami:.7,amiFc:1.2,pl:1.1,plFc:.5,ce:1,ceil:3}),
+  th({bg:0xa8c8b8,fog:0xb4d0c0,fd:.04,fdFc:.01,am:0xd0e8d0,ami:.6,amiFc:.9,pl:.3,plFc:.1,ce:0,sun:[0xfff0c8,.6,[.3,1,.2]]})],
+ WTD={1:{h:1.6},2:{h:3.2},3:{h:4.8},4:{h:6.4},5:{h:1.6},6:{h:1.6},7:{h:1.6},8:{h:2.4},9:{h:3},10:{h:3},11:{h:.95},12:{h:3},13:{h:2.4}},
+ PAL_B=[0xe8d8c0,0xd0b090,0xb8c0cc,0xc8a8a0,0xd8d0a0,0xa8b8a8,0xa0a8c0,0xe0b888],PAL_C=[0xd04040,0x3a70d0,0x40a050,0xe0b030,0xf0f0f0,0x8a50c0,0x30b0c0,0x505058],
+ FPAL=[0,['#8a8a86','#3a3d44','#a9a9a4','#b8a888','#4f8a3c','#7a7a76'],['#8a8a86','#3a3d44','#a9a9a4','#b8a888','#4f8a3c','#7a7a76'],['#d6b878','#d6b878','#9a9488'],['#55575c','#4a4c50','#c9b02a'],['#3f7a3a','#3f7a3a','#7a5c3a']];
+const BLD=[],DSP=[];let WMS=[],FLR,TH=TH0;
+function ctex(w,h,f,rx,ry){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.magFilter=THREE.NearestFilter;t.wrapS=t.wrapT=THREE.RepeatWrapping;if(rx)t.repeat.set(rx,ry);return t}
+function shade(h,f){const n=parseInt(h.slice(1),16),c=k=>Math.max(0,Math.min(255,(n>>k&255)*f|0));return`rgb(${c(16)},${c(8)},${c(0)})`}
+// 建物の窓(4階分のシート) m=0昼 1窓の灯り(emissive) 2夜の本体
+function paintFacade(g,m){g.fillStyle=m==1?'#000':'#e4dac8';g.fillRect(0,0,64,256);
+ for(let r=0;r<4;r++){const y0=r*64;
+  if(m!=1){g.fillStyle='#cfc4b0';g.fillRect(0,y0+60,64,4);g.fillStyle='#f2ebdc';g.fillRect(0,y0+58,64,2);for(let i=0;i<14;i++){const s=hs(r*31+i,i*7+3);g.fillStyle=s&1?'#d8cdba':'#ede3d0';g.fillRect(s%62,y0+(s>>6)%56,2,2)}}
+  for(let w=0;w<2;w++){const x0=9+w*28,y1=y0+12;
+   if(m==1){if((r*5+w*3+(r>>1))%3!==0){g.fillStyle='#ffd070';g.fillRect(x0+2,y1+2,14,24)}}
+   else{g.fillStyle='#f6f0e4';g.fillRect(x0-2,y1-2,22,32);const gr=g.createLinearGradient(0,y1,0,y1+28);gr.addColorStop(0,m?'#2a3a50':'#7fa6c8');gr.addColorStop(1,m?'#141c2a':'#35506e');g.fillStyle=gr;g.fillRect(x0,y1,18,28);g.fillStyle='#f6f0e4';g.fillRect(x0+8,y1,2,28);g.fillRect(x0,y1+12,18,2);g.fillStyle='#b9ad98';g.fillRect(x0-3,y1+30,24,3)}}}}
+function paintHedge(g,H){g.fillStyle='#2c6a2a';g.fillRect(0,0,64,H);const pl=['#3b8a37','#245a24','#4aa044','#1f4d20'];for(let i=0;i<260;i++){const s=hs(i,7*i+1);g.fillStyle=pl[s&3];g.fillRect((s>>3)%62,(s>>9)%(H-2),3,3)}for(let i=0;i<7;i++){const s=hs(i+99,i*5);g.fillStyle=i&1?'#e8d44a':'#e86a8a';g.fillRect((s>>3)%60,(s>>9)%(H-3),2,2)}}
+function paintStone(g,H){g.fillStyle='#5e5e5b';g.fillRect(0,0,64,H);for(let r=0;r*16<H;r++){const o=r&1?16:0;for(let c=-1;c<3;c++){const v=118+hs(r*13+c,r+5)%40;g.fillStyle=`rgb(${v},${v},${v-4})`;g.fillRect(c*32+o+1,r*16+1,30,14)}}}
+function paintCrate(g,H){g.fillStyle='#6a4420';g.fillRect(0,0,64,H);g.fillStyle='#b0803f';g.fillRect(4,4,56,H-8);g.fillStyle='#8c6230';for(let y=20;y<H-4;y+=16)g.fillRect(4,y,56,2);g.fillStyle='#6a4420';g.beginPath();g.moveTo(4,4);g.lineTo(10,4);g.lineTo(60,H-4);g.lineTo(54,H-4);g.fill();g.beginPath();g.moveTo(60,4);g.lineTo(54,4);g.lineTo(4,H-4);g.lineTo(10,H-4);g.fill()}
+function paintShelf(g,H){g.fillStyle='#17202e';g.fillRect(0,0,64,H);g.fillStyle='#3c5c9c';g.fillRect(0,0,5,H);g.fillRect(59,0,5,H);const bc=['#c8a060','#a86a3c','#d6c8a6','#6f9060','#b85a4a'];
+ for(let lv=1;lv<=3;lv++){const y=H*lv/3|0;g.fillStyle='#2c4478';g.fillRect(0,y-4,64,4);for(let x=7,i=0;x<56;i++){const w=10+hs(i,y)%14,hh=10+hs(y,i)%18;g.fillStyle=bc[hs(i+y,3)%5];g.fillRect(x,y-4-hh,Math.min(w,57-x),hh);x+=w+2}}}
+function paintTree(g,H){g.fillStyle='#1c3a1c';g.fillRect(0,0,64,H);const lh=H*.74,pl=['#2f7a2c','#3b8a37','#24621f','#4a9a42'];for(let y=0;y<lh;y+=3)for(let x=0;x<64;x+=3){g.fillStyle=pl[hs(x+3,y+11)&3];g.fillRect(x,y,3,3)}g.fillStyle='#5a3c22';g.fillRect(24,lh,16,H-lh);g.fillStyle='#46301a';g.fillRect(24,lh,3,H-lh);g.fillRect(36,lh,4,H-lh)}
+function paintPillar(g,H){g.fillStyle='#d9c9a2';g.fillRect(0,0,64,H);for(let x=0;x<64;x+=8){g.fillStyle='#c4b48a';g.fillRect(x+5,0,3,H);g.fillStyle='#ebddb8';g.fillRect(x,0,2,H)}g.fillStyle='#b0a074';g.fillRect(0,0,64,8);g.fillRect(0,H-8,64,8);g.fillStyle='#e6d8b0';g.fillRect(0,8,64,2);g.fillRect(0,H-10,64,2)}
+function paintCar(g,H){g.fillStyle='#f4f4f4';g.fillRect(0,0,64,H);g.fillStyle='#2a3444';g.fillRect(6,12,52,20);g.fillStyle='#4a5c78';g.fillRect(8,14,22,16);g.fillRect(34,14,22,16);g.fillStyle='#d8d8d8';g.fillRect(0,36,64,4);g.fillStyle='#1a1a1e';g.fillRect(6,48,14,16);g.fillRect(44,48,14,16);g.fillStyle='#ffe8a0';g.fillRect(0,40,5,6);g.fillStyle='#e04848';g.fillRect(59,40,5,6)}
+function paintConc(g,H){g.fillStyle='#7c7f84';g.fillRect(0,0,64,H);g.fillStyle='#62656a';g.fillRect(31,0,2,H);for(let y=0;y<H;y+=32)g.fillRect(0,y,64,2);for(let i=0;i<40;i++){const s=hs(i,5*i+2);g.fillStyle=s&1?'#8b8e93':'#70737a';g.fillRect(s%62,(s>>6)%H,2,2)}for(let x=0;x<64;x+=8){g.fillStyle=(x>>3)&1?'#d8b820':'#1c1c1c';g.fillRect(x,H-8,8,8)}}
+function paintCont(g,H){g.fillStyle='#e8e8e8';g.fillRect(0,0,64,H);for(let x=0;x<64;x+=4){g.fillStyle='#c0c0c0';g.fillRect(x+2,6,2,H-12)}g.fillStyle='#9a9a9a';g.fillRect(0,0,64,6);g.fillRect(0,H-6,64,6);g.fillStyle='#707070';g.fillRect(30,6,2,H-12)}
+const WPAINT={5:paintHedge,6:paintStone,7:paintCrate,8:paintShelf,9:paintTree,10:paintPillar,11:paintCar,12:paintConc,13:paintCont};
+function wallMat(t){
+ if(t==1){const m=new THREE.MeshLambertMaterial({map:wallTex});DSP.push(m);return m}
+ if(t>=2&&t<=4){const rep=t/4,mp=ctex(64,256,g=>paintFacade(g,TH.night?2:0),1,rep),o={map:mp};DSP.push(mp);
+  if(TH.night){const em=ctex(64,256,g=>paintFacade(g,1),1,rep);DSP.push(em);o.emissive=new THREE.Color(0xffffff);o.emissiveMap=em}
+  const sm=new THREE.MeshLambertMaterial(o),rf=new THREE.MeshLambertMaterial({color:0x6a6c70});DSP.push(sm,rf);return[sm,sm,rf,rf,sm,sm]}
+ const h=(WTD[t]||WTD[1]).h,H=64*Math.max(1,Math.round(h/1.6)),mp=ctex(64,H,g=>(WPAINT[t]||paintStone)(g,H),1,1),m=new THREE.MeshLambertMaterial({map:mp});DSP.push(mp,m);return m}
+function tint(t,x,y,col){const v=.9+hs(x,y)%5*.025;
+ if(t==1){const s=.75+((x*7+y*13)%5)*.07;return col.setRGB(s,s,s)}
+ if(t>=2&&t<=4)return col.setHex(PAL_B[MC[y][x]&7]).multiplyScalar(v);
+ if(t==11||t==13)return col.setHex(PAL_C[MC[y][x]&7]);
+ return col.setRGB(v,v,v)}
+// 床: 1セル12pxのキャンバスに種類ごとの色・道路の白線・歩道のタイル目地などを描く
+function floorTex(){const FP=12,S=N*FP,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d'),pal=FPAL[PR]||FPAL[1],A=(x,y)=>x>=0&&y>=0&&x<N&&y<N&&FK[y][x]==1,town=PR==1||PR==2;
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){const k=FK[y][x],b=pal[k]||pal[0],px=x*FP,py=y*FP;
+  g.fillStyle=b;g.fillRect(px,py,FP,FP);
+  for(let i=0;i<5;i++){const s=hs(x*9+i,y*5+i*3);g.fillStyle=shade(b,s&1?1.1:.9);g.fillRect(px+s%(FP-2),py+(s>>5)%(FP-2),2,2)}
+  if(town){
+   if(k==1&&!(A(x,y-1)&&A(x,y+1)&&A(x-1,y)&&A(x+1,y))){g.fillStyle='#e6d676';
+    if(A(x-1,y)&&A(x+1,y)){if(A(x,y+1)&&!A(x,y-1)&&!(x&1))g.fillRect(px+2,py+FP-1,FP-4,2);if(A(x,y-1)&&!A(x,y+1)&&!(x&1))g.fillRect(px+2,py-1,FP-4,2)}
+    if(A(x,y-1)&&A(x,y+1)){if(A(x+1,y)&&!A(x-1,y)&&!(y&1))g.fillRect(px+FP-1,py+2,2,FP-4);if(A(x-1,y)&&!A(x+1,y)&&!(y&1))g.fillRect(px-1,py+2,2,FP-4)}}
+   else if(k==2){g.fillStyle=shade(b,.8);g.fillRect(px,py+FP-1,FP,1);g.fillRect(px+FP-1,py,1,FP)}
+   else if(k==3&&((x+y)&1)){g.fillStyle='rgba(0,0,0,.1)';g.fillRect(px,py,FP,FP)}}
+  else if(PR==3&&k==2){g.fillStyle=shade(b,.8);g.fillRect(px,py+FP-1,FP,1);g.fillRect(px+FP-1,py,1,FP)}
+  else if(PR==4){if(k==2){g.fillStyle='#1c1c1c';for(let i=0;i<FP;i+=4)g.fillRect(px+i,py,2,FP)}else{g.fillStyle=shade(b,.82);g.fillRect(px,py,FP,1);g.fillRect(px,py,1,FP)}}}
+ const t=new THREE.CanvasTexture(c);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t}
+// 倉庫の天井: 照明パネルと梁
+function ceilTex(){const S=N*8,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');g.fillStyle='#24262b';g.fillRect(0,0,S,S);g.fillStyle='#1a1c20';for(let i=0;i<N;i+=6){g.fillRect(i*8,0,3,S);g.fillRect(0,i*8,S,3)}
+ for(let y=3;y<N;y+=6)for(let x=2;x<N;x+=6){g.fillStyle='#fff6d8';g.fillRect(x*8,(N-1-y)*8+1,24,6)}
+ const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t}
+function buildScene(){
+ for(const o of BLD)SC.remove(o);BLD.length=0;for(const o of DSP)o.dispose();DSP.length=0;WIX.clear();WMS=[];
+ TH=THM[PR]||TH0;CM.far=Math.max(80,N*2);CM.updateProjectionMatrix();
+ const groups=new Map(),d=new THREE.Object3D(),col=new THREE.Color();
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(M[y][x]){const t=PR?MT[y][x]||1:1;if(!groups.has(t))groups.set(t,[]);groups.get(t).push([x,y])}
+ for(const[t,list]of groups){const h=(WTD[t]||WTD[1]).h,geo=new THREE.BoxGeometry(1,h,1),im=new THREE.InstancedMesh(geo,wallMat(t),list.length);DSP.push(geo);
+  list.forEach(([x,y],i)=>{WIX.set(y*N+x,{m:im,i});d.position.set(x+.5,h/2,y+.5);d.updateMatrix();im.setMatrixAt(i,d.matrix);im.setColorAt(i,tint(t,x,y,col))});
+  im.frustumCulled=false;SC.add(im);BLD.push(im);WMS.push(im)}
+ let fm;if(PR){fm=floorTex();DSP.push(fm)}else{ft.repeat.set(N,N);fm=ft}
+ const fmat=new THREE.MeshLambertMaterial({map:fm}),fgeo=new THREE.PlaneGeometry(N,N);DSP.push(fmat,fgeo);
+ const fl=FLR=new THREE.Mesh(fgeo,fmat);fl.rotation.x=-Math.PI/2;fl.position.set(N/2,0,N/2);SC.add(fl);BLD.push(fl);
+ let cm;if(PR==4){const ct=ceilTex();DSP.push(ct);cm=new THREE.MeshBasicMaterial({map:ct})}else cm=new THREE.MeshBasicMaterial({color:TH.cc});
+ const cgeo=new THREE.PlaneGeometry(N,N);DSP.push(cm,cgeo);
+ CE=new THREE.Mesh(cgeo,cm);CE.rotation.x=Math.PI/2;CE.position.set(N/2,TH.ceil,N/2);SC.add(CE);BLD.push(CE)}
 buildScene();
 const AM=new THREE.AmbientLight(0x8fa0c0,.55),PLt=new THREE.PointLight(0xffe2b8,1.15,16),MF=new THREE.PointLight(0xffa040,0,6),BLt=new THREE.PointLight(0xff8a30,0,12);
 SC.add(AM,PLt,BLt);CM.add(MF);MF.position.set(.2,-.1,-.6);
+const SUN=new THREE.DirectionalLight(0xffffff,0);SC.add(SUN);
+function applyTheme(){SC.background.setHex(TH.bg);SC.fog.color.setHex(TH.fog);AM.color.setHex(TH.am);PLt.color.setHex(TH.pc);if(TH.sun){SUN.color.setHex(TH.sun[0]);SUN.intensity=TH.sun[1];SUN.position.set(...TH.sun[2])}else SUN.intensity=0}
+applyTheme();
 const bx3=(g,w,h,d,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:c}));m.position.set(x,y,z);g.add(m);return m};
 const GV=new THREE.Group();bx3(GV,.07,.09,.34,0x2b3140,0,0,0);bx3(GV,.035,.035,.2,0x0d1016,0,.02,-.26);bx3(GV,.06,.12,.07,0x3c4558,0,-.09,.08);bx3(GV,.09,.07,.08,0xe0ac84,0,-.1,.14);
 const MZ=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),new THREE.MeshBasicMaterial({color:0xffd34d}));MZ.position.set(0,.02,-.4);GV.add(MZ);CM.add(GV);
@@ -147,7 +337,7 @@ function sync3d(){
  const c=FC.on?FC:{x:P.x,y:P.y,z:P.hp>0?EY+Math.sin(T*(P.dash?13:9))*(P.mv?(P.dash?.035:.02):0):.25,a:P.a,p:P.hp>0?P.p||0:-.15},sk=(P.sk||0)*.12,r=()=>(Math.random()-.5)*sk;
  CM.position.set(c.x+r(),c.z+r(),c.y+r());CM.rotation.set(c.p,-c.a-Math.PI/2,0);
  const fv=2*Math.atan(Math.tan(FOV/2)*H/W)*57.2958;if(Math.abs(fv-CM.fov)>.01){CM.fov=fv;CM.updateProjectionMatrix()}
- PLt.position.copy(CM.position);AM.intensity=FC.on?1.1:.55;PLt.intensity=FC.on?.6:1.15;SC.fog.density=FC.on?.012:.08;CE.visible=!FC.on;
+ PLt.position.copy(CM.position);AM.intensity=FC.on?TH.amiFc:TH.ami;PLt.intensity=FC.on?TH.plFc:TH.pl;SC.fog.density=FC.on?TH.fdFc:TH.fd;CE.visible=!FC.on&&!!TH.ce;
  const rl=P.rl>0?Math.sin(Math.max(0,Math.min(1,1-P.rl/1.3))*Math.PI):0;GV.visible=!FC.on&&P.hp>0&&RD.v<.15;GV.position.set(.2,-.2-rl*.2,-.45+P.k*.06);GV.rotation.x=P.k*.12+rl*.5;MZ.visible=P.fl>0;MF.intensity=P.fl>0?2.5:0;
  syncChars();
  for(const b of BB){if(!b.m){b.m=new THREE.Mesh(BGm,new THREE.MeshBasicMaterial({color:0x331111}));SC.add(b.m)}b.m.position.set(b.x,b.z,b.y);b.m.material.color.setHex(Math.sin(T*(12+(1.5-b.t)*22))>0?0xff3030:0x331111)}
@@ -168,21 +358,21 @@ function bombStep(dt){bcd-=dt;
   if(M[b.y|0][nx|0]){b.vx*=-.4;nx=b.x}if(M[ny|0][nx|0]){b.vy*=-.4;ny=b.y}
   if(nz<.08){nz=.08;b.vz=Math.abs(b.vz)>1?-b.vz*.45:0;b.vx*=.7;b.vy*=.7}if(nz>WL-.1){nz=WL-.1;b.vz*=-.4}
   b.x=nx;b.y=ny;b.z=nz;if(b.t<=0){BB.splice(i,1);boom(b)}}}
-function boom(b){b.m&&SC.remove(b.m);noise(.7,.6);beep(70,.5,.4);const own=b.o===P||!b.o;
+function boom(b){b.m&&SC.remove(b.m);noise(.7,.6);beep(70,.5,.4);const own=b.o===P||!b.o,cA=mode=='cvc'&&b.o&&!b.o.tm,cB=mode=='cvc'&&b.o&&b.o.tm;
  const m=new THREE.Mesh(XG,new THREE.MeshBasicMaterial({color:0xffa030,transparent:true,opacity:.85,fog:false}));m.position.set(b.x,b.z,b.y);SC.add(m);EX.push({x:b.x,y:b.y,t:T,m});
  const dm=o=>{const d=Math.hypot(o.x-b.x,o.y-b.y);return d<BR&&los(b.x,b.y,o.x,o.y)?Math.round(100*(1-d/BR)):0};
  P.sk=Math.max(P.sk||0,.7-Math.hypot(b.x-P.x,b.y-P.y)*.08);
- for(const e of E)if(e.hp>0){const d=dm(e);if(!d)continue;if(online&&!ishost&&own){for(let k=0;k<Math.ceil(d/DMG);k++)claims.push(e.id);e.fl=.12}else hitE(e,d)}
- if(!online)for(const a of AL)if(a.hp>0){const d=dm(a);if(d)hitE(a,d)}
- const d=dm(P);if(d&&P.hp>0){P.hp=Math.max(0,P.hp-d*.6);P.hit=.4;P.sk=.5}
+ for(const e of E)if(e.hp>0){const d=dm(e);if(!d)continue;if(own||cA)dmg('d',Math.min(d,hv0(e)),e);if(online&&!ishost&&own){for(let k=0;k<Math.ceil(d/DMG);k++)claims.push(e.id);e.fl=.12}else hitE(e,d)}
+ if(!online)for(const a of AL)if(a.hp>0){const d=dm(a);if(d){if(cB)dmg('t',Math.min(d,hv0(a)));hitE(a,d)}}
+ const d=dm(P);if(d&&P.hp>0){dmg('t',Math.min(P.hp,d*.6));P.hp=Math.max(0,P.hp-d*.6);P.hit=.4;P.sk=.5}
  breakWalls(b.x,b.y)}
 // ---- destructible walls ----
 const BRK=2.3;
-function breakWalls(bx,by){let n=0;const d=new THREE.Object3D();
+function breakWalls(bx,by){let n=0;const d=new THREE.Object3D(),ts=new Set();
  for(let y=Math.max(1,(by-BRK)|0);y<=Math.min(N-2,(by+BRK)|0);y++)for(let x=Math.max(1,(bx-BRK)|0);x<=Math.min(N-2,(bx+BRK)|0);x++){
   if(!M[y][x]||Math.hypot(x+.5-bx,y+.5-by)>BRK)continue;
-  M[y][x]=0;n++;const i=WIX.get(y*N+x);if(i!=null&&WM){d.position.set(0,-9,0);d.scale.setScalar(0);d.updateMatrix();WM.setMatrixAt(i,d.matrix)}}
- if(n){if(WM)WM.instanceMatrix.needsUpdate=true;for(const b of[...E,...AL])b.D=null;noise(.5,.35)}}
+  M[y][x]=0;n++;const w=WIX.get(y*N+x);if(w){d.position.set(0,-9,0);d.scale.setScalar(0);d.updateMatrix();w.m.setMatrixAt(w.i,d.matrix);ts.add(w.m)}}
+ if(n){for(const m of ts)m.instanceMatrix.needsUpdate=true;for(const b of[...E,...AL])b.D=null;noise(.5,.35)}}
 // ---- free camera ----
 function fcMove(dt){FC.a+=(((K.ArrowRight?1:0)-(K.ArrowLeft?1:0))*2.4+GP.lx*3)*CFG.sens*dt;FC.p=Math.max(-1.5,Math.min(1.5,FC.p+(((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.8-GP.ly*2.2)*CFG.sens*dt));
  const f=(K.KeyW?1:0)-(K.KeyS?1:0)-GP.my,s=(K.KeyD?1:0)-(K.KeyA?1:0)+GP.mx,u=(K.Space||GP.up?1:0)-(K.ShiftLeft||K.ShiftRight||GP.dn?1:0),v=7*CFG.spd*dt,c=Math.cos(FC.p);
@@ -234,16 +424,16 @@ function radar(){
 function show(h){$('hud').style.visibility='hidden';ov.innerHTML=h;ov.style.display='flex';ov.classList.remove('lite')}
 function lock(){try{const r=C.requestPointerLock();r&&r.catch&&r.catch(()=>{})}catch(e){}}
 function go(){st=1;$('hud').style.visibility='visible';ov.style.display='none';lock()}
-function pause(){st=3;md=0;document.exitPointerLock&&document.exitPointerLock();show('<h1>一時停止</h1><p>クリック / STARTで再開</p><button onclick="openSet()">設定</button><button onclick="menu()">メニューへ</button>')}
+function pause(){st=3;md=0;document.exitPointerLock&&document.exitPointerLock();show('<h1>一時停止</h1><p>クリック / STARTで再開</p>'+statsHTML()+'<button onclick="openSet()">設定</button><button onclick="menu()">メニューへ</button>')}
 ov.onclick=e=>{if(ov.classList.contains('lite')||e.target.closest('button,.set'))return;if(st==3)go()};
 // 設定（操作・表示）
 const OPT=[['fov','視野角',60,120,1],['sens','マウス/スティック感度',.2,3,.05],['spd','移動速度',.5,2,.05],['dif','敵の強さ',.5,2,.25],['rnd','CPUの個性(ムラ)の強さ',0,1.5,.1],['vol','音量',0,1,.05],['scan','走査線(CRT)',0,1,.1]];
 const CFGD={fov:90,sens:1,spd:1,vol:.7,dif:1,scan:.5,rnd:1};
 // 試合設定
-const SETD={ns:1,nt:2,na:1,ca:2,cb:2,lve:5,lva:5,mz:51,mc:5,ms:1,hp:100,bm:3,win:3},SET=Object.assign({},SETD);
+const SETD={ns:1,nt:2,na:1,ca:2,cb:2,lve:5,lva:5,mp:0,mz:51,mc:5,ms:1,hp:100,bm:3,win:3},SET=Object.assign({},SETD);
 try{Object.assign(SET,JSON.parse(localStorage.cpsSet))}catch(e){}
-const MOPT=[['ns','ソロ：敵CPUの数',1,6,1],['nt','タッグ：敵CPUの数',1,6,1],['na','タッグ：味方CPUの数',0,5,1],['ca','CPU対戦：A軍の数',1,6,1],['cb','CPU対戦：B軍の数',1,6,1],['lve','敵CPU(B軍)のレベル（0=ランダム）',0,12,1],['lva','味方CPU(A軍)のレベル（0=ランダム）',0,12,1],['mz','マップサイズ',21,91,2],['mc','マップの複雑さ（0=広場 10=迷路）',0,10,1],['ms','マップ番号（1=従来 0=毎回ランダム）',0,99,1],['hp','HP',20,300,10],['bm','ボムの数（1ラウンド）',0,9,1],['win','先取ラウンド数',1,10,1]];
-const fmt=(k,v)=>k=='fov'?v+'°':k=='vol'||k=='scan'?Math.round(v*100)+'%':k=='lve'||k=='lva'?lvName(v):k=='mz'?v+'×'+v:k=='mc'?v+'/10':k=='ms'?(+v?'No.'+v:'ランダム'):k in SETD?String(v):(+v).toFixed(2)+'×';
+const MOPT=[['ns','ソロ：敵CPUの数',1,6,1],['nt','タッグ：敵CPUの数',1,6,1],['na','タッグ：味方CPUの数',0,5,1],['ca','CPU対戦：A軍の数',1,6,1],['cb','CPU対戦：B軍の数',1,6,1],['lve','敵CPU(B軍)のレベル（0=ランダム）',0,12,1],['lva','味方CPU(A軍)のレベル（0=ランダム）',0,12,1],['mp','マップの種類（0=迷路 1=町(昼) 2=町(夜) 3=闘技場 4=倉庫 5=森）',0,5,1],['mz','マップサイズ',21,91,2],['mc','迷路の複雑さ（0=広場 10=迷路）※種類0のみ',0,10,1],['ms','マップ番号（1=従来 0=毎回ランダム）',0,99,1],['hp','HP',20,300,10],['bm','ボムの数（1ラウンド）',0,9,1],['win','先取ラウンド数',1,10,1]];
+const fmt=(k,v)=>k=='fov'?v+'°':k=='vol'||k=='scan'?Math.round(v*100)+'%':k=='lve'||k=='lva'?lvName(v):k=='mp'?(PRN[+v|0]||v):k=='mz'?v+'×'+v:k=='mc'?v+'/10':k=='ms'?(+v?'No.'+v:'ランダム'):k in SETD?String(v):(+v).toFixed(2)+'×';
 function applyScan(){$('w').style.setProperty('--scan',CFG.scan)}
 function sv(){try{localStorage.cfg=JSON.stringify(CFG)}catch(x){}}
 function sm(){try{localStorage.cpsSet=JSON.stringify(SET)}catch(x){}}
@@ -295,6 +485,43 @@ function gpPoll(dt){
 
 // ---- v4: モード / エペ式AI(個性つき) / オンライン ----
 const MAG=10,DMG=34;
+// ---- ダメージ集計 ----（d=与ダメージ t=被ダメージ。HPが実際に減った量で数える。CPU対戦はA軍の攻撃=d, B軍の攻撃=t）
+let ST=null,LOG=[],dmK='';
+const hv0=o=>Math.max(0,o.hv==null?MH:o.hv),sumD=()=>{let d=0,t=0;for(const r of LOG){d+=r.d;t+=r.t}if(ST&&!ST.done){d+=ST.d;t+=ST.t}return{d,t}};
+function dmg(k,v,o){if(ST&&!ST.done&&v>0){ST[k]+=v;if(mode!='cvc'){pop(k,v,k=='d'&&o&&v>=hv0(o)-.01);if(k=='t')hurtFx()}}}
+// ---- HP: めくれるフリップカード / 警告 / ダメージポップ ----
+const NOMO=matchMedia('(prefers-reduced-motion: reduce)').matches,FDG=[];let fdOn=0,hpLo=0;
+function fdMake(){const e=document.createElement('span');e.className='fd';e.innerHTML='<span class="fh fu"><span></span></span><span class="fh fl"><span></span></span><span class="fh ft"><span></span></span><span class="fh fb"><span></span></span>';
+ const q=[...e.children].map(x=>x.firstChild),o={e,u:q[0],l:q[1],t:q[2],b:q[3],c:'',busy:0,to:0};e.lastChild.addEventListener('animationend',()=>fdDone(o));return o}
+function fdDone(o){clearTimeout(o.to);if(!o.busy)return;o.busy=0;o.e.classList.remove('go');o.l.textContent=o.c}
+function fdSet(o,ch,dl,anim){if(ch===o.c)return;fdDone(o);const old=o.c;o.c=ch;
+ if(!anim){o.u.textContent=o.l.textContent=ch;return}
+ o.u.textContent=o.b.textContent=ch;o.l.textContent=o.t.textContent=old;
+ o.e.style.setProperty('--dl',dl+'s');o.e.classList.remove('go');void o.e.offsetWidth;o.e.classList.add('go');o.busy=1;o.to=setTimeout(()=>fdDone(o),(dl+.6)*1000)}
+function hpCard(lo){const h=$('hv');
+ if(!FDG.length){h.innerHTML='<span class=hl>HP</span><span class=hc></span><span class=hw>DANGER</span>';const c=h.querySelector('.hc');for(let i=0;i<3;i++){const o=fdMake();FDG.push(o);c.appendChild(o.e)}}
+ const s=String(Math.max(0,Math.ceil(P.hp))).padStart(3,' ');
+ for(let i=0;i<3;i++)fdSet(FDG[i],s[i]===' '?'':s[i],i*.05,fdOn&&!NOMO);fdOn=1;
+ const dead=P.hp<=0;h.classList.toggle('lo',lo);h.classList.toggle('dead',dead);h.classList.toggle('mid',!lo&&!dead&&P.hp<=MH*.67);
+ $('vg').classList.toggle('on',lo);
+ if(lo&&!hpLo){beep(620,.09,.18);setTimeout(()=>beep(440,.16,.18),130)}hpLo=lo}
+function hurtFx(){const h=$('hv');h.classList.remove('hurt');void h.offsetWidth;h.classList.add('hurt')}
+function pop(k,v,kill){const n=Math.round(v);if(n<1)return;const fx=$('fx');while(fx.children.length>9)fx.firstChild.remove();
+ const e=document.createElement('div');e.className='pp '+(kill?'k':k);e.textContent='-'+n+(kill?' 撃破!':'');
+ if(k=='d'){e.style.setProperty('--x',((Math.random()-.5)*110|0)+'px');e.style.setProperty('--y',((Math.random()-.5)*50-30|0)+'px')}
+ e.addEventListener('animationend',()=>e.remove());setTimeout(()=>e.remove(),1500);fx.appendChild(e)}
+function closeRound(){if(ST&&!ST.done){ST.done=1;ST.r=bm;LOG.push(ST)}}
+function statsHTML(){const rows=LOG.slice();if(ST&&!ST.done&&(ST.d||ST.t))rows.push({n:ST.n,d:ST.d,t:ST.t,r:'途中'});if(!rows.length)return'';
+ const cv=mode=='cvc',t=sumD(),r=Math.round,L=cv?['A軍の攻撃','B軍の攻撃']:['与ダメージ','被ダメージ'];
+ let h=`<div class='tb'><span class=h>ラウンド</span><span class=h>結果</span><span class='h n'>${L[0]}</span><span class='h n'>${L[1]}</span>`;
+ for(const q of rows)h+=`<span>${Math.max(1,q.n)}</span><span>${q.r||''}</span><span class='n d'>${r(q.d)}</span><span class='n t'>${r(q.t)}</span>`;
+ return h+`<span class=s>合計</span><span class=s></span><span class='n d s'>${r(t.d)}</span><span class='n t s'>${r(t.t)}</span></div>`}
+function dmgHud(){const el=$('dm'),er=$('rr');if(!ST){el.style.display=er.style.display='none';return}
+ const cv=mode=='cvc',t=sumD(),r=Math.round,n=Math.max(1,ST.n),k=[n,r(ST.d),r(ST.t),r(t.d),r(t.t),rs,cv].join();
+ el.style.display='grid';er.style.display=rs?'grid':'none';if(k===dmK)return;dmK=k;
+ const g=(a,b,c)=>`<span>${a}</span><span class=d>${b}</span><span class=t>${c}</span>`,hd=(a,b)=>`<span></span><span class=h>${a}</span><span class=h>${b}</span>`;
+ el.innerHTML=hd(cv?'A軍':'与',cv?'B軍':'被')+g('R'+n,r(ST.d),r(ST.t))+g('計',r(t.d),r(t.t));
+ er.innerHTML=hd(cv?'A軍の攻撃':'与ダメージ',cv?'B軍の攻撃':'被ダメージ')+g('ラウンド'+n,r(ST.d),r(ST.t))+g('合計',r(t.d),r(t.t))}
 let GS=null,SX=null,mode='solo',online=0,ishost=1,NR,code,lt,sc=[0,0],rd=0,rs=0,rt=0,rt0=0,bm='',WIN=5,AL=[],PH={},myPh=0,myId,claims=[],net_t=0,RM={},fin=0,gw=0,MH=100,BM0=3;
 const slot=(tm,i)=>tm?[N-1.5-i%3,N-1.5-(i/3|0)]:[1.5+i%3,1.5+(i/3|0)];
 const counts=()=>mode=='solo'?[0,SET.ns]:mode=='tag'?[online?0:SET.na,SET.nt]:[SET.ca,SET.cb];
@@ -310,8 +537,9 @@ function mk(x,y,tm,id){
  const o={x,y,a:tm?-2.36:.78,hp:1,hv:MH,tm,id,cd:1.2,sh:0,fl:0,ls:-9,rx:0,s:'m',sT:0,sd:1,m:6,t:0,tx:x,ty:y,v:id%3,mv:0,rl:0,sn:0,
   aim:m(ax),rc:Math.max(.08,.5+(rr(.15,1.1)-.5)*v),rush:Math.max(.4,m(rs_)),dl:Math.random()<.35?0:rr(.4,4)*v,
   rdT:rr(0,2.5),rI:rr(1.8,5),rg:rs_>1.2?20:12,bz:rr(.2,1.3),bm:BM0,bc:rr(1,3),kn:null,D:null};return lvApply(o,tm)}
-function reset(){P={x:0,y:0,a:0,hp:100,ammo:MAG,cd:0,rl:0,fl:0,hit:0,k:0,hm:0,mv:0,ls:-9,ms:0,tm:0,spec:0};sc=[0,0];rd=online&&!ishost?0:1;PH={};myPh=0;RM={};fin=0;gw=0;WIN=SET.win;MH=SET.hp;BM0=SET.bm;newRound()}
+function reset(){LOG=[];ST=null;P={x:0,y:0,a:0,hp:100,ammo:MAG,cd:0,rl:0,fl:0,hit:0,k:0,hm:0,mv:0,ls:-9,ms:0,tm:0,spec:0};sc=[0,0];rd=online&&!ishost?0:1;PH={};myPh=0;RM={};fin=0;gw=0;WIN=SET.win;MH=SET.hp;BM0=SET.bm;newRound()}
 function newRound(){
+ if(ST&&!ST.done&&(ST.d||ST.t))closeRound();ST={n:rd,d:0,t:0,done:0,r:''};$('fx').textContent='';
  const[na,ne]=counts(),spec=mode=='cvc',gst=online&&!ishost,nA=online?2:spec?na:na+1;
  // 毎ラウンド ランダムスポーン（ゲストはホストが決めた位置を受け取る）
  const sp=gst&&GS?{a:GS,b:[]}:spawns(nA,gst?0:ne),pa=sp.a;SX=pa;
@@ -329,7 +557,7 @@ function fire(){
  let b=null,bd=99;
  for(const e of E)if(e.hp>0){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy),da=Math.atan2(dy,dx)-P.a;
   if(Math.cos(da)>0&&Math.abs(Math.sin(da))*d<.3&&Math.abs(Math.tan(P.p||0)*d+.3)<.55&&d<bd&&los(P.x,P.y,e.x,e.y)){b=e;bd=d}}
- if(b){hitE(b,DMG);P.hm=.2;beep(900,.06,.1);claims.push(b.id)}
+ if(b){dmg('d',Math.min(DMG,hv0(b)),b);hitE(b,DMG);P.hm=.2;beep(900,.06,.1);claims.push(b.id)}
 }
 // エペ式AI: 間合い(m) / フェイント(f) / 待ち(w) / 隙を突く攻撃(a)
 // + 個性(命中・反応・接近速度・出遅れ) + レーダー/銃声で位置を把握 + ボム
@@ -380,8 +608,8 @@ function ai(b,dt,foes,fr){
  return r
 }
 function hit(o,b){
- if(o===P){P.hp=Math.max(0,P.hp-DMG);P.hit=P.hp>0?.3:.5;P.sk=.35;beep(160,.2,.2)}
- else{o.hv=(o.hv==null?MH:o.hv)-DMG;o.fl=.12;if(o.pid)PH[o.pid]=(PH[o.pid]||0)+1;if(o.hv<=0){o.hp=0;o.fl=.2;if(o.pid)o.dd=rd}}
+ if(o===P){dmg('t',Math.min(P.hp,DMG));P.hp=Math.max(0,P.hp-DMG);P.hit=P.hp>0?.3:.5;P.sk=.35;beep(160,.2,.2)}
+ else{if(mode=='cvc')dmg(o.tm?'d':'t',Math.min(DMG,hv0(o)));o.hv=(o.hv==null?MH:o.hv)-DMG;o.fl=.12;if(o.pid)PH[o.pid]=(PH[o.pid]||0)+1;if(o.hv<=0){o.hp=0;o.fl=.2;if(o.pid)o.dd=rd}}
 }
 // オフライン/ホスト: CPUの思考とラウンド進行
 function sim(dt){
@@ -396,7 +624,7 @@ function sim(dt){
   if(rt&&T>=rt){
    if(!a1)sc[0]++;if(!a0)sc[1]++;rs=1;rt=T+2.2;
    bm=cvc?(!a0&&!a1?'相打ち！':!a1?'A軍 一本！':'B軍 一本！'):(!a0&&!a1?'相打ち！':!a1?'一本！':'一本取られた…');
-   fin=sc[0]>=WIN&&sc[0]>sc[1]?1:sc[1]>=WIN&&sc[1]>sc[0]?2:0
+   closeRound();fin=sc[0]>=WIN&&sc[0]>sc[1]?1:sc[1]>=WIN&&sc[1]>sc[0]?2:0
   }
  }else if(T>=rt){if(fin)end(fin);else{rd++;newRound()}}
 }
@@ -415,10 +643,10 @@ function guest(dt){
  const hp=NR.peers().find(p=>!p.isMe&&p.presence.go);if(!hp)return;const H=hp.presence,k=Math.min(1,dt*14);
  if(H.mh)MH=H.mh;if(H.wn)WIN=H.wn;if(H.bz!=null)BM0=H.bz;
  if(H.rd!==rd){rd=H.rd;GS=H.sx||null;newRound()}
- sc=H.sc||sc;rs=H.rs|0;bm=H.bm||'';
+ sc=H.sc||sc;rs=H.rs|0;bm=H.bm||'';if(rs)closeRound();
  (H.B||[]).forEach((q,i)=>{const b=E[i]||(E[i]=mk(q[0],q[1],1,i));b.x+=(q[0]-b.x)*k;b.y+=(q[1]-b.y)*k;b.a=q[2];b.hp=q[3];if(q[5]!=null)b.hv=q[5];b.sh-=dt;b.fl-=dt;
   if(q[4]>b.sn){b.sn=q[4];b.sh=.1;noise(.1,.2/(1+Math.hypot(b.x-P.x,b.y-P.y)*.4))}});
- const m=(H.ph||[]).find(e=>e[0]==myId);if(m&&m[1]>myPh){const n=m[1]-myPh;myPh=m[1];if(P.hp>0){P.hp=Math.max(0,P.hp-DMG*n);P.hit=P.hp>0?.3:.5;P.sk=.35;beep(160,.2,.2)}}
+ const m=(H.ph||[]).find(e=>e[0]==myId);if(m&&m[1]>myPh){const n=m[1]-myPh;myPh=m[1];if(P.hp>0){dmg('t',Math.min(P.hp,DMG*n));P.hp=Math.max(0,P.hp-DMG*n);P.hit=P.hp>0?.3:.5;P.sk=.35;beep(160,.2,.2)}}
  if(H.w&&!gw){gw=1;const w=H.w;setTimeout(()=>end(w),2200)}
 }
 function netpub(dt){
@@ -451,27 +679,27 @@ function hud(){
  $('fc').style.display=FC.on?'block':'none';if(FC.on)$('fc').textContent=sp?'CPU対戦 観戦  WASD/左スティック:移動  Space/A:上昇  Shift/B:下降':'FREE CAM  F:戻る  Space:上昇  Shift:下降';
  hpbar();
  ammo();
- $('mid').textContent=rs?bm:P.hp<=0&&!sp?'撃破された…':T-rt0<1?(sp?'開始まで…':'構えて…'):'';
+ $('mid').textContent=rs?bm:P.hp<=0&&!sp?'撃破された…':T-rt0<1?(sp?'開始まで…':'構えて…'):'';dmgHud();
 }
 let hpS=100,hpG=100;
 function hpbar(){const k=1-Math.pow(.7,FD*60),g=1-Math.pow(.96,FD*60);hpS+=(P.hp-hpS)*k;hpG+=(hpS-hpG)*g;if(hpG<hpS)hpG=hpS;const lo=P.hp>0&&P.hp<=MH*.34,w=v=>Math.min(100,Math.max(0,v/MH*100))+'%';
- $('hp').style.width=w(hpS);$('gh').style.width=w(hpG);$('hp').style.background=lo?'var(--ac)':'var(--ok)';$('hv').textContent='HP '+Math.ceil(P.hp);$('bar').classList.toggle('lo',lo)}
+ $('hp').style.width=w(hpS);$('gh').style.width=w(hpG);$('hp').style.background=lo?'var(--ac)':'var(--ok)';hpCard(lo);$('bar').classList.toggle('lo',lo)}
 const BU=[];{const a=$('am');for(let i=0;i<MAG;i++){const b=document.createElement('i');b.className='bu';a.appendChild(b);BU.push(b)}}
 let amK='',pl=MAG;
 function ammo(){const rl=P.rl>0,lit=rl?Math.floor((1-P.rl/1.3)*MAG):P.ammo,k=lit+(rl?'r':'');
  if(k!=amK){amK=k;BU.forEach((b,i)=>b.className='bu'+(i<lit?'':' off')+(!rl&&i>=lit&&i<pl?' ej':'')+(rl&&i<lit&&i>=pl?' ld':''));pl=lit}
  $('rt').textContent=rl?'RELOADING':P.ammo<=0&&P.hp>0?'R : RELOAD':''}
-function end(w){st=2;document.exitPointerLock&&document.exitPointerLock();const cv=mode=='cvc';show(`<h1>${cv?(w==1?'A軍 勝利！':'B軍 勝利！'):(w==1?'勝利！':'敗北…')}</h1><p>${sc[0]} - ${sc[1]}</p><button class='cta' onclick='menu()'>メニューへ</button>`)}
+function end(w){closeRound();st=2;document.exitPointerLock&&document.exitPointerLock();const cv=mode=='cvc';show(`<h1>${cv?(w==1?'A軍 勝利！':'B軍 勝利！'):(w==1?'勝利！':'敗北…')}</h1><p>${sc[0]} - ${sc[1]}</p>${statsHTML()}<button class='cta' onclick='menu()'>メニューへ</button>`)}
 function menu(){
  if(NR){NR.leave().catch(()=>{});NR=null}clearInterval(lt);online=0;ishost=1;st=0;FC.on=0;document.exitPointerLock&&document.exitPointerLock();
  show(`<h1>CPU STRIKE</h1><div class='sub'>◆ エペ式 一本勝負 FPS ◆</div><div class='mn'><button class='cta' onclick='begin(0)'>ソロ（vs CPU）</button><button class='cta' onclick='begin(1)'>タッグ（CPU相棒）</button><button class='cta' onclick='begin(2)'>CPU対戦（観戦）</button><button onclick='lobby()'>オンライン タッグ</button><button onclick='openMatch()'>試合設定</button><button onclick='openSet()'>設定</button></div><div class='keys'><b>WASD</b><span>移動</span><b>SHIFT</b><span>ダッシュ</span><b>MOUSE</b><span>視点（矢印も可）</span><b>CLICK</b><span>撃つ</span><b>R</b><span>リロード</span><b>E</b><span>レーダー（撃てない）</span><b>Q</b><span>ボム（壁を壊せる）</span><b>F</b><span>フリーカメラ</span></div><p class='hint'>🎮 コントローラー: 左スティック=移動 / 右スティック=視点 / RT=撃つ / LB=ボム / X=リロード / Y=レーダー / L3・A=ダッシュ / BACK=フリーカメラ / START=ポーズ。メニューは十字キーで選択、Aで決定。</p><p class='hint'>銃は3発で撃破（HPは試合設定で変更可）。ボムは1.5秒後に爆発、爆心地ほど大ダメージ。CPUもレーダーや銃声で位置を探り、ボムも投げてきます。個性（ミス多め／達人／最短で来る／遅れて来る）は毎ラウンドランダムです。</p>`)
 }
 function begin(m){mode=['solo','tag','cvc'][m];online=0;ishost=1;useMap();reset();if(mode=='cvc'){FC.x=N/2;FC.y=N/2;FC.z=Math.max(20,N*.67);FC.a=.8;FC.p=-1.3}go()}
 // ---- マップ切替（試合開始時に設定どおり再生成。オンラインはホストの設定を共有） ----
-let MAPP=[51,5,20261024];
-function applyMap(p){genMap(p[0],p[1],p[2]);buildScene();MAPP=[p[0],p[1],p[2]]}
+let MAPP=[51,5,20261024,0];
+function applyMap(p){const pr=p[3]|0;genMap(p[0],p[1],p[2],pr);buildScene();applyTheme();MAPP=[p[0],p[1],p[2],pr]}
 function useMap(){const n=(+SET.mz|0)||51,cx=Math.max(0,Math.min(10,+SET.mc)),ms=+SET.ms|0,
- seed=ms==1?20261024:ms?((20261024+ms*104729)>>>0):(Math.random()*4294967295>>>0);applyMap([n%2?n:n+1,isNaN(cx)?5:cx,seed])}
+ seed=ms==1?20261024:ms?((20261024+ms*104729)>>>0):(Math.random()*4294967295>>>0);applyMap([n%2?n:n+1,isNaN(cx)?5:cx,seed,Math.max(0,Math.min(PRN.length-1,+SET.mp|0))])}
 // ---- Supabase Realtime（テーブル不要：Broadcast + Presence のみ使用） ----
 /* ★ Supabase設定（ここに直接書く）: Project Settings > API の「Project URL」と「anon / publishable キー」
    ※ service_role キーは絶対に入れない。空のままならオンラインは使えません。 */

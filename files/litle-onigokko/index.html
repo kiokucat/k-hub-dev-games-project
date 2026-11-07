@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>リトル東京 鬼ごっこ</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,500,1,0&display=swap" rel="stylesheet">
+<style>
+body{margin:0;overflow:hidden;background:#000;font-family:'DotGothic16',sans-serif;color:#fff;user-select:none}
+.ms{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;font-size:24px;line-height:1;display:inline-block;white-space:nowrap;font-feature-settings:'liga';vertical-align:middle}
+.hud{position:fixed;pointer-events:none}
+.chip{background:rgba(10,14,22,.62);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:6px 12px;display:flex;align-items:center;gap:6px;font-size:18px}
+#top{top:12px;left:50%;transform:translateX(-50%);display:flex;gap:10px}
+#role.oni{background:rgba(200,30,30,.8)}
+#score{left:12px;top:12px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+#mini{right:12px;top:12px;width:200px;height:200px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:#222}
+#stam{bottom:24px;left:50%;transform:translateX(-50%);width:280px}
+#sbw{flex:1;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden}
+#sb{height:100%;width:100%;background:linear-gradient(90deg,#ffd54a,#ff8a3d)}
+#toast{top:28%;left:50%;transform:translateX(-50%);font-size:34px;text-shadow:0 2px 8px #000;opacity:0;transition:opacity .3s;white-space:nowrap}
+#modes button{margin:0 2px}#score .chip{font-size:15px}#vig{inset:0;background:radial-gradient(transparent 40%,rgba(230,20,20,.8));opacity:0}
+#dot{top:50%;left:50%;width:4px;height:4px;margin:-2px;background:#fff;border-radius:50%;opacity:.7}
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,12,20,.75);z-index:5}
+.card{background:#141a26;border:1px solid #3a4560;border-radius:16px;padding:28px 36px;max-width:520px;text-align:center}
+h1{margin:0 0 8px;font-size:30px}.card p{color:#b8c2d8;margin:6px 0 14px}
+button{font:inherit;color:#fff;background:#2a3550;border:1px solid #4a5a80;border-radius:10px;padding:8px 16px;font-size:17px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+button.on{background:#c0392b;border-color:#ff7a6a}button:disabled{opacity:.4;cursor:wait}
+#go{margin:16px 0 10px;padding:12px 28px;font-size:22px;background:#1f8a5b;border-color:#5fe0a8}
+ul{text-align:left;color:#9aa6c0;font-size:14px;padding-left:20px;margin:8px 0 0}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.180.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.180.0/examples/jsm/"}}</script>
+</head><body>
+<div id="vig" class="hud"></div><div id="dot" class="hud"></div>
+<div id="top" class="hud"><div id="role" class="chip"><span class="ms" id="ri">directions_run</span><span id="rt"></span></div><div class="chip" id="tmc"><span class="ms">timer</span><span id="tm">2:00</span></div></div>
+<div id="score" class="hud"></div>
+<div id="hint" class="hud chip" style="display:none;bottom:62px;left:50%;transform:translateX(-50%)"><span class="ms" id="hi"></span><span id="ht"></span></div>
+<canvas id="mini" class="hud" width="200" height="200"></canvas>
+<div id="stam" class="hud chip"><span class="ms">bolt</span><div id="sbw"><div id="sb"></div></div></div>
+<div id="toast" class="hud"></div>
+<div id="menu" class="ov"><div class="card">
+<h1><span class="ms" style="font-size:34px">sports_kabaddi</span> <span id="ttl">リトル東京 鬼ごっこ</span></h1>
+<p id="sub">街を駆け抜けてCPUと鬼ごっこ。鬼だった時間が短い方が勝ち!</p>
+<div id="opts"><div id="modes"><button data-m="tag" class="on"><span class="ms">sports_kabaddi</span>鬼ごっこ</button> <button data-m="free"><span class="ms">explore</span>自由探索</button> <button data-m="coin"><span class="ms">flag</span>チェックポイント</button></div><p id="mdesc" style="margin:10px 0"></p><div id="diff"><button data-d="0">やさしい</button> <button data-d="1" class="on">ふつう</button> <button data-d="2">むずかしい</button></div></div>
+<div><button id="go" disabled><span class="ms">play_arrow</span><span id="gt">スタート</span></button></div>
+<p id="load">モデル読み込み中…</p>
+<ul><li>WASD 移動 / 矢印キー・マウス 視点 / Shift ダッシュ / Space ジャンプ</li><li>車の近くで E 乗り降り。W 加速 / S 後退 / A D ハンドル / Space ブレーキ / V 視点切替</li><li>鬼ごっこ: 触れると交代(3秒は再タッチ不可)。車で追いかけてもOK</li></ul>
+</div></div>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id),CDN='https://polyfork.dev/cdn/';
+const N=9,BL=24,RD=10,P_=BL+RD,HALF=(N*P_+RD)/2,GN=HALF*2;
+let seed=11;const rnd=()=>(seed=seed*16807%2147483647)/2147483647,R=(a,b)=>a+Math.random()*(b-a);
+// ---- three
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#a9cbe8');scene.fog=new THREE.Fog('#a9cbe8',50,210);
+scene.add(new THREE.HemisphereLight('#ffffff','#8a8f99',2.3));
+const sun=new THREE.DirectionalLight('#fff2dd',2.2);sun.position.set(60,100,40);scene.add(sun);
+const cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,400);cam.rotation.order='YXZ';
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+// ---- ground texture
+{const S=3072,WD=N*P_+RD+40,k=S/WD,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d'),X=v=>(v+WD/2)*k,L=N*P_+RD;
+g.fillStyle='#6f9462';g.fillRect(0,0,S,S);g.fillStyle='#3b3e44';
+for(let i=0;i<=N;i++){const a=-HALF+i*P_;g.fillRect(X(a),X(-HALF),RD*k,L*k);g.fillRect(X(-HALF),X(a),L*k,RD*k)}
+g.fillStyle='#c9c6bb';for(let i=0;i<N;i++)for(let j=0;j<N;j++)g.fillRect(X(-HALF+RD+i*P_),X(-HALF+RD+j*P_),BL*k,BL*k);
+g.fillStyle='#e9e4c8';for(let i=0;i<=N;i++){const a=-HALF+i*P_+RD/2-.1;for(let t=-HALF;t<HALF;t+=4){g.fillRect(X(a),X(t),.2*k,2*k);g.fillRect(X(t),X(a),2*k,.2*k)}}
+const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=8;
+const m=new THREE.Mesh(new THREE.PlaneGeometry(WD,WD),new THREE.MeshLambertMaterial({map:tx}));m.rotation.x=-Math.PI/2;scene.add(m);
+const gr=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshLambertMaterial({color:'#6f9462'}));gr.rotation.x=-Math.PI/2;gr.position.y=-.03;scene.add(gr)}
+// ---- assets
+const BID=['two-storey-shophouse-183790','three-storey-shophouse-2f6378','wide-shophouse-089f20','corner-shophouse-ad15c2','apartment-block-6445af','convenience-store-c30e1d','amusement-parlour-7eb45f','bathhouse-4ac41a','alley-bar-hut-3e41f8'];
+const U={lamp:['street-lamp-29f365','t',5.5],vend:['vending-machine-471c29','s',1.9],tree:['cherry-blossom-tree-3f7ab7','t',6.5],post:['red-post-box-f12045','s',1.4],bench:['wooden-bench-661da4','s',1],pole:['utility-pole-574130','t',9],
+shrine:['small-shrine-hall-cb8b25','b',12],torii:['torii-gate-402f30','t',5.5],lantern:['stone-lantern-d56d0a','s',1.8],lion:['guardian-lion-statue-5bde18','s',1.3],
+taxi:['city-taxi-eefa91','c',4.3],kei:['kei-van-211ed5','c',4],cpu:['salaryman-commuter-4170c1','p',1.75]};
+const IDS=[...new Set([...BID,...Object.values(U).map(v=>v[0])])],models={},anims={},loader=new GLTFLoader();let done=0,fail=0;
+const A={b:[1,1.1,1],p:[.35,1,.25],c:[.45,.35,1],t:[.3,1,.3],s:[.5,1,.4]},COL={b:'#d8c8b0',p:'#c44',c:'#e8c040',t:'#887',s:'#88a'};
+const load=id=>new Promise(res=>{const t=setTimeout(()=>{fail++;res()},15000);
+loader.load(CDN+id+'.glb',g=>{clearTimeout(t);models[id]=g.scene;anims[id]=g.animations;res()},undefined,()=>{clearTimeout(t);fail++;res()})}).then(()=>{$('load').textContent=`モデル読み込み ${++done}/${IDS.length}`});
+function make(id,kind,size){
+ const src=models[id],inner=src?(kind=='p'?src:src.clone(true)):new THREE.Mesh(new THREE.BoxGeometry(...A[kind]),new THREE.MeshLambertMaterial({color:COL[kind]}));
+ const pv=new THREE.Group();pv.add(inner);const w=new THREE.Group();w.add(pv);
+ let b=new THREE.Box3().setFromObject(pv),s=b.getSize(new THREE.Vector3());
+ if(kind=='c'&&s.x>s.z){pv.rotation.y=Math.PI/2;pv.updateMatrixWorld(true);b.setFromObject(pv);b.getSize(s)}
+ const c=b.getCenter(new THREE.Vector3());pv.position.set(-c.x,-b.min.y,-c.z);
+ w.scale.setScalar((kind=='b'||kind=='c')?size/Math.max(s.x,s.z):size/s.y);return w}
+// ---- world / colliders
+const boxes=[],blk=new Uint8Array(GN*GN);
+function place(d,x,z,ry=0,col=1,size){const o=make(d[0],d[1],size||d[2]);o.position.set(x,0,z);o.rotation.y=ry;scene.add(o);o.updateMatrixWorld(true);
+ if(col==1){const b=new THREE.Box3().setFromObject(o);boxes.push({x0:b.min.x,x1:b.max.x,z0:b.min.z,z1:b.max.z})}
+ else if(col==2)boxes.push({x0:x-.4,x1:x+.4,z0:z-.4,z1:z+.4});return o}
+function buildCity(){
+ for(let i=0;i<N;i++)for(let j=0;j<N;j++){const ox=-HALF+RD+i*P_,oz=-HALF+RD+j*P_;
+  if(i==(N>>1)&&j==(N>>1)){place(U.shrine,ox+12,oz+6,0);place(U.torii,ox+12,oz+17,0,0);
+   place(U.lantern,ox+9,oz+13,0,2);place(U.lantern,ox+15,oz+13,0,2);place(U.lion,ox+10.5,oz+15,0);place(U.lion,ox+13.5,oz+15,0);
+   for(const [a,b] of [[3,3],[21,3],[3,21],[21,21]])place(U.tree,ox+a,oz+b,0,2);continue}
+  for(let a=0;a<2;a++)for(let b=0;b<2;b++){let ry=b?0:Math.PI;if(rnd()<.3)ry=a?Math.PI/2:-Math.PI/2;
+   place([BID[(rnd()*BID.length)|0],'b',10],ox+6+a*12,oz+6+b*12,ry,1,8.5+rnd()*1.7)}
+  const edges=[[0,-1,0,Math.PI],[0,1,0,0],[-1,0,0,-Math.PI/2],[1,0,0,Math.PI/2]];
+  for(const [ex,ez,,fr] of edges)for(const t of [4,12,20]){const r=rnd(),x=ox+12+ex*11.3+(ex?0:t-12),z=oz+12+ez*11.3+(ez?0:t-12);
+   if(r<.22)place(U.lamp,x,z,fr,2);else if(r<.32)place(U.vend,x,z,fr);else if(r<.42)place(U.tree,x,z,fr,2);else if(r<.47)place(U.post,x,z,fr);else if(r<.52)place(U.bench,x,z,fr);else if(r<.58)place(U.pole,x,z,fr,2)}}
+ for(let n=0;n<44;n++){const k=(rnd()*(N+1))|0,i=(rnd()*N)|0,line=-HALF+k*P_+RD/2+(rnd()<.5?-2.8:2.8),t=-HALF+RD+i*P_+3+rnd()*18,hz=rnd()<.5;
+  addCar(rnd()<.5?U.taxi:U.kei,hz?t:line,hz?line:t,hz?(rnd()<.5?Math.PI/2:-Math.PI/2):(rnd()<.5?0:Math.PI))}
+ addCar(U.taxi,-48.2,-6,0);
+ for(const b of boxes)for(let ix=Math.max(0,Math.floor(b.x0+HALF-.55));ix<=Math.min(GN-1,Math.ceil(b.x1+HALF+.55));ix++)for(let iz=Math.max(0,Math.floor(b.z0+HALF-.55));iz<=Math.min(GN-1,Math.ceil(b.z1+HALF+.55));iz++)blk[iz*GN+ix]=1}
+function col1(p,r,b){const cx=Math.max(b.x0,Math.min(p.x,b.x1)),cz=Math.max(b.z0,Math.min(p.z,b.z1)),dx=p.x-cx,dz=p.z-cz,d2=dx*dx+dz*dz;
+ if(d2<r*r){if(d2>1e-8){const d=Math.sqrt(d2);p.x+=dx/d*(r-d);p.z+=dz/d*(r-d)}else{const l=p.x-b.x0,rr=b.x1-p.x,t=p.z-b.z0,bt=b.z1-p.z,m=Math.min(l,rr,t,bt);
+  if(m==l)p.x=b.x0-r;else if(m==rr)p.x=b.x1+r;else if(m==t)p.z=b.z0-r;else p.z=b.z1+r}}}
+function collide(p,r,sk){for(const b of boxes)col1(p,r,b);for(const b of dyn)if(b!==sk)col1(p,r,b);const L=HALF-1.5;p.x=Math.max(-L,Math.min(L,p.x));p.z=Math.max(-L,Math.min(L,p.z))}
+// ---- A*
+const GS=new Float32Array(GN*GN),PR=new Int32Array(GN*GN),CL=new Uint8Array(GN*GN),H=[];
+const idx=(x,z)=>Math.min(GN-1,Math.max(0,Math.floor(z+HALF)))*GN+Math.min(GN-1,Math.max(0,Math.floor(x+HALF)));
+function hp(f,i){H.push([f,i]);let c=H.length-1;while(c>0){const p=(c-1)>>1;if(H[p][0]<=H[c][0])break;[H[p],H[c]]=[H[c],H[p]];c=p}}
+function hq(){const t=H[0],l=H.pop();if(H.length){H[0]=l;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m==i)break;[H[m],H[i]]=[H[i],H[m]];i=m}}return t}
+function freeNear(i){if(!blk[i])return i;const x0=i%GN,z0=(i/GN)|0;for(let r=1;r<6;r++)for(let dz=-r;dz<=r;dz++)for(let dx=-r;dx<=r;dx++){const x=x0+dx,z=z0+dz;if(x>=0&&z>=0&&x<GN&&z<GN&&!blk[z*GN+x])return z*GN+x}return i}
+const ND=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+function astar(sx,sz,tx,tz){const s=idx(sx,sz),t=freeNear(idx(tx,tz)),tx0=t%GN,tz0=(t/GN)|0;GS.fill(1e9);PR.fill(-1);CL.fill(0);H.length=0;GS[s]=0;hp(0,s);let n=0;
+ while(H.length&&n++<45000){const [,c]=hq();if(CL[c])continue;CL[c]=1;if(c==t)break;const cx=c%GN,cz=(c/GN)|0;
+  for(const [dx,dz] of ND){const x=cx+dx,z=cz+dz;if(x<0||z<0||x>=GN||z>=GN)continue;const j=z*GN+x;if(blk[j]||CL[j])continue;if(dx&&dz&&(blk[cz*GN+x]||blk[z*GN+cx]))continue;
+   const g=GS[c]+(dx&&dz?1.414:1);if(g<GS[j]){GS[j]=g;PR[j]=c;hp(g+1.2*Math.hypot(x-tx0,z-tz0),j)}}}
+ if(!CL[t])return[];const o=[];for(let c=t;c!=-1;c=PR[c])o.push([c%GN-HALF+.5,((c/GN)|0)-HALF+.5]);return o.reverse()}
+const los=(ax,az,bx,bz)=>{const st=Math.ceil(Math.hypot(bx-ax,bz-az)*2);for(let i=1;i<=st;i++)if(blk[idx(ax+(bx-ax)*i/st,az+(bz-az)*i/st)])return false;return true};
+// ---- CPU animation: use clips if the GLB has them, otherwise bend the T-pose mesh procedurally (arms down, arm/leg swing)
+let mixer=null,rig=null;const sm=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)};
+function setupRig(w,id){
+ const clips=anims[id]||[];
+ if(clips.length){mixer=new THREE.AnimationMixer(models[id]);mixer.clipAction(clips.find(c=>/run|walk/i.test(c.name))||clips[0]).play();return}
+ w.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(w.matrixWorld).invert(),parts=[];let y0=1e9,y1=-1e9;
+ w.traverse(o=>{if(!o.isMesh||!o.geometry.attributes.position)return;const pa=o.geometry.attributes.position,rel=new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld),wp=new Float32Array(pa.count*3),v=new THREE.Vector3();
+  for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(rel);wp.set([v.x,v.y,v.z],i*3);y0=Math.min(y0,v.y);y1=Math.max(y1,v.y)}
+  parts.push({pa,wp,rel,ri:rel.clone().invert()})});
+ const H=y1-y0;let ya=0,na=0;for(const q of parts)for(let i=0;i<q.pa.count;i++)if(Math.abs(q.wp[i*3])>.3*H){ya+=q.wp[i*3+1];na++}
+ ya=na?ya/na:y0+.8*H;
+ for(const q of parts){const n=q.pa.count;q.wl=new Float32Array(n);q.wa=new Float32Array(n);
+  for(let i=0;i<n;i++){const x=Math.abs(q.wp[i*3])/H,y=(q.wp[i*3+1]-y0)/H;q.wl[i]=sm(.52,.44,y);q.wa[i]=y>.4?sm(.17,.25,x):0}}
+ rig={parts,H,ya,y0}}
+const lm=(px,py,ax,az)=>new THREE.Matrix4().makeTranslation(px,py,0).multiply(new THREE.Matrix4().makeRotationX(ax)).multiply(new THREE.Matrix4().makeRotationZ(az)).multiply(new THREE.Matrix4().makeTranslation(-px,-py,0));
+function animRig(ph,amp){if(!rig)return;const sw=Math.sin(ph)*amp,H=rig.H,M={leg:{},arm:{}},v=new THREE.Vector3(),u=new THREE.Vector3();
+ for(const s of[1,-1]){M.leg[s]=lm(s*.05*H,rig.y0+.48*H,s*sw*.8,0);M.arm[s]=lm(s*.2*H,rig.ya,-s*sw*.7,-s*1.25)}
+ for(const q of rig.parts){for(let i=0;i<q.pa.count;i++){const x=q.wp[i*3];v.set(x,q.wp[i*3+1],q.wp[i*3+2]);const s=x>=0?1:-1;
+   if(q.wl[i]>0){u.copy(v).applyMatrix4(M.leg[s]);v.lerp(u,q.wl[i])}else if(q.wa[i]>0){u.copy(v).applyMatrix4(M.arm[s]);v.lerp(u,q.wa[i])}
+   v.applyMatrix4(q.ri);q.pa.setXYZ(i,v.x,v.y,v.z)}(q.pa.data||q.pa).needsUpdate=true}}
+// ---- vehicles & checkpoint
+function carBox(c){const sn=Math.abs(Math.sin(c.ry)),co=Math.abs(Math.cos(c.ry)),hx=sn*c.hl+co*c.hw,hz=co*c.hl+sn*c.hw;Object.assign(c.box,{x0:c.x-hx,x1:c.x+hx,z0:c.z-hz,z1:c.z+hz})}
+function addCar(d,x,z,ry){const o=place(d,x,z,ry,0),b=new THREE.Box3().setFromObject(o),bx=b.max.x-b.min.x,bz=b.max.z-b.min.z,c={o,x,z,ry,v:0,hl:Math.max(bx,bz)/2,hw:Math.min(bx,bz)/2,box:{}};carBox(c);cars.push(c);dyn.push(c.box)}
+function driveStep(c,dt){
+ const up=k.KeyW?1:0,dn=k.KeyS?1:0,st=(k.KeyA?1:0)-(k.KeyD?1:0);
+ if(up)c.v+=(c.v<0?30:15)*dt;if(dn)c.v-=(c.v>0?30:10)*dt;if(!up&&!dn)c.v-=Math.sign(c.v)*Math.min(Math.abs(c.v),6*dt);
+ if(k.Space)c.v-=Math.sign(c.v)*Math.min(Math.abs(c.v),28*dt);
+ c.v=Math.max(-8,Math.min(24,c.v));
+ const dr=st*1.9*Math.max(-1,Math.min(1,c.v/6))*dt;c.ry+=dr;Pl.yaw+=dr;
+ c.x+=Math.sin(c.ry)*c.v*dt;c.z+=Math.cos(c.ry)*c.v*dt;let hit=0;
+ for(const t of[-.6,0,.6]){const cx=c.x+Math.sin(c.ry)*c.hl*t,cz=c.z+Math.cos(c.ry)*c.hl*t,p={x:cx,z:cz};collide(p,c.hw*.95,c.box);const ex=p.x-cx,ez=p.z-cz;if(ex||ez){c.x+=ex;c.z+=ez;hit=1}}
+ if(hit)c.v*=1-Math.min(1,3*dt);
+ carBox(c);c.o.position.set(c.x,0,c.z);c.o.rotation.y=c.ry}
+function useCar(){
+ if(Pl.car){const c=Pl.car;c.v=0;Pl.car=null;Pl.x=c.x+Math.cos(c.ry)*(c.hw+1);Pl.z=c.z-Math.sin(c.ry)*(c.hw+1);collide(Pl,.45);toast('降車',700);return}
+ let b=null,bd=2;for(const c of cars){const d=Math.hypot(c.x-Pl.x,c.z-Pl.z)-c.hl;if(d<bd){bd=d;b=c}}
+ if(b){Pl.car=b;Pl.y=0;Pl.vy=0;b.v=0;Pl.yaw=b.ry+Math.PI;Pl.pitch=0;toast('乗車',700)}}
+const cp={x:0,z:0,m:new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,36,20,1,true),new THREE.MeshBasicMaterial({color:'#ffd54a',transparent:true,opacity:.35,side:2,depthWrite:false}))};cp.m.visible=false;scene.add(cp.m);
+function newCp(){for(let n=0;n<80;n++){const c=-HALF+RD/2+((Math.random()*(N+1))|0)*P_+R(-2.5,2.5),t=R(-HALF+8,HALF-8),v=Math.random()<.5,x=v?c:t,z=v?t:c;
+ if(!blk[idx(x,z)]&&Math.hypot(x-Pl.x,z-Pl.z)>50){cp.x=x;cp.z=z;break}}cp.m.position.set(cp.x,18,cp.z)}
+const MODES={tag:['鬼ごっこ','sports_kabaddi','街を駆け抜けてCPUと鬼ごっこ。鬼だった時間が短い方が勝ち!'],free:['自由探索','explore','制限なしで街を探索。車を見つけてEで乗ってみよう'],coin:['チェックポイント','flag','光る柱に触れて得点(+5秒)。車で一気に稼ごう!']};
+// ---- game
+const cars=[],dyn=[],k={},G={mode:'menu',game:'tag',pts:0,third:false,diff:1,oni:'cpu',cool:0,t:120,tp:0,tc:0,stam:100,exh:false},Pl={car:null,x:0,z:0,y:0,vy:0,yaw:0,pitch:0,bob:0},C={x:0,z:0,ry:0,ph:0,amp:0,mv:false,path:[],pi:0,rep:0,tg:[0,0],mesh:null};
+const SPD=[5.6,6.8,8],mark=new THREE.Mesh(new THREE.ConeGeometry(.3,.6,8),new THREE.MeshBasicMaterial({color:'#ff2a2a'})),beam=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,40,6),new THREE.MeshBasicMaterial({color:'#ff3030',transparent:true,opacity:.28}));
+mark.rotation.x=Math.PI;beam.position.y=22;const MS=200;let mini,mc=$('mini').getContext('2d');
+const toast=(s,ms=1600)=>{const e=$('toast');e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,ms)};
+function show(t,s,b){$('opts').style.display=G.mode=='pause'?'none':'';$('ttl').textContent=t;$('sub').innerHTML=s;$('gt').textContent=b;$('menu').style.display='flex'}
+function reset(){const tag=G.game=='tag',coin=G.game=='coin';Pl.car=null;Object.assign(Pl,{x:-51,z:-17,y:0,vy:0,yaw:Math.PI/2,pitch:0});Object.assign(C,{x:17,z:17,path:[],pi:0,rep:0});
+ Object.assign(G,{oni:'cpu',cool:3,t:coin?60:120,tp:0,tc:0,pts:0,stam:100,exh:false,third:false});
+ $('tmc').style.display=G.game=='free'?'none':'';cp.m.visible=coin;if(coin)newCp();
+ $('score').innerHTML=tag?'<div class="chip"><span class="ms">person</span>あなた <b id="sp">0.0</b>秒</div><div class="chip"><span class="ms">smart_toy</span>CPU <b id="sc">0.0</b>秒</div>':coin?'<div class="chip"><span class="ms">flag</span><b id="sp">0</b>個</div>':'';
+ toast(tag?'鬼はCPU! 逃げろ!':coin?'光る柱を目指せ!':'自由探索スタート',2000)}
+function swap(){G.oni=G.oni=='cpu'?'me':'cpu';G.cool=3;C.rep=0;toast(G.oni=='me'?'あなたが鬼!':'タッチされた! 逃げろ!')}
+function cpuStep(dt){const oni=G.oni=='cpu';C.mv=false;if(oni&&G.cool>0)return;C.rep-=dt;
+ if(C.rep<=0){C.rep=oni?.5:1;let tx=Pl.x,tz=Pl.z;
+  if(!oni){let best=-1e9;for(let i=0;i<24;i++){const x=C.x+R(-50,50),z=C.z+R(-50,50);if(Math.abs(x)>HALF-4||Math.abs(z)>HALF-4||blk[idx(x,z)])continue;
+   let sc=Math.hypot(x-Pl.x,z-Pl.z)-.6*Math.hypot(x-C.x,z-C.z);if((x-C.x)*(Pl.x-C.x)+(z-C.z)*(Pl.z-C.z)>0)sc-=30;if(sc>best){best=sc;tx=x;tz=z}}}
+  C.tg=[tx,tz];C.path=astar(C.x,C.z,tx,tz);C.pi=0}
+ const pa=C.path;let j=C.pi;while(j<pa.length-1&&Math.hypot(pa[j][0]-C.x,pa[j][1]-C.z)<1.1)j++;let b=j;
+ for(let q=j+1;q<Math.min(pa.length,j+14);q++)if(los(C.x,C.z,pa[q][0],pa[q][1]))b=q;C.pi=j;
+ const tg=pa.length?pa[b]:C.tg,dx=tg[0]-C.x,dz=tg[1]-C.z,d=Math.hypot(dx,dz);
+ if(d>.05){C.mv=true;const sp=SPD[G.diff]*(oni?1.04:.95);C.x+=dx/d*sp*dt;C.z+=dz/d*sp*dt;C.ph+=sp*dt*1.6;let da=Math.atan2(dx,dz)-C.ry;da=Math.atan2(Math.sin(da),Math.cos(da));C.ry+=da*Math.min(1,dt*10)}
+ collide(C,.45)}
+function step(dt){
+ const tag=G.game=='tag',coin=G.game=='coin';
+ Pl.yaw+=((k.ArrowLeft?1:0)-(k.ArrowRight?1:0))*2.3*dt;Pl.pitch=Math.max(-1.45,Math.min(1.45,Pl.pitch+((k.ArrowUp?1:0)-(k.ArrowDown?1:0))*1.8*dt));
+ if(Pl.car){driveStep(Pl.car,dt);Pl.x=Pl.car.x;Pl.z=Pl.car.z;G.stam=Math.min(100,G.stam+22*dt)}
+ else{
+  const f=(k.KeyW?1:0)-(k.KeyS?1:0),s=(k.KeyD?1:0)-(k.KeyA?1:0),mv=f||s,sprint=(k.ShiftLeft||k.ShiftRight)&&!G.exh&&mv;
+  if(sprint){G.stam=Math.max(0,G.stam-28*dt);if(G.stam<=0)G.exh=true}else{G.stam=Math.min(100,G.stam+(mv?10:22)*dt);if(G.stam>25)G.exh=false}
+  const vx=-Math.sin(Pl.yaw)*f+Math.cos(Pl.yaw)*s,vz=-Math.cos(Pl.yaw)*f-Math.sin(Pl.yaw)*s,l=Math.hypot(vx,vz)||1,sp=sprint?9.2:6.2;
+  if(mv){Pl.x+=vx/l*sp*dt;Pl.z+=vz/l*sp*dt}collide(Pl,.45);
+  if(k.Space&&Pl.y==0)Pl.vy=7;Pl.vy-=22*dt;Pl.y=Math.max(0,Pl.y+Pl.vy*dt);if(Pl.y==0)Pl.vy=0;
+  Pl.bob+=mv&&Pl.y==0?sp*dt*1.7:0}
+ let d=1e9;
+ if(tag){cpuStep(dt);C.amp+=((C.mv?1:0)-C.amp)*Math.min(1,dt*8);if(mixer)mixer.update(C.mv?dt:0);
+  G.cool=Math.max(0,G.cool-dt);if(G.oni=='cpu')G.tc+=dt;else G.tp+=dt;
+  d=Math.hypot(Pl.x-C.x,Pl.z-C.z);if(d<(Pl.car?2.8:1.5)&&G.cool<=0&&Pl.y<1)swap()}
+ if(coin&&Math.hypot(Pl.x-cp.x,Pl.z-cp.z)<3.5){G.pts++;G.t+=5;toast('+5秒',700);newCp()}
+ if(G.game!='free'){G.t-=dt;if(G.t<=0){G.mode='end';document.exitPointerLock();
+  if(tag){const w=G.tp<G.tc;show(w?'あなたの勝ち!':G.tp==G.tc?'引き分け':'CPUの勝ち',`鬼だった時間 あなた ${G.tp.toFixed(1)}秒 / CPU ${G.tc.toFixed(1)}秒`,'もう一度')}
+  else show('タイムアップ!',`チェックポイント ${G.pts}個`,'もう一度')}}
+ // visuals
+ if(Pl.car){const c=Pl.car;if(G.third){cam.position.set(c.x+Math.sin(Pl.yaw)*7.5,3.6,c.z+Math.cos(Pl.yaw)*7.5);cam.rotation.x=Pl.pitch-.15}else{cam.position.set(c.x+Math.sin(c.ry)*.25,1.3,c.z+Math.cos(c.ry)*.25);cam.rotation.x=Pl.pitch}}
+ else{cam.position.set(Pl.x,1.65+Pl.y+Math.sin(Pl.bob)*.05,Pl.z);cam.rotation.x=Pl.pitch}
+ cam.rotation.y=Pl.yaw;
+ const oni=G.oni=='cpu';C.mesh.visible=mark.visible=tag;beam.visible=tag&&oni;
+ if(tag){const m=C.mesh;m.position.set(C.x,Math.abs(Math.sin(C.ph))*.09*C.amp,C.z);m.rotation.y=C.ry;animRig(C.ph,C.amp);
+  mark.position.set(C.x,2.5+Math.sin(performance.now()/250)*.1,C.z);mark.rotation.y+=dt*3;mark.material.color.set(oni?'#ff2a2a':'#3ee08a');beam.position.x=C.x;beam.position.z=C.z}
+ // hud
+ const rl=$('role');rl.classList.toggle('oni',tag&&G.oni=='me');
+ $('ri').textContent=tag?(G.oni=='me'?'whatshot':'directions_run'):MODES[G.game][1];$('rt').textContent=tag?(G.oni=='me'?'あなたが鬼!':'逃げろ!'):MODES[G.game][0];
+ $('tm').textContent=Math.floor(G.t/60)+':'+String(Math.floor(G.t%60)).padStart(2,'0');
+ const a=$('sp');if(a)a.textContent=tag?G.tp.toFixed(1):G.pts;const b2=$('sc');if(b2)b2.textContent=G.tc.toFixed(1);$('sb').style.width=G.stam+'%';
+ $('vig').style.opacity=tag&&oni&&d<16?(1-d/16)*.9:0;
+ let near=null;if(!Pl.car){let bd=2;for(const c of cars){const dd=Math.hypot(c.x-Pl.x,c.z-Pl.z)-c.hl;if(dd<bd){bd=dd;near=c}}}
+ const h=$('hint');if(Pl.car){h.style.display='';$('hi').textContent='directions_car';$('ht').textContent=`${Math.round(Math.abs(Pl.car.v)*3.6)} km/h  [E]降りる [V]視点`}
+ else if(near){h.style.display='';$('hi').textContent='directions_car';$('ht').textContent='[E] 車に乗る'}else h.style.display='none';
+ mc.drawImage(mini,0,0);const q=MS/(HALF*2),px=(Pl.x+HALF)*q,pz=(Pl.z+HALF)*q;
+ for(const c of cars){mc.fillStyle=c==Pl.car?'#fff':'#58b8ff';mc.fillRect((c.x+HALF)*q-1.5,(c.z+HALF)*q-1.5,3,3)}
+ if(coin){mc.fillStyle='#ffd54a';mc.beginPath();mc.arc((cp.x+HALF)*q,(cp.z+HALF)*q,5,0,7);mc.fill()}
+ if(tag){mc.fillStyle=oni?'#ff3a3a':'#3ee08a';mc.beginPath();mc.arc((C.x+HALF)*q,(C.z+HALF)*q,4,0,7);mc.fill()}
+ mc.save();mc.translate(px,pz);mc.rotate(-Pl.yaw);mc.fillStyle='#fff';mc.beginPath();mc.moveTo(0,-6);mc.lineTo(4,5);mc.lineTo(-4,5);mc.fill();mc.restore()}
+// ---- input / ui
+addEventListener('keydown',e=>{k[e.code]=1;if(e.code=='Space'||e.code.startsWith('Arrow'))e.preventDefault();if(G.mode=='play'&&!e.repeat){if(e.code=='KeyE')useCar();if(e.code=='KeyV')G.third=!G.third}});addEventListener('keyup',e=>k[e.code]=0);
+addEventListener('mousemove',e=>{if(document.pointerLockElement){Pl.yaw-=e.movementX*.0022;Pl.pitch=Math.max(-1.45,Math.min(1.45,Pl.pitch-e.movementY*.0022))}});
+document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&G.mode=='play'){G.mode='pause';show('一時停止','クリックで再開','続ける')}});
+document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{G.diff=+b.dataset.d;document.querySelectorAll('#diff button').forEach(x=>x.classList.toggle('on',x==b))});
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>{G.game=b.dataset.m;document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x==b));$('mdesc').textContent=MODES[G.game][2];$('diff').style.display=G.game=='tag'?'':'none'});$('mdesc').textContent=MODES.tag[2];
+$('go').onclick=()=>{if(G.mode!='pause')reset();G.mode='play';$('menu').style.display='none';renderer.domElement.requestPointerLock()};
+// ---- boot
+await Promise.all(IDS.map(load));
+buildCity();C.mesh=make(...U.cpu.slice(0,1),'p',U.cpu[2]);scene.add(C.mesh,mark,beam);setupRig(C.mesh,U.cpu[0]);
+mini=document.createElement('canvas');mini.width=mini.height=MS;{const g=mini.getContext('2d'),q=MS/(HALF*2);g.fillStyle='#2b2f36';g.fillRect(0,0,MS,MS);g.fillStyle='#9aa0ab';
+ for(const b of boxes)g.fillRect((b.x0+HALF)*q,(b.z0+HALF)*q,Math.max(1,(b.x1-b.x0)*q),Math.max(1,(b.z1-b.z0)*q))}
+$('load').textContent=fail?`一部モデルを取得できず、ボックスで代替しています(失敗 ${fail}/${IDS.length})`:'準備完了';$('go').disabled=false;
+let last=performance.now();(function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000);last=t;if(G.mode=='play')step(dt);else if(G.mode!='play'&&C.mesh&&!cam.userData.i){cam.userData.i=1;cam.position.set(0,60,90);cam.lookAt(0,0,0)}renderer.render(scene,cam)})(last);
+</script></body></html>
