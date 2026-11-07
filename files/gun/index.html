@@ -117,9 +117,13 @@ button.cta:hover,button.cta:focus{background:var(--yl);color:#000}
 100%{opacity:0;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px) - 58px)) perspective(320px) rotateX(92deg) scale(.9)}}
 @keyframes ppr{0%,100%{opacity:0;transform:translate(-50%,-50%)}15%,80%{opacity:1;transform:translate(-50%,-50%)}}
 @media (prefers-reduced-motion:reduce){.pp{animation-name:ppr}#vg.on{animation:none;opacity:.6}.fd.go .ft,.fd.go .fb{animation:none}#hv.hurt .hc{animation:none}}
+#cr{left:50%;bottom:19%;transform:translateX(-50%);padding:5px 14px;font-size:.85em;white-space:nowrap;display:none;text-align:center;line-height:1.7}
+.ck{background:var(--fg);color:#000;padding:0 .4em;margin:0 .15em;box-shadow:2px 2px 0 #000}
+.cs{font:400 1.5em var(--fh);color:var(--ok)}
+.cw{color:#ff6a5a}
 </style></head><body>
 <div id="w"><div id="fr"><canvas id="g3"></canvas><canvas id="c"></canvas>
-<div id="hud"><div id="vg"></div><div id="top" class="px"></div><div id="net" class="px"></div><div id="fc" class="px"></div><div id="mid"></div><div id="bar"><i id="gh"></i><i id="hp"></i><b id="hv"></b></div><div id="rt"></div><div id="am"></div><div id="bm" class="px"></div><div id="dm" class="px dg"></div><div id="rr" class="px dg"></div><div id="fx"></div></div></div>
+<div id="hud"><div id="vg"></div><div id="top" class="px"></div><div id="net" class="px"></div><div id="fc" class="px"></div><div id="mid"></div><div id="bar"><i id="gh"></i><i id="hp"></i><b id="hv"></b></div><div id="rt"></div><div id="am"></div><div id="bm" class="px"></div><div id="dm" class="px dg"></div><div id="rr" class="px dg"></div><div id="fx"></div><div id="cr" class="px"></div></div></div>
 <div id="ov"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -295,14 +299,29 @@ function floorTex(){const FP=12,S=N*FP,c=document.createElement('canvas');c.widt
 function ceilTex(){const S=N*8,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');g.fillStyle='#24262b';g.fillRect(0,0,S,S);g.fillStyle='#1a1c20';for(let i=0;i<N;i+=6){g.fillRect(i*8,0,3,S);g.fillRect(0,i*8,S,3)}
  for(let y=3;y<N;y+=6)for(let x=2;x<N;x+=6){g.fillStyle='#fff6d8';g.fillRect(x*8,(N-1-y)*8+1,24,6)}
  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t}
+
+// ---- 車（町の車は乗って運転できる）----
+let CARS=[];const CAR_AT=new Map();
+function carRes(){const R={gb:new THREE.BoxGeometry(1.9,.4,.86),gc:new THREE.BoxGeometry(1,.3,.76),gw:new THREE.CylinderGeometry(.17,.17,.12,10),gl:new THREE.BoxGeometry(.05,.1,.16),
+ glass:new THREE.MeshLambertMaterial({color:0x2a3444}),tire:new THREE.MeshLambertMaterial({color:0x15151a}),head:new THREE.MeshBasicMaterial({color:0xfff2b0}),tail:new THREE.MeshBasicMaterial({color:0xff3030}),body:PAL_C.map(c=>new THREE.MeshLambertMaterial({color:c}))};
+ DSP.push(R.gb,R.gc,R.gw,R.gl,R.glass,R.tire,R.head,R.tail,...R.body);return R}
+function carMake(cells,hz,mc,R){const g=new THREE.Group(),b=new THREE.Mesh(R.gb,R.body[mc&7]);b.position.y=.36;g.add(b);
+ const k=new THREE.Mesh(R.gc,R.glass);k.position.set(-.1,.69,0);g.add(k);
+ for(const[x,z]of[[.6,.4],[.6,-.4],[-.6,.4],[-.6,-.4]]){const w=new THREE.Mesh(R.gw,R.tire);w.rotation.x=Math.PI/2;w.position.set(x,.17,z);g.add(w)}
+ for(const z of[.28,-.28]){const h=new THREE.Mesh(R.gl,R.head);h.position.set(.96,.38,z);g.add(h);const t=new THREE.Mesh(R.gl,R.tail);t.position.set(-.96,.38,z);g.add(t)}
+ SC.add(g);BLD.push(g);const n=cells.length,car={x:cells.reduce((a,p)=>a+p[0]+.5,0)/n,y:cells.reduce((a,p)=>a+p[1]+.5,0)/n,a:hz?0:Math.PI/2,v:0,cells:cells.map(p=>p.slice()),col:mc,m:g,parked:1,dead:0};
+ CARS.push(car);for(const[x,y]of cells)CAR_AT.set(y*N+x,car)}
 function buildScene(){
- for(const o of BLD)SC.remove(o);BLD.length=0;for(const o of DSP)o.dispose();DSP.length=0;WIX.clear();WMS=[];
+ CARS=[];CAR_AT.clear();for(const o of BLD)SC.remove(o);BLD.length=0;for(const o of DSP)o.dispose();DSP.length=0;WIX.clear();WMS=[];
  TH=THM[PR]||TH0;CM.far=Math.max(80,N*2);CM.updateProjectionMatrix();
  const groups=new Map(),d=new THREE.Object3D(),col=new THREE.Color();
- for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(M[y][x]){const t=PR?MT[y][x]||1:1;if(!groups.has(t))groups.set(t,[]);groups.get(t).push([x,y])}
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(M[y][x]){const t=PR?MT[y][x]||1:1;if(t==11)continue;if(!groups.has(t))groups.set(t,[]);groups.get(t).push([x,y])}
  for(const[t,list]of groups){const h=(WTD[t]||WTD[1]).h,geo=new THREE.BoxGeometry(1,h,1),im=new THREE.InstancedMesh(geo,wallMat(t),list.length);DSP.push(geo);
   list.forEach(([x,y],i)=>{WIX.set(y*N+x,{m:im,i});d.position.set(x+.5,h/2,y+.5);d.updateMatrix();im.setMatrixAt(i,d.matrix);im.setColorAt(i,tint(t,x,y,col))});
   im.frustumCulled=false;SC.add(im);BLD.push(im);WMS.push(im)}
+ if(PR){const seen=new Set();let R=null;for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){if(!M[y][x]||MT[y][x]!=11||seen.has(y*N+x))continue;seen.add(y*N+x);const cells=[[x,y]],mc=MC[y][x];let hz=1;
+  for(const[dx,dy]of[[1,0],[0,1]]){const nx=x+dx,ny=y+dy;if(nx<N&&ny<N&&M[ny][nx]&&MT[ny][nx]==11&&MC[ny][nx]==mc&&!seen.has(ny*N+nx)){cells.push([nx,ny]);seen.add(ny*N+nx);hz=dx;break}}
+  carMake(cells,hz,mc,R||(R=carRes()))}}
  let fm;if(PR){fm=floorTex();DSP.push(fm)}else{ft.repeat.set(N,N);fm=ft}
  const fmat=new THREE.MeshLambertMaterial({map:fm}),fgeo=new THREE.PlaneGeometry(N,N);DSP.push(fmat,fgeo);
  const fl=FLR=new THREE.Mesh(fgeo,fmat);fl.rotation.x=-Math.PI/2;fl.position.set(N/2,0,N/2);SC.add(fl);BLD.push(fl);
@@ -334,12 +353,12 @@ function syncChars(){
   m.fi.scale.set(.68*fr+.001,.09,1);m.fi.position.x=-.34+.34*fr;m.fi.material.color.setHex(fr>.5?0x4ade80:fr>.25?0xf5c542:0xff4d4d)}
 }
 function sync3d(){
- const c=FC.on?FC:{x:P.x,y:P.y,z:P.hp>0?EY+Math.sin(T*(P.dash?13:9))*(P.mv?(P.dash?.035:.02):0):.25,a:P.a,p:P.hp>0?P.p||0:-.15},sk=(P.sk||0)*.12,r=()=>(Math.random()-.5)*sk;
+ const c=FC.on?FC:P.car?carCam():{x:P.x,y:P.y,z:P.hp>0?EY+Math.sin(T*(P.dash?13:9))*(P.mv?(P.dash?.035:.02):0):.25,a:P.a,p:P.hp>0?P.p||0:-.15},sk=(P.sk||0)*.12,r=()=>(Math.random()-.5)*sk;
  CM.position.set(c.x+r(),c.z+r(),c.y+r());CM.rotation.set(c.p,-c.a-Math.PI/2,0);
  const fv=2*Math.atan(Math.tan(FOV/2)*H/W)*57.2958;if(Math.abs(fv-CM.fov)>.01){CM.fov=fv;CM.updateProjectionMatrix()}
  PLt.position.copy(CM.position);AM.intensity=FC.on?TH.amiFc:TH.ami;PLt.intensity=FC.on?TH.plFc:TH.pl;SC.fog.density=FC.on?TH.fdFc:TH.fd;CE.visible=!FC.on&&!!TH.ce;
- const rl=P.rl>0?Math.sin(Math.max(0,Math.min(1,1-P.rl/1.3))*Math.PI):0;GV.visible=!FC.on&&P.hp>0&&RD.v<.15;GV.position.set(.2,-.2-rl*.2,-.45+P.k*.06);GV.rotation.x=P.k*.12+rl*.5;MZ.visible=P.fl>0;MF.intensity=P.fl>0?2.5:0;
- syncChars();
+ const rl=P.rl>0?Math.sin(Math.max(0,Math.min(1,1-P.rl/1.3))*Math.PI):0;GV.visible=!FC.on&&!P.car&&P.hp>0&&RD.v<.15;GV.position.set(.2,-.2-rl*.2,-.45+P.k*.06);GV.rotation.x=P.k*.12+rl*.5;MZ.visible=P.fl>0;MF.intensity=P.fl>0?2.5:0;
+ syncChars();syncCars();
  for(const b of BB){if(!b.m){b.m=new THREE.Mesh(BGm,new THREE.MeshBasicMaterial({color:0x331111}));SC.add(b.m)}b.m.position.set(b.x,b.z,b.y);b.m.material.color.setHex(Math.sin(T*(12+(1.5-b.t)*22))>0?0xff3030:0x331111)}
  for(let i=EX.length-1;i>=0;i--){const e=EX[i],a=(T-e.t)/.55;if(a>=1){SC.remove(e.m);EX.splice(i,1);continue}e.m.scale.setScalar(.3+BR*.7*Math.sqrt(a));e.m.material.opacity=.85*(1-a)}
  const le=EX[EX.length-1];BLt.intensity=le?3*(1-(T-le.t)/.55):0;if(le)BLt.position.set(le.x,.8,le.y);
@@ -347,7 +366,7 @@ function sync3d(){
 // ---- bomb ----
 function hitE(e,d){e.hv=(e.hv==null?MH:e.hv)-d;e.fl=.12;if(e.hv<=0){e.hp=0;e.fl=.2}}
 function clrBombs(){for(const b of BB)b.m&&SC.remove(b.m);BB.length=0;bombs=BM0;bcd=0;FC.on=P&&P.spec?1:0}
-function throwBomb(){if(RD.on||RD.v>.15||P.hp<=0||FC.on||rs||bombs<=0||bcd>0||T-rt0<1)return;bombs--;bcd=.7;
+function throwBomb(){if(P.car||RD.on||RD.v>.15||P.hp<=0||FC.on||rs||bombs<=0||bcd>0||T-rt0<1)return;bombs--;bcd=.7;
  const c=Math.cos(P.p||0),s=Math.sin(P.p||0),ca=Math.cos(P.a),sa=Math.sin(P.a),ok=!M[(P.y+sa*.3)|0][(P.x+ca*.3)|0];
  BB.push({x:P.x+(ok?ca*.3:0),y:P.y+(ok?sa*.3:0),z:EY-.1,vx:ca*c*10,vy:sa*c*10,vz:s*10+2.5,t:1.5,o:P});beep(220,.08,.1)}
 function botBomb(b,tg,d){b.bm--;b.bc=3+Math.random()*4;
@@ -371,13 +390,52 @@ const BRK=2.3;
 function breakWalls(bx,by){let n=0;const d=new THREE.Object3D(),ts=new Set();
  for(let y=Math.max(1,(by-BRK)|0);y<=Math.min(N-2,(by+BRK)|0);y++)for(let x=Math.max(1,(bx-BRK)|0);x<=Math.min(N-2,(bx+BRK)|0);x++){
   if(!M[y][x]||Math.hypot(x+.5-bx,y+.5-by)>BRK)continue;
-  M[y][x]=0;n++;const w=WIX.get(y*N+x);if(w){d.position.set(0,-9,0);d.scale.setScalar(0);d.updateMatrix();w.m.setMatrixAt(w.i,d.matrix);ts.add(w.m)}}
+  M[y][x]=0;n++;{const cr=CAR_AT.get(y*N+x);if(cr)carBoom(cr)}const w=WIX.get(y*N+x);if(w){d.position.set(0,-9,0);d.scale.setScalar(0);d.updateMatrix();w.m.setMatrixAt(w.i,d.matrix);ts.add(w.m)}}
  if(n){for(const m of ts)m.instanceMatrix.needsUpdate=true;for(const b of[...E,...AL])b.D=null;noise(.5,.35)}}
+// ---- 車: 乗り降り・運転 ----
+let carMsgT=0,crK='';const ENG={o:null,g:null};
+function carCells(c,on){for(const[x,y]of c.cells){const k=y*N+x;if(on){M[y][x]=1;MT[y][x]=11;MC[y][x]=c.col;CAR_AT.set(k,c)}else{M[y][x]=0;CAR_AT.delete(k)}}}
+function navDirty(){for(const b of[...E,...AL])b.D=null}
+function carBoom(c){if(c.dead)return;c.dead=1;c.parked=0;carCells(c,0)}
+function carNear(){let b=null,bd=1.8;if(P.car)return null;for(const c of CARS)if(c.parked&&!c.dead)for(const[x,y]of c.cells){const d=Math.hypot(x+.5-P.x,y+.5-P.y);if(d<bd){bd=d;b=c}}return b}
+function carEnter(c){carCells(c,0);c.parked=0;c.v=0;P.car=c;P.x=c.x;P.y=c.y;P.a=c.a;P.p=0;RD.on=0;navDirty();beep(260,.08,.2)}
+function carLeave(force){const c=P.car;if(!c)return true;
+ const free=(x,y)=>x>0&&y>0&&x<N-1&&y<N-1&&!M[y][x]&&![...E,...AL].some(o=>o.hp>0&&Math.hypot(o.x-(x+.5),o.y-(y+.5))<.8),hz0=Math.abs(Math.cos(c.a))>=Math.abs(Math.sin(c.a));
+ let sp=null,ex=null;
+ for(const hz of[hz0,!hz0]){const bx=hz?Math.round(c.x)-1:Math.floor(c.x),by=hz?Math.floor(c.y):Math.round(c.y)-1;
+  for(const[dx,dy]of[[0,0],[1,0],[-1,0],[0,1],[0,-1]]){const x=bx+dx,y=by+dy,x2=x+(hz?1:0),y2=y+(hz?0:1);if(free(x,y)&&free(x2,y2)){sp={cells:[[x,y],[x2,y2]],hz};break}}if(sp)break}
+ if(sp){const cx=(sp.cells[0][0]+sp.cells[1][0]+1)/2,cy=(sp.cells[0][1]+sp.cells[1][1]+1)/2,own=new Set(sp.cells.map(p=>p[1]*N+p[0]));let bd=9;
+  for(let y=sp.cells[0][1]-1;y<=sp.cells[1][1]+1;y++)for(let x=sp.cells[0][0]-1;x<=sp.cells[1][0]+1;x++){if(own.has(y*N+x)||!free(x,y))continue;const d=Math.hypot(x+.5-cx,y+.5-cy);if(d<bd){bd=d;ex=[x,y]}}
+  if(ex){c.cells=sp.cells;c.x=cx;c.y=cy;c.a=sp.hz?(Math.cos(c.a)>=0?0:Math.PI):(Math.sin(c.a)>=0?Math.PI/2:-Math.PI/2);c.v=0;c.parked=1;carCells(c,1);P.car=null;P.x=ex[0]+.5;P.y=ex[1]+.5;P.p=0;navDirty();engStop();beep(200,.08,.2);return true}}
+ if(force){c.v=0;P.car=null;engStop();return true}
+ return false}
+function carToggle(){if(P.hp<=0||P.spec||FC.on||online)return;if(P.car){if(!carLeave(0))carMsgT=T+1.6;return}if(rs||T-rt0<1)return;const c=carNear();if(c)carEnter(c)}
+function carHit(x,y){const m=.46;return M[(y-m)|0][(x-m)|0]||M[(y-m)|0][(x+m)|0]||M[(y+m)|0][(x-m)|0]||M[(y+m)|0][(x+m)|0]}
+function carMove(c,dx,dy){let h=0;if(!carHit(c.x+dx,c.y))c.x+=dx;else h=1;if(!carHit(c.x,c.y+dy))c.y+=dy;else h=1;
+ if(h){const sp=Math.abs(c.v);if(sp>2){P.sk=Math.max(P.sk||0,Math.min(.25,sp*.03));noise(.18,Math.min(.5,sp*.05))}c.v*=-.25}}
+function driveCar(dt){const c=P.car,f=(K.KeyW?1:0)-(K.KeyS?1:0)-GP.my,s=(K.KeyD?1:0)-(K.KeyA?1:0)+GP.mx;
+ if(f>0)c.v+=(c.v<0?14:7)*f*dt;else if(f<0)c.v+=(c.v>0?14:5)*f*dt;else c.v-=Math.sign(c.v)*Math.min(Math.abs(c.v),3.2*dt);
+ if(K.Space||GP.up)c.v-=Math.sign(c.v)*Math.min(Math.abs(c.v),13*dt);
+ c.v=Math.max(-3.5,Math.min(9,c.v));c.a+=s*Math.sign(c.v)*Math.min(1,Math.abs(c.v)/2.5)*2.1*dt;
+ carMove(c,Math.cos(c.a)*c.v*dt,Math.sin(c.a)*c.v*dt);
+ if(Math.abs(c.v)>3)for(const e of E)if(e.hp>0&&!(e.rc>T)&&Math.hypot(e.x-c.x,e.y-c.y)<1.05){const dv=Math.min(100,Math.round(Math.abs(c.v)*9));dmg('d',Math.min(dv,hv0(e)),e);hitE(e,dv);e.rc=T+.6;P.hm=.2;beep(150,.12,.3);noise(.2,.4);P.sk=Math.max(P.sk||0,.18);c.v*=.85}
+ P.x=c.x;P.y=c.y;P.a=c.a;P.p=0;P.mv=Math.abs(c.v)>.3?1:0;P.dash=false;
+ if(!ENG.o)engStart();engSet(c.v)}
+function carCam(){const c=P.car,cx=Math.cos(c.a),cy=Math.sin(c.a),sol=(x,y)=>x<0||y<0||x>=N||y>=N||M[y|0][x|0];let d=2.7;while(d>.45&&sol(c.x-cx*d,c.y-cy*d))d-=.15;return{x:c.x-cx*d,y:c.y-cy*d,z:1.25+Math.max(0,2.7-d)*.1,a:c.a,p:-.14}}
+function syncCars(){for(const c of CARS){const m=c.m;m.visible=!c.dead;m.position.set(c.x,0,c.y);m.rotation.y=-c.a}}
+function engStart(){try{if(ENG.o)return;const a=ctx(),o=a.createOscillator(),g=a.createGain();o.type='sawtooth';o.frequency.value=50;g.gain.value=0;o.connect(g).connect(a.destination);o.start();ENG.o=o;ENG.g=g}catch(e){}}
+function engSet(v){try{if(!ENG.o)return;const a=ctx(),t=a.currentTime,k=Math.min(1,Math.abs(v)/9);ENG.o.frequency.setTargetAtTime(48+k*95,t,.08);ENG.g.gain.setTargetAtTime((.03+k*.05)*CFG.vol,t,.08)}catch(e){}}
+function engStop(){try{if(ENG.o){ENG.o.stop();ENG.o.disconnect();ENG.g.disconnect()}}catch(e){}ENG.o=ENG.g=null}
+function carHud(){if(st!=1&&ENG.o)engStop();const el=$('cr');let h='';
+ if(P.car&&st==1){const c=P.car;h=`<span class=cs>${Math.round(Math.abs(c.v)*10)}</span> km/h　<span class=ck>G</span>降りる　<span class=ck>W/S</span>アクセル・バック　<span class=ck>A/D</span>ハンドル　<span class=ck>SPACE</span>ブレーキ`+(T<carMsgT?'<br><span class=cw>ここでは降りられない</span>':'')}
+ else if(st==1&&!P.spec&&P.hp>0&&!online&&!rs&&carNear())h='<span class=ck>G</span> 車に乗る';
+ if(h!==crK){crK=h;el.innerHTML=h}el.style.display=h?'block':'none'}
+// ---- /車 ----
 // ---- free camera ----
 function fcMove(dt){FC.a+=(((K.ArrowRight?1:0)-(K.ArrowLeft?1:0))*2.4+GP.lx*3)*CFG.sens*dt;FC.p=Math.max(-1.5,Math.min(1.5,FC.p+(((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.8-GP.ly*2.2)*CFG.sens*dt));
  const f=(K.KeyW?1:0)-(K.KeyS?1:0)-GP.my,s=(K.KeyD?1:0)-(K.KeyA?1:0)+GP.mx,u=(K.Space||GP.up?1:0)-(K.ShiftLeft||K.ShiftRight||GP.dn?1:0),v=7*CFG.spd*dt,c=Math.cos(FC.p);
  FC.x=Math.max(-4,Math.min(N+4,FC.x+(Math.cos(FC.a)*c*f-Math.sin(FC.a)*s)*v));FC.y=Math.max(-4,Math.min(N+4,FC.y+(Math.sin(FC.a)*c*f+Math.cos(FC.a)*s)*v));FC.z=Math.max(.3,Math.min(Math.max(45,N*.9),FC.z+(Math.sin(FC.p)*f+u)*v))}
-function toggleFC(){if(P.spec)return;FC.on^=1;if(FC.on){FC.x=P.x-Math.cos(P.a)*2.5;FC.y=P.y-Math.sin(P.a)*2.5;FC.z=2.2;FC.a=P.a;FC.p=-.5}}
+function toggleFC(){if(P.spec||P.car)return;FC.on^=1;if(FC.on){FC.x=P.x-Math.cos(P.a)*2.5;FC.y=P.y-Math.sin(P.a)*2.5;FC.z=2.2;FC.a=P.a;FC.p=-.5}}
 // ---- CPU navigation (BFS) ----
 function nav(b,o){const D4=[[1,0],[-1,0],[0,1],[0,-1]];
  if(!b.D||T>b.nT){const D=new Int16Array(N*N).fill(-1),q=[(o.y|0)*N+(o.x|0)];D[q[0]]=0;for(let i=0;i<q.length;i++){const c=q[i],x=c%N,y=c/N|0;for(const[a,d]of D4){const nx=x+a,ny=y+d;if(nx>=0&&ny>=0&&nx<N&&ny<N&&!M[ny][nx]&&D[ny*N+nx]<0){D[ny*N+nx]=D[c]+1;q.push(ny*N+nx)}}}b.D=D;b.nT=T+1.2}
@@ -450,7 +508,7 @@ function closeSet(){ov.innerHTML=prev;ov.classList.remove('lite')}
 document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&st==1&&!online)pause()});
 document.addEventListener('mousemove',e=>{if(P&&(document.pointerLockElement||(st==1&&(e.buttons&2)))){const o=FC.on?FC:P;o.a+=e.movementX*.0025*CFG.sens;o.p=Math.max(-1.5,Math.min(1.5,(o.p||0)-e.movementY*.0025*CFG.sens))}});
 onmousedown=e=>{if(st==1&&e.button==0)md=1};onmouseup=()=>md=0;oncontextmenu=e=>e.preventDefault();
-onkeydown=e=>{K[e.code]=1;if(e.code=='KeyR'&&st==1)reload();if(e.code=='KeyE'&&st==1&&!P.spec)RD.on^=1;if(e.code=='KeyQ'&&st==1&&!e.repeat)throwBomb();if(e.code=='KeyF'&&st==1&&!e.repeat)toggleFC();if(st==1&&/^(Space|Arrow)/.test(e.code))e.preventDefault()};
+onkeydown=e=>{K[e.code]=1;if(e.code=='KeyR'&&st==1)reload();if(e.code=='KeyE'&&st==1&&!P.spec)RD.on^=1;if(e.code=='KeyQ'&&st==1&&!e.repeat)throwBomb();if(e.code=='KeyF'&&st==1&&!e.repeat)toggleFC();if(e.code=='KeyG'&&st==1&&!e.repeat)carToggle();if(st==1&&/^(Space|Arrow)/.test(e.code))e.preventDefault()};
 onkeyup=e=>K[e.code]=0;
 C.onclick=()=>{if(st==1&&!document.pointerLockElement)lock()};
 
@@ -469,7 +527,7 @@ function gpPoll(dt){
  GP.mx=dz(ax(0));GP.my=dz(ax(1));GP.lx=dz(ax(2));GP.ly=dz(ax(3));
  GP.fire=GPP[7]||GPP[5]?1:0;GP.dash=GPP[10]||GPP[0]?1:0;GP.up=GPP[0]?1:0;GP.dn=GPP[1]?1:0;
  if(st==1){
-  if(eg[2])reload();if(eg[3]&&!P.spec)RD.on^=1;if(eg[4])throwBomb();if(eg[8])toggleFC();if(eg[9]&&!online)pause();
+  if(eg[2])reload();if(eg[3]&&!P.spec)RD.on^=1;if(eg[4])throwBomb();if(eg[8])toggleFC();if(eg[6])carToggle();if(eg[9]&&!online)pause();
  }else{
   if(st==3&&!ov.classList.contains('lite')&&eg[9]){go();return}
   const bs=[...ov.querySelectorAll('button:not([disabled]),input[type=range]')];if(!bs.length)return;
@@ -539,6 +597,7 @@ function mk(x,y,tm,id){
   rdT:rr(0,2.5),rI:rr(1.8,5),rg:rs_>1.2?20:12,bz:rr(.2,1.3),bm:BM0,bc:rr(1,3),kn:null,D:null};return lvApply(o,tm)}
 function reset(){LOG=[];ST=null;P={x:0,y:0,a:0,hp:100,ammo:MAG,cd:0,rl:0,fl:0,hit:0,k:0,hm:0,mv:0,ls:-9,ms:0,tm:0,spec:0};sc=[0,0];rd=online&&!ishost?0:1;PH={};myPh=0;RM={};fin=0;gw=0;WIN=SET.win;MH=SET.hp;BM0=SET.bm;newRound()}
 function newRound(){
+ if(P&&P.car)carLeave(1);
  if(ST&&!ST.done&&(ST.d||ST.t))closeRound();ST={n:rd,d:0,t:0,done:0,r:''};$('fx').textContent='';
  const[na,ne]=counts(),spec=mode=='cvc',gst=online&&!ishost,nA=online?2:spec?na:na+1;
  // 毎ラウンド ランダムスポーン（ゲストはホストが決めた位置を受け取る）
@@ -550,9 +609,9 @@ function newRound(){
  AL=online?[]:Array.from({length:na},(_,i)=>mk(...(pa[spec?i:i+1]||slot(0,i+1)),0,100+i));
  for(const o of[...E,...AL])o.a=faceOpen(o.x,o.y);
 }
-function reload(){if(RD.on||P.rl>0||P.ammo>=MAG||P.hp<=0)return;P.rl=1.3;beep(300,.1,.1)}
+function reload(){if(P.car||RD.on||P.rl>0||P.ammo>=MAG||P.hp<=0)return;P.rl=1.3;beep(300,.1,.1)}
 function fire(){
- if(RD.on||RD.v>.15||P.hp<=0||rs||T-rt0<1||P.cd>0||P.rl>0)return;if(P.ammo<=0)return reload();
+ if(P.car||RD.on||RD.v>.15||P.hp<=0||rs||T-rt0<1||P.cd>0||P.rl>0)return;if(P.ammo<=0)return reload();
  P.ammo--;P.cd=.16;P.fl=.05;P.k=1;P.ls=T;P.ms++;P.sk=Math.max(P.sk||0,.07);noise(.12,.25);
  let b=null,bd=99;
  for(const e of E)if(e.hp>0){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy),da=Math.atan2(dy,dx)-P.a;
@@ -657,7 +716,9 @@ function netpub(dt){
 }
 function update(dt){
  if(FC.on)fcMove(dt);
- if(P.hp>0&&!FC.on){
+ if(P.car&&P.hp<=0)carLeave(1);
+ if(P.car&&!FC.on)driveCar(dt);
+ else if(P.hp>0&&!FC.on){
   const f=(K.KeyW?1:0)-(K.KeyS?1:0)-GP.my,s=(K.KeyD?1:0)-(K.KeyA?1:0)+GP.mx,n=Math.max(1,Math.hypot(f,s)),dash=((K.ShiftLeft||K.ShiftRight)||GP.dash)&&(f||s)?1.75:1,sp=3.2*CFG.spd*dash*dt/n;
   P.mv=f||s?1:0;P.dash=dash>1;P.a+=(((K.ArrowRight?1:0)-(K.ArrowLeft?1:0))*2.4+GP.lx*3)*CFG.sens*dt;P.p=Math.max(-1.5,Math.min(1.5,(P.p||0)+(((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.8-GP.ly*2.2)*CFG.sens*dt));
   mv(P,(Math.cos(P.a)*f-Math.sin(P.a)*s)*sp,(Math.sin(P.a)*f+Math.cos(P.a)*s)*sp);
@@ -679,7 +740,7 @@ function hud(){
  $('fc').style.display=FC.on?'block':'none';if(FC.on)$('fc').textContent=sp?'CPU対戦 観戦  WASD/左スティック:移動  Space/A:上昇  Shift/B:下降':'FREE CAM  F:戻る  Space:上昇  Shift:下降';
  hpbar();
  ammo();
- $('mid').textContent=rs?bm:P.hp<=0&&!sp?'撃破された…':T-rt0<1?(sp?'開始まで…':'構えて…'):'';dmgHud();
+ $('mid').textContent=rs?bm:P.hp<=0&&!sp?'撃破された…':T-rt0<1?(sp?'開始まで…':'構えて…'):'';dmgHud();carHud();
 }
 let hpS=100,hpG=100;
 function hpbar(){const k=1-Math.pow(.7,FD*60),g=1-Math.pow(.96,FD*60);hpS+=(P.hp-hpS)*k;hpG+=(hpS-hpG)*g;if(hpG<hpS)hpG=hpS;const lo=P.hp>0&&P.hp<=MH*.34,w=v=>Math.min(100,Math.max(0,v/MH*100))+'%';
@@ -692,7 +753,7 @@ function ammo(){const rl=P.rl>0,lit=rl?Math.floor((1-P.rl/1.3)*MAG):P.ammo,k=lit
 function end(w){closeRound();st=2;document.exitPointerLock&&document.exitPointerLock();const cv=mode=='cvc';show(`<h1>${cv?(w==1?'A軍 勝利！':'B軍 勝利！'):(w==1?'勝利！':'敗北…')}</h1><p>${sc[0]} - ${sc[1]}</p>${statsHTML()}<button class='cta' onclick='menu()'>メニューへ</button>`)}
 function menu(){
  if(NR){NR.leave().catch(()=>{});NR=null}clearInterval(lt);online=0;ishost=1;st=0;FC.on=0;document.exitPointerLock&&document.exitPointerLock();
- show(`<h1>CPU STRIKE</h1><div class='sub'>◆ エペ式 一本勝負 FPS ◆</div><div class='mn'><button class='cta' onclick='begin(0)'>ソロ（vs CPU）</button><button class='cta' onclick='begin(1)'>タッグ（CPU相棒）</button><button class='cta' onclick='begin(2)'>CPU対戦（観戦）</button><button onclick='lobby()'>オンライン タッグ</button><button onclick='openMatch()'>試合設定</button><button onclick='openSet()'>設定</button></div><div class='keys'><b>WASD</b><span>移動</span><b>SHIFT</b><span>ダッシュ</span><b>MOUSE</b><span>視点（矢印も可）</span><b>CLICK</b><span>撃つ</span><b>R</b><span>リロード</span><b>E</b><span>レーダー（撃てない）</span><b>Q</b><span>ボム（壁を壊せる）</span><b>F</b><span>フリーカメラ</span></div><p class='hint'>🎮 コントローラー: 左スティック=移動 / 右スティック=視点 / RT=撃つ / LB=ボム / X=リロード / Y=レーダー / L3・A=ダッシュ / BACK=フリーカメラ / START=ポーズ。メニューは十字キーで選択、Aで決定。</p><p class='hint'>銃は3発で撃破（HPは試合設定で変更可）。ボムは1.5秒後に爆発、爆心地ほど大ダメージ。CPUもレーダーや銃声で位置を探り、ボムも投げてきます。個性（ミス多め／達人／最短で来る／遅れて来る）は毎ラウンドランダムです。</p>`)
+ show(`<h1>CPU STRIKE</h1><div class='sub'>◆ エペ式 一本勝負 FPS ◆</div><div class='mn'><button class='cta' onclick='begin(0)'>ソロ（vs CPU）</button><button class='cta' onclick='begin(1)'>タッグ（CPU相棒）</button><button class='cta' onclick='begin(2)'>CPU対戦（観戦）</button><button onclick='lobby()'>オンライン タッグ</button><button onclick='openMatch()'>試合設定</button><button onclick='openSet()'>設定</button></div><div class='keys'><b>WASD</b><span>移動</span><b>SHIFT</b><span>ダッシュ</span><b>MOUSE</b><span>視点（矢印も可）</span><b>CLICK</b><span>撃つ</span><b>R</b><span>リロード</span><b>E</b><span>レーダー（撃てない）</span><b>Q</b><span>ボム（壁を壊せる）</span><b>F</b><span>フリーカメラ</span><b>G</b><span>車に乗る・降りる（町）</span></div><p class='hint'>🎮 コントローラー: 左スティック=移動 / 右スティック=視点 / RT=撃つ / LB=ボム / X=リロード / Y=レーダー / L3・A=ダッシュ / BACK=フリーカメラ / L2=車の乗降 / START=ポーズ。メニューは十字キーで選択、Aで決定。</p><p class='hint'>銃は3発で撃破（HPは試合設定で変更可）。ボムは1.5秒後に爆発、爆心地ほど大ダメージ。CPUもレーダーや銃声で位置を探り、ボムも投げてきます。個性（ミス多め／達人／最短で来る／遅れて来る）は毎ラウンドランダムです。</p>`)
 }
 function begin(m){mode=['solo','tag','cvc'][m];online=0;ishost=1;useMap();reset();if(mode=='cvc'){FC.x=N/2;FC.y=N/2;FC.z=Math.max(20,N*.67);FC.a=.8;FC.p=-1.3}go()}
 // ---- マップ切替（試合開始時に設定どおり再生成。オンラインはホストの設定を共有） ----
