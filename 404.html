@@ -4,307 +4,108 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
-    <title>404 エラー - Google</title>
+    <title>404 エラー</title>
     <link rel="icon" type="image/png" href="/icon.png">
     <link rel="apple-touch-icon" href="/icon.png">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=apps,home,search&display=block">
     <style>
+        html, body { height: 100%; }
         body {
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
             background-color: #ffffff;
+            color: #222;
             overflow-x: hidden;
-            position: relative;
         }
 
-        .material-symbols-outlined {
-            font-family: 'Material Symbols Outlined';
-            font-weight: normal;
-            font-style: normal;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            direction: ltr;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            font-feature-settings: 'liga';
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-            user-select: none;
-        }
-
-        header {
+        .wrap {
+            box-sizing: border-box;
+            min-height: 100%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            min-height: 58px;
-            padding: 0 12px 0 16px;
-            font-size: 13px;
+            justify-content: center;
+            gap: 56px;
+            padding: 40px 24px;
         }
 
-        .hdr-left, .hdr-right { display: flex; align-items: center; }
-
-        header a {
-            color: #202124;
-            text-decoration: none;
-        }
-
-        .hdr-left a { padding: 6px 12px; }
-        .hdr-right a.hdr-link { padding: 6px 8px; }
-        header a.hdr-link:hover { text-decoration: underline; }
-
-        .apps-btn {
-            display: inline-grid;
-            place-items: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            color: #5f6368 !important;
-        }
-        .apps-btn:hover { background: #f1f3f4; }
-        .apps-btn .material-symbols-outlined { font-size: 24px; }
-
-        .login-btn {
-            display: inline-flex;
-            align-items: center;
-            height: 40px;
-            margin-left: 8px;
-            padding: 0 14px;
-            border-radius: 20px;
-            background: #0b57d0;
-            color: #fff !important;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .login-btn:hover { background: #0a4cb3; box-shadow: 0 1px 3px rgba(32,33,36,0.35); }
-
-        .apps-btn:focus-visible, .login-btn:focus-visible, .btn:focus-visible {
-            outline: 2px solid #1a73e8;
-            outline-offset: 1px;
-        }
-
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0 20px 50px;
-        }
+        .text { width: 100%; max-width: 400px; }
 
         .logo {
-            margin-top: auto;
-            font-size: 90px;
+            font-size: 56px;
             font-weight: 600;
-            letter-spacing: -2.5px;
-            margin-bottom: 30px;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin: 0 0 44px;
             user-select: none;
         }
-
         .g1, .g2 { color: #4285F4; }
         .o1, .e { color: #EA4335; }
         .o2 { color: #FBBC05; }
         .l { color: #34A853; }
 
-        .err-box {
-            width: 100%;
-            max-width: 690px;
-            margin-bottom: auto;
-            text-align: left;
-        }
-
-        .err-code {
-            margin: 0 0 8px;
-            font-size: 24px;
+        .code {
+            margin: 0 0 22px;
+            font-size: 16px;
             font-weight: 400;
-            color: #202124;
+            color: #70757a;
         }
-        .err-code b { color: #EA4335; font-weight: 600; }
+        .code b { color: #202124; font-weight: 700; }
 
-        .err-msg {
-            margin: 0 0 6px;
+        .msg {
+            margin: 0 0 24px;
             font-size: 16px;
             line-height: 1.6;
-            color: #3c4043;
+            color: #202124;
             word-break: break-all;
         }
-        .err-msg code {
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #f1f3f4;
-            font-family: Consolas, 'Courier New', monospace;
-            font-size: 14px;
-            color: #202124;
-        }
-        .err-sub { margin: 0; font-size: 14px; color: #70757a; }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            border: 1px solid #dfe1e5;
-            border-radius: 26px;
-            padding: 0 10px 0 14px;
-            height: 52px;
-            margin-top: 28px;
-            transition: box-shadow 0.2s;
-            background: #fff;
-        }
-        .search-box:hover, .search-box:focus-within {
-            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
-            border-color: rgba(0,0,0,0);
-        }
-        .search-icon {
-            flex: none;
-            color: #202124;
-            margin-right: 12px;
-            font-size: 24px;
-        }
-        .search-input {
-            flex: 1;
-            width: 100%;
-            min-width: 0;
-            height: 100%;
-            border: none;
-            outline: none;
-            font-size: 16px;
-            color: #000;
-            background: transparent;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 30px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background-color: #f8f9fa;
-            border: 1px solid #f8f9fa;
-            border-radius: 8px;
-            color: #3c4043;
-            font-size: 14px;
+        .msg .gray { color: #70757a; }
+        .msg code {
             font-family: inherit;
-            padding: 0 16px;
-            height: 36px;
-            cursor: pointer;
-            user-select: none;
-            min-width: 0;
-            text-align: center;
-            text-decoration: none;
-            box-sizing: border-box;
+            font-weight: 600;
         }
-        .btn:hover {
-            border: 1px solid #dadce0;
-            color: #202124;
-            background-color: #f8f9fa;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-        }
-        .btn .material-symbols-outlined { font-size: 18px; }
 
-        footer {
-            background-color: #fff;
+        .back {
+            display: inline-block;
             font-size: 14px;
-            color: #202124;
+            color: #1a73e8;
+            text-decoration: none;
         }
-        .foot-country { padding: 15px 30px; border-bottom: 1px solid #dadce0; }
-        .foot-links {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            padding: 0 22px;
-        }
-        .foot-links > div { display: flex; flex-wrap: wrap; }
-        .foot-links a { padding: 15px; color: #202124; text-decoration: none; }
-        .foot-links a:hover { text-decoration: underline; }
+        .back:hover { text-decoration: underline; }
+        .back:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
 
-        @media (max-width: 520px) {
-            .hdr-left { display: none; }
-            header { justify-content: flex-end; }
-            .logo { font-size: 64px; letter-spacing: -1.5px; }
-            .button-container { flex-wrap: wrap; }
+        .robot { flex: none; width: 200px; height: auto; user-select: none; }
+
+        @media (max-width: 720px) {
+            .wrap { flex-direction: column; justify-content: center; gap: 24px; }
+            .text { max-width: 480px; }
+            .logo { margin-bottom: 28px; }
+            .robot { width: 150px; }
         }
     </style>
 </head>
 <body>
+    <div class="wrap">
+        <div class="text">
+            <h1 class="logo" aria-label="Google">
+                <span class="g1">G</span><span class="o1">o</span><span class="o2">o</span><span class="g2">g</span><span class="l">l</span><span class="e">e</span>
+            </h1>
 
-    <header>
-        <nav class="hdr-left" aria-label="Google について">
-            <a href="https://about.google/" class="hdr-link">Googleについて</a>
-            <a href="https://store.google.com/jp/" class="hdr-link">ストア</a>
-        </nav>
-        <nav class="hdr-right" aria-label="Google のサービス">
-            <a href="https://mail.google.com/mail/" class="hdr-link">Gmail</a>
-            <a href="https://www.google.com/imghp" class="hdr-link">画像</a>
-            <a href="https://about.google/products/" class="apps-btn" aria-label="Google アプリ">
-                <span class="material-symbols-outlined">apps</span>
-            </a>
-            <a href="https://accounts.google.com/" class="login-btn">ログイン</a>
-        </nav>
-    </header>
+            <p class="code"><b>404.</b> エラーです。</p>
 
-    <main>
-        <div class="logo" aria-label="Google">
-            <span class="g1">G</span><span class="o1">o</span><span class="o2">o</span><span class="g2">g</span><span class="l">l</span><span class="e">e</span>
-        </div>
-
-        <div class="err-box">
-            <h1 class="err-code"><b>404.</b> ページが見つかりません</h1>
-            <p class="err-msg">
+            <p class="msg">
                 リクエストされた URL <code id="reqPath">/</code> はこのサーバーで見つかりませんでした。
+                <span class="gray">わかっているのはここまでです。</span>
             </p>
-            <p class="err-sub">URL が間違っているか、ページが移動・削除された可能性があります。</p>
 
-            <form class="search-form" action="/" method="get" id="backForm">
-                <div class="search-box">
-                    <span class="search-icon material-symbols-outlined">search</span>
-                    <input type="text" id="q" class="search-input" autocomplete="off" placeholder="ゲームを探す" aria-label="ゲームを探す">
-                </div>
-            </form>
-
-            <div class="button-container">
-                <a href="/" class="btn"><span class="material-symbols-outlined">home</span>トップページへ戻る</a>
-                <button type="button" class="btn" onclick="history.length > 1 ? history.back() : (location.href = '/')">前のページへ戻る</button>
-            </div>
+            <a href="/" class="back">トップページへ戻る</a>
         </div>
-    </main>
 
-    <footer>
-        <div class="foot-country">日本</div>
-        <div class="foot-links">
-            <div>
-                <a href="https://ads.google.com/intl/ja_jp/home/">広告</a>
-                <a href="https://smallbusiness.withgoogle.com/">ビジネス</a>
-                <a href="https://www.google.com/search/howsearchworks/">検索の仕組み</a>
-            </div>
-            <div>
-                <a href="https://policies.google.com/privacy">プライバシー</a>
-                <a href="https://policies.google.com/terms">規約</a>
-                <a href="https://www.google.com/preferences">設定</a>
-            </div>
-        </div>
-    </footer>
+        <img class="robot" src="/robot.png" width="171" height="213" alt="壊れて部品が散らばったロボットのイラスト">
+    </div>
 
     <script>
-        (function () {
-            // 存在しなかったURLのパスを表示（textContentなのでHTMLとしては解釈されない）
-            document.getElementById('reqPath').textContent = location.pathname + location.search;
-
-            // 検索ボックスに入力して Enter → トップページへ（?q= を付けて渡す）
-            document.getElementById('backForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                var q = document.getElementById('q').value.trim();
-                location.href = q ? '/?q=' + encodeURIComponent(q) : '/';
-            });
-        })();
+        // 存在しなかったURLのパスを表示（textContentなのでHTMLとしては解釈されない）
+        document.getElementById('reqPath').textContent = location.pathname + location.search;
     </script>
 </body>
 </html>
