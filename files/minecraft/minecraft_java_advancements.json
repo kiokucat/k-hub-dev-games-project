@@ -1,0 +1,1294 @@
+{
+  "meta": {
+    "game": "Minecraft: Java Edition",
+    "version": "26.3",
+    "total": 126,
+    "tabs": {
+      "story": "Minecraft",
+      "nether": "Nether",
+      "end": "The End",
+      "adventure": "Adventure",
+      "husbandry": "Husbandry"
+    },
+    "counts_by_tab": {
+      "story": 16,
+      "nether": 23,
+      "end": 9,
+      "adventure": 47,
+      "husbandry": 31
+    },
+    "counts_by_frame": {
+      "task": 91,
+      "goal": 10,
+      "challenge": 25
+    },
+    "total_xp": 3590,
+    "note": "id は /advancement コマンドで使える名前空間ID。null は未確認。unverified_ids は記憶ベースで未検証。26.4スナップショットでは What Goes Around Comes Around が追加され127件になる予定。",
+    "unverified_ids": [
+      "minecraft:husbandry/place_dried_ghast_in_water",
+      "minecraft:adventure/heart_transplanter"
+    ]
+  },
+  "advancements": [
+    {
+      "id": "minecraft:story/root",
+      "name": "Minecraft",
+      "tab": "story",
+      "frame": "task",
+      "root": true,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "作業台をインベントリに入れる"
+    },
+    {
+      "id": "minecraft:story/mine_stone",
+      "name": "Stone Age",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "丸石・ブラックストーン・深層岩の丸石のいずれかを入手する"
+    },
+    {
+      "id": "minecraft:story/upgrade_tools",
+      "name": "Getting an Upgrade",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "石のツルハシを入手する"
+    },
+    {
+      "id": "minecraft:story/smelt_iron",
+      "name": "Acquire Hardware",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "鉄インゴットを入手する"
+    },
+    {
+      "id": "minecraft:story/lava_bucket",
+      "name": "Hot Stuff",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "溶岩入りバケツを入手する"
+    },
+    {
+      "id": "minecraft:story/form_obsidian",
+      "name": "Ice Bucket Challenge",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "黒曜石を入手する"
+    },
+    {
+      "id": "minecraft:story/enter_the_nether",
+      "name": "We Need to Go Deeper",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ネザーに入る"
+    },
+    {
+      "id": "minecraft:story/follow_ender_eye",
+      "name": "Eye Spy",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "要塞に入る"
+    },
+    {
+      "id": "minecraft:story/enter_the_end",
+      "name": "The End?",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンドに入る"
+    },
+    {
+      "id": "minecraft:story/cure_zombie_villager",
+      "name": "Zombie Doctor",
+      "tab": "story",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ゾンビ村人を治療する(弱体化の効果→金のリンゴ)"
+    },
+    {
+      "id": "minecraft:story/iron_tools",
+      "name": "Isn't It Iron Pick?",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "鉄のツルハシを入手する"
+    },
+    {
+      "id": "minecraft:story/mine_diamond",
+      "name": "Diamonds!",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ダイヤモンドを入手する"
+    },
+    {
+      "id": "minecraft:story/shiny_gear",
+      "name": "Cover Me with Diamonds",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ダイヤモンドの防具を1つ入手する"
+    },
+    {
+      "id": "minecraft:story/enchant_item",
+      "name": "Enchanter",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンチャントテーブルでアイテムにエンチャントする"
+    },
+    {
+      "id": "minecraft:story/obtain_armor",
+      "name": "Suit Up",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "鉄の防具を1つ入手する"
+    },
+    {
+      "id": "minecraft:story/deflect_arrow",
+      "name": "Not Today, Thank You",
+      "tab": "story",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "盾で飛び道具を防ぐ"
+    },
+    {
+      "id": "minecraft:nether/root",
+      "name": "Nether",
+      "tab": "nether",
+      "frame": "task",
+      "root": true,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ネザーに入る"
+    },
+    {
+      "id": "minecraft:nether/find_fortress",
+      "name": "A Terrible Fortress",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ネザー要塞に入る"
+    },
+    {
+      "id": "minecraft:nether/obtain_blaze_rod",
+      "name": "Into Fire",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ブレイズロッドを入手する"
+    },
+    {
+      "id": "minecraft:nether/brew_potion",
+      "name": "Local Brewery",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "醸造台からポーションを取り出す"
+    },
+    {
+      "id": "minecraft:nether/all_potions",
+      "name": "A Furious Cocktail",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "17種類のポーション効果を同時に受ける"
+    },
+    {
+      "id": "minecraft:nether/all_effects",
+      "name": "How Did We Get Here?",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": true,
+      "xp": 1000,
+      "requirement_ja": "34種類の効果を同時に受ける"
+    },
+    {
+      "id": "minecraft:nether/get_wither_skull",
+      "name": "Spooky Scary Skeleton",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ウィザースケルトンの頭蓋骨を入手する"
+    },
+    {
+      "id": "minecraft:nether/summon_wither",
+      "name": "Withering Heights",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ウィザーが召喚される際に近くにいる"
+    },
+    {
+      "id": "minecraft:nether/create_beacon",
+      "name": "Bring Home the Beacon",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ビーコンが起動する際に近くにいる"
+    },
+    {
+      "id": "minecraft:nether/create_full_beacon",
+      "name": "Beaconator",
+      "tab": "nether",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "4段のピラミッドでビーコンが起動する際に近くにいる"
+    },
+    {
+      "id": "minecraft:nether/obtain_ancient_debris",
+      "name": "Hidden in the Depths",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "古代の残骸を入手する"
+    },
+    {
+      "id": "minecraft:nether/netherite_armor",
+      "name": "Cover Me in Debris",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "ネザライトの防具一式を入手する"
+    },
+    {
+      "id": "minecraft:nether/distract_piglin",
+      "name": "Oh Shiny",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "金の防具を着ずに、成体のピグリンを金でひきつける"
+    },
+    {
+      "id": "minecraft:nether/return_to_sender",
+      "name": "Return to Sender",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "跳ね返したガストの火の玉でガストを倒す"
+    },
+    {
+      "id": "minecraft:nether/uneasy_alliance",
+      "name": "Uneasy Alliance",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "オーバーワールドにいる状態でガストを倒す(キル判定を得る)"
+    },
+    {
+      "id": "minecraft:nether/fast_travel",
+      "name": "Subspace Bubble",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "ネザー経由でオーバーワールドの7000ブロック離れた2地点間を移動する(ネザーでの移動は875ブロック)"
+    },
+    {
+      "id": "minecraft:nether/ride_strider",
+      "name": "This Boat Has Legs",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "鞍を付けたストライダーに乗り、ゆがんだキノコ付きの棒で操る"
+    },
+    {
+      "id": "minecraft:nether/ride_strider_in_overworld_lava",
+      "name": "Feels Like Home",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "オーバーワールドの溶岩の上をストライダーで50ブロック移動する"
+    },
+    {
+      "id": "minecraft:nether/explore_nether",
+      "name": "Hot Tourist Destinations",
+      "tab": "nether",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 500,
+      "requirement_ja": "ネザーの5つのバイオームすべてを訪れる"
+    },
+    {
+      "id": "minecraft:nether/find_bastion",
+      "name": "Those Were the Days",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "バスティオン・リムナントに入る"
+    },
+    {
+      "id": "minecraft:nether/loot_bastion",
+      "name": "War Pigs",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "未開封のバスティオンのチェストを開ける"
+    },
+    {
+      "id": "minecraft:nether/obtain_crying_obsidian",
+      "name": "Who is Cutting Onions?",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "泣く黒曜石を入手する"
+    },
+    {
+      "id": "minecraft:nether/charge_respawn_anchor",
+      "name": "Not Quite \"Nine\" Lives",
+      "tab": "nether",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "リスポーンアンカーをグロウストーンで最大までチャージする"
+    },
+    {
+      "id": "minecraft:end/root",
+      "name": "The End",
+      "tab": "end",
+      "frame": "task",
+      "root": true,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンドに入る"
+    },
+    {
+      "id": "minecraft:end/kill_dragon",
+      "name": "Free the End",
+      "tab": "end",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンダードラゴンを倒す"
+    },
+    {
+      "id": "minecraft:end/enter_end_gateway",
+      "name": "Remote Getaway",
+      "tab": "end",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンドゲートウェイに入る"
+    },
+    {
+      "id": "minecraft:end/find_end_city",
+      "name": "The City at the End of the Game",
+      "tab": "end",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンドシティに入る"
+    },
+    {
+      "id": "minecraft:end/levitate",
+      "name": "Great View From Up Here",
+      "tab": "end",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "シュルカーの浮遊効果で50ブロック上昇する"
+    },
+    {
+      "id": "minecraft:end/elytra",
+      "name": "Sky's the Limit",
+      "tab": "end",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エリトラを入手する"
+    },
+    {
+      "id": "minecraft:end/respawn_dragon",
+      "name": "The End... Again...",
+      "tab": "end",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "エンドクリスタルでドラゴンを復活させる際に中央の島の近くにいる"
+    },
+    {
+      "id": "minecraft:end/dragon_egg",
+      "name": "The Next Generation",
+      "tab": "end",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ドラゴンの卵を入手する"
+    },
+    {
+      "id": "minecraft:end/dragon_breath",
+      "name": "You Need a Mint",
+      "tab": "end",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ドラゴンの息入りの瓶を入手する"
+    },
+    {
+      "id": "minecraft:adventure/root",
+      "name": "Adventure",
+      "tab": "adventure",
+      "frame": "task",
+      "root": true,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "何かを倒す、または何かに倒される"
+    },
+    {
+      "id": "minecraft:adventure/fall_from_world_height",
+      "name": "Caves & Cliffs",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "Y319以上からY-59以下まで379ブロック超落下して生還する"
+    },
+    {
+      "id": "minecraft:adventure/use_lodestone",
+      "name": "Country Lode, Take Me Home",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ロードストーンにコンパスを使う"
+    },
+    {
+      "id": "minecraft:adventure/crafters_crafting_crafters",
+      "name": "Crafters Crafting Crafters",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "クラフターがクラフターを作る際に近くにいる"
+    },
+    {
+      "id": "minecraft:adventure/trim_with_any_armor_pattern",
+      "name": "Crafting a New Look",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "鍛冶台で、18種の装飾テンプレートのいずれかを防具に使う"
+    },
+    {
+      "id": "minecraft:adventure/trim_with_all_exclusive_armor_patterns",
+      "name": "Smithing with Style",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 150,
+      "requirement_ja": "指定された8種類の装飾テンプレートをすべて使う"
+    },
+    {
+      "id": "minecraft:adventure/heart_transplanter",
+      "name": "Heart Transplanter",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "同じ軸の2本のペールオークの原木の間にクリーキングのハートを設置する"
+    },
+    {
+      "id": "minecraft:adventure/spyglass_at_parrot",
+      "name": "Is It a Bird?",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "望遠鏡でオウムを見る"
+    },
+    {
+      "id": "minecraft:adventure/spyglass_at_ghast",
+      "name": "Is It a Balloon?",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "望遠鏡でガストを見る"
+    },
+    {
+      "id": "minecraft:adventure/spyglass_at_dragon",
+      "name": "Is It a Plane?",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "望遠鏡でエンダードラゴンを見る"
+    },
+    {
+      "id": "minecraft:adventure/brush_armadillo",
+      "name": "Isn't It Scute?",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "アルマジロをブラシで撫でる"
+    },
+    {
+      "id": "minecraft:adventure/minecraft_trials_edition",
+      "name": "Minecraft: Trial(s) Edition",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "試練の間に入る"
+    },
+    {
+      "id": "minecraft:adventure/blowback",
+      "name": "Blowback",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 40,
+      "requirement_ja": "ブリーズ自身が放った風の球を跳ね返して倒す"
+    },
+    {
+      "id": "minecraft:adventure/lighten_up",
+      "name": "Lighten Up",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "酸化が始まった点灯中の銅の電球に斧を使う"
+    },
+    {
+      "id": "minecraft:adventure/overoverkill",
+      "name": "Over-Overkill",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "メイスの一撃で100ダメージ(ハート50個分)を与える"
+    },
+    {
+      "id": "minecraft:adventure/under_lock_and_key",
+      "name": "Under Lock and Key",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "試練の鍵で宝物庫を開ける"
+    },
+    {
+      "id": "minecraft:adventure/revaulting",
+      "name": "Revaulting",
+      "tab": "adventure",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "不吉な試練の鍵で不吉な宝物庫を開ける"
+    },
+    {
+      "id": "minecraft:adventure/who_needs_rockets",
+      "name": "Who Needs Rockets?",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "風チャージで自分を上方へ打ち上げる"
+    },
+    {
+      "id": "minecraft:adventure/kill_a_mob",
+      "name": "Monster Hunter",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "41種の敵対モブのいずれか1体を倒す"
+    },
+    {
+      "id": "minecraft:adventure/throw_trident",
+      "name": "A Throwaway Joke",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "投げたトライデントをモブに命中させる"
+    },
+    {
+      "id": "minecraft:adventure/very_very_frightening",
+      "name": "Very Very Frightening",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "チャネリングのトライデントによる落雷を村人に当てる"
+    },
+    {
+      "id": "minecraft:adventure/kill_mob_near_sculk_catalyst",
+      "name": "It Spreads",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "スカルクカタリスト付近でXPを落とすモブを倒す"
+    },
+    {
+      "id": "minecraft:adventure/spear_many_mobs",
+      "name": "Mob Kabob",
+      "tab": "adventure",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "槍のチャージ攻撃1回で5体のモブに命中させる"
+    },
+    {
+      "id": "minecraft:adventure/kill_all_mobs",
+      "name": "Monsters Hunted",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "41種の敵対モブをすべて倒す"
+    },
+    {
+      "id": "minecraft:adventure/totem_of_undying",
+      "name": "Postmortal",
+      "tab": "adventure",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "不死のトーテムで致命傷から生還する"
+    },
+    {
+      "id": "minecraft:adventure/shoot_arrow",
+      "name": "Take Aim",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "弓またはクロスボウの矢でモブを撃つ"
+    },
+    {
+      "id": "minecraft:adventure/bullseye",
+      "name": "Bullseye",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "30ブロック以上離れた位置からターゲットブロックの中心に命中させる"
+    },
+    {
+      "id": "minecraft:adventure/sniper_duel",
+      "name": "Sniper Duel",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "50ブロック以上離れたスケルトンを飛び道具で倒す"
+    },
+    {
+      "id": "minecraft:adventure/ol_betsy",
+      "name": "Ol' Betsy",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "クロスボウを撃つ"
+    },
+    {
+      "id": "minecraft:adventure/arbalistic",
+      "name": "Arbalistic",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": true,
+      "xp": 85,
+      "requirement_ja": "クロスボウ1発で5種類の異なるモブを倒す"
+    },
+    {
+      "id": "minecraft:adventure/two_birds_one_arrow",
+      "name": "Two Birds, One Arrow",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 65,
+      "requirement_ja": "貫通クロスボウの矢1本で2体のファントムを倒す"
+    },
+    {
+      "id": "minecraft:adventure/whos_the_pillager_now",
+      "name": "Who's the Pillager Now?",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "クロスボウでピリジャーを倒す"
+    },
+    {
+      "id": "minecraft:adventure/salvage_sherd",
+      "name": "Respecting the Remnants",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "不審な砂/砂利をブラシで掘り、陶器の欠片を入手する"
+    },
+    {
+      "id": "minecraft:adventure/craft_decorated_pot_using_only_sherds",
+      "name": "Careful Restoration",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "4つの陶器の欠片から飾り壺を作る"
+    },
+    {
+      "id": "minecraft:adventure/avoid_vibration",
+      "name": "Sneak 100",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "スカルクセンサー(8ブロック以内)またはウォーデン(16ブロック以内)に感知されずに近くを通る"
+    },
+    {
+      "id": "minecraft:adventure/honey_block_slide",
+      "name": "Sticky Situation",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "落下中にハニーブロックの側面を滑り降りる"
+    },
+    {
+      "id": "minecraft:adventure/lightning_rod_with_villager_no_fire",
+      "name": "Surge Protector",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "何も燃えない落雷の近くで、無傷の村人を守る"
+    },
+    {
+      "id": "minecraft:adventure/sleep_in_bed",
+      "name": "Sweet Dreams",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ベッドに横になる"
+    },
+    {
+      "id": "minecraft:adventure/adventuring_time",
+      "name": "Adventuring Time",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 500,
+      "requirement_ja": "オーバーワールドの56バイオームすべてを訪れる"
+    },
+    {
+      "id": "minecraft:adventure/walk_on_powder_snow_with_leather_boots",
+      "name": "Light as a Rabbit",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "革のブーツで粉雪の上を歩く"
+    },
+    {
+      "id": "minecraft:adventure/play_jukebox_in_meadows",
+      "name": "Sound of Music",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "草原でジュークボックスを使ってレコードを再生する"
+    },
+    {
+      "id": "minecraft:adventure/read_power_of_chiseled_bookshelf",
+      "name": "The Power of Books",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "コンパレーターで装飾本棚を読み取る"
+    },
+    {
+      "id": "minecraft:adventure/voluntary_exile",
+      "name": "Voluntary Exile",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": true,
+      "xp": 0,
+      "requirement_ja": "襲撃隊のキャプテンを倒す"
+    },
+    {
+      "id": "minecraft:adventure/hero_of_the_village",
+      "name": "Hero of the Village",
+      "tab": "adventure",
+      "frame": "challenge",
+      "root": false,
+      "hidden": true,
+      "xp": 100,
+      "requirement_ja": "襲撃者を1体以上倒し、襲撃に勝利する"
+    },
+    {
+      "id": "minecraft:adventure/trade",
+      "name": "What a Deal!",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "村人または行商人と取引する"
+    },
+    {
+      "id": "minecraft:adventure/summon_iron_golem",
+      "name": "Hired Help",
+      "tab": "adventure",
+      "frame": "goal",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "アイアンゴーレムを作る"
+    },
+    {
+      "id": "minecraft:adventure/trade_at_world_height",
+      "name": "Star Trader",
+      "tab": "adventure",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "Y318より上で取引する"
+    },
+    {
+      "id": "minecraft:husbandry/root",
+      "name": "Husbandry",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": true,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ケーキ以外の食べ物・飲み物を摂取する"
+    },
+    {
+      "id": "minecraft:husbandry/plant_seed",
+      "name": "A Seedy Place",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "小麦・カボチャ・スイカ・ビートルート・ネザーウォート・トーチフラワー・ピッチャーのいずれかを植える"
+    },
+    {
+      "id": "minecraft:husbandry/balanced_diet",
+      "name": "A Balanced Diet",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "対象の40種類の食べ物をすべて食べる"
+    },
+    {
+      "id": "minecraft:husbandry/obtain_netherite_hoe",
+      "name": "Serious Dedication",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "ネザライトのクワを入手する"
+    },
+    {
+      "id": "minecraft:husbandry/safely_harvest_honey",
+      "name": "Bee Our Guest",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ハチを怒らせずに、巣または巣箱からハチミツ瓶を採取する"
+    },
+    {
+      "id": "minecraft:husbandry/wax_on",
+      "name": "Wax On",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "銅ブロックにハニカムでワックスを塗る"
+    },
+    {
+      "id": "minecraft:husbandry/wax_off",
+      "name": "Wax Off",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "銅ブロックのワックスを斧で削り取る"
+    },
+    {
+      "id": "minecraft:husbandry/tame_an_animal",
+      "name": "Best Friends Forever",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "手なずけられる動物を1匹手なずける"
+    },
+    {
+      "id": "minecraft:husbandry/complete_catalogue",
+      "name": "A Complete Catalogue",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "ネコ11種類すべてを手なずける"
+    },
+    {
+      "id": "minecraft:husbandry/repair_wolf_armor",
+      "name": "Good as New",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "オオカミが装着中のオオカミの鎧を、アルマジロの鱗甲で完全に修理する"
+    },
+    {
+      "id": "minecraft:husbandry/remove_wolf_armor",
+      "name": "Shear Brilliance",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ハサミでオオカミの鎧を外す"
+    },
+    {
+      "id": "minecraft:husbandry/whole_pack",
+      "name": "The Whole Pack",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 50,
+      "requirement_ja": "オオカミ9種類すべてを手なずける"
+    },
+    {
+      "id": "minecraft:husbandry/tadpole_in_a_bucket",
+      "name": "Bukkit Bukkit",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "水入りバケツでオタマジャクシを捕まえる"
+    },
+    {
+      "id": "minecraft:husbandry/leash_all_frog_variants",
+      "name": "When the Squad Hops into Town",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "カエル3種類それぞれをリードで繋ぐ(同時でなくてよい)"
+    },
+    {
+      "id": "minecraft:husbandry/froglights",
+      "name": "With Our Powers Combined!",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "3種類のフロッグライトをすべて同時にインベントリに入れる"
+    },
+    {
+      "id": "minecraft:husbandry/fishy_business",
+      "name": "Fishy Business",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "釣り竿で魚を釣る"
+    },
+    {
+      "id": "minecraft:husbandry/tactical_fishing",
+      "name": "Tactical Fishing",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "水入りバケツで魚モブを捕まえる"
+    },
+    {
+      "id": "minecraft:husbandry/axolotl_in_a_bucket",
+      "name": "The Cutest Predator",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "水入りバケツでウーパールーパーを捕まえる"
+    },
+    {
+      "id": "minecraft:husbandry/kill_axolotl_target",
+      "name": "The Healing Power of Friendship!",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ウーパールーパーが戦っているモブにとどめを刺し、再生の効果を得る"
+    },
+    {
+      "id": "minecraft:husbandry/make_a_sign_glow",
+      "name": "Glow and Behold!",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "光るイカスミ袋を看板に使う"
+    },
+    {
+      "id": "minecraft:husbandry/obtain_sniffer_egg",
+      "name": "Smells Interesting",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": true,
+      "xp": 0,
+      "requirement_ja": "スニッファーのタマゴを入手する"
+    },
+    {
+      "id": "minecraft:husbandry/feed_snifflet",
+      "name": "Little Sniffs",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": true,
+      "xp": 0,
+      "requirement_ja": "スニッフレットにトーチフラワーの種を与える"
+    },
+    {
+      "id": "minecraft:husbandry/plant_any_sniffer_seed",
+      "name": "Planting the Past",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": true,
+      "xp": 0,
+      "requirement_ja": "トーチフラワーの種またはピッチャーポッドを植える"
+    },
+    {
+      "id": "minecraft:husbandry/place_dried_ghast_in_water",
+      "name": "Stay Hydrated!",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "乾いたガストのブロックを水に入れる"
+    },
+    {
+      "id": "minecraft:husbandry/breed_an_animal",
+      "name": "The Parrots and the Bats",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "動物2匹を交配させる"
+    },
+    {
+      "id": "minecraft:husbandry/bred_all_animals",
+      "name": "Two by Two",
+      "tab": "husbandry",
+      "frame": "challenge",
+      "root": false,
+      "hidden": false,
+      "xp": 100,
+      "requirement_ja": "対象の26種類の動物をすべて交配させる"
+    },
+    {
+      "id": "minecraft:husbandry/silk_touch_nest",
+      "name": "Total Beelocation",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ハチ3匹が入ったハチの巣を、シルクタッチで壊す"
+    },
+    {
+      "id": null,
+      "name": "Uh Oh",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "成体のサルファーキューブにTNTを吸収させる"
+    },
+    {
+      "id": "minecraft:husbandry/ride_a_boat_with_a_goat",
+      "name": "Whatever Floats Your Goat!",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": false,
+      "xp": 0,
+      "requirement_ja": "ヤギと一緒にボート(いかだ)に乗る"
+    },
+    {
+      "id": "minecraft:husbandry/allay_deliver_item_to_player",
+      "name": "You've Got a Friend in Me",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": true,
+      "xp": 0,
+      "requirement_ja": "アレイにアイテムを届けてもらう"
+    },
+    {
+      "id": "minecraft:husbandry/allay_deliver_cake_to_note_block",
+      "name": "Birthday Song",
+      "tab": "husbandry",
+      "frame": "task",
+      "root": false,
+      "hidden": true,
+      "xp": 0,
+      "requirement_ja": "アレイに音符ブロックの上へケーキを落としてもらう"
+    }
+  ]
+}
