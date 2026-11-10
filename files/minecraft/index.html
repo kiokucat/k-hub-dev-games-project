@@ -293,7 +293,7 @@ body.mob #tip{bottom:auto;top:calc(88px + env(safe-area-inset-top))}
 <style id="addon">
 .gui .body{width:100%;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;padding:0 0 4px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:thin}
 .gui .body>.mb,.gui .body>.gr,.gui .body>.lbl,.gui .body>.mi,.gui .body>.mcs{flex:none}
-.gui .body .mb+.mb{margin-top:4px}
+.gui .body .mb+.mb{margin-top:4px}.gui .body .gr .mb,.gui .body .gr .mb+.mb,.gui .gr .mb,.gui .gr .mcs{margin:0}.kk .mb,.kk .mb+.mb{margin:0}.kk{min-height:14px}
 .gui .ft{flex:none;width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px;position:relative;z-index:2}
 .gui .body #kl{max-height:none;overflow:visible}
 .gui .body #kmsg{flex:none}
@@ -2984,12 +2984,13 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{delete keys[e.code];if(e.code==KB.brk)mL=0;if(e.code==KB.pl)mR=0});addEventListener('blur',resetIn);
 const cv=$('#cv');
 let noLock=0,lockErr=0,lastUl=0;
-function lockPtr(){if(mob||noLock||!world||paused||dead||document.pointerLockElement===cv)return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+let lockTry=0,lockTm=0;function lockPtr(){if(mob||!world||paused||dead||document.pointerLockElement===cv)return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>retryLock())}catch(e){retryLock()}}
+function retryLock(){if(lockTm||mob||!world||paused||dead||lockTry>=8)return;lockTry++;lockTm=setTimeout(()=>{lockTm=0;lockPtr()},350)}
 function unlockPtr(){try{if(document.pointerLockElement)document.exitPointerLock()}catch(e){}}
-document.addEventListener('pointerlockerror',()=>{if(++lockErr>=2)noLock=1});
-document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement===cv){lockErr=0;return}lastUl=performance.now();if(world&&!dead&&!paused&&!mob)pause(true)});
+document.addEventListener('pointerlockerror',()=>retryLock());
+document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement===cv){lockErr=0;lockTry=0;return}lastUl=performance.now();if(world&&!dead&&!paused&&!mob)pause(true)});
 addEventListener('mousemove',e=>{if(document.pointerLockElement!==cv||paused||mob)return;const mx=Math.max(-250,Math.min(250,e.movementX)),my=Math.max(-250,Math.min(250,e.movementY));yaw-=mx*.0022*sens;pitch=Math.max(-1.55,Math.min(1.55,pitch-my*.0022*sens*(invY?-1:1)))});
-cv.addEventListener('mousedown',e=>{if(paused||!world||mob)return;if(!noLock&&document.pointerLockElement!==cv){lockPtr();return}if(e.button==0)mL=1;if(e.button==2){mR=1;cool=0}});
+cv.addEventListener('mousedown',e=>{if(paused||!world||mob)return;if(document.pointerLockElement!==cv){lockTry=0;lockPtr();return}if(e.button==0)mL=1;if(e.button==2){mR=1;cool=0}});
 addEventListener('mouseup',e=>{if(e.button==0)mL=0;if(e.button==2)mR=0});
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('wheel',e=>{if(paused||!world)return;sel=(sel+(e.deltaY>0?1:8))%9;renderHot();tip()},{passive:true});
