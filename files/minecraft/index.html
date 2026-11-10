@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="utf-8">
+<html lang="ja"><head><meta charset="utf-8"><link rel="icon" id="favicon" href="icon.png"><script>(function(){var l=document.getElementById("favicon"),i=new Image();i.onerror=function(){var j=new Image();j.onload=function(){l.type="image/jpeg";l.href="icon.jpg"};j.src="icon.jpg"};i.src="icon.png"})()</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BLOCKLAND</title>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Material+Symbols+Outlined" rel="stylesheet">
@@ -246,7 +246,7 @@ body.mob #tip{bottom:auto;top:calc(88px + env(safe-area-inset-top))}
 #splash{position:absolute;left:100%;top:58%;margin-left:-60px;width:max-content;max-width:120px;color:#ffff55;font-size:9px;text-shadow:1px 1px 0 #3f3f00;transform:rotate(-18deg);animation:spl .6s ease-in-out infinite alternate;pointer-events:none}
 @keyframes spl{to{transform:rotate(-18deg) scale(1.1)}}
 .foot{position:absolute;left:3px;right:3px;bottom:2px;display:flex;justify-content:space-between;font-size:7px;color:#fff;text-shadow:1px 1px 0 #000}
-#s-title .mb+.mb{margin-top:4px}#s-title .gr{margin-top:12px}
+#s-title .mb+.mb{margin-top:4px}#s-title .gr{margin-top:12px}#s-title .gr .mb,#s-title .gr .mb+.mb{margin:0}
 /* windows */
 .win{width:310px;max-width:calc(100% - 10px);flex:1;min-height:0;box-sizing:border-box;background:rgba(0,0,0,.55);border:1px solid #000;box-shadow:inset 0 0 0 1px #5a5a5a;padding:4px;display:flex;flex-direction:column;overflow:hidden;text-align:left}
 .wl{overflow:auto;padding:2px}
@@ -2818,7 +2818,7 @@ const menuRoot=n=>{nav=[];scr='';showScr(n)};
 function menuBack(){if(nav.length)showScr(nav.pop(),true);else if(world&&!dead&&scr=='pause')pause(0)}
 MENU.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;selSnd();
  if(b.dataset.go)showScr(b.dataset.go);else if('back' in b.dataset)menuBack();else if(b.dataset.act=='resume')pause(0)});
-$('#quit').onclick=function(){try{window.close()}catch(e){}const b=this;b.textContent='タブを閉じてください';setTimeout(()=>b.textContent='ゲームを終了',2200)};
+$('#quit').onclick=function(){if(document.getElementById('quit-end'))return;const o=document.createElement('div');o.id='quit-end';o.style.cssText='position:fixed;inset:0;z-index:99999;background:#000;color:#ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font:inherit;font-size:16px;opacity:0;transition:opacity .5s';o.innerHTML='<div>ゲームを終了しました</div><div style="font-size:11px;color:#888">ご利用ありがとうございました</div>';document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity='1'});try{window.__quit=1;if(typeof audioCtx!=='undefined'&&audioCtx&&audioCtx.close)audioCtx.close()}catch(e){}setTimeout(()=>{try{window.close()}catch(e){}setTimeout(()=>{try{location.replace('about:blank')}catch(e){}},200)},900)};
 $('#qt').onclick=async()=>{await saveNow();world=0;$('#hud').hidden=true;await renderSaves();menuRoot('title')};
 // --- world list
 async function renderSaves(){const L=await DB.list();if(L===null){$('#wlist').innerHTML='<p class="em">セーブデータを読み込めませんでした。ページを再読み込みしてください</p>';['wplay','wedit','wdel','wre','wexp'].forEach(i=>$('#'+i).disabled=1);updSt();return}wl=L.filter(o=>o&&o.slots).sort((a,b)=>b.t-a.t);drawW();updSt()}
