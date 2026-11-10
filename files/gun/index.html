@@ -121,9 +121,15 @@ button.cta:hover,button.cta:focus{background:var(--yl);color:#000}
 .ck{background:var(--fg);color:#000;padding:0 .4em;margin:0 .15em;box-shadow:2px 2px 0 #000}
 .cs{font:400 1.5em var(--fh);color:var(--ok)}
 .cw{color:#ff6a5a}
+.pp.c{color:#ffd23c}.pp.h{color:#6aff8a}
+#wn{right:14px;bottom:calc(58px + 2.2em);padding:3px 10px;font-size:.8em;white-space:nowrap;color:var(--yl)}
+.coin{color:var(--yl);font-family:var(--fh);font-size:.9em}
+.arm{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:center;text-align:left;padding:10px 14px;background:var(--pn);border:3px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo);box-shadow:0 0 0 2px #000;max-width:min(760px,94vw);max-height:56vh;overflow:auto;font-size:.82em}
+.arm .an{color:var(--fg);white-space:nowrap}.arm .as{color:#b8b8c8;font-size:.9em}
+.arm button:disabled{opacity:.45}
 </style></head><body>
 <div id="w"><div id="fr"><canvas id="g3"></canvas><canvas id="c"></canvas>
-<div id="hud"><div id="vg"></div><div id="top" class="px"></div><div id="net" class="px"></div><div id="fc" class="px"></div><div id="mid"></div><div id="bar"><i id="gh"></i><i id="hp"></i><b id="hv"></b></div><div id="rt"></div><div id="am"></div><div id="bm" class="px"></div><div id="dm" class="px dg"></div><div id="rr" class="px dg"></div><div id="fx"></div><div id="cr" class="px"></div></div></div>
+<div id="hud"><div id="vg"></div><div id="top" class="px"></div><div id="net" class="px"></div><div id="fc" class="px"></div><div id="mid"></div><div id="bar"><i id="gh"></i><i id="hp"></i><b id="hv"></b></div><div id="rt"></div><div id="am"></div><div id="bm" class="px"></div><div id="wn" class="px"></div><div id="dm" class="px dg"></div><div id="rr" class="px dg"></div><div id="fx"></div><div id="cr" class="px"></div></div></div>
 <div id="ov"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -358,7 +364,7 @@ function sync3d(){
  const fv=2*Math.atan(Math.tan(FOV/2)*H/W)*57.2958;if(Math.abs(fv-CM.fov)>.01){CM.fov=fv;CM.updateProjectionMatrix()}
  PLt.position.copy(CM.position);AM.intensity=FC.on?TH.amiFc:TH.ami;PLt.intensity=FC.on?TH.plFc:TH.pl;SC.fog.density=FC.on?TH.fdFc:TH.fd;CE.visible=!FC.on&&!!TH.ce;
  const rl=P.rl>0?Math.sin(Math.max(0,Math.min(1,1-P.rl/1.3))*Math.PI):0;GV.visible=!FC.on&&!P.car&&P.hp>0&&RD.v<.15;GV.position.set(.2,-.2-rl*.2,-.45+P.k*.06);GV.rotation.x=P.k*.12+rl*.5;MZ.visible=P.fl>0;MF.intensity=P.fl>0?2.5:0;
- syncChars();syncCars();
+ syncChars();syncCars();pkSync();
  for(const b of BB){if(!b.m){b.m=new THREE.Mesh(BGm,new THREE.MeshBasicMaterial({color:0x331111}));SC.add(b.m)}b.m.position.set(b.x,b.z,b.y);b.m.material.color.setHex(Math.sin(T*(12+(1.5-b.t)*22))>0?0xff3030:0x331111)}
  for(let i=EX.length-1;i>=0;i--){const e=EX[i],a=(T-e.t)/.55;if(a>=1){SC.remove(e.m);EX.splice(i,1);continue}e.m.scale.setScalar(.3+BR*.7*Math.sqrt(a));e.m.material.opacity=.85*(1-a)}
  const le=EX[EX.length-1];BLt.intensity=le?3*(1-(T-le.t)/.55):0;if(le)BLt.position.set(le.x,.8,le.y);
@@ -470,7 +476,7 @@ function radar(){
  X.strokeStyle='#8dffa8';X.lineWidth=1.5;X.beginPath();X.moveTo(cx,cy);X.lineTo(cx+Math.cos(sw)*r*1.5,cy+Math.sin(sw)*r*1.5);X.stroke();
  const bl=(e,col)=>{const dx=e.x-P.x,dy=e.y-P.y;if(dx*dx+dy*dy>RG*RG)return;const sx=(dx*c-dy*s)*k,sy=(dx*s+dy*c)*k,an=(Math.atan2(sy,sx)+7*Math.PI)%(Math.PI*2),ag=(sw-an+Math.PI*4)%(Math.PI*2),z=ag<.25?6:4;
   X.globalAlpha=v*Math.max(.3,1-ag/(Math.PI*2));X.fillStyle='#000';X.fillRect(Math.round(cx+sx-z/2)-1,Math.round(cy+sy-z/2)-1,z+2,z+2);X.fillStyle=col;X.fillRect(Math.round(cx+sx-z/2),Math.round(cy+sy-z/2),z,z)};
- for(const e of E)if(e.hp>0)bl(e,'#ff3b30');for(const e of AL)if(e.hp>0)bl(e,'#38d8ff');
+ for(const e of E)if(e.hp>0)bl(e,'#ff3b30');for(const e of AL)if(e.hp>0)bl(e,'#38d8ff');for(const p of PK)bl(p,p.t=='c'?'#ffd23c':'#3cff7a');
  X.globalAlpha=v;X.fillStyle='#e0ffe8';X.beginPath();X.moveTo(cx,cy-5);X.lineTo(cx-4,cy+4);X.lineTo(cx,cy+2);X.lineTo(cx+4,cy+4);X.closePath();X.fill();
  X.globalAlpha=.18;X.fillStyle='#000';for(let y=cy-r;y<cy+r;y+=3)X.fillRect(cx-r,y,r*2,1);
  X.restore();
@@ -484,14 +490,74 @@ function lock(){try{const r=C.requestPointerLock();r&&r.catch&&r.catch(()=>{})}c
 function go(){st=1;$('hud').style.visibility='visible';ov.style.display='none';lock()}
 function pause(){st=3;md=0;document.exitPointerLock&&document.exitPointerLock();show('<h1>一時停止</h1><p>クリック / STARTで再開</p>'+statsHTML()+'<button onclick="openSet()">設定</button><button onclick="menu()">メニューへ</button>')}
 ov.onclick=e=>{if(ov.classList.contains('lite')||e.target.closest('button,.set'))return;if(st==3)go()};
+
+// ---- 武器 / コイン / ピックアップ ----
+// n名前 d威力 c連射間隔(s) m装弾 r リロード(s) p同時弾数 s散布(rad) $価格 rg射程 pi貫通
+const WP=[
+{n:'ハンドガン',d:34,c:.16,m:10,r:1.3,p:1,s:0,$:0,rg:99},
+{n:'リボルバー',d:55,c:.45,m:6,r:1.9,p:1,s:0,$:150,rg:99},
+{n:'マシンピストル',d:13,c:.055,m:20,r:1.4,p:1,s:.035,$:200,rg:99},
+{n:'デザートイーグル',d:68,c:.5,m:7,r:1.7,p:1,s:.004,$:300,rg:99},
+{n:'サブマシンガン',d:17,c:.07,m:30,r:1.6,p:1,s:.03,$:300,rg:99},
+{n:'ソードオフ',d:12,c:.6,m:2,r:1.5,p:8,s:.1,$:350,rg:8},
+{n:'カービン',d:24,c:.09,m:25,r:1.5,p:1,s:.02,$:350,rg:99},
+{n:'ショットガン',d:13,c:.8,m:6,r:2.3,p:9,s:.08,$:400,rg:11},
+{n:'アサルトライフル',d:28,c:.1,m:30,r:1.9,p:1,s:.015,$:450,rg:99},
+{n:'マークスマン',d:60,c:.45,m:10,r:2,p:1,s:.004,$:600,rg:99},
+{n:'バトルライフル',d:42,c:.2,m:20,r:2.1,p:1,s:.008,$:650,rg:99},
+{n:'オートショットガン',d:10,c:.3,m:8,r:2.5,p:7,s:.08,$:800,rg:10},
+{n:'ライトマシンガン',d:22,c:.075,m:60,r:3.5,p:1,s:.03,$:900,rg:99},
+{n:'スナイパーライフル',d:100,c:1,m:5,r:2.3,p:1,s:0,$:1000,rg:99},
+{n:'レーザーガン',d:11,c:.04,m:50,r:2,p:1,s:0,$:1200,rg:99},
+{n:'ゴールドガン',d:40,c:.1,m:15,r:1.1,p:1,s:.005,$:1500,rg:99},
+{n:'ミニガン',d:15,c:.035,m:100,r:4.2,p:1,s:.05,$:1500,rg:99},
+{n:'アンチマテリアル',d:150,c:1.4,m:3,r:3,p:1,s:0,$:1800,rg:99,pi:1},
+{n:'レールガン',d:85,c:.8,m:8,r:2.4,p:1,s:0,$:2200,rg:99,pi:1},
+{n:'ストライクカスタム',d:55,c:.09,m:30,r:1.6,p:1,s:.008,$:3000,rg:99}];
+let COIN=0,UNL=WP.map((_,i)=>i),EQ=0,CW=0,MCF=0;
+try{COIN=Math.max(0,+localStorage.cpsCoin|0)}catch(e){}
+try{EQ=+localStorage.cpsEq|0;if(!UNL.includes(EQ))EQ=0}catch(e){}
+CW=EQ;
+const WPN=()=>WP[CW],svW=()=>{try{localStorage.cpsCoin=COIN;localStorage.cpsUnl=JSON.stringify(UNL);localStorage.cpsEq=EQ}catch(e){}};
+const PK=[],CGeo=new THREE.CylinderGeometry(.17,.17,.04,14),CMat=new THREE.MeshBasicMaterial({color:0xffd23c}),
+ HB=new THREE.BoxGeometry(.26,.26,.26),HX=new THREE.BoxGeometry(.4,.1,.1),HY=new THREE.BoxGeometry(.1,.4,.1),HZ=new THREE.BoxGeometry(.1,.1,.4),
+ HM1=new THREE.MeshBasicMaterial({color:0x2ee86a}),HM2=new THREE.MeshBasicMaterial({color:0xffffff});
+function pkMesh(t){const g=new THREE.Group();
+ if(t=='c'){const c=new THREE.Mesh(CGeo,CMat);c.rotation.x=Math.PI/2;g.add(c)}
+ else{g.add(new THREE.Mesh(HB,HM1),new THREE.Mesh(HX,HM2),new THREE.Mesh(HY,HM2),new THREE.Mesh(HZ,HM2))}
+ SC.add(g);return g}
+function clrPK(){for(const p of PK)SC.remove(p.m);PK.length=0}
+function spawnPK(){clrPK();if(P.spec)return;const cells=[];for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++)if(!M[y][x])cells.push([x,y]);shuf(cells);let i=0,id=0;
+ const add=(t,n)=>{for(let k=0;k<n&&i<cells.length;i++){const[x,y]=cells[i];if(Math.hypot(x+.5-P.x,y+.5-P.y)<2.5)continue;k++;PK.push({t,x:x+.5,y:y+.5,i:id++,m:pkMesh(t)})}};
+ add('h',Math.max(0,+SET.hc|0));add('c',Math.max(0,+SET.cn|0))}
+function popTxt(s,c){const fx=$('fx');while(fx.children.length>9)fx.firstChild.remove();const e=document.createElement('div');e.className='pp '+c;e.textContent=s;e.style.setProperty('--x',((Math.random()-.5)*60|0)+'px');e.style.setProperty('--y','40px');e.addEventListener('animationend',()=>e.remove());setTimeout(()=>e.remove(),1500);fx.appendChild(e)}
+function pkStep(){if(P.hp<=0||P.spec||rs)return;
+ for(let i=PK.length-1;i>=0;i--){const p=PK[i];if(Math.hypot(p.x-P.x,p.y-P.y)>.75)continue;
+  if(p.t=='h'){if(P.hp>=MH)continue;const a=Math.round(MH*.4);P.hp=Math.min(MH,P.hp+a);popTxt('+'+a+' HP','h');beep(700,.12,.15);setTimeout(()=>beep(1000,.12,.15),90)}
+  else{COIN+=10;MCF+=10;svW();popTxt('+10 COIN','c');beep(1500,.05,.12)}
+  SC.remove(p.m);PK.splice(i,1)}}
+function pkSync(){for(const p of PK){p.m.position.set(p.x,.38+Math.sin(T*3+p.i)*.07,p.y);p.m.rotation.y=T*2.2+p.i}}
+function wpAssign(o,tm){const sel=+(tm?SET.ew:SET.aw),W=online?WP[0]:sel?WP[Math.min(WP.length,sel)-1]:WP[Math.random()*WP.length|0];
+ o.W=W;o.cr=Math.min(3,Math.max(.5,W.c/.16));o.dm=Math.round(W.d*(W.p>1?W.p*.55:1));return o}
+function setWpn(i){if(i==CW||!UNL.includes(i))return;P.wa[CW]=P.ammo;CW=i;EQ=i;P.ammo=P.wa[i]==null?WP[i].m:P.wa[i];P.rl=0;P.cd=.25;beep(500,.05,.1);buildAm();svW()}
+function swW(d){if(online||st!=1||P.hp<=0||P.car||P.spec||UNL.length<2)return;const l=[...UNL].sort((a,b)=>a-b),p=l.indexOf(CW);setWpn(l[(p+d+l.length)%l.length])}
+function selW(n){if(online||st!=1||P.hp<=0||P.car||P.spec)return;const l=[...UNL].sort((a,b)=>a-b);if(l[n]!=null)setWpn(l[n])}
+function openArmory(){
+ const rows=WP.map((w,i)=>{const own=UNL.includes(i),on=EQ==i,t=`威力${w.d}${w.p>1?'×'+w.p:''} 連射${(1/w.c).toFixed(1)}/s 装弾${w.m} ﾘﾛｰﾄﾞ${w.r}s`+(w.rg<99?` 射程${w.rg}m`:'')+(w.pi?' 貫通':'')+(w.s?'':' 精密');
+  const b=own?`<button ${on?'disabled':''} onclick="eqW(${i})">${on?'装備中':'装備'}</button>`:`<button class="cta" ${COIN<w.$?'disabled':''} onclick="buyW(${i})">●${w.$}</button>`;
+  return `<span class="an">${w.n}</span><span class="as">${t}</span>${b}`}).join('');
+ show(`<h1>武器庫</h1><p class="coin">所持コイン ●${COIN}</p><p class="hint">全ての銃が最初から使えます。試合中は 1〜9 / ホイール / 十字キー左右 で銃を切替。オンラインはハンドガン固定。</p><div class="arm">${rows}</div><button class="cta" onclick="menu()">戻る</button>`)}
+function buyW(i){const w=WP[i];if(!w||UNL.includes(i)||COIN<w.$)return;COIN-=w.$;UNL.push(i);EQ=i;svW();openArmory()}
+function eqW(i){if(!UNL.includes(i))return;EQ=i;svW();openArmory()}
+function payout(w){const cv=mode=='cvc',base=cv?40:30,win=!cv&&w==1?100:0,rds=cv?0:sc[0]*30,tot=base+win+rds;COIN+=tot;svW();const f=MCF;MCF=0;return{f,tot}}
 // 設定（操作・表示）
 const OPT=[['fov','視野角',60,120,1],['sens','マウス/スティック感度',.2,3,.05],['spd','移動速度',.5,2,.05],['dif','敵の強さ',.5,2,.25],['rnd','CPUの個性(ムラ)の強さ',0,1.5,.1],['vol','音量',0,1,.05],['scan','走査線(CRT)',0,1,.1]];
 const CFGD={fov:90,sens:1,spd:1,vol:.7,dif:1,scan:.5,rnd:1};
 // 試合設定
-const SETD={ns:1,nt:2,na:1,ca:2,cb:2,lve:5,lva:5,mp:0,mz:51,mc:5,ms:1,hp:100,bm:3,win:3},SET=Object.assign({},SETD);
+const SETD={ns:1,nt:2,na:1,ca:2,cb:2,lve:5,lva:5,mp:0,mz:51,mc:5,ms:1,hp:100,bm:3,win:3,hc:3,cn:8,ew:1,aw:1},SET=Object.assign({},SETD);
 try{Object.assign(SET,JSON.parse(localStorage.cpsSet))}catch(e){}
-const MOPT=[['ns','ソロ：敵CPUの数',1,6,1],['nt','タッグ：敵CPUの数',1,6,1],['na','タッグ：味方CPUの数',0,5,1],['ca','CPU対戦：A軍の数',1,6,1],['cb','CPU対戦：B軍の数',1,6,1],['lve','敵CPU(B軍)のレベル（0=ランダム）',0,12,1],['lva','味方CPU(A軍)のレベル（0=ランダム）',0,12,1],['mp','マップの種類（0=迷路 1=町(昼) 2=町(夜) 3=闘技場 4=倉庫 5=森）',0,5,1],['mz','マップサイズ',21,91,2],['mc','迷路の複雑さ（0=広場 10=迷路）※種類0のみ',0,10,1],['ms','マップ番号（1=従来 0=毎回ランダム）',0,99,1],['hp','HP',20,300,10],['bm','ボムの数（1ラウンド）',0,9,1],['win','先取ラウンド数',1,10,1]];
-const fmt=(k,v)=>k=='fov'?v+'°':k=='vol'||k=='scan'?Math.round(v*100)+'%':k=='lve'||k=='lva'?lvName(v):k=='mp'?(PRN[+v|0]||v):k=='mz'?v+'×'+v:k=='mc'?v+'/10':k=='ms'?(+v?'No.'+v:'ランダム'):k in SETD?String(v):(+v).toFixed(2)+'×';
+const MOPT=[['ns','ソロ：敵CPUの数',1,6,1],['nt','タッグ：敵CPUの数',1,6,1],['na','タッグ：味方CPUの数',0,5,1],['ca','CPU対戦：A軍の数',1,6,1],['cb','CPU対戦：B軍の数',1,6,1],['lve','敵CPU(B軍)のレベル（0=ランダム）',0,12,1],['lva','味方CPU(A軍)のレベル（0=ランダム）',0,12,1],['mp','マップの種類（0=迷路 1=町(昼) 2=町(夜) 3=闘技場 4=倉庫 5=森）',0,5,1],['mz','マップサイズ',21,91,2],['mc','迷路の複雑さ（0=広場 10=迷路）※種類0のみ',0,10,1],['ms','マップ番号（1=従来 0=毎回ランダム）',0,99,1],['hp','HP',20,300,10],['bm','ボムの数（1ラウンド）',0,9,1],['win','先取ラウンド数',1,10,1],['hc','回復アイテムの数（0=設置しない）',0,10,1],['cn','戦場のコイン数（1ラウンド）',0,30,1],['ew','敵CPU(B軍)の銃（0=ランダム）',0,WP.length,1],['aw','味方CPU(A軍)の銃（0=ランダム）',0,WP.length,1]];
+const fmt=(k,v)=>k=='fov'?v+'°':k=='vol'||k=='scan'?Math.round(v*100)+'%':k=='lve'||k=='lva'?lvName(v):k=='mp'?(PRN[+v|0]||v):k=='mz'?v+'×'+v:k=='mc'?v+'/10':k=='ms'?(+v?'No.'+v:'ランダム'):k=='ew'||k=='aw'?(+v?WP[v-1].n:'ランダム'):k=='hc'?(+v?v+'個':'なし'):k in SETD?String(v):(+v).toFixed(2)+'×';
 function applyScan(){$('w').style.setProperty('--scan',CFG.scan)}
 function sv(){try{localStorage.cfg=JSON.stringify(CFG)}catch(x){}}
 function sm(){try{localStorage.cpsSet=JSON.stringify(SET)}catch(x){}}
@@ -508,8 +574,9 @@ function closeSet(){ov.innerHTML=prev;ov.classList.remove('lite')}
 document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&st==1&&!online)pause()});
 document.addEventListener('mousemove',e=>{if(P&&(document.pointerLockElement||(st==1&&(e.buttons&2)))){const o=FC.on?FC:P;o.a+=e.movementX*.0025*CFG.sens;o.p=Math.max(-1.5,Math.min(1.5,(o.p||0)-e.movementY*.0025*CFG.sens))}});
 onmousedown=e=>{if(st==1&&e.button==0)md=1};onmouseup=()=>md=0;oncontextmenu=e=>e.preventDefault();
-onkeydown=e=>{K[e.code]=1;if(e.code=='KeyR'&&st==1)reload();if(e.code=='KeyE'&&st==1&&!P.spec)RD.on^=1;if(e.code=='KeyQ'&&st==1&&!e.repeat)throwBomb();if(e.code=='KeyF'&&st==1&&!e.repeat)toggleFC();if(e.code=='KeyG'&&st==1&&!e.repeat)carToggle();if(st==1&&/^(Space|Arrow)/.test(e.code))e.preventDefault()};
+onkeydown=e=>{K[e.code]=1;if(e.code=='KeyR'&&st==1)reload();if(e.code=='KeyE'&&st==1&&!P.spec)RD.on^=1;if(e.code=='KeyQ'&&st==1&&!e.repeat)throwBomb();if(e.code=='KeyF'&&st==1&&!e.repeat)toggleFC();if(e.code=='KeyG'&&st==1&&!e.repeat)carToggle();if(st==1&&!e.repeat&&/^Digit[1-9]$/.test(e.code))selW(+e.code[5]-1);if(st==1&&/^(Space|Arrow)/.test(e.code))e.preventDefault()};
 onkeyup=e=>K[e.code]=0;
+onwheel=e=>{if(st==1)swW(e.deltaY>0?1:-1)};
 C.onclick=()=>{if(st==1&&!document.pointerLockElement)lock()};
 
 // ---- コントローラー (Gamepad API) ----
@@ -527,7 +594,7 @@ function gpPoll(dt){
  GP.mx=dz(ax(0));GP.my=dz(ax(1));GP.lx=dz(ax(2));GP.ly=dz(ax(3));
  GP.fire=GPP[7]||GPP[5]?1:0;GP.dash=GPP[10]||GPP[0]?1:0;GP.up=GPP[0]?1:0;GP.dn=GPP[1]?1:0;
  if(st==1){
-  if(eg[2])reload();if(eg[3]&&!P.spec)RD.on^=1;if(eg[4])throwBomb();if(eg[8])toggleFC();if(eg[6])carToggle();if(eg[9]&&!online)pause();
+  if(eg[2])reload();if(eg[3]&&!P.spec)RD.on^=1;if(eg[4])throwBomb();if(eg[14])swW(-1);if(eg[15])swW(1);if(eg[8])toggleFC();if(eg[6])carToggle();if(eg[9]&&!online)pause();
  }else{
   if(st==3&&!ov.classList.contains('lite')&&eg[9]){go();return}
   const bs=[...ov.querySelectorAll('button:not([disabled]),input[type=range]')];if(!bs.length)return;
@@ -542,7 +609,7 @@ function gpPoll(dt){
 }
 
 // ---- v4: モード / エペ式AI(個性つき) / オンライン ----
-const MAG=10,DMG=34;
+const DMG=34;
 // ---- ダメージ集計 ----（d=与ダメージ t=被ダメージ。HPが実際に減った量で数える。CPU対戦はA軍の攻撃=d, B軍の攻撃=t）
 let ST=null,LOG=[],dmK='';
 const hv0=o=>Math.max(0,o.hv==null?MH:o.hv),sumD=()=>{let d=0,t=0;for(const r of LOG){d+=r.d;t+=r.t}if(ST&&!ST.done){d+=ST.d;t+=ST.t}return{d,t}};
@@ -594,8 +661,8 @@ function mk(x,y,tm,id){
  const v=CFG.rnd,m=q=>1+(q-1)*v,q=Math.random(),ax=q<.2?rr(.3,.6):q<.8?rr(.85,1.15):rr(1.5,2.1),rs_=rr(.55,1.45);
  const o={x,y,a:tm?-2.36:.78,hp:1,hv:MH,tm,id,cd:1.2,sh:0,fl:0,ls:-9,rx:0,s:'m',sT:0,sd:1,m:6,t:0,tx:x,ty:y,v:id%3,mv:0,rl:0,sn:0,
   aim:m(ax),rc:Math.max(.08,.5+(rr(.15,1.1)-.5)*v),rush:Math.max(.4,m(rs_)),dl:Math.random()<.35?0:rr(.4,4)*v,
-  rdT:rr(0,2.5),rI:rr(1.8,5),rg:rs_>1.2?20:12,bz:rr(.2,1.3),bm:BM0,bc:rr(1,3),kn:null,D:null};return lvApply(o,tm)}
-function reset(){LOG=[];ST=null;P={x:0,y:0,a:0,hp:100,ammo:MAG,cd:0,rl:0,fl:0,hit:0,k:0,hm:0,mv:0,ls:-9,ms:0,tm:0,spec:0};sc=[0,0];rd=online&&!ishost?0:1;PH={};myPh=0;RM={};fin=0;gw=0;WIN=SET.win;MH=SET.hp;BM0=SET.bm;newRound()}
+  rdT:rr(0,2.5),rI:rr(1.8,5),rg:rs_>1.2?20:12,bz:rr(.2,1.3),bm:BM0,bc:rr(1,3),kn:null,D:null};lvApply(o,tm);return wpAssign(o,tm)}
+function reset(){LOG=[];ST=null;MCF=0;P={x:0,y:0,a:0,hp:100,ammo:WPN().m,wa:{},cd:0,rl:0,fl:0,hit:0,k:0,hm:0,mv:0,ls:-9,ms:0,tm:0,spec:0};sc=[0,0];rd=online&&!ishost?0:1;PH={};myPh=0;RM={};fin=0;gw=0;WIN=SET.win;MH=SET.hp;BM0=SET.bm;newRound()}
 function newRound(){
  if(P&&P.car)carLeave(1);
  if(ST&&!ST.done&&(ST.d||ST.t))closeRound();ST={n:rd,d:0,t:0,done:0,r:''};$('fx').textContent='';
@@ -603,20 +670,27 @@ function newRound(){
  // 毎ラウンド ランダムスポーン（ゲストはホストが決めた位置を受け取る）
  const sp=gst&&GS?{a:GS,b:[]}:spawns(nA,gst?0:ne),pa=sp.a;SX=pa;
  const[x,y]=pa[gst?1:0]||slot(0,gst?1:0);
- Object.assign(P,{x,y,a:faceOpen(x,y),p:0,hp:spec?0:MH,ammo:MAG,cd:0,rl:0,mv:0,spec:spec?1:0});
+ Object.assign(P,{x,y,a:faceOpen(x,y),p:0,hp:spec?0:MH,ammo:WPN().m,wa:{},cd:0,rl:0,mv:0,spec:spec?1:0});
  hpS=hpG=P.hp;claims=[];clrBombs();rs=0;rt=0;rt0=T;for(const q in RM)RM[q].hv=MH;
  if(gst)E=[];else E=Array.from({length:ne},(_,i)=>mk(...(sp.b[i]||slot(1,i)),1,i));
  AL=online?[]:Array.from({length:na},(_,i)=>mk(...(pa[spec?i:i+1]||slot(0,i+1)),0,100+i));
  for(const o of[...E,...AL])o.a=faceOpen(o.x,o.y);
+ spawnPK();buildAm();
 }
-function reload(){if(P.car||RD.on||P.rl>0||P.ammo>=MAG||P.hp<=0)return;P.rl=1.3;beep(300,.1,.1)}
+function reload(){if(P.car||RD.on||P.rl>0||P.ammo>=WPN().m||P.hp<=0)return;P.rl=WPN().r;beep(300,.1,.1)}
 function fire(){
+ const W=WPN();
  if(P.car||RD.on||RD.v>.15||P.hp<=0||rs||T-rt0<1||P.cd>0||P.rl>0)return;if(P.ammo<=0)return reload();
- P.ammo--;P.cd=.16;P.fl=.05;P.k=1;P.ls=T;P.ms++;P.sk=Math.max(P.sk||0,.07);noise(.12,.25);
- let b=null,bd=99;
- for(const e of E)if(e.hp>0){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy),da=Math.atan2(dy,dx)-P.a;
-  if(Math.cos(da)>0&&Math.abs(Math.sin(da))*d<.3&&Math.abs(Math.tan(P.p||0)*d+.3)<.55&&d<bd&&los(P.x,P.y,e.x,e.y)){b=e;bd=d}}
- if(b){dmg('d',Math.min(DMG,hv0(b)),b);hitE(b,DMG);P.hm=.2;beep(900,.06,.1);claims.push(b.id)}
+ P.ammo--;P.cd=W.c;P.fl=.05;P.k=1;P.ls=T;P.ms++;P.sk=Math.max(P.sk||0,.04+Math.min(.2,W.d*.0008*Math.min(3,W.p)));noise(Math.min(.35,.08+W.d*.0015),Math.min(.5,.2+W.d*.001));
+ const dm=new Map();
+ for(let q=0;q<W.p;q++){
+  const pa=P.a+(W.s?(Math.random()-.5)*2*W.s:0),pp=(P.p||0)+(W.s?(Math.random()-.5)*2*W.s:0);let b=null,bd=99;
+  for(const e of E)if(e.hp>0){const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy),da=Math.atan2(dy,dx)-pa;
+   if(d<=W.rg&&Math.cos(da)>0&&Math.abs(Math.sin(da))*d<.3&&Math.abs(Math.tan(pp)*d+.3)<.55&&los(P.x,P.y,e.x,e.y)){
+    const v=W.d*(W.rg<99?1-.5*d/W.rg:1);
+    if(W.pi)dm.set(e,(dm.get(e)||0)+v);else if(d<bd){b=e;bd=d;b.__v=v}}}
+  if(b)dm.set(b,(dm.get(b)||0)+b.__v)}
+ for(const[e,v0]of dm){const v=Math.max(1,Math.round(v0));dmg('d',Math.min(v,hv0(e)),e);hitE(e,v);P.hm=.2;beep(900,.06,.1);claims.push(e.id)}
 }
 // エペ式AI: 間合い(m) / フェイント(f) / 待ち(w) / 隙を突く攻撃(a)
 // + 個性(命中・反応・接近速度・出遅れ) + レーダー/銃声で位置を把握 + ボム
@@ -640,9 +714,9 @@ function ai(b,dt,foes,fr){
   f=b.s=='m'?(od>b.m+1?1:od<b.m-1?-1:0):b.s=='f'?(b.sT>.55?1.6:-1.6):b.s=='a'?(od>3.5?1.3:0):0;
   if(ad<.15&&b.s!='a')lat=b.sd*1.3;
   if(b.rx>b.rc/CFG.dif&&b.cd<=0&&od<13&&(b.s=='a'||op||off||(b.s=='m'&&Math.random()<dt*.5))){
-   b.cd=(.55+Math.random()*.5)*(1.25-.2*Math.min(2,b.aim))*(b.cdm||1);b.sh=.1;b.ls=T;b.sn++;noise(.1,.2/(1+od*.4));
+   b.cd=(.55+Math.random()*.5)*(1.25-.2*Math.min(2,b.aim))*(b.cdm||1)*(b.cr||1);b.sh=.1;b.ls=T;b.sn++;noise(.1,.2/(1+od*.4));
    const base=Math.min(.8,Math.max(.1,.85-od*.045-(o.mv?.25:0)));
-   if(Math.random()<Math.min(.97,Math.max(.02,base*b.aim*Math.min(1.3,CFG.dif))))r=o}
+   if(Math.random()<Math.min(.97,Math.max(.02,base*b.aim*Math.min(1.3,CFG.dif)*(b.W&&od>b.W.rg?.15:1))))r=o}
  }else{
   b.rx=0;
   if(b.dl>0){f=0;lat=0}
@@ -666,7 +740,7 @@ function ai(b,dt,foes,fr){
  }
  return r
 }
-function hit(o,b){
+function hit(o,b){const DMG=b&&b.dm?b.dm:34;
  if(o===P){dmg('t',Math.min(P.hp,DMG));P.hp=Math.max(0,P.hp-DMG);P.hit=P.hp>0?.3:.5;P.sk=.35;beep(160,.2,.2)}
  else{if(mode=='cvc')dmg(o.tm?'d':'t',Math.min(DMG,hv0(o)));o.hv=(o.hv==null?MH:o.hv)-DMG;o.fl=.12;if(o.pid)PH[o.pid]=(PH[o.pid]||0)+1;if(o.hv<=0){o.hp=0;o.fl=.2;if(o.pid)o.dd=rd}}
 }
@@ -722,19 +796,19 @@ function update(dt){
   const f=(K.KeyW?1:0)-(K.KeyS?1:0)-GP.my,s=(K.KeyD?1:0)-(K.KeyA?1:0)+GP.mx,n=Math.max(1,Math.hypot(f,s)),dash=((K.ShiftLeft||K.ShiftRight)||GP.dash)&&(f||s)?1.75:1,sp=3.2*CFG.spd*dash*dt/n;
   P.mv=f||s?1:0;P.dash=dash>1;P.a+=(((K.ArrowRight?1:0)-(K.ArrowLeft?1:0))*2.4+GP.lx*3)*CFG.sens*dt;P.p=Math.max(-1.5,Math.min(1.5,(P.p||0)+(((K.ArrowUp?1:0)-(K.ArrowDown?1:0))*1.8-GP.ly*2.2)*CFG.sens*dt));
   mv(P,(Math.cos(P.a)*f-Math.sin(P.a)*s)*sp,(Math.sin(P.a)*f+Math.cos(P.a)*s)*sp);
-  if(P.rl>0){P.rl-=dt;if(P.rl<=0)P.ammo=MAG}
+  if(P.rl>0){P.rl-=dt;if(P.rl<=0)P.ammo=WPN().m}
   if(md||K.Space||GP.fire)fire();
  }else P.mv=0;
  P.cd-=dt;P.fl-=dt;P.hit-=dt;P.hm-=dt;P.sk=Math.max(0,(P.sk||0)-dt);P.k=Math.max(0,P.k-dt*8);
- bombStep(dt);if(online)netin(dt);
+ bombStep(dt);pkStep();if(online)netin(dt);
  if(!online||ishost)sim(dt);else guest(dt);
  if(online)netpub(dt);
 }
 function hud(){
  const[na,ne]=counts(),sp=!!P.spec;
  {const b=online?netBadge():'';if(b!==NB){NB=b;$('net').style.display=b?'block':'none';$('net').innerHTML=b}}
- $('top').textContent=(mode=='solo'?`1v${ne} ソロ ${online?'':lvT(SET.lve)}`:mode=='tag'?`${online?2:na+1}v${ne} タッグ${online?'':' 敵'+lvT(SET.lve)+' 味'+lvT(SET.lva)}`:`CPU対戦 ${na}v${ne} A:${lvT(SET.lva)} B:${lvT(SET.lve)}`)+' ｜ '+(sp?`A軍 ${sc[0]} - ${sc[1]} B軍`:`あなた ${sc[0]} - ${sc[1]} CPU`)+`（先取${WIN}）`+(online?` ｜ NET ${code}`:'');
- for(const id of['bar','am','rt'])$(id).style.display=sp?'none':'';
+ $('top').textContent=(mode=='solo'?`1v${ne} ソロ ${online?'':lvT(SET.lve)}`:mode=='tag'?`${online?2:na+1}v${ne} タッグ${online?'':' 敵'+lvT(SET.lve)+' 味'+lvT(SET.lva)}`:`CPU対戦 ${na}v${ne} A:${lvT(SET.lva)} B:${lvT(SET.lve)}`)+' ｜ '+(sp?`A軍 ${sc[0]} - ${sc[1]} B軍`:`あなた ${sc[0]} - ${sc[1]} CPU`)+`（先取${WIN}）`+(online?` ｜ NET ${code}`:'')+` ｜ ●${COIN}`+(MCF?`(+${MCF})`:'');
+ for(const id of['bar','am','rt','wn'])$(id).style.display=sp?'none':'';
  const mx=Math.max(BM0,bombs);
  $('bm').style.display=RD.v<.3&&!sp?'block':'none';$('bm').textContent='BOMB '+(mx>6?`${Math.max(0,bombs)}/${BM0}`:'■'.repeat(Math.max(0,bombs))+'□'.repeat(Math.max(0,mx-bombs)))+'  [Q]';
  $('fc').style.display=FC.on?'block':'none';if(FC.on)$('fc').textContent=sp?'CPU対戦 観戦  WASD/左スティック:移動  Space/A:上昇  Shift/B:下降':'FREE CAM  F:戻る  Space:上昇  Shift:下降';
@@ -745,17 +819,18 @@ function hud(){
 let hpS=100,hpG=100;
 function hpbar(){const k=1-Math.pow(.7,FD*60),g=1-Math.pow(.96,FD*60);hpS+=(P.hp-hpS)*k;hpG+=(hpS-hpG)*g;if(hpG<hpS)hpG=hpS;const lo=P.hp>0&&P.hp<=MH*.34,w=v=>Math.min(100,Math.max(0,v/MH*100))+'%';
  $('hp').style.width=w(hpS);$('gh').style.width=w(hpG);$('hp').style.background=lo?'var(--ac)':'var(--ok)';hpCard(lo);$('bar').classList.toggle('lo',lo)}
-const BU=[];{const a=$('am');for(let i=0;i<MAG;i++){const b=document.createElement('i');b.className='bu';a.appendChild(b);BU.push(b)}}
-let amK='',pl=MAG;
-function ammo(){const rl=P.rl>0,lit=rl?Math.floor((1-P.rl/1.3)*MAG):P.ammo,k=lit+(rl?'r':'');
+const BU=[];let amK='',pl=10,wnK='';
+function buildAm(){const a=$('am'),n=Math.max(1,Math.min(WPN().m,12));a.innerHTML='';BU.length=0;for(let i=0;i<n;i++){const b=document.createElement('i');b.className='bu';a.appendChild(b);BU.push(b)}pl=n;amK='';wnK=''}
+function ammo(){const W=WPN(),n=BU.length,rl=P.rl>0,lit=rl?Math.floor((1-P.rl/W.r)*n):Math.ceil(Math.max(0,P.ammo)*n/W.m),k=lit+(rl?'r':'');
  if(k!=amK){amK=k;BU.forEach((b,i)=>b.className='bu'+(i<lit?'':' off')+(!rl&&i>=lit&&i<pl?' ej':'')+(rl&&i<lit&&i>=pl?' ld':''));pl=lit}
- $('rt').textContent=rl?'RELOADING':P.ammo<=0&&P.hp>0?'R : RELOAD':''}
-function end(w){closeRound();st=2;document.exitPointerLock&&document.exitPointerLock();const cv=mode=='cvc';show(`<h1>${cv?(w==1?'A軍 勝利！':'B軍 勝利！'):(w==1?'勝利！':'敗北…')}</h1><p>${sc[0]} - ${sc[1]}</p>${statsHTML()}<button class='cta' onclick='menu()'>メニューへ</button>`)}
+ $('rt').textContent=rl?'RELOADING':P.ammo<=0&&P.hp>0?'R : RELOAD':'';
+ const wt=W.n+'  '+(rl?'--':P.ammo)+'/'+W.m+(UNL.length>1&&!online?'  [1-9]':'');if(wt!==wnK){wnK=wt;$('wn').textContent=wt}}
+function end(w){closeRound();st=2;const po=payout(w);document.exitPointerLock&&document.exitPointerLock();const cv=mode=='cvc';show(`<h1>${cv?(w==1?'A軍 勝利！':'B軍 勝利！'):(w==1?'勝利！':'敗北…')}</h1><p>${sc[0]} - ${sc[1]}</p>${statsHTML()}<p class='coin'>コイン獲得 戦場 ●${po.f} ＋ 終了ボーナス ●${po.tot}</p><p class='hint'>所持コイン ●${COIN}</p><button class='cta' onclick='menu()'>メニューへ</button>`)}
 function menu(){
  if(NR){NR.leave().catch(()=>{});NR=null}clearInterval(lt);online=0;ishost=1;st=0;FC.on=0;document.exitPointerLock&&document.exitPointerLock();
- show(`<h1>CPU STRIKE</h1><div class='sub'>◆ エペ式 一本勝負 FPS ◆</div><div class='mn'><button class='cta' onclick='begin(0)'>ソロ（vs CPU）</button><button class='cta' onclick='begin(1)'>タッグ（CPU相棒）</button><button class='cta' onclick='begin(2)'>CPU対戦（観戦）</button><button onclick='lobby()'>オンライン タッグ</button><button onclick='openMatch()'>試合設定</button><button onclick='openSet()'>設定</button></div><div class='keys'><b>WASD</b><span>移動</span><b>SHIFT</b><span>ダッシュ</span><b>MOUSE</b><span>視点（矢印も可）</span><b>CLICK</b><span>撃つ</span><b>R</b><span>リロード</span><b>E</b><span>レーダー（撃てない）</span><b>Q</b><span>ボム（壁を壊せる）</span><b>F</b><span>フリーカメラ</span><b>G</b><span>車に乗る・降りる（町）</span></div><p class='hint'>🎮 コントローラー: 左スティック=移動 / 右スティック=視点 / RT=撃つ / LB=ボム / X=リロード / Y=レーダー / L3・A=ダッシュ / BACK=フリーカメラ / L2=車の乗降 / START=ポーズ。メニューは十字キーで選択、Aで決定。</p><p class='hint'>銃は3発で撃破（HPは試合設定で変更可）。ボムは1.5秒後に爆発、爆心地ほど大ダメージ。CPUもレーダーや銃声で位置を探り、ボムも投げてきます。個性（ミス多め／達人／最短で来る／遅れて来る）は毎ラウンドランダムです。</p>`)
+ show(`<h1>CPU STRIKE</h1><div class='sub'>◆ エペ式 一本勝負 FPS ◆</div><p class='hint'>●コイン ${COIN}　装備：${WP[EQ].n}</p><div class='mn'><button class='cta' onclick='begin(0)'>ソロ（vs CPU）</button><button class='cta' onclick='begin(1)'>タッグ（CPU相棒）</button><button class='cta' onclick='begin(2)'>CPU対戦（観戦）</button><button onclick='lobby()'>オンライン タッグ</button><button onclick='openArmory()'>武器庫（銃を選ぶ）</button><button onclick='openMatch()'>試合設定</button><button onclick='openSet()'>設定</button></div><div class='keys'><b>WASD</b><span>移動</span><b>SHIFT</b><span>ダッシュ</span><b>MOUSE</b><span>視点（矢印も可）</span><b>CLICK</b><span>撃つ</span><b>R</b><span>リロード</span><b>E</b><span>レーダー（撃てない）</span><b>Q</b><span>ボム（壁を壊せる）</span><b>F</b><span>フリーカメラ</span><b>G</b><span>車に乗る・降りる（町）</span><b>1-9/ﾎｲｰﾙ</b><span>銃の切替</span></div><p class='hint'>🎮 コントローラー: 左スティック=移動 / 右スティック=視点 / RT=撃つ / LB=ボム / X=リロード / Y=レーダー / L3・A=ダッシュ / BACK=フリーカメラ / L2=車の乗降 / START=ポーズ。メニューは十字キーで選択、Aで決定。</p><p class='hint'>銃は3発で撃破（HPは試合設定で変更可）。ボムは1.5秒後に爆発、爆心地ほど大ダメージ。CPUもレーダーや銃声で位置を探り、ボムも投げてきます。個性（ミス多め／達人／最短で来る／遅れて来る）は毎ラウンドランダムです。</p>`)
 }
-function begin(m){mode=['solo','tag','cvc'][m];online=0;ishost=1;useMap();reset();if(mode=='cvc'){FC.x=N/2;FC.y=N/2;FC.z=Math.max(20,N*.67);FC.a=.8;FC.p=-1.3}go()}
+function begin(m){mode=['solo','tag','cvc'][m];online=0;ishost=1;CW=EQ;useMap();reset();if(mode=='cvc'){FC.x=N/2;FC.y=N/2;FC.z=Math.max(20,N*.67);FC.a=.8;FC.p=-1.3}go()}
 // ---- マップ切替（試合開始時に設定どおり再生成。オンラインはホストの設定を共有） ----
 let MAPP=[51,5,20261024,0];
 function applyMap(p){const pr=p[3]|0;genMap(p[0],p[1],p[2],pr);buildScene();applyTheme();MAPP=[p[0],p[1],p[2],pr]}
@@ -814,7 +889,7 @@ async function netCheck(){const el=$('nst');if(!el)return;
  try{await sbLoad();const t0=performance.now(),n=await sbJoin('cs-ping-'+Math.random().toString(36).slice(2,8)),ms=Math.round(performance.now()-t0);await n.leave();
   if($('nst')===el)el.innerHTML=dot('--ok',`Supabase ONLINE（${ms}ms）`)}
  catch(e){if($('nst')===el)el.innerHTML=dot('--ac','Supabase OFFLINE：'+String(e&&e.message||e).replace(/[<>&]/g,''))}}
-function lobby(){show(`<h1>オンライン</h1><p>友達も同じページを開き、同じコードを入力。2人で組んでCPUと戦います（敵の数・レベル・HP・ボム数はホストの試合設定）。</p><p class='hint'>接続状態: <span id='nst'></span> <button onclick='netCheck()' style='font-size:.8em;padding:.1em .6em'>再確認</button></p><div><button class='cta' onclick='joinRoom(1)'>部屋を作る</button></div><div><input id='cd' maxlength='8' placeholder='コード' style='font:inherit;padding:.4em;width:7em;text-align:center'> <button onclick='joinRoom(0)'>参加する</button></div><button onclick='menu()'>戻る</button>`);netCheck()}
+function lobby(){show(`<h1>オンライン</h1><p>友達も同じページを開き、同じコードを入力。2人で組んでCPUと戦います（敵の数・レベル・HP・ボム数はホストの試合設定／銃はハンドガン固定）。</p><p class='hint'>接続状態: <span id='nst'></span> <button onclick='netCheck()' style='font-size:.8em;padding:.1em .6em'>再確認</button></p><div><button class='cta' onclick='joinRoom(1)'>部屋を作る</button></div><div><input id='cd' maxlength='8' placeholder='コード' style='font:inherit;padding:.4em;width:7em;text-align:center'> <button onclick='joinRoom(0)'>参加する</button></div><button onclick='menu()'>戻る</button>`);netCheck()}
 async function joinRoom(h){
  const c=h?Math.random().toString(36).slice(2,6):($('cd').value||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(!c)return;
  show('<h1>接続中…</h1>');
@@ -825,7 +900,7 @@ async function joinRoom(h){
  lt=setInterval(()=>{const ps=NR.peers(),n=ps.length;$('lc').innerHTML=`参加中 ${n}人`+(h?(n<2?' ／ 友達を待っています…':''):'（ホストの開始待ち）')+'<br>'+netBadge();if(h)$('sb').disabled=n<2;
   const hp=ps.find(p=>!p.isMe&&p.presence.go);if(!h&&hp){clearInterval(lt);goOnline(hp.presence.mp)}},400)
 }
-function goOnline(mp){clearInterval(lt);mode='tag';online=1;if(ishost)useMap();else if(mp)applyMap(mp);reset();go()}
+function goOnline(mp){clearInterval(lt);mode='tag';online=1;CW=0;if(ishost)useMap();else if(mp)applyMap(mp);reset();go()}
 useMap();menu();
 
 reset();
