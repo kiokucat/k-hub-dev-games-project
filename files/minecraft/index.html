@@ -360,6 +360,9 @@ body.noflash #flash{display:none}
   <div class="win wl" id="wlist"></div>
   <div class="gr"><button class="mb h" id="wplay" disabled>選択したワールドで遊ぶ</button><button class="mb h" id="wnew">ワールド新規作成</button></div>
   <div class="gr"><button class="mb q" id="wedit" disabled>編集</button><button class="mb q red" id="wdel" disabled>削除</button><button class="mb q" id="wre" disabled>再生成</button><button class="mb q" data-back>戻る</button></div>
+  <div class="gr"><button class="mb q" id="wexp" disabled>書き出し</button><button class="mb q" id="wexpall">全て書き出し</button><button class="mb q" id="wimp">読み込み</button></div>
+  <small id="wmsg" style="margin-top:3px;flex:none;text-align:center;max-width:300px;white-space:normal;min-height:9px"></small>
+  <input type="file" id="wfile" accept=".blockland,.json,application/json,application/gzip" multiple hidden>
  </div>
  <div id="s-create" class="gui"><h2>ワールドを新規作成</h2>
   <div class="body">
@@ -2531,7 +2534,7 @@ function update(dt){tickStats(dt);
  $('#prog i').style.width=Math.min(100,Math.max(prog,bowC,xbC/1.1)*100)+'%';
  if((infT+=dt)>.15&&!(infT=0))$('#info').innerHTML=`<span class="material-symbols-outlined">${cre?'flight':'forest'}</span> ${cre?'クリエイティブ':'サバイバル'}${fly?' (飛行中)':''}<br><span class="material-symbols-outlined">casino</span> シード: ${seedTxt.replace(/</g,'&lt;')}<br><span class="material-symbols-outlined">location_on</span> ${DIMN[dim]} ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}<br><span class="material-symbols-outlined">${night?'dark_mode':'light_mode'}</span> ${String(Math.floor((6+tod*24)%24)).padStart(2,'0')}:${String(Math.floor(tod*1440%60)).padStart(2,'0')}${cre?'':'<br><span class="material-symbols-outlined">swords</span> 手持ち: '+(slots[sel]?idesc(slots[sel].b):'素手')+' / 防御 '+defTot()+' / 矢 '+cnt(NI.arw)}`}
 // ---- start
-function start(sv){SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wname=sv?(sv.name||'ワールド'):($('#wname').value.trim()||'新規ワールド');ADV={};ST=newST();thumb=sv?(sv.th||''):'';crt=sv?(sv.c||sv.t):Date.now();lpx=null;thT=2;$('#toasts').innerHTML='';
+function start(sv){reqPersist();SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wname=sv?(sv.name||'ワールド'):($('#wname').value.trim()||'新規ワールド');ADV={};ST=newST();thumb=sv?(sv.th||''):'';crt=sv?(sv.c||sv.t):Date.now();lpx=null;thT=2;$('#toasts').innerHTML='';
  let s=sv?sv.seed:$('#seed').value.trim();if(!s)s=String(Math.floor(Math.random()*1e9));$('#seed').value=s;seedTxt=s;S=hs(s);
  dimChunks.forEach(m=>{m.forEach(dispose);m.clear()});chunks=dimChunks[0];dim=0;portals=[[],[],[]];ptT=ptWait=0;lcx=1e9;
  for(let a=-3;a<=3;a++)for(let b=-3;b<=3;b++)genAny(a,b);
@@ -2545,7 +2548,7 @@ function start(sv){SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wname=sv?(sv.name
  if(cre)[1,2,3,8,7,9,11,D1,TB].forEach((b,i)=>slots[i]={b,n:1});if(!sv&&!cre&&ws.kit)giveKit();sel=0;world=1;if(sv)applySave(sv);
  $('#hud').hidden=false;$('#menu').hidden=true;$('#dead').hidden=true;paused=0;resetIn();renderHot();renderHp();renderXp();lockPtr();
  if(!cre&&ws.animals)for(let k=0;k<6;k++){const q=spawnPos(0);if(q)spawnHerd(q)}
- playBgm();tip(cre?'ダブルジャンプで飛行':'木や地面を壊して素材を集めよう')}
+ playBgm();tip(cre?'ダブルジャンプで飛行':'木や地面を壊して素材を集めよう');if(!sv)saveNow()}
 $('#go').onclick=()=>start();
 $('#rnd').onclick=()=>$('#seed').value=String(Math.floor(Math.random()*1e9));
 $('#invc').onclick=tInv;
@@ -2554,14 +2557,24 @@ $('#dtitle').onclick=()=>{dead=0;world=0;$('#dead').hidden=true;$('#hud').hidden
 // ---- settings
 // ---- save data (IndexedDB)
 let wid=0,saving=0,asT=0;
-const DB={db:null,open(){return new Promise(r=>{try{const q=indexedDB.open('blockland',1);q.onupgradeneeded=()=>q.result.createObjectStore('w',{keyPath:'id'});q.onsuccess=()=>{DB.db=q.result;r(1)};q.onerror=()=>r(0);q.onblocked=()=>r(0)}catch(e){r(0)}})},
- run(m,f){return new Promise(r=>{if(!DB.db)return r(null);try{const t=DB.db.transaction('w',m),q=f(t.objectStore('w'));t.oncomplete=()=>r(q&&q.result!==undefined?q.result:1);t.onerror=t.onabort=()=>r(null)}catch(e){r(null)}})},
+const DB={db:null,err:'',
+ open(){return new Promise(r=>{const go=v=>{try{const q=v?indexedDB.open('blockland',v):indexedDB.open('blockland');
+  q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains('w'))q.result.createObjectStore('w',{keyPath:'id'})};
+  q.onsuccess=()=>{const d=q.result;if(!d.objectStoreNames.contains('w')){const nv=d.version+1;d.close();go(nv);return}
+   d.onversionchange=()=>{d.close();if(DB.db===d)DB.db=null};d.onclose=()=>{if(DB.db===d)DB.db=null};DB.db=d;r(1)};
+  q.onerror=()=>r(0);q.onblocked=()=>r(0)}catch(e){r(0)}};go(0)})},
+ run(m,f,rt=1){return new Promise(async r=>{if(!DB.db)await DB.open();const d=DB.db;DB.err='';if(!d)return r(null);let done=0;
+  const fail=e=>{if(done)return;done=1;const n=(e&&e.name)||'';DB.err=n;if(rt&&/InvalidState|Unknown|NotFound|Transaction/.test(n)){try{d.close()}catch(x){}if(DB.db===d)DB.db=null;DB.run(m,f,0).then(r)}else r(null)};
+  try{const t=d.transaction('w',m),q=f(t.objectStore('w'));t.oncomplete=()=>{done=1;r(q&&q.result!==undefined?q.result:1)};t.onerror=()=>fail(t.error||(q&&q.error));t.onabort=()=>fail(t.error||(q&&q.error))}catch(e){fail(e)}})},
+ list(){return new Promise(async r=>{if(!DB.db)await DB.open();const d=DB.db;if(!d)return r(null);
+  try{const t=d.transaction('w','readonly'),out=[];t.objectStore('w').openCursor().onsuccess=e=>{const c=e.target.result;if(c){const o=Object.assign({},c.value);delete o.ch;out.push(o);c.continue()}};t.oncomplete=()=>r(out);t.onerror=t.onabort=()=>r(null)}catch(e){r(null)}})},
  put:o=>DB.run('readwrite',s=>s.put(o)),get:id=>DB.run('readonly',s=>s.get(id)),del:id=>DB.run('readwrite',s=>s.delete(id)),all:()=>DB.run('readonly',s=>s.getAll())};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-async function saveNow(msg){if(!world||!DB.db||saving||dead)return;saving=1;
- try{const ch={};dimChunks.forEach((m,d)=>m.forEach(c=>{if(c.mod)ch[d+':'+c.cx+','+c.cz]=c.d.slice()}));
+let noDbW=0;
+async function saveNow(msg){if(!world||(saving&&Date.now()-saving<20000)||dead)return;if(!DB.db){if(!noDbW){noDbW=1;tip('セーブ不可: この環境ではIndexedDBが使えません')}return}saving=Date.now();
+ try{const ch=Object.assign({},SAVED||{});dimChunks.forEach((m,d)=>m.forEach(c=>{if(c.mod)ch[d+':'+c.cx+','+c.cz]=c.d.slice()}));
   const r=await DB.put({id:wid,v:1,seed:seedTxt,name:wname,adv:ADV,st:ST,th:thumb,c:crt,cre,ws,fx,ib:IB,gt,dim,p:{x:p.x,y:p.y,z:p.z},yaw,pitch,hp,hg,xp,sel,slots:slots.map(s=>s?{...s}:null),eq:eq.map(s=>s?{...s}:null),sp:{x:sp.x,y:sp.y,z:sp.z},portals,ch,t:Date.now()});
-  if(msg)tip(r===null?'セーブに失敗しました':'セーブしました')}catch(e){}finally{saving=0}}
+  if(r===null)tip(DB.err=='QuotaExceededError'?'セーブ失敗: 保存容量が足りません(書き出しでバックアップを)':'セーブに失敗しました');else if(msg)tip('セーブしました')}catch(e){}finally{saving=0}}
 function applySave(o){ADV=o.adv||{};ST=Object.assign(newST(),o.st||{});gt=o.gt;hp=o.hp;hg=o.hg;xp=o.xp||0;hgq=Math.ceil(hg/2);{const off=IB-(o.ib||OLD_IB),rm=s=>s&&off&&s.b>=OLD_IB?{...s,b:s.b+off}:s;slots.fill(null);o.slots.forEach((s,i)=>slots[i]=rm(s));eq.fill(null);o.eq.forEach((s,i)=>eq[i]=rm(s));if(off&&ST.fd)ST.fd=ST.fd.map(b=>b>=OLD_IB?b+off:b);fx=Object.assign({},o.fx||{})}sel=o.sel;yaw=o.yaw;pitch=o.pitch;portals=o.portals||[[],[],[]];Object.assign(sp,o.sp);
  if(o.dim)switchDim(o.dim);ensureGen(o.p.x,o.p.z);Object.assign(p,o.p);v.x=v.y=v.z=0;buildAround(p.x,p.z)}
 DB.open().then(renderSaves);
@@ -2592,7 +2605,7 @@ function refreshLabels(){
   'バケツ: 空のバケツで水・溶岩をすくい、右クリックで置く(水を溶岩に→黒曜石)。鉄鉱石×3でクラフト',
   'ネザーゲート: 黒曜石で幅2×高さ3以上の穴の枠を作り、火打ち石と打ち金(鉄鉱石+砂利)で点火。ゲートに入ると溶岩の海と洞窟のネザーへ(座標は1/8)。ネザーでは水は使えない',
   'ジ・エンド: エンドポータルフレーム(黒曜石×2+ダイヤ鉱石)を3×3の穴の周り12個で囲み、エンダーアイ(ソウルサンド+ダイヤ鉱石+グロウストーン)を右クリック。ポータルに入るとエンドへ。エンドから落ちる/ポータルに入ると地上へ戻る',
-  'セーブ: 30秒ごと・一時停止時に自動でIndexedDBへ保存。タイトル画面のセーブデータから再開・削除できる',
+  'セーブ: 30秒ごと・一時停止時に自動でIndexedDBへ保存。タイトル画面のセーブデータから再開・削除できる。ワールド選択画面の「書き出し」「読み込み」でファイルにバックアップできる',
   '松明: 石炭鉱石+板材でクラフト。地面に置くと周りを照らす(手に持っても明るい)。ポーション: ガラス瓶(ガラス×3)+材料でクラフトし、右クリックで飲む。効果は画面右上に表示',
 'ゲーム設定(一時停止→ゲーム設定): ゲームモード・難易度・敵の湧き量などをプレイ中に変更できる',
 'モバイル操作: 左スティックで移動 / 画面ドラッグで視点 / 右のボタンで操作'].map(t=>`<li>${t}</li>`).join('')}
@@ -2646,11 +2659,11 @@ MENU.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.di
 $('#quit').onclick=function(){try{window.close()}catch(e){}const b=this;b.textContent='タブを閉じてください';setTimeout(()=>b.textContent='ゲームを終了',2200)};
 $('#qt').onclick=async()=>{await saveNow();world=0;$('#hud').hidden=true;try{bgm.pause()}catch(e){}await renderSaves();menuRoot('title')};
 // --- world list
-async function renderSaves(){const L=await DB.all();wl=Array.isArray(L)?L.filter(o=>o&&o.slots).sort((a,b)=>b.t-a.t):[];drawW()}
+async function renderSaves(){const L=await DB.list();if(L===null){$('#wlist').innerHTML='<p class="em">セーブデータを読み込めませんでした。ページを再読み込みしてください</p>';['wplay','wedit','wdel','wre','wexp'].forEach(i=>$('#'+i).disabled=1);updSt();return}wl=L.filter(o=>o&&o.slots).sort((a,b)=>b.t-a.t);drawW();updSt()}
 function drawW(){const q=wq.toLowerCase(),a=wl.filter(o=>!q||(o.name||'').toLowerCase().includes(q)||String(o.seed).toLowerCase().includes(q));
  if(selW&&!wl.some(o=>o.id==selW))selW=null;
  $('#wlist').innerHTML=a.length?a.map(o=>{const nm=esc(o.name||'ワールド');return`<div class="wi${o.id==selW?' on':''}" data-id="${o.id}"><img src="${o.th||ICON[1]}" alt=""><div><b>${nm}</b><small>${nm} (${new Date(o.c||o.t).toLocaleString('ja-JP')})</small><small>${o.cre?'クリエイティブ':'サバイバル'}モード、シード: ${esc(o.seed)}、進捗 ${Object.keys(o.adv||{}).length}/${TOT}</small></div></div>`}).join(''):'<p class="em">ワールドがありません</p>';
- ['wplay','wedit','wdel','wre'].forEach(i=>$('#'+i).disabled=!selW)}
+ ['wplay','wedit','wdel','wre','wexp'].forEach(i=>$('#'+i).disabled=!selW)}
 const playW=async()=>{if(!selW)return;const o=await DB.get(selW);if(o&&o.slots)start(o)};
 $('#wlist').onclick=e=>{const w=e.target.closest('.wi');if(w){selW=+w.dataset.id;drawW()}};
 $('#wlist').ondblclick=e=>{if(e.target.closest('.wi'))playW()};
@@ -2664,6 +2677,60 @@ $('#esave').onclick=async()=>{const o=await DB.get(selW);if(o){o.name=$('#ename'
 $('#wdel').onclick=()=>{const o=wl.find(w=>w.id==selW);if(!o)return;$('#dmsg').textContent='「'+(o.name||'ワールド')+'」を削除しますか?\nこの操作は取り消せません。';$('#dmsg').style.whiteSpace='pre-line';showScr('del')};
 $('#dyes').onclick=async()=>{await DB.del(selW);selW=null;menuBack()};
 // --- sliders / options
+// ---- persistent storage / export / import
+function reqPersist(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().then(()=>updSt(),()=>{})}catch(e){}}
+let wmT=0;
+function wmsg(t){const e=$('#wmsg');if(!e)return;e.textContent=t;clearTimeout(wmT);wmT=setTimeout(updSt,4500)}
+async function updSt(){const e=$('#wmsg');if(!e)return;
+ if(!DB.db){e.textContent='IndexedDBが使えないためセーブできません';return}
+ let t='';try{if(navigator.storage&&navigator.storage.persisted){t='永続ストレージ: '+(await navigator.storage.persisted()?'有効':'未許可')}
+  if(navigator.storage&&navigator.storage.estimate){const q=await navigator.storage.estimate();t+=(t?' / ':'')+'使用量 '+((q.usage||0)/1048576).toFixed(1)+'MB'}}catch(x){}
+ e.textContent=t||'自動セーブ: IndexedDB'}
+const B64={enc(u){let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)},dec(t){const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}};
+const gz=async s=>new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+const gunz=async b=>await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+const dlFile=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+const packW=o=>{const r={...o,ch:{}};for(const k in o.ch||{})if(o.ch[k] instanceof Uint8Array)r.ch[k]=B64.enc(o.ch[k]);return r};
+async function expW(all){
+ try{
+  const L=all?((await DB.all())||[]).filter(o=>o&&o.slots):[await DB.get(selW)].filter(o=>o&&o.slots);
+  if(!L.length){wmsg('書き出すワールドがありません');return}
+  const js=JSON.stringify({app:'blockland',kind:'save',ver:1,t:Date.now(),worlds:L.map(packW)});
+  const z=typeof CompressionStream=='function',blob=z?new Blob([await gz(js)],{type:'application/gzip'}):new Blob([js],{type:'application/json'});
+  const nm=all?'blockland-all':String(L[0].name||'world').replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,40);
+  dlFile(blob,nm+'-'+new Date().toISOString().slice(0,10)+(z?'.blockland':'.json'));
+  wmsg(L.length+'個のワールドを書き出しました')
+ }catch(e){wmsg('書き出しに失敗しました')}}
+const isN=Number.isFinite,isO=x=>x&&typeof x=='object'&&!Array.isArray(x),isV=q=>isO(q)&&isN(q.x)&&isN(q.y)&&isN(q.z);
+let nidc=0;const nid=()=>Date.now()+(nidc++);
+function cleanW(o){
+ if(!isO(o)||!Array.isArray(o.slots)||!Array.isArray(o.eq)||o.slots.length>slots.length||o.eq.length>eq.length)return null;
+ if(!isV(o.p)||!isV(o.sp)||![o.hp,o.hg,o.gt,o.yaw,o.pitch,o.sel].every(isN)||!isO(o.ch))return null;
+ const n=16*16*H,ch={};
+ for(const k in o.ch){if(!/^[012]:-?\d+,-?\d+$/.test(k)||typeof o.ch[k]!='string')continue;try{const u=B64.dec(o.ch[k]);if(u.length==n)ch[k]=u}catch(e){}}
+ const now=Date.now(),it=s=>s===null||(isO(s)&&isN(s.b)&&isN(s.n));
+ if(!o.slots.every(it)||!o.eq.every(it))return null;
+ return{id:nid(),v:1,seed:String(o.seed==null?'':o.seed).slice(0,32),name:String(o.name||'ワールド').slice(0,24),
+  adv:isO(o.adv)?o.adv:{},st:isO(o.st)?o.st:{},th:/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(o.th||'')?o.th:'',
+  c:isN(o.c)?o.c:now,cre:o.cre?1:0,ws:isO(o.ws)?o.ws:{},fx:isO(o.fx)?o.fx:{},ib:isN(o.ib)?o.ib:OLD_IB,gt:o.gt,
+  dim:[0,1,2].includes(o.dim)?o.dim:0,p:{x:o.p.x,y:o.p.y,z:o.p.z},yaw:o.yaw,pitch:o.pitch,hp:o.hp,hg:o.hg,xp:isN(o.xp)?o.xp:0,sel:o.sel,
+  slots:o.slots,eq:o.eq,sp:{x:o.sp.x,y:o.sp.y,z:o.sp.z},
+  portals:Array.isArray(o.portals)&&o.portals.length==3&&o.portals.every(Array.isArray)?o.portals:[[],[],[]],ch,t:isN(o.t)?o.t:now}}
+async function impW(files){
+ let n=0,bad=0;
+ for(const f of files){try{
+  const buf=new Uint8Array(await f.arrayBuffer());let txt;
+  if(buf[0]==0x1f&&buf[1]==0x8b){if(typeof DecompressionStream!='function')throw 0;txt=await gunz(buf)}else txt=new TextDecoder().decode(buf);
+  const j=JSON.parse(txt),arr=Array.isArray(j.worlds)?j.worlds:[j];
+  for(const o of arr){const r=cleanW(o);if(!r){bad++;continue}if(await DB.put(r)!==null)n++;else bad++}
+ }catch(x){bad++}}
+ await renderSaves();
+ wmsg(n?n+'個のワールドを読み込みました'+(bad?' (失敗 '+bad+')':''):'読み込めませんでした (形式が違うか、壊れています)')}
+$('#wexp').onclick=()=>{if(selW)expW(0)};
+$('#wexpall').onclick=()=>expW(1);
+$('#wimp').onclick=()=>$('#wfile').click();
+$('#wfile').onchange=e=>{const f=[...e.target.files];e.target.value='';if(f.length)impW(f)};
+
 let fov=70,rdv=5,brt=100,oInfo=1,oHud=1,oFl=1,oMz=1,asv=30;
 try{const j=JSON.parse(localStorage.getItem('bl-opt')||'{}');if(j.f>=30&&j.f<=110)fov=+j.f;if(j.r>=2&&j.r<=10)rdv=+j.r;if(j.b>=50&&j.b<=150)brt=+j.b;if(j.i===0)oInfo=0;if(j.h>=0&&j.h<=2)oHud=+j.h;if(j.fl===0)oFl=0;if(j.mz>=0&&j.mz<=2)oMz=+j.mz;if([0,30,60,120].includes(j.as))asv=j.as}catch(e){}
 const saveOpt=()=>{try{localStorage.setItem('bl-opt',JSON.stringify({f:fov,r:rdv,b:brt,i:oInfo,h:oHud,fl:oFl,mz:oMz,as:asv}))}catch(e){}};
