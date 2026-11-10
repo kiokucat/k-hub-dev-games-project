@@ -410,8 +410,16 @@ body.noflash #flash{display:none}
   <div class="mcs" data-k="bgm" style="width:200px"><input type="range"><i></i><span></span></div>
   <div class="mcs" data-k="se" style="width:200px"><input type="range"><i></i><span></span></div>
   <button class="mb" id="vmute" style="margin-top:8px"></button>
+  <div class="lbl" id="sst" style="width:310px;text-align:center;margin:8px 0 0"></div>
+  <button class="mb" id="sdl"></button>
+  <button class="mb" id="sno"></button>
   <div class="sp"></div>
   <button class="mb" data-back>完了</button>
+ </div>
+ <div id="s-snd" class="gui"><h2>サウンドデータ</h2>
+  <div class="win" style="flex:none;height:auto;padding:8px 6px;text-align:center;line-height:1.7">このゲームにはサウンドが含まれています<br>ダウンロードしますか?<br><small>BGMと効果音 (約49.6MB) をこの端末に保存します<br>あとからサウンド設定で変更できます</small></div>
+  <button class="mb" id="snd-dl" style="margin-top:8px">ダウンロード (49.6MB)</button>
+  <button class="mb" id="snd-no">音無しでプレイ</button>
  </div>
  <div id="s-ctrl" class="gui"><h2>操作設定</h2>
   <div class="body">
@@ -1766,14 +1774,58 @@ let au={m:.5,s:.8,x:0};try{const j=JSON.parse(localStorage.getItem('bl-au')||'{}
 let mFd=1,sAct=0,sGest=0,hitT=0,stD=0,wasW=0,lastVy=0,uwWas=0,fT=0,cvT=20,nT=12,ptA=6;
 const saveAu=()=>{try{localStorage.setItem('bl-au',JSON.stringify(au))}catch(e){}},applyAu=()=>{bgm.volume=au.x?0:Math.max(0,Math.min(1,au.m*mFd))};
 const sTpl=new Map(),sLast={},sT={},ambA={};
+// ---- サウンドのダウンロード管理 (Cache Storage に保存。初回にダウンロード/音無しを選ぶ)
+const SND_MB='49.6',SND_CN='blockland-snd-v1';
+const SND_L=[...new Set([...Object.values(SND).flat(),...Object.values(MUS).flat(),...Object.values(AMB)])];
+let sndMode='';try{sndMode=localStorage.getItem('bl-sndmode')||''}catch(e){}
+if(sndMode!='dl'&&sndMode!='off')sndMode='';
+const sndGate=/^https?:/.test(location.protocol)&&!!window.caches;
+const sndExt=()=>!sndGate||sndMode=='dl',sndMute=()=>sndGate&&sndMode=='off';
+const sndBlob=new Map(),sndDl={on:0,done:0,total:0,fail:0,miss:0};
+const sndUrl=u=>sndBlob.get(u)||u;
+const sndFull=()=>sndBlob.size+sndDl.miss>=SND_L.length;
+const sndPct=()=>Math.min(100,Math.floor(sndDl.done/(sndDl.total||1)*100));
+const setSndMode=m=>{sndMode=m;try{localStorage.setItem('bl-sndmode',m)}catch(e){}};
+const sndType=u=>/\.ogg$/.test(u)?'audio/ogg':/\.mp3$/.test(u)?'audio/mpeg':/\.wav$/.test(u)?'audio/wav':'';
+function sndUpd(){let e=document.getElementById('sndp');
+ if(!e){e=document.createElement('div');e.id='sndp';e.style.cssText="position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:99990;pointer-events:none;font:11px/1.3 'DotGothic16',sans-serif;color:#fff;background:rgba(0,0,0,.65);border:1px solid #000;box-shadow:inset 0 0 0 1px #5a5a5a;padding:4px 10px;text-align:center;display:none";e.innerHTML='<div></div><div style=\"height:4px;margin-top:3px;background:#333\"><i style=\"display:block;height:100%;width:0;background:#6fbf5f\"></i></div>';document.body.appendChild(e)}
+ const pc=sndPct();e.style.display=sndDl.on?'block':'none';e.firstChild.textContent='サウンドをダウンロード中... '+pc+'%';e.querySelector('i').style.width=pc+'%';
+ try{renderSnd()}catch(x){}}
+// 保存済みのサウンドを blob URL にして読み込む
+async function sndLoadCache(){if(!sndGate)return;
+ try{const c=await caches.open(SND_CN),ks=await c.keys(),mp=new Map(SND_L.map(u=>[new URL(u,location.href).href,u]));
+  const L=ks.filter(r=>mp.has(r.url)&&!sndBlob.has(mp.get(r.url)));
+  for(let i=0;i<L.length;i+=24)await Promise.all(L.slice(i,i+24).map(async r=>{try{const rs=await c.match(r);if(!rs)return;const b=await rs.blob(),u=mp.get(r.url);sndBlob.set(u,URL.createObjectURL(new Blob([b],{type:sndType(u)||b.type})))}catch(e){}}))
+ }catch(e){}
+ sndUpd()}
+// 足りないサウンドをダウンロードして保存 (中断しても続きから)
+async function sndDownload(){if(!sndGate||sndDl.on)return;
+ sndDl.on=1;sndDl.fail=0;sndDl.miss=0;
+ try{const c=await caches.open(SND_CN),have=new Set((await c.keys()).map(r=>r.url));
+  const need=SND_L.filter(u=>!have.has(new URL(u,location.href).href));
+  sndDl.total=SND_L.length;sndDl.done=SND_L.length-need.length;sndUpd();
+  let i=0;
+  const worker=async()=>{while(i<need.length&&sndMode=='dl'){const u=need[i++];let ok=0,gone=0;
+   for(let t=0;t<3&&!ok&&!gone;t++){try{const r=await fetch(u);if(r.ok){await c.put(u,r);ok=1}else if(r.status==404)gone=1}catch(e){}}
+   if(ok)sndDl.done++;else if(gone){sndDl.done++;sndDl.miss++}else sndDl.fail++;
+   sndUpd()}};
+  await Promise.all(Array.from({length:6},worker));
+  await sndLoadCache();
+ }catch(e){sndDl.fail++}
+ sndDl.on=0;sndUpd()}
+async function sndDelete(){try{await caches.delete(SND_CN)}catch(e){}
+ sndBlob.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});sndBlob.clear();sTpl.clear();
+ for(const k in ambA){try{ambA[k].a.pause()}catch(e){}delete ambA[k]}
+ sndDl.done=sndDl.total=sndDl.fail=sndDl.miss=0;sndUpd()}
+if(sndGate&&sndMode=='dl')sndLoadCache().then(()=>{if(!sndFull())sndDownload()});
 const noPP=a=>{a.preservesPitch=a.mozPreservesPitch=a.webkitPreservesPitch=false};
 // 効果音テンプレート (最近使った24個だけ保持。ブラウザのメディア数上限対策)
-function sTemplate(u){let t=sTpl.get(u);if(t)sTpl.delete(u);else{t=new Audio(u);t.preload='auto';noPP(t);if(sTpl.size>=24){const k=sTpl.keys().next().value,o=sTpl.get(k);sTpl.delete(k);try{o.removeAttribute('src');o.load()}catch(e){}}}sTpl.set(u,t);return t}
+function sTemplate(u){let t=sTpl.get(u);if(t)sTpl.delete(u);else{t=new Audio(sndUrl(u));t.preload='auto';noPP(t);if(sTpl.size>=24){const k=sTpl.keys().next().value,o=sTpl.get(k);sTpl.delete(k);try{o.removeAttribute('src');o.load()}catch(e){}}}sTpl.set(u,t);return t}
 // http(s)で開いた時だけ、全効果音を先読みしてキャッシュに載せる
-function warmSfx(){if(!/^https?:/.test(location.protocol))return;const us=[...new Set(Object.values(SND).flat())];let i=0;const go=()=>{for(let n=0;n<10&&i<us.length;n++)fetch(us[i++]).catch(()=>{});if(i<us.length)setTimeout(go,120)};go()}
+function warmSfx(){if(sndGate||!/^https?:/.test(location.protocol))return;const us=[...new Set(Object.values(SND).flat())];let i=0;const go=()=>{for(let n=0;n<10&&i<us.length;n++)fetch(us[i++]).catch(()=>{});if(i<us.length)setTimeout(go,120)};go()}
 // 効果音を1回再生 (k:キー vol:音量 pit:ピッチ jit:ピッチのばらつき)
 function playS(k,vol,pit,jit){
- if(au.x||au.s<=0)return null;const L=SND[k];if(!L)return null;
+ if(au.x||au.s<=0||!sndExt())return null;const L=SND[k];if(!L)return null;
  vol=vol==null?1:vol;const now=performance.now();if(vol<=.01||sAct>=24||now-(sT[k]||0)<30)return null;sT[k]=now;
  let i=Math.random()*L.length|0;if(L.length>1&&i==sLast[k])i=(i+1)%L.length;sLast[k]=i;
  try{const a=sTemplate(L[i]).cloneNode();a.volume=Math.min(1,au.s*vol);noPP(a);
@@ -1821,7 +1873,7 @@ function eatSnd(){playS('eat',.8,1);setTimeout(()=>playS('eat',.8,1),210);setTim
 const atkSnd=d=>playS(!gnd&&v.y<-1&&!fly?'crit':d>=4?'atkS':'atkW',.9,1);
 function mobSnd(m,kind,vol){const k='m'+m.t+'.'+kind;if(!SND[k])return;playAt(k,m.x,m.y,m.z,vol==null?1:vol,1,TY[m.t].hs?26:18)}
 // 環境音ループ (水中・ネザー)
-function ambLoop(k,tgt,dt){let o=ambA[k];if(!o){if(tgt<=0)return;const a=new Audio(AMB[k]);a.loop=true;a.preload='auto';o=ambA[k]={a,v:0}}
+function ambLoop(k,tgt,dt){if(!sndExt())tgt=0;let o=ambA[k];if(!o){if(tgt<=0)return;const a=new Audio(sndUrl(AMB[k]));a.loop=true;a.preload='auto';o=ambA[k]={a,v:0}}
  const sp=dt*(tgt>o.v?1:.7);o.v+=Math.max(-sp,Math.min(sp,tgt-o.v));o.a.volume=au.x?0:Math.min(1,o.v*au.s);
  if(o.v>.005&&!au.x){if(o.a.paused){const q=o.a.play();if(q&&q.catch)q.catch(()=>{})}}else if(!o.a.paused)o.a.pause()}
 function ambTick(dt,uw,ul){
@@ -1836,13 +1888,13 @@ const mQ={ctx:'',on:0,next:0,last:{}};
 const mCtxNow=()=>!world?'menu':dim==1?'nether':dim==2?'end':cre?'creative':'game';
 function mStart(c){const L=c=='creative'?MUS.creative.concat(MUS.game):MUS[c];if(!L||!L.length)return;
  let u=L[Math.random()*L.length|0];if(L.length>1&&u==mQ.last[c])u=L[(L.indexOf(u)+1)%L.length];mQ.last[c]=u;
- mQ.ctx=c;mQ.on=1;mFd=1;bgm.src=u;bgm.loop=false;applyAu();const q=bgm.play();if(q&&q.catch)q.catch(()=>{mQ.on=0;mQ.ctx='';mQ.next=0})}
+ mQ.ctx=c;mQ.on=1;mFd=1;bgm.src=sndUrl(u);bgm.loop=false;applyAu();const q=bgm.play();if(q&&q.catch)q.catch(()=>{mQ.on=0;mQ.ctx='';mQ.next=0})}
 bgm.addEventListener('ended',()=>{mQ.on=0;const c=mQ.ctx;mQ.next=performance.now()+(c=='menu'?4000:c=='game'||c=='creative'?12000+Math.random()*30000:8000+Math.random()*16000)});
 bgm.addEventListener('error',()=>{mQ.on=0;mQ.next=performance.now()+8000});
 function musicTick(){try{
  const c=mCtxNow(),now=performance.now();
  if(!world||paused||dead)for(const k in ambA)ambLoop(k,0,.25);
- if(au.x||au.m<=0||!sGest||document.hidden){if(!bgm.paused)bgm.pause();return}
+ if(au.x||au.m<=0||!sGest||document.hidden||!sndExt()){if(!bgm.paused)bgm.pause();return}
  if(mQ.on&&mQ.ctx!=c){mFd=Math.max(0,mFd-.18);applyAu();if(mFd<=0){bgm.pause();mQ.on=0;mQ.next=0;mStart(c)}return}
  if(mQ.on){if(bgm.paused&&mFd>0){const q=bgm.play();if(q&&q.catch)q.catch(()=>{})}else if(mFd<1){mFd=Math.min(1,mFd+.18);applyAu()}return}
  if(mQ.ctx!=c||!mQ.next||now>=mQ.next){mQ.next=0;mStart(c)}
@@ -1853,7 +1905,7 @@ addEventListener('pointerdown',gestF,true);addEventListener('keydown',gestF,true
 function selSnd(){playS('click',.9,1,0)}
 function sfx(r,g){playS('hurt',Math.min(1,g||1),r||1)}
 applyAu();
-let ac=null;function tone(f0,f1,d,g,ty){if(au.x||au.s<=0)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime,o=ac.createOscillator(),gn=ac.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+d);gn.gain.setValueAtTime(Math.max(.001,g*au.s),t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn);gn.connect(ac.destination);o.start(t);o.stop(t+d)}catch(e){}}
+let ac=null;function tone(f0,f1,d,g,ty){if(au.x||au.s<=0||sndMute())return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime,o=ac.createOscillator(),gn=ac.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+d);gn.gain.setValueAtTime(Math.max(.001,g*au.s),t);gn.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(gn);gn.connect(ac.destination);o.start(t);o.stop(t+d)}catch(e){}}
 // ---- noise
 const hx=(s,x,y,z)=>{let h=s^Math.imul(x,374761393)^Math.imul(y,668265263)^Math.imul(z,2147483647);h=Math.imul(h^h>>>13,1274126177);h=Math.imul(h^h>>>15,2246822519);h^=h>>>16;return(h>>>0)/4294967296};
 let S=0;const hh=(x,y,z)=>hx(S,x,y,z),rnd=(x,y,k)=>hx(12345,x,y,k);
@@ -2696,7 +2748,7 @@ function update(dt){tickStats(dt);
  $('#prog i').style.width=Math.min(100,Math.max(prog,bowC,xbC/1.1)*100)+'%';
  if((infT+=dt)>.15&&!(infT=0))$('#info').innerHTML=`<span class="material-symbols-outlined">${cre?'flight':'forest'}</span> ${cre?'クリエイティブ':'サバイバル'}${fly?' (飛行中)':''}<br><span class="material-symbols-outlined">casino</span> シード: ${seedTxt.replace(/</g,'&lt;')}<br><span class="material-symbols-outlined">location_on</span> ${DIMN[dim]} ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}<br><span class="material-symbols-outlined">${night?'dark_mode':'light_mode'}</span> ${String(Math.floor((6+tod*24)%24)).padStart(2,'0')}:${String(Math.floor(tod*1440%60)).padStart(2,'0')}${cre?'':'<br><span class="material-symbols-outlined">swords</span> 手持ち: '+(slots[sel]?idesc(slots[sel].b):'素手')+' / 防御 '+defTot()}<br><span class="material-symbols-outlined">arrow_upward</span> 矢: ${cnt(NI.arw)}`}
 // ---- start
-function start(sv){reqPersist();SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wname=sv?(sv.name||'ワールド'):($('#wname').value.trim()||'新規ワールド');ADV={};ST=newST();thumb=sv?(sv.th||''):'';crt=sv?(sv.c||sv.t):Date.now();lpx=null;thT=2;$('#toasts').innerHTML='';
+function start0(sv){reqPersist();SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wname=sv?(sv.name||'ワールド'):($('#wname').value.trim()||'新規ワールド');ADV={};ST=newST();thumb=sv?(sv.th||''):'';crt=sv?(sv.c||sv.t):Date.now();lpx=null;thT=2;$('#toasts').innerHTML='';
  let s=sv?sv.seed:$('#seed').value.trim();if(!s)s=String(Math.floor(Math.random()*1e9));$('#seed').value=s;seedTxt=s;S=hs(s);
  dimChunks.forEach(m=>{m.forEach(dispose);m.clear()});chunks=dimChunks[0];dim=0;portals=[[],[],[]];ptT=ptWait=0;lcx=1e9;
  for(let a=-3;a<=3;a++)for(let b=-3;b<=3;b++)genAny(a,b);
@@ -2711,6 +2763,7 @@ function start(sv){reqPersist();SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wnam
  $('#hud').hidden=false;$('#menu').hidden=true;$('#dead').hidden=true;paused=0;resetIn();renderHot();renderHp();renderXp();lockPtr();
  if(!cre&&ws.animals)for(let k=0;k<6;k++){const q=spawnPos(0);if(q)spawnHerd(q)}
  playBgm();setLoading(1);tip(cre?'ダブルジャンプで飛行':'木や地面を壊して素材を集めよう');if(!sv)saveNow()}
+function start(sv){sndEnsure(()=>start0(sv))}
 $('#go').onclick=()=>start();
 $('#rnd').onclick=()=>$('#seed').value=String(Math.floor(Math.random()*1e9));
 $('#invc').onclick=tInv;
@@ -2813,7 +2866,7 @@ const newSplash=()=>{$('#splash').textContent=SPL[Math.floor(Math.random()*SPL.l
 function showScr(n,back){if(!back&&scr&&scr!=n)nav.push(scr);scr=n;rebind=null;
  document.querySelectorAll('#menu .gui').forEach(g=>g.classList.toggle('on',g.id=='s-'+n));
  MENU.classList.toggle('inw',!!world);MENU.classList.toggle('t',!world&&n=='title');MENU.classList.toggle('d',!world&&n!='title');
- if(n=='worlds')renderSaves();else if(n=='adv')renderAdv();else if(n=='sts')renderSts();else if(n=='ctrl'||n=='opts'||n=='video'||n=='sound')renderSet();else if(n=='help')refreshLabels();else if(n=='title')newSplash();if(n=='create')renderRows($('#cwrows'),nw,1);if(n=='game')renderRows($('#gsrows'),ws,0);requestAnimationFrame(fitGui)}
+ if(n=='worlds')renderSaves();else if(n=='adv')renderAdv();else if(n=='sts')renderSts();else if(n=='ctrl'||n=='opts'||n=='video'||n=='sound')renderSet();else if(n=='snd')renderSnd();else if(n=='help')refreshLabels();else if(n=='title')newSplash();if(n=='create')renderRows($('#cwrows'),nw,1);if(n=='game')renderRows($('#gsrows'),ws,0);requestAnimationFrame(fitGui)}
 const menuRoot=n=>{nav=[];scr='';showScr(n)};
 function menuBack(){if(nav.length)showScr(nav.pop(),true);else if(world&&!dead&&scr=='pause')pause(0)}
 MENU.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;selSnd();
@@ -2907,10 +2960,25 @@ function syncS(){document.querySelectorAll('.mcs').forEach(el=>{const d=SLD[el.d
 document.querySelectorAll('.mcs').forEach(el=>{const d=SLD[el.dataset.k],i=el.querySelector('input');i.oninput=()=>{d.set(+i.value);syncS()};i.onchange=()=>{if(el.dataset.k=='se')sfx(1,1)}});
 function renderSet(){syncS();$('#kl').innerHTML=Object.keys(KS).map(a=>`<div class="kk"><span>${KS[a]}</span><button class="mb sm${rebind==a?' on':''}" data-a="${a}">${rebind==a?'> <':esc(kn(KB[a]))}</button></div>`).join('');
  [...$('#ctl').children].forEach(x=>x.classList.toggle('on',+x.dataset.c==mob));
- $('#invy').textContent='視点の上下を反転: '+(invY?'オン':'オフ');$('#vmute').textContent='音を消す: '+(au.x?'オン':'オフ');$('#thm').textContent='インベントリの配色: '+(root.dataset.theme=='dark'?'ダーク':'ライト');const SZ=['小','標準','大'];$('#oinfo').textContent='座標などの情報: '+(oInfo?'表示':'非表示');$('#ohud').textContent='ホットバーの大きさ: '+SZ[oHud];$('#oflash').textContent='被ダメージの赤い演出: '+(oFl?'オン':'オフ');$('#omz').textContent='モバイルボタン: '+SZ[oMz];$('#oas').textContent='自動セーブ: '+(asv?asv+'秒ごと':'オフ');$('#ogame').disabled=!world;refreshLabels()}
+ $('#invy').textContent='視点の上下を反転: '+(invY?'オン':'オフ');$('#vmute').textContent='音を消す: '+(au.x?'オン':'オフ');$('#thm').textContent='インベントリの配色: '+(root.dataset.theme=='dark'?'ダーク':'ライト');const SZ=['小','標準','大'];$('#oinfo').textContent='座標などの情報: '+(oInfo?'表示':'非表示');$('#ohud').textContent='ホットバーの大きさ: '+SZ[oHud];$('#oflash').textContent='被ダメージの赤い演出: '+(oFl?'オン':'オフ');$('#omz').textContent='モバイルボタン: '+SZ[oMz];$('#oas').textContent='自動セーブ: '+(asv?asv+'秒ごと':'オフ');$('#ogame').disabled=!world;renderSnd();refreshLabels()}
 $('#kl').onclick=e=>{const b=e.target.closest('button');if(b){rebind=b.dataset.a;$('#kmsg').textContent='';renderSet()}};
 $('#invy').onclick=()=>{invY=invY?0:1;saveKB();renderSet()};
 $('#vmute').onclick=()=>{au.x=au.x?0:1;applyAu();saveAu();if(!au.x&&world&&bgm.paused)playBgm();renderSet()};
+// --- サウンドのダウンロード設定 UI
+function renderSnd(){const a=$('#sdl'),b=$('#sno'),t=$('#sst');if(!a||!b||!t)return;
+ const sh=sndGate?'':'none';a.style.display=b.style.display=t.style.display=sh;if(!sndGate)return;
+ t.textContent=sndDl.on?'ダウンロード中... '+sndPct()+'%':sndMode=='off'?'サウンド: 音無しでプレイ中':sndFull()?'サウンド: ダウンロード済み':sndDl.fail?'サウンド: 一部のダウンロードに失敗しました':'サウンド: 未ダウンロード';
+ a.disabled=!!sndDl.on;
+ a.textContent=sndDl.on?'ダウンロード中... '+sndPct()+'%':sndFull()?'ダウンロード済みサウンドを削除':sndDl.fail?'もう一度ダウンロード':'サウンドをダウンロード ('+SND_MB+'MB)';
+ b.textContent='音無しでプレイ: '+(sndMode=='off'?'オン':'オフ')}
+$('#sdl').onclick=async()=>{if(sndDl.on)return;
+ if(sndFull()){await sndDelete();setSndMode('off')}else{setSndMode('dl');sndDownload()}renderSnd()};
+$('#sno').onclick=()=>{if(sndMode=='off'){setSndMode('dl');sndDownload()}else setSndMode('off');renderSnd()};
+// ゲーム開始時: まだ選んでいなければ確認画面を出す
+let sndAsk=null;
+function sndEnsure(cb){if(!sndGate||sndMode){cb();return}sndAsk=cb;showScr('snd')}
+function sndPick(m){setSndMode(m);if(m=='dl')sndDownload();const cb=sndAsk;sndAsk=null;menuBack();if(cb)cb()}
+$('#snd-dl').onclick=()=>sndPick('dl');$('#snd-no').onclick=()=>sndPick('off');
 $('#thm').onclick=()=>{setTh(root.dataset.theme=='dark'?'light':'dark');renderSet()};
 const cyc=f=>{f();saveOpt();applyOpt();renderSet()};
 $('#oinfo').onclick=()=>cyc(()=>oInfo=oInfo?0:1);$('#ohud').onclick=()=>cyc(()=>oHud=(oHud+1)%3);$('#oflash').onclick=()=>cyc(()=>oFl=oFl?0:1);$('#omz').onclick=()=>cyc(()=>oMz=(oMz+1)%3);
@@ -2932,7 +3000,7 @@ const newST=()=>({time:0,walk:0,sprint:0,fly:0,jump:0,broke:0,placed:0,kills:0,d
 let ADV={},ST=newST(),wname='新規ワールド',thumb='',crt=0,lpx=null,lpz=0,lGnd=1,chT=0,thT=3;
 const TF={task:'進捗を達成した!',goal:'目標を達成した!',challenge:'挑戦を達成した!'};
 const advA=new Audio($('#advsnd').textContent.trim());advA.preload='auto';
-function advSnd(){if(au.x||au.s<=0)return;try{const a=advA.cloneNode();a.volume=Math.min(1,au.s);const q=a.play();if(q&&q.catch)q.catch(()=>{})}catch(e){}}
+function advSnd(){if(au.x||au.s<=0||sndMute())return;try{const a=advA.cloneNode();a.volume=Math.min(1,au.s);const q=a.play();if(q&&q.catch)q.catch(()=>{})}catch(e){}}
 function adv(id){const a=ADS[id];if(!a||ADV[id]||!world)return;ADV[id]=Date.now();
  const e=document.createElement('div');e.className='toast '+a.frame;e.innerHTML=`<div class="tf">${iconF(a)}</div><div class="tt"><small>${TF[a.frame]||TF.task}</small><b>${esc(advName(a))}</b></div>`;
  $('#toasts').appendChild(e);setTimeout(()=>e.remove(),2000);advSnd()}
