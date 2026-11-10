@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /functions/
+Disallow: /bell_maker.html
+
+Sitemap: https://k-hub.pages.dev/sitemap.xml
