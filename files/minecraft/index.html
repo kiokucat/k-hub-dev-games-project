@@ -5,7 +5,7 @@
 【開発メモ / 必須】更新するたびに必ずバージョンを上げること。
   変更する場所: ① JS の const VER ② この <title> ③ JS の PATCH 配列の先頭に今回の変更点を追加 ④ ファイル名の番号 (blockcraft_vN.html)
 -->
-<title>BLOCKLAND v7.6</title>
+<title>BLOCKLAND v7.7</title>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Material+Symbols+Outlined" rel="stylesheet">
 <style>
 :root{--bg:#f1efe6;--pn:#fff;--tx:#1b1d1f;--mu:#666b6f;--bd:#cfcbbd;--ac:#3b7f36;--at:#fff;color-scheme:light}
@@ -2539,7 +2539,7 @@ function shSunSet(tod){const th=tod*6.2832,s=Math.sin(th),c=Math.cos(th),t=.4,sm
  if(s>=0)shS.col.set(1.3-.24*k,.85+.17*k,.6+.35*k);else shS.col.set(.82,.93,1.16)}
 const dMat=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});
 dMat.onBeforeCompile=sh=>{sh.uniforms.uShK=uSh.uShK;sh.vertexShader=sh.vertexShader.replace(/void\s+main\s*\(\s*\)\s*\{/,'uniform float uShK;\nvec2 shDist(vec2 p){float r=length(p);return p/(1.+(r-1.)*uShK/(1.+r));}\nvoid main(){').replace('#include <project_vertex>','#include <project_vertex>\ngl_Position.xy=shDist(gl_Position.xy);')};
-function shMark(){scene.traverse(o=>{if(o.isMesh&&!o.castShadow&&o.material!==matT&&o.parent!==sky){o.castShadow=true;o.customDepthMaterial=dMat}})}
+function shMark(){scene.traverse(o=>{if(o.isMesh&&!o.castShadow&&!o.userData.nsh&&o.material!==matT&&o.parent!==sky){o.castShadow=true;o.customDepthMaterial=dMat}})}
 const shBl=(src,dst,dx,dy,th)=>{blurMat.uniforms.tC.value=src.texture;blurMat.uniforms.uDir.value.set(dx*shBp.x,dy*shBp.y);blurMat.uniforms.uTh.value=th;pq.material=blurMat;ren.setRenderTarget(dst);ren.render(psc,pcam)};
 function shRender(){
  if(!(shd>0&&shRT&&!shBad)){mbPrev=0;ren.render(scene,cam);return}
@@ -2974,6 +2974,17 @@ function spawnPos(hs){for(let k=0;k<14;k++){const a=Math.random()*6.283,r=(hs?14
 function spawnHerd(q){const t=2+Math.floor(Math.random()*4),n=2+Math.floor(Math.random()*3);addMob(t,q[0],q[1],q[2]);
  for(let i=1;i<n;i++){const x=Math.floor(q[0])+Math.floor(Math.random()*7)-3,z=Math.floor(q[2])+Math.floor(Math.random()*7)-3,y=Math.floor(q[1]);
   if(!chunks.has(K(x>>4,z>>4)))continue;if(!solid(x,y-1,z)||solid(x,y,z)||solid(x,y+1,z)||get(x,y-1,z)==MAGMA)continue;addMob(t,x+.5,y+.01,z+.5)}}
+// クリティカルヒットのエフェクト (黄色・白のスパークが飛び散る + 小さな衝撃リング)
+const CRP=[],crG=new THREE.BoxGeometry(1,1,1),crC=[0xffe36a,0xffffff,0xffc83a,0xfff6b0];
+function critFx(m){const T=TY[m.t]||{},cy=m.y+(T.h||1.6)*.6;
+ for(let i=0;i<18;i++){const mt=new THREE.MeshBasicMaterial({color:crC[i&3],transparent:true,fog:false,depthWrite:false}),o=new THREE.Mesh(crG,mt),s=.07+Math.random()*.09;o.scale.set(s,s,s);o.userData.nsh=1;o.position.set(m.x+(Math.random()-.5)*.3,cy,m.z+(Math.random()-.5)*.3);scene.add(o);
+  const a=Math.random()*6.283,u=Math.random()*2-.6,sp=2.2+Math.random()*2.6,r=Math.sqrt(Math.max(0,1-u*u));
+  CRP.push({o,vx:Math.cos(a)*r*sp,vy:u*sp+1,vz:Math.sin(a)*r*sp,t:0,L:.45+Math.random()*.25,s})}
+ const rm=new THREE.MeshBasicMaterial({color:0xfff2a0,transparent:true,fog:false,depthWrite:false,side:THREE.DoubleSide}),rg=new THREE.Mesh(new THREE.RingGeometry(.35,.5,20),rm);rg.userData.nsh=1;rg.userData.ring=1;rg.position.set(m.x,cy,m.z);rg.lookAt(cam.position);scene.add(rg);CRP.push({o:rg,vx:0,vy:0,vz:0,t:0,L:.25,s:1})}
+setInterval(()=>{for(let i=CRP.length-1;i>=0;i--){const c=CRP[i],d=.016;c.t+=d;const k=c.t/c.L;
+  if(k>=1){scene.remove(c.o);c.o.material.dispose();if(c.o.userData.ring)c.o.geometry.dispose();CRP.splice(i,1);continue}
+  if(c.o.userData.ring){const s=1+k*2.2;c.o.scale.set(s,s,s);c.o.material.opacity=1-k;continue}
+  c.vy-=9*d;c.o.position.x+=c.vx*d;c.o.position.y+=c.vy*d;c.o.position.z+=c.vz*d;const s=c.s*(1-k*.7);c.o.scale.set(s,s,s);c.o.material.opacity=1-k*k}},16);
 function hurtMob(m,dmg,kx,kz){const T=TY[m.t];ST.dmgD+=dmg;m.hp-=dmg;m.hf=.3;m.kx=kx;m.kz=kz;m.vy=Math.max(m.vy,4);if(m.hp>0)mobSnd(m,'hurt');
  if(!T.hs){m.pn=4;m.pa=Math.atan2(m.x-p.x,m.z-p.z)}
  if(m.hp<=0)mobDie(m)}
@@ -3243,7 +3254,7 @@ function update(dt){tickStats(dt);cartsUpdate(dt);cmpTick();
  else if(dim==2){uSkC.value.set(.34,.26,.5);uAm.value.set(.08,.06,.11);dkV=1;sunS.visible=moonS.visible=false;stM.opacity=1;if(!uw&&!ul){skyC.setHex(0x0b0614);scene.fog.color.copy(skyC);scene.background.copy(skyC);scene.fog.near=24;scene.fog.far=130}}
  updPortal(dt);
  tickFx(dt);if(asv&&(asT+=dt)>asv){asT=0;saveNow()}if(mR&&!mRp)mrE=1;if(!mR)mrE=0;mRp=mR;acd-=dt;eatCd-=dt;const tm=!cre&&mL?aimMob():null,tcart=mL?aimCart():null;if(tcart&&acd<=0){acd=.5;breakCart(tcart)}
- if(tm&&acd<=0){acd=.5;const wi=hI();const dmg=!wi?1:wi.k=='sw'?SW[wi.t]:wi.k=='ax'?Math.max(2,SW[wi.t]-1):Math.max(1.5,SW[wi.t]*.5);wear(wi?(wi.k=='sw'?1:2):0);const dd=Math.hypot(tm.x-p.x,tm.z-p.z)||1;atkSnd(dmg);hurtMob(tm,dmg+(fx.str>0?3:0),(tm.x-p.x)/dd*6,(tm.z-p.z)/dd*6)}
+ if(tm&&acd<=0){acd=.5;const wi=hI();const dmg=!wi?1:wi.k=='sw'?SW[wi.t]:wi.k=='ax'?Math.max(2,SW[wi.t]-1):Math.max(1.5,SW[wi.t]*.5);wear(wi?(wi.k=='sw'?1:2):0);const dd=Math.hypot(tm.x-p.x,tm.z-p.z)||1;atkSnd(dmg);if(!gnd&&v.y<-1&&!fly)critFx(tm);hurtMob(tm,dmg+(fx.str>0?3:0),(tm.x-p.x)/dd*6,(tm.z-p.z)/dd*6)}
  updBow(dt);updMobs(dt);updDrops(dt);
  setHeld();hw=mL&&!cre||mL&&cre?hw+dt*11:0;{const sw=Math.abs(Math.sin(hw)),mv2=Math.min(1,Math.hypot(v.x,v.z)/4);if(hk){hand.position.set(.44-sw*.1-bowC*.08,-.44+Math.sin(gt*9)*.014*mv2-sw*.06,-.85-sw*.12+bowC*.1);hand.rotation.set(-sw*.7,0,sw*.35)}else{hand.position.set(.46,-.5+Math.sin(gt*9)*.014*mv2,-.22);hand.rotation.set(.12-sw*.4,.22+sw*.45,-.05-sw*.1)}}
  const h=ray();hl.visible=!!h;cool-=dt;
@@ -3266,7 +3277,7 @@ function start0(sv){reqPersist();SAVED=sv?sv.ch:null;wid=sv?sv.id:Date.now();wna
   if(y>SEA&&b!=WATER&&b!=9&&b!=7&&b!=39&&b!=41&&b!=44&&b!=MAGMA&&!get(x,y+1,z)&&!get(x,y+2,z)){sp.x=x+.5;sp.y=y+1.01;sp.z=z+.5;f=1}}
  if(!f){const{h}=col(0,0);sp.x=sp.z=.5;sp.y=Math.max(h,SEA)+1.01}}
  Object.assign(p,sp);v.x=v.y=v.z=0;
- yaw=0;pitch=-.15;fly=0;falling=0;hp=20;dead=0;burn=0;hg=20;hgq=10;stv=0;eatCd=0;slots.fill(null);held=null;gt=DAYLEN*.1;dkV=0;wasN=0;arrows.slice().forEach(a=>rmA(a,0));clearDrops();bowC=xbC=xbH=0;ug=ugT=0;mobs.forEach(rmMob);mobs.length=0;clearCarts();pendC=[];ride=null;lastDeath=null;eq.fill(null);hk=null;spT=3;xp=0;$('#inv').hidden=true;cg.fill(null);tbl=0;ws=Object.assign({},WSD,sv?(sv.ws||{}):nw);cre=sv?+sv.cre:+nw.mode;ws.mode=cre;fx={};fxr=0;showFx();ms=0;
+ yaw=0;pitch=-.15;fly=0;falling=0;hp=20;dead=0;burn=0;hg=20;hgq=10;stv=0;eatCd=0;slots.fill(null);held=null;gt=DAYLEN*.1;dkV=0;wasN=0;arrows.slice().forEach(a=>rmA(a,0));clearDrops();bowC=xbC=xbH=0;ug=ugT=0;mobs.forEach(rmMob);mobs.length=0;clearCarts();pendC=[];ride=null;lastDeath=null;eq.fill(null);hk=null;spT=3;xp=0;$('#inv').hidden=true;cg.fill(null);tbl=0;ws=Object.assign({},WSD,sv?(sv.ws||{}):nw);if(!ws.km){ws.km=1;ws.keep=1}cre=sv?+sv.cre:+nw.mode;ws.mode=cre;fx={};fxr=0;showFx();ms=0;
  if(cre)[1,2,3,8,7,9,11,D1,TB].forEach((b,i)=>slots[i]={b,n:1});if(!sv&&!cre&&ws.kit)giveKit();sel=0;world=1;if(sv)applySave(sv);
  $('#hud').hidden=false;$('#menu').hidden=true;$('#dead').hidden=true;paused=0;resetIn();renderHot();renderHp();renderXp();lockPtr();
  if(!cre&&ws.animals)for(let k=0;k<6;k++){const q=spawnPos(0);if(q)spawnHerd(q)}
@@ -3336,7 +3347,7 @@ function refreshLabels(){
 // ===================== UI v5: screens / worlds / options / advancements / stats =====================
 const KS={f:'前進',b:'後退',l:'左移動',r:'右移動',jp:'ジャンプ/上昇',sp:'ダッシュ/降下',brk:'破壊・攻撃',pl:'設置・食べる',inv:'インベントリ',cr:'クラフト',map:'マップ',eat:'食べる',dr:'アイテムを捨てる'};
 let scr='',nav=[],selW=null,wl=[],wq='',atab='story',advSel=null;
-const WSD={mode:0,diff:2,mobs:1,animals:2,day:0,hunger:0,fall:0,kit:0,keep:0};
+const WSD={mode:0,diff:2,mobs:1,animals:2,day:0,hunger:0,fall:0,kit:0,keep:1,km:1};
 const WSC=[['mode','ゲームモード',['サバイバル','クリエイティブ']],['diff','難易度',['ピース','イージー','ノーマル','ハード']],['mobs','敵の湧き量',['なし','少なめ','ふつう','多め']],['animals','動物の湧き量',['なし','少なめ','ふつう','多め']],['day','昼夜',['通常','常に昼','常に夜','時間停止']],['hunger','空腹',['あり','なし']],['fall','落下ダメージ',['あり','なし']],['keep','インベントリキープ',['なし','あり']],['kit','初期アイテム',['なし','スターターセット'],1]];
 let nw=Object.assign({},WSD),ws=Object.assign({},WSD);
 const dmul=()=>[0,.5,1,1.5][ws.diff];
@@ -3621,7 +3632,8 @@ bar.addEventListener('pointerdown',e=>{if(!mob)return;const i=[...bar.children].
 
 // ===================== v7 =====================
 // 【開発メモ】更新するたびに必ずバージョンを上げること (VER / <title> / PATCH の先頭 / ファイル名)
-const VER='v7.6',PATCH=[
+const VER='v7.7',PATCH=[
+ ['v7.7','2026-11-12',['クリティカルヒット (落下中の攻撃) のときに、黄色いスパークと衝撃リングのエフェクトを追加']],
  ['v7.6','2026-11-12',['影シェーダーをオンにすると画面に横線・縦線の縞模様が出るバグを修正 (AOの深度サンプリング位置のずれと、斜めの面での自己遮蔽が原因)','ビデオ設定に「モーションブラー」(0〜100%) を追加。カメラの動きに合わせてぼかす。影シェーダーがオンのときに有効']],
  ['v7.5','2026-11-12',['影シェーダーを最適化・強化 (E-LITE shaders の方式を参考): シャドウマップの歪み補正でプレイヤー付近の解像度を上げつつ範囲を拡大 / 距離に応じた法線バイアス / 円形の影フェードアウト','影の軽量化: 影の判定が不要な場所 (地下・夜・光に背を向けた面) をスキップ、判定が一様な場所は5サンプルで打ち切り、シャドウマップの再描画を移動量・動くものの有無に応じて間引き','経験値レベルが0のときは数字を非表示','ホットバーの右側の余白を解消 (ステータス行と幅をそろえた)','溶岩のテクスチャを新しくした (つなぎ目のないノイズで、暗い赤〜明るい黄色のグラデーション)']],
  ['v7.4','2026-11-12',['画面中央のメッセージ(アイテム名など)がHP・満腹度バーに重ならないよう、常にホットバー群の上に表示','視点切り替えを追加 (Pキー / モバイルは左上のカメラボタン): 一人称 → 三人称(背面) → 三人称(前面)。三人称ではプレイヤーのモデルを表示','敵モブを追加: クリーパー(接近すると点滅して爆発) / エンダーマン(テレポートして追ってくる) / ウィザースケルトン(ネザー)','ネザーの要塞を追加 (ネザーレンガの回廊・中央広間・塔。ウィザースケルトンが出現)','エンドにエンドシティの塔を追加 (外周の島。紫のコンクリートの塔、内部に階段。エンドではエンダーマンが出現)']],
