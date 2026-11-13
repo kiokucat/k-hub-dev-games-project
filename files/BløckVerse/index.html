@@ -4,8 +4,14 @@
 <!--
 【開発メモ / 必須】更新するたびに必ずバージョンを上げること。
   変更する場所: ① JS の const VER ② この <title> ③ JS の PATCH 配列の先頭に今回の変更点を追加 ④ ファイル名の番号 (blockverse_vN.html)
+【ワールドテンプレート】
+  「ワールド新規作成」→ 先頭に「新規ワールドを作成」、その下にテンプレート一覧が出る。テンプレートは HTML に埋め込み済み (<script type="application/json" id="wtpl-data">)。
+  追加するときはこの JSON 配列に {name, desc, icon(Material Symbols名), mode(0/1), seed, ws:{diff,mobs,animals,day,keep,kit,...}} を足す。設定のみのテンプレートは作成画面が開く。
+  建築済みワールドを入れたいときは、書き出した .blockland / .json ファイルを base64 にして "world" に入れる (選ぶとコピーが作られてそのまま始まる)。新しいワールド設定 (WSC) を増やしたら、テンプレートの ws も見直すこと。
+【光源のルール】
+  ブロックの発光レベルは EL に定義し、レベル N の光源は N ブロック先まで届く (光源15 = 15ブロック、1ブロックごとに1下がる)。新しい光源ブロックを足すときは EL に登録し、この距離の仕様を変えないこと。
 -->
-<title>BløckVerse release v5</title>
+<title>BløckVerse release v6.1</title>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Material+Symbols+Outlined" rel="stylesheet">
 <style>
 :root{--bg:#f1efe6;--pn:#fff;--tx:#1b1d1f;--mu:#666b6f;--bd:#cfcbbd;--ac:#3b7f36;--at:#fff;color-scheme:light}
@@ -276,6 +282,7 @@ body.mob #chl{bottom:calc(150px + env(safe-area-inset-bottom));width:min(60vw,42
 .wi:hover{background:#ffffff18}.wi.on{border-color:#fff;background:#ffffff22}
 .wi img{width:32px;height:32px;flex:none;image-rendering:auto;background:#000}
 .wi div{display:grid;gap:1px;min-width:0}.wi b{font-weight:400;font-size:8px}.wi small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wi .tpi{font-size:28px;width:32px;height:32px;line-height:32px;overflow:hidden;white-space:nowrap;text-align:center;flex:none}#tlist .wi small{white-space:normal}
 .em{margin:18px 0;text-align:center;color:#a8a8a8}
 #s-worlds .mi{margin-bottom:4px}
 /* options */
@@ -567,6 +574,19 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
   <div class="gr"><button class="mb q" id="wexp" disabled>書き出し</button><button class="mb q" id="wexpall">全て書き出し</button><button class="mb q" id="wimp">読み込み</button></div>
   <small id="wmsg" style="margin-top:3px;flex:none;text-align:center;max-width:300px;white-space:normal;min-height:9px"></small>
   <input type="file" id="wfile" accept=".blockland,.json,application/json,application/gzip" multiple hidden>
+ </div>
+ <div id="s-wtpl" class="gui"><h2>ワールドを作る</h2>
+  <button class="mb" id="tnew">新規ワールドを作成</button>
+  <div class="lbl" style="margin-top:6px">ワールドテンプレート</div>
+  <div class="win wl" id="tlist"></div>
+  <small id="tmsg" style="margin-top:3px;flex:none;text-align:center;max-width:300px;white-space:normal;min-height:9px"></small>
+  <div class="ft"><button class="mb" data-back>戻る</button></div>
+  <script type="application/json" id="wtpl-data">[
+ {"name":"はじめてのサバイバル","desc":"ピースフル・スターターセット付き。まずは気軽に遊びたい人向け","icon":"spa","mode":0,"ws":{"diff":0,"mobs":0,"animals":3,"kit":1,"keep":1}},
+ {"name":"クリエイティブ建築","desc":"クリエイティブ・常に昼・敵も動物もいない建築向け設定","icon":"construction","mode":1,"ws":{"mode":1,"mobs":0,"animals":0,"day":1}},
+ {"name":"冒険・探検","desc":"ノーマル難易度・動物多め・スターターセット付き","icon":"explore","mode":0,"ws":{"diff":2,"mobs":2,"animals":3,"kit":1}},
+ {"name":"ハードサバイバル","desc":"ハード・敵多め・死ぬと持ち物を失う本格サバイバル","icon":"skull","mode":0,"ws":{"diff":3,"mobs":3,"animals":2,"keep":0,"creeper":1,"mdmg":1}}
+]</script>
  </div>
  <div id="s-create" class="gui"><h2>ワールドを新規作成</h2>
   <div class="body">
@@ -2219,6 +2239,7 @@ d('模様入りのクォーツ','#ece6df',1,'S');d('クォーツの柱','#ece6df
 d('模様入りの砂岩','#d8cb9b',1,'S',{t:'#dbd0a0',tp:'n',b:'#dbd0a0',bp:'n'});
 d('銅ブロック','#c4704a',3,'m');d('緑青の銅ブロック','#4fa58a',3,'m');d('プリズマリンレンガ','#4f9f8f',1.5,'b',{m:'#2f6f64'});
 const BEDH0=NM.length;BCOL.forEach(a=>d(a[0]+'のベッド(頭側)',a[1],.2,'B',{t:a[1],tp:'N',b:'#a8854f',bp:'p',tr:1}));
+const PRL=NM.length;['パワードレール','パワードレール','パワードレール(曲)','パワードレール(曲)','パワードレール(曲)','パワードレール(曲)','パワードレール(坂)','パワードレール(坂)','パワードレール(坂)','パワードレール(坂)'].forEach((n,i)=>d(n,'#c9a63a',.7,'K',{tr:1,sh:i,pw:1}));
 const AP=NM.indexOf('リンゴ'),MEAT=NM.indexOf('腐った肉'),FOOD={[AP]:4,[MEAT]:4},NB=NM.length,WATER=10,MAGMA=23,DR={1:2,3:4,11:0,13:0,23:0};
 const ID=n=>NM.indexOf(n),D1=ID('ドア'),D2=ID('ドア(上)'),D3=ID('ドア(開)'),D4=ID('ドア(開・上)'),TB=ID('作業台'),DS=ID('深層岩'),DK={[D1]:1,[D2]:1,[D3]:1,[D4]:1};DR[DS]=ID('深層岩の丸石');
 const PT=ID('ネザーポータル'),EP=ID('エンドポータル'),EFR=ID('エンドポータルフレーム'),OBS=ID('黒曜石'),NRK=ID('ネザーラック'),SSD=ID('ソウルサンド');
@@ -2228,6 +2249,7 @@ let bedO=new Map(),spBed=null,wsp=null,oldSp=null,pendBD=[],bedMsg=null,bedT=0,w
 for(let i=0;i<4;i++){NS[LAD+i]=1;NS[TDO+i]=1}NS[TDC]=1;HTT[TDC]=.1875;
 for(let i=1;i<4;i++){HIDB[LAD+i]=1;DR[LAD+i]=LAD}for(let i=0;i<4;i++){HIDB[TDO+i]=1;DR[TDO+i]=TDC}
 for(let i=0;i<10;i++){NS[RL+i]=1;if(i){HIDB[RL+i]=1;DR[RL+i]=RL}}
+for(let i=0;i<10;i++){NS[PRL+i]=1;if(i){HIDB[PRL+i]=1;DR[PRL+i]=PRL}}
 for(let i=0;i<4;i++){NS[WTO+i]=1;HIDB[WTO+i]=1;DR[WTO+i]=TORCH}
 
 const PSB={},SBX={},LAN=NM.indexOf('ランタン');
@@ -2279,10 +2301,10 @@ function pix0(p,x,y,B,id,o,f){
   else if(p=='M'){k=(x==0||y==0||y==15||x==15?.82:y==9?.9:1)*(1+(j-.5)*.12)}
  else if(p=='H'){a=0;const rl=(x>=2&&x<=3)||(x>=12&&x<=13),rg=y%4==1&&x>3&&x<12;if(rl||rg){a=255;c=[150,108,56];k=(rl?(x==2||x==12?1.1:.85):1)*(1+(j-.5)*.15)}}
  else if(p=='R'){const e=x<2||x>13||y<2||y>13;k=(e?.72:(y==7||y==8)?.8:1.06)*(1+(j-.5)*.1);if(!e&&x>=6&&x<=9&&y>=11&&y<=12)c=[40,30,20]}
- else if(p=='K'){a=0;const sh=o.sh;let rl=0,tie=0;
+ else if(p=='K'){a=0;const sh=o.sh;let rl=0,tie=0,pwc=0;
    if(sh>=2&&sh<=5){const cx=(sh==2||sh==5)?16:0,cz=(sh==2||sh==3)?16:0,dx=x+.5-cx,dz=y+.5-cz,r=Math.hypot(dx,dz),tt=Math.atan2(dz,dx)/(Math.PI/2)*5;rl=Math.abs(r-3.5)<.95||Math.abs(r-12.5)<.95;tie=!rl&&r>3&&r<13&&Math.abs(tt-Math.round(tt))<.3}
-   else{const ax=(sh==1||sh==6||sh==7),u=ax?y:x,w=ax?x:y;rl=(u>=2&&u<=3)||(u>=12&&u<=13);tie=u>3&&u<12&&(w%4==1||w%4==2)}
-   if(rl){a=255;c=[190,192,198];k=(1+(j-.5)*.12)*(1)}else if(tie){a=255;c=[120,86,46];k=1+(j-.5)*.2}}
+   else{const ax=(sh==1||sh==6||sh==7),u=ax?y:x,w=ax?x:y;rl=(u>=2&&u<=3)||(u>=12&&u<=13);tie=u>3&&u<12&&(w%4==1||w%4==2);if(o.pw&&u>=7&&u<=8&&w%4!=0)pwc=1}
+   if(pwc){a=255;c=[214,44,36];k=1+(j-.5)*.12}else if(rl){a=255;c=o.pw?[232,190,62]:[190,192,198];k=(1+(j-.5)*.12)*(1)}else if(tie){a=255;c=[120,86,46];k=1+(j-.5)*.2}}
   else if(p=='S'){const e=Math.min(x,y,15-x,15-y);k*=e==0?.7:e==1?1.14:e==4?.78:e>4?1.07:1}
   else if(p=='q'){k*=(x%8==0?.8:x%8==1?1.14:1)*(1+(j-.5)*.04)}
   else if(p=='U'){const fr=x<3||x>12||y<2||y>13||y==7||y==8;c=fr?[66,68,76]:[255,200,92];k=fr?1+(j-.5)*.15:.92+j*.16;if(!fr&&x>=6&&x<=9&&y>=5&&y<=10)c=[255,244,190]}
@@ -2457,7 +2479,7 @@ function useEye(sl){if(!mrE)return;mrE=0;const h=ray();if(!h||h.b!=EFR)return;
 
 // ---- 線路・トロッコ・コンパス・リカバリーコンパス
 const RDR=[[0,-1],[1,0],[0,1],[-1,0]],RO=[[0,2],[1,3],[1,2],[3,2],[3,0],[1,0],[1,3],[3,1],[0,2],[2,0]],RHI={6:1,7:3,8:0,9:2},SU=[8,6,9,7],EDGD=RDR.map(a=>[.5+a[0]*.5,.5+a[1]*.5]);
-const isRail=b=>b>=RL&&b<RL+10,railH=(sh,d)=>sh>=6&&RHI[sh]==d?1:0,carts=[];let pendC=[],ride=null,lastDeath=null;
+const isRail=b=>b>=RL&&b<RL+10||b>=PRL&&b<PRL+10,rsh=b=>b>=PRL?b-PRL:b-RL,rbase=b=>b>=PRL?PRL:RL,railH=(sh,d)=>sh>=6&&RHI[sh]==d?1:0,carts=[];let pendC=[],ride=null,lastDeath=null;
 function railLinks(x,y,z){const L=[0,0,0,0];for(let d=0;d<4;d++){const nx=x+RDR[d][0],nz=z+RDR[d][1];
  if(isRail(get(nx,y,nz)))L[d]=1;else if(isRail(get(nx,y+1,nz))&&solid(nx,y,nz))L[d]=2;else if(isRail(get(nx,y-1,nz))&&!solid(nx,y,nz))L[d]=3}return L}
 function railPick(L,cur){const ds=[0,1,2,3].filter(d=>L[d]);if(!ds.length)return cur;
@@ -2466,10 +2488,10 @@ function railPick(L,cur){const ds=[0,1,2,3].filter(d=>L[d]);if(!ds.length)return
  if(fl.length>=2){const m=1<<fl[0]|1<<fl[1];return m==6?2:m==12?3:m==9?4:m==3?5:cur}
  if(fl.length==1)return fl[0]%2?1:0;
  return SU[up[0]]}
-function railFix(x,y,z){const b=get(x,y,z);if(!isRail(b))return;const s=railPick(railLinks(x,y,z),b-RL);if(RL+s!=b)setB(x,y,z,RL+s)}
+function railFix(x,y,z){const b=get(x,y,z);if(!isRail(b))return;const L=railLinks(x,y,z);let s=railPick(L,rsh(b));if(b>=PRL&&s>=2&&s<6){const d=[0,1,2,3].find(d=>L[d]);s=d%2?1:0}const nb=rbase(b)+s;if(nb!=b)setB(x,y,z,nb)}
 function railAround(x,y,z){railFix(x,y,z);for(let d=0;d<4;d++)for(let dy=-1;dy<=1;dy++)railFix(x+RDR[d][0],y+dy,z+RDR[d][1])}
 function railAfter(x,y,z){for(let d=0;d<4;d++)for(let dy=-1;dy<=1;dy++)railFix(x+RDR[d][0],y+dy,z+RDR[d][1])}
-function railPop(x,y,z){if(isRail(get(x,y+1,z))){setB(x,y+1,z,0);if(!cre)dropAt(x+.5,y+1.5,z+.5,RL,1)}}
+function railPop(x,y,z){const q=get(x,y+1,z);if(isRail(q)){setB(x,y+1,z,0);if(!cre)dropAt(x+.5,y+1.5,z+.5,rbase(q),1)}}
 // --- トロッコ
 function cartMesh(ty){const g=new THREE.Group(),ms=[],M=h=>{const m=new THREE.MeshBasicMaterial({color:h});m.userData.bc=new THREE.Color(h);ms.push(m);return m},bd=M(ty?0x9a6b3c:0x8e949c),dk=M(ty?0x5a3d20:0x555b63),rm=M(ty?0xc79a62:0xc4c9cf),wh=M(0x2b2e33),gd=M(0xe0b020);
  const bx=(w,h,d,x,y,z,m)=>{const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);q.position.set(x,y,z);g.add(q)};
@@ -2483,7 +2505,7 @@ function cartPose(c,dt){const q=cartAt(c,c.u);c.x=q[0];c.y=q[1];c.z=q[2];
  const a=cartAt(c,Math.max(0,c.u-.04)),b=cartAt(c,Math.min(1,c.u+.04)),dx=b[0]-a[0],dz=b[2]-a[2],hl=Math.hypot(dx,dz);
  if(hl>1e-4){c.hx=dx/hl;c.hz=dz/hl;const ry=Math.atan2(dx,dz);let d=ry-c.ry;d=Math.atan2(Math.sin(d),Math.cos(d));c.ry+=dt==null?d:d*Math.min(1,dt*16);c.rp=-Math.atan2(b[1]-a[1],hl)}
  c.g.position.set(c.x,c.y,c.z);c.g.rotation.y=c.ry;c.g.rotation.x=c.rp||0}
-function spawnCart(a){const b=get(a.cx,a.cy,a.cz);if(!isRail(b))return null;const sh=b-RL,o=RO[sh];let en=a.en,ex=a.ex;
+function spawnCart(a){const b=get(a.cx,a.cy,a.cz);if(!isRail(b))return null;const sh=rsh(b),o=RO[sh];let en=a.en,ex=a.ex;
  if(en==null||ex==null||o.indexOf(en)<0||o.indexOf(ex)<0||en==ex){en=o[0];ex=o[1]}
  const c={cx:a.cx,cy:a.cy,cz:a.cz,sh,en,ex,u:a.u!=null?a.u:.5,sp:0,x:0,y:0,z:0,ry:0,rp:0,age:0,snT:0,ty:a.ty?1:0,g:cartMesh(a.ty?1:0)};
  scene.add(c.g);carts.push(c);cartPose(c);return c}
@@ -2501,7 +2523,7 @@ function placeCart(sl){const ty=sl&&sl.b==NI.cart2?1:0;const h=ray();if(dim){tip
 function rideCart(c){ride=c;c.age=0;tip('トロッコに乗った (前進キーで加速 / Shiftで降りる)');playS('b.stone',.6,.9)}
 function rideSnap(){const c=ride;if(!c)return;p.x=c.x;p.y=c.y;p.z=c.z;v.x=v.z=0;v.y=0;falling=0;fallY=p.y}
 function nextC(c){const d=c.ex,nx=c.cx+RDR[d][0],nz=c.cz+RDR[d][1],lv=c.cy+railH(c.sh,d),op=(d+2)&3;
- for(const ny of[c.cy,c.cy-1,c.cy+1]){const b=get(nx,ny,nz);if(!isRail(b))continue;const sh=b-RL,o=RO[sh];if(o[0]!=op&&o[1]!=op)continue;if(ny+railH(sh,op)!=lv)continue;
+ for(const ny of[c.cy,c.cy-1,c.cy+1]){const b=get(nx,ny,nz);if(!isRail(b))continue;const sh=rsh(b),o=RO[sh];if(o[0]!=op&&o[1]!=op)continue;if(ny+railH(sh,op)!=lv)continue;
   return{cx:nx,cy:ny,cz:nz,sh,en:op,ex:o[0]==op?o[1]:o[0]}}return null}
 const revC=c=>{const t=c.en;c.en=c.ex;c.ex=t;c.u=1-c.u},cellLen=sh=>sh>=6?1.41:sh>=2?.85:1;
 const cartLava=c=>get(Math.floor(c.x),Math.floor(c.y+.1),Math.floor(c.z))==MAGMA||get(Math.floor(c.x),Math.floor(c.y-.3),Math.floor(c.z))==MAGMA;
@@ -2517,7 +2539,7 @@ function freeCart(c,i,dt){let n=Math.max(1,Math.ceil(dt/.04));const h=dt/n;
   c.y=ny;
   if(gd){const f=Math.exp(-h*1.6);c.vx*=f;c.vz*=f;if(Math.hypot(c.vx,c.vz)<.12){c.vx=c.vz=0}}
   const fx=Math.floor(c.x),fy=Math.floor(c.y+.05),fz=Math.floor(c.z),b=get(fx,fy,fz);
-  if(isRail(b)&&c.y<fy+.6){const sh=b-RL,o=RO[sh],sp=Math.hypot(c.vx,c.vz);let ex=o[0],bd=-9;for(const d of o){const dd=RDR[d][0]*c.vx+RDR[d][1]*c.vz;if(dd>bd){bd=dd;ex=d}}
+  if(isRail(b)&&c.y<fy+.6){const sh=rsh(b),o=RO[sh],sp=Math.hypot(c.vx,c.vz);let ex=o[0],bd=-9;for(const d of o){const dd=RDR[d][0]*c.vx+RDR[d][1]*c.vz;if(dd>bd){bd=dd;ex=d}}
    c.free=0;c.cx=fx;c.cy=fy;c.cz=fz;c.sh=sh;c.ex=ex;c.en=o[0]==ex?o[1]:o[0];c.u=.5;c.sp=Math.min(13,sp);c.vx=c.vy=c.vz=0;cartPose(c);return}
   if(cartLava(c)){burnCart(c,i);return}}
  if(c.y<-20){breakCart(c,i,1);return}
@@ -2534,11 +2556,12 @@ function cartsUpdate(dt){
   if(cartLava(c)){burnCart(c,i);continue}
   if(c.free){freeCart(c,i,dt);continue}
   const b=get(c.cx,c.cy,c.cz);if(!isRail(b)){breakCart(c,i);continue}
-  if(b-RL!=c.sh){const o=RO[b-RL];c.sh=b-RL;if(o.indexOf(c.en)<0||o.indexOf(c.ex)<0){c.en=o[0];c.ex=o[1];c.u=.5}}
+  if(rsh(b)!=c.sh){const o=RO[rsh(b)];c.sh=rsh(b);if(o.indexOf(c.en)<0||o.indexOf(c.ex)<0){c.en=o[0];c.ex=o[1];c.u=.5}}
   const rd=ride===c;c.age+=dt;let fi=0;
   if(rd){fi=(keys[KB.f]?1:0)-(keys[KB.b]?1:0)+joy.y;if(fi){const dd=-Math.sin(yaw)*(c.hx||0)-Math.cos(yaw)*(c.hz||0);c.sp+=fi*(dd>=-.25?1:-1)*7*dt}}
   c.sp-=(railH(c.sh,c.ex)-railH(c.sh,c.en))*6*dt;
   c.sp*=Math.exp(-dt*(rd&&fi?.05:.3));
+  if(b>=PRL&&c.sp>.05)c.sp+=14*dt;
   if(c.sp<0){revC(c);c.sp=-c.sp}
   c.sp=Math.min(c.sp,13);
   let rem=c.sp*dt;
@@ -2886,22 +2909,22 @@ const F=[{d:[1,0,0],c:[[1,0,1],[1,0,0],[1,1,0],[1,1,1]],s:.8,t:1},{d:[-1,0,0],c:
 const UQ=[[0,1],[1,1],[1,0],[0,0]],E=.0004;
 const GLOW=NM.indexOf('グロウストーン'),EL={[GLOW]:14,[MAGMA]:11,[ID('シーランタン')]:15,[ID('ジャックオランタン')]:14,[PT]:11,[TORCH]:15};for(let i=0;i<4;i++)EL[WTO+i]=15;EL[ID('ランタン')]=15;EL[ID('レッドストーンランプ')]=15;
 function scanEm(D,bx,bz,top){const e=[];for(let y=0;y<=top&&y<H;y++)for(let z=0;z<16;z++)for(let x=0;x<16;x++){const b=D[x+16*(z+16*y)];if(EL[b])e.push([bx+x,y,bz+z,EL[b]])}return e}
-const LRG=14,LW=16+2*LRG,LL=LW*LW,LV=LL*H,LS=new Uint8Array(LV),LB=new Uint8Array(LV),LO=new Uint8Array(LV),GB=new Int16Array(LL),NBO=[1,-1,LW,-LW,LL,-LL];
+const LRG=15,LW=16+2*LRG,LL=LW*LW,LV=LL*H,LS=new Uint8Array(LV),LB=new Uint8Array(LV),LO=new Uint8Array(LV),GB=new Int16Array(LL),NBO=[1,-1,LW,-LW,LL,-LL];
 const ri=(x,y,z)=>(x+LRG)+LW*((z+LRG)+LW*y);
 // flood fill light (BFS by level). LO: 0 clear,1 opaque,2 leaves(-1 extra),3 water(-2 extra)
-function flood(A,Q){for(let l=15;l>1;l--){const q=Q[l];for(let k=0;k<q.length;k++){const i=q[k];if(A[i]!=l)continue;
+function flood(A,Q){for(let l=16;l>1;l--){const q=Q[l];for(let k=0;k<q.length;k++){const i=q[k];if(A[i]!=l)continue;
   const x=i%LW,z=((i/LW)|0)%LW,y=(i/LL)|0;
   for(let f=0;f<6;f++){if(f==0&&x==LW-1||f==1&&!x||f==2&&z==LW-1||f==3&&!z||f==4&&y==H-1||f==5&&!y)continue;
    const j=i+NBO[f],o=LO[j];if(o==1)continue;const nl=l-1-(o>1?o-1:0);if(nl>A[j]){A[j]=nl;if(nl>1)Q[nl].push(j)}}}}}
 function lightMap(c){
- const ox=c.cx*16-LRG,oz=c.cz*16-LRG,QS=Array.from({length:16},()=>[]),QB=Array.from({length:16},()=>[]);let topAll=0;
+ const ox=c.cx*16-LRG,oz=c.cz*16-LRG,QS=Array.from({length:17},()=>[]),QB=Array.from({length:17},()=>[]);let topAll=0;
  LO.fill(0);LS.fill(0);LB.fill(0);
  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){const n=chunks.get(K(c.cx+dx,c.cz+dz));if(!n)continue;
   const bx=n.cx*16,bz=n.cz*16,top=Math.min(H-1,n.top+1);topAll=Math.max(topAll,top);
   for(let lz=0;lz<16;lz++){const rz=bz+lz-oz;if(rz<0||rz>=LW)continue;
    for(let lx=0;lx<16;lx++){const rx=bx+lx-ox;if(rx<0||rx>=LW)continue;
     for(let y=0;y<=top;y++){const b=n.d[lx+16*(lz+16*y)];if(!b)continue;const tr=TR[b];LO[rx+LW*(rz+LW*y)]=!tr?1:tr==1?0:tr}}}
-  if(n.em)for(const[x,y,z,l]of n.em){if(x<ox||x>=ox+LW||z<oz||z>=oz+LW)continue;const i=(x-ox)+LW*((z-oz)+LW*y);if(LB[i]<l){LB[i]=l;QB[l].push(i)}}}
+  if(n.em)for(const[x,y,z,l]of n.em){if(x<ox||x>=ox+LW||z<oz||z>=oz+LW)continue;const i=(x-ox)+LW*((z-oz)+LW*y);{const L=Math.min(16,l+1);if(LB[i]<L){LB[i]=L;QB[L].push(i)}}}}
  // sky light: straight down from the top, then spread sideways
  for(let col=0;col<LL;col++){let s=15,low=H;for(let y=H-1;y>=0;y--){const i=col+LL*y,o=LO[i];if(o==1)break;if(o>1)s=Math.max(0,s-(o==2?2:3));if(!s)break;LS[i]=s;low=y}GB[col]=low}
  for(let rz=0;rz<LW;rz++)for(let rx=0;rx<LW;rx++){const col=rx+LW*rz;
@@ -2909,7 +2932,7 @@ function lightMap(c){
    for(let y=y0;y<=topAll;y++){const i=col+LL*y,s=LS[i];if(s>1){const j=nc+LL*y;if(LO[j]!=1&&LS[j]<s-1)QS[s].push(i)}}}}
  flood(LS,QS);flood(LB,QB);
  const n=16*H*16;if(!c.ls){c.ls=new Uint8Array(n);c.lb=new Uint8Array(n)}
- for(let y=0;y<H;y++)for(let z=0;z<16;z++){const a=16*(z+16*y),b=LRG+LW*(z+LRG+LW*y);for(let x=0;x<16;x++){c.ls[a+x]=LS[b+x];c.lb[a+x]=LB[b+x]}}}
+ for(let y=0;y<H;y++)for(let z=0;z<16;z++){const a=16*(z+16*y),b=LRG+LW*(z+LRG+LW*y);for(let x=0;x<16;x++){c.ls[a+x]=LS[b+x];c.lb[a+x]=Math.min(15,LB[b+x])}}}
 function dispose(c){if(c.m)c.m.forEach(m=>{scene.remove(m);m.geometry.dispose()});c.m=null;c.built=0}
 const AOF=[.5,.68,.84,1],AXS=[[1,2],[0,2],[0,1]];
 function crossQ(O,b,bx,bz,x,y,z,sv,bv){const t=b*3+1,u0=(t%32)/32+E,v0=(t>>5)/32+E,w=1/32-2*E,s0=sv(x,y,z)/15,b0=bv(x,y,z)/15;
@@ -2924,7 +2947,7 @@ function wtQ(O,b,bx,bz,x,y,z,sv,bv,o){const t=b*3+1,u0=(t%32)/32+E,v0=(t>>5)/32+
   for(let k=0;k<4;k++){const tx=k==1||k==2?1:0,h=k>1?1:0,l=A?tx-.5:0,od=OF(h)+(A?0:tx-.5);
    O.p.push(cx+dx*od+Math.abs(dz)*l,y+.15+h*.85,cz+dz*od+Math.abs(dx)*l);O.u.push(u0+UQ[k][0]*w,v0+UQ[k][1]*w);O.c.push(1,1,1);O.l.push(b0);O.s.push(s0)}
   O.i.push(n,n+1,n+2,n,n+2,n+3,n,n+2,n+1,n,n+3,n+2)}}
-function railQ(O,b,bx,bz,x,y,z,sv,bv){const sh=b-RL,t=b*3+1,u0=(t%32)/32+E,v0=(t>>5)/32+E,w=1/32-2*E,s0=sv(x,y,z)/15,b0=bv(x,y,z)/15,n=O.p.length/3;
+function railQ(O,b,bx,bz,x,y,z,sv,bv){const sh=rsh(b),t=b*3+1,u0=(t%32)/32+E,v0=(t>>5)/32+E,w=1/32-2*E,s0=sv(x,y,z)/15,b0=bv(x,y,z)/15,n=O.p.length/3;
  const h=(tx,tz)=>{let r=.0625;if(sh==6)r+=tx;else if(sh==7)r+=1-tx;else if(sh==8)r+=1-tz;else if(sh==9)r+=tz;return r};
  for(const q of[[0,0],[1,0],[1,1],[0,1]]){O.p.push(bx+x+q[0],y+h(q[0],q[1]),bz+z+q[1]);O.u.push(u0+q[0]*w,v0+q[1]*w);O.c.push(.95,.95,.95);O.l.push(b0);O.s.push(s0)}
  O.i.push(n,n+1,n+2,n,n+2,n+3,n,n+2,n+1,n,n+3,n+2)}
@@ -2947,9 +2970,9 @@ function build(c){
  dispose(c);c.m=[];const D=c.d,bx=c.cx*16,bz=c.cz*16,mk=()=>({p:[],u:[],c:[],i:[],l:[],s:[]}),SO=mk(),TO=mk();
  const g=(x,y,z)=>x>=0&&x<16&&z>=0&&z<16?(y<0?1:y>=H?0:D[x+16*(z+16*y)]):get(bx+x,y,bz+z);
  lightMap(c);const AOQ=LTV('ao');
- const sv=(x,y,z)=>y>=H?15:y<0?0:LS[ri(x,y,z)],bv=(x,y,z)=>y<0||y>=H?0:LB[ri(x,y,z)],op=(x,y,z)=>y<0?1:y>=H?0:LO[ri(x,y,z)]==1?1:0,ak=[0,0,0,0];
+ const sv=(x,y,z)=>y>=H?15:y<0?0:LS[ri(x,y,z)],bv=(x,y,z)=>y<0||y>=H?0:Math.min(15,LB[ri(x,y,z)]),op=(x,y,z)=>y<0?1:y>=H?0:LO[ri(x,y,z)]==1?1:0,ak=[0,0,0,0];
  for(let y=0;y<=c.top;y++)for(let z=0;z<16;z++)for(let x=0;x<16;x++){
-  const b=D[x+16*(z+16*y)];if(!b)continue;if(SBX[b]){boxesQ(SO,b,bx,bz,x,y,z,sv,bv,g);continue}if(b>=RL&&b<RL+10){railQ(TO,b,bx,bz,x,y,z,sv,bv);continue}if(b>=LAD&&b<LAD+4){panelQ(TO,b,bx,bz,x,y,z,sv,bv,b-LAD,.06);continue}if(b>=TDO&&b<TDO+4){panelQ(TO,b,bx,bz,x,y,z,sv,bv,b-TDO,.12);continue}if(b>=WTO&&b<WTO+4){wtQ(TO,b,bx,bz,x,y,z,sv,bv,b-WTO);continue}if(CRS[b]){crossQ(TO,b,bx,bz,x,y,z,sv,bv);continue}const tr=TR[b],O=tr==1||tr==3?TO:SO,em=EL[b];
+  const b=D[x+16*(z+16*y)];if(!b)continue;if(SBX[b]){boxesQ(SO,b,bx,bz,x,y,z,sv,bv,g);continue}if(isRail(b)){railQ(TO,b,bx,bz,x,y,z,sv,bv);continue}if(b>=LAD&&b<LAD+4){panelQ(TO,b,bx,bz,x,y,z,sv,bv,b-LAD,.06);continue}if(b>=TDO&&b<TDO+4){panelQ(TO,b,bx,bz,x,y,z,sv,bv,b-TDO,.12);continue}if(b>=WTO&&b<WTO+4){wtQ(TO,b,bx,bz,x,y,z,sv,bv,b-WTO);continue}if(CRS[b]){crossQ(TO,b,bx,bz,x,y,z,sv,bv);continue}const tr=TR[b],O=tr==1||tr==3?TO:SO,em=EL[b];
   for(let f=0;f<6;f++){const q=F[f],nb=g(x+q.d[0],y+q.d[1],z+q.d[2]);
    if(nb&&(!TR[nb]||nb==b||b==13&&nb==WATER||b==WATER&&nb==13))continue;
    const t=b*3+q.t,u0=(t%32)/32+E,v0=(t>>5)/32+E,n=O.p.length/3,w=1/32-2*E,
@@ -3065,7 +3088,7 @@ function updPortal(dt){const fx=Math.floor(p.x),fz=Math.floor(p.z),y0=Math.floor
 
 const rb=(a,b)=>{const c=chunks.get(K(a,b));if(c&&c.built)build(c)};
 function setB(x,y,z,b){const c=chunks.get(K(x>>4,z>>4));if(!c||y<0||y>=H)return;
- const oi=(x&15)+16*((z&15)+16*y),ob=c.d[oi];c.d[oi]=b;c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;const ec=EL[ob]||EL[b];if(ec){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}build(c);const lx=x&15,lz=z&15,lim=ec?15:10;
+ const oi=(x&15)+16*((z&15)+16*y),ob=c.d[oi];c.d[oi]=b;c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;const ec=EL[ob]||EL[b];if(ec){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}build(c);const lx=x&15,lz=z&15,lim=ec?16:15;
  for(let a=-1;a<=1;a++)for(let q=-1;q<=1;q++){if(!a&&!q)continue;const n=chunks.get(K(c.cx+a,c.cz+q));if(!n||!n.built||n.dq)continue;
   const gx=a<0?lx+1:a>0?16-lx:0,gz=q<0?lz+1:q>0?16-lz:0;if(gx<=lim&&gz<=lim){n.dq=1;dirty.push(n)}}
  if(ob&&ob!=b&&world)torchCheck(x,y,z)}
@@ -3105,7 +3128,7 @@ const lad=(x,y,z)=>{const b=get(x,y,z);return b>=LAD&&b<LAD+4};
 function hbx(b){
  if(b==TORCH)return[[.375,0,.375,.625,.9375,.625]];
  if(b>=WTO&&b<WTO+4){const k=b-WTO;return[k==1?[.02,.15,.375,.56,.95,.625]:k==0?[.44,.15,.375,.98,.95,.625]:k==3?[.375,.15,.02,.625,.95,.56]:[.375,.15,.44,.625,.95,.98]]}
- if(isRail(b)){const sh=b-RL;if(sh<6)return[[0,0,0,1,.0625,1]];const L=[];for(let i=0;i<4;i++){const a=i/4,c=(i+1)/4,hh=.0625+c;L.push(sh==6?[a,0,0,c,hh,1]:sh==7?[1-c,0,0,1-a,hh,1]:sh==8?[0,0,1-c,1,hh,1-a]:[0,0,a,1,hh,c])}return L}
+ if(isRail(b)){const sh=rsh(b);if(sh<6)return[[0,0,0,1,.0625,1]];const L=[];for(let i=0;i<4;i++){const a=i/4,c=(i+1)/4,hh=.0625+c;L.push(sh==6?[a,0,0,c,hh,1]:sh==7?[1-c,0,0,1-a,hh,1]:sh==8?[0,0,1-c,1,hh,1-a]:[0,0,a,1,hh,c])}return L}
  if(SBX[b])return SBX[b];
  return null}
 function rayBox(L,x,y,z,ox,oy,oz,dx,dy,dz){let bt=1e9,bn=null,bq=null;
@@ -3136,10 +3159,11 @@ function sprMesh(cv){const d=cv.getContext('2d').getImageData(0,0,16,16).data,P=
  const m=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide});hmats.push(m);return new THREE.Mesh(G,m)}
 function cubeMesh(id){const mk=f=>{const q=new THREE.CanvasTexture(atlasCv(id,f));q.magFilter=q.minFilter=THREE.NearestFilter;q.generateMipmaps=false;const m=new THREE.MeshBasicMaterial({map:q,transparent:TR[id]>0,alphaTest:.5});hmats.push(m);return m},sd=mk(1),tp=mk(0),bt=mk(2);
  return new THREE.Mesh(new THREE.BoxGeometry(.34,.34,.34),[sd,sd,tp,bt,sd,sd])}
-let AC=[.86,.65,.5];function armMesh(){const g=new THREE.BoxGeometry(.2,.2,.72).translate(0,0,-.36),c=[],k=[.85,.85,1,.7,.9,.8];for(let f=0;f<6;f++)for(let i=0;i<4;i++)c.push(AC[0]*k[f],AC[1]*k[f],AC[2]*k[f]);g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));const m=new THREE.MeshBasicMaterial({vertexColors:true});hmats.push(m);return new THREE.Mesh(g,m)}
+let AC=[.86,.65,.5];function armMesh(){const S=skSlim?3:4,mk=(v,pad,mat)=>{const m=skBox(S,12,4,40,v,pad,mat,1),g=m.geometry;g.rotateY(Math.PI);g.rotateX(Math.PI/2);g.scale(.8,.8,.96);g.translate(skSlim?.025:0,0,-.36);return m},
+ a=new THREE.MeshBasicMaterial({map:skTex,alphaTest:.5}),b=new THREE.MeshBasicMaterial({map:skTex,transparent:true,alphaTest:.1,side:THREE.DoubleSide});hmats.push(a,b);const g=new THREE.Group();g.add(mk(16,0,a));g.add(mk(32,.03,b));return g}
 function setHeld(){const s=slots[sel],id=s?s.b:0;if(id===hk)return;hk=id;hand.clear();hmats=[];let me;
  if(!id){me=armMesh()}
- else if(id>=IB||FOOD[id]||CRS[id]||id==LAD||id==RL){me=sprMesh(id>=IB?ART[id]:atlasCv(id,1));me.scale.setScalar(id>=IB?.78:.5);me.rotation.set(0,-.55,id>=IB?-.12:0)}
+ else if(id>=IB||FOOD[id]||CRS[id]||id==LAD||id==RL||id==PRL){me=sprMesh(id>=IB?ART[id]:atlasCv(id,1));me.scale.setScalar(id>=IB?.78:.5);me.rotation.set(0,-.55,id>=IB?-.12:0)}
  else{me=cubeMesh(id);me.rotation.set(.25,.7,0)}
  hand.add(me)}
 // ---- hud
@@ -3258,7 +3282,7 @@ function skDefault(){const c=skx;c.clearRect(0,0,64,64);
  const arm=(u,v)=>bx(u,v,4,12,4,(n,i,j)=>n=='t'?SHT:n=='b'?SKN:j<4?SHT:SKN);arm(40,16);arm(32,48);
  const leg=(u,v)=>bx(u,v,4,12,4,(n,i,j)=>n=='t'?PNT:n=='b'?SHO:j>=9?SHO:PNT);leg(0,16);leg(16,48);skSlim=0}
 function skAvg(){try{const d=skx.getImageData(44,28,4,4).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4)if(d[i+3]>100){r+=d[i];g+=d[i+1];b+=d[i+2];n++}if(n)AC=[r/n/255*1.02,g/n/255*1.02,b/n/255*1.02]}catch(e){}}
-function skApply(){skTex.needsUpdate=true;skAvg();try{skPrev()}catch(e){}try{if(world){hk=null;setHeld()}}catch(e){}}
+function skApply(){skTex.needsUpdate=true;skAvg();try{skPrev()}catch(e){}try{drawPv()}catch(e){}try{if(world){hk=null;setHeld()}}catch(e){}}
 function skStore(){try{localStorage.setItem('bv-skin',JSON.stringify({d:SKC.toDataURL(),s:skSlim}))}catch(e){}}
 function skFromImg(im){const w=im.width,h=im.height;if(w!=64||(h!=64&&h!=32))return 0;
  skx.clearRect(0,0,64,64);skx.drawImage(im,0,0);
@@ -3429,7 +3453,7 @@ rc('ランタン',1,[['松明',1],['鉄ブロック',1]]);rc('レッドストー
 rc('模様入りの石レンガ',1,[['石レンガ',2]]);rc('ひび割れた石レンガ',1,[['石レンガ',1],['砂利',1]]);rc('苔むした石レンガ',1,[['石レンガ',1],['苔石',1]]);
 rc('模様入りのクォーツ',1,[['クォーツブロック',2]]);rc('クォーツの柱',2,[['クォーツブロック',3]]);rc('模様入りの砂岩',1,[['砂岩',2]]);
 rc('ドア',2,[['オークの板材',4],['オークの原木',1]]);
-R.push({n:'線路 ×16',c:{16:6,8:1},g:[RL,16],cat:0},{n:'トロッコ(ガードレール付)',c:{16:5},g:[NI.cart,1],cat:1},{n:'トロッコ',c:{16:4},g:[NI.cart2,1],cat:1},{n:'コンパス',c:{16:4,19:1},g:[NI.cmp,1],cat:1},{n:'リカバリーコンパス',c:{[NI.cmp]:1,18:1,20:4},g:[NI.rcmp,1],cat:1});
+R.push({n:'線路 ×16',c:{16:6,8:1},g:[RL,16],cat:0},{n:'パワードレール ×6',c:{[ID('金鉱石')]:6,8:1,[ID('レッドストーン鉱石')]:1},g:[PRL,6],cat:0},{n:'トロッコ(ガードレール付)',c:{16:5},g:[NI.cart,1],cat:1},{n:'トロッコ',c:{16:4},g:[NI.cart2,1],cat:1},{n:'コンパス',c:{16:4,19:1},g:[NI.cmp,1],cat:1},{n:'リカバリーコンパス',c:{[NI.cmp]:1,18:1,20:4},g:[NI.rcmp,1],cat:1});
 ['ジャングル','アカシア','桜'].forEach(n=>rc(n+'の板材',4,[[n+'の原木',1]]));
 ['安山岩','閃緑岩','花崗岩'].forEach(n=>rc('磨かれた'+n,4,[[n,4]]));
 rc('滑らかな石',2,[['石',2]]);rc('深層岩レンガ',4,[['深層岩の丸石',4]]);rc('泥レンガ',4,[['土',4]]);rc('赤い砂',2,[['砂',1],['レンガ',1]]);rc('赤い砂岩',1,[['赤い砂',4]]);
@@ -3476,15 +3500,14 @@ function catOf(id){if(id>=IB){const k=IT[id-IB].k;return k=='fd'||k=='ig'||k=='p
  const n=NM[id],o=DF[id];if(/カーペット|ランタン|ランプ/.test(n))return 3;if(FOOD[id]||o.p=='f')return 5;if(o.p=='Q')return 3;if(/ポータル/.test(n))return 6;
  if(o.p=='o'||o.p=='m')return 2;if(o.p=='w'||o.p=='v'||o.p=='k'||o.p=='B'||/コンクリート|色ガラス/.test(n))return 3;
  if(['p','b','c','D','E','T','h','g','H','R','C'].includes(o.p)||/レンガ|磨かれた|滑らかな|クォーツ|プリズマリン|板材/.test(n))return 1;return 0}
-function drawPv(){const x=$('#pv').getContext('2d');x.clearRect(0,0,16,32);const R=(c,a,b,w,h)=>{x.fillStyle=c;x.fillRect(a,b,w,h)};
- R('#4a3020',4,2,8,2);R('#e2b48c',4,4,8,5);R('#4a3020',4,4,1,2);R('#4a3020',11,4,1,2);R('#1c2a58',5,6,2,1);R('#1c2a58',9,6,2,1);R('#a45a4a',7,8,2,1);
- R('#d8742a',4,10,8,10);R('#b85c1c',4,16,8,1);R('#c0661e',2,10,2,9);R('#c0661e',12,10,2,9);R('#e2b48c',2,19,2,2);R('#e2b48c',12,19,2,2);
- R('#34437f',4,20,4,9);R('#34437f',8,20,4,9);R('#242424',4,29,4,2);R('#242424',8,29,4,2);
+function drawPv(){const x=$('#pv').getContext('2d');x.clearRect(0,0,16,32);x.imageSmoothingEnabled=false;const S=skSlim?3:4,A=(sx,sy,w,h,dx,dy)=>x.drawImage(SKC,sx,sy,w,h,dx,dy,w,h),R=(c,a,b,w,h)=>{x.fillStyle=c;x.fillRect(a,b,w,h)};
+ A(8,8,8,8,4,0);A(20,20,8,12,4,8);A(4,20,4,12,4,20);A(20,52,4,12,8,20);A(44,20,S,12,4-S,8);A(36,52,S,12,12,8);
+ A(40,8,8,8,4,0);A(20,36,8,12,4,8);A(4,36,4,12,4,20);A(4,52,4,12,8,20);A(44,36,S,12,4-S,8);A(52,52,S,12,12,8);
  const ar=i=>{const e=eq[i];if(!e)return null;const nm=NM[e.b];return TC[nm.slice(0,nm.indexOf('の'))]||null};let t;
- if(t=ar(0)){R(t[0],3,2,10,4);R(t[1],4,2,8,1);R(t[2],3,5,10,1)}
- if(t=ar(1)){R(t[0],3,10,10,10);R(t[1],4,11,8,1);R(t[2],3,19,10,1);R(t[0],2,10,2,4);R(t[0],12,10,2,4);R(t[2],2,13,2,1);R(t[2],12,13,2,1)}
+ if(t=ar(0)){R(t[0],3,0,10,5);R(t[1],4,0,8,1);R(t[2],3,4,10,1)}
+ if(t=ar(1)){R(t[0],3,8,10,12);R(t[1],4,9,8,1);R(t[2],3,19,10,1);R(t[0],0,8,4,5);R(t[0],12,8,4,5);R(t[2],0,12,4,1);R(t[2],12,12,4,1)}
  if(t=ar(2)){R(t[0],4,20,8,8);R(t[1],4,21,8,1);R(t[2],7,22,2,6);R(t[2],4,27,8,1)}
- if(t=ar(3)){R(t[0],4,28,4,3);R(t[0],8,28,4,3);R(t[2],4,30,4,1);R(t[2],8,30,4,1)}}
+ if(t=ar(3)){R(t[0],4,28,4,4);R(t[0],8,28,4,4);R(t[2],4,31,4,1);R(t[2],8,31,4,1)}}
 function renderCT(){$('#cct').innerHTML=CCI.map((ic,i)=>`<button data-t="${i-1}" class="${i-1==ccat?'on':''}" title="${i?CCN[i-1]:'すべて'}"><span class="material-symbols-outlined">${ic}</span></button>`).join('')}
 function applyCF(){const G=$('#grid');[...G.children].forEach(b=>{b.hidden=!((ccat<0||+b.dataset.cc==ccat)&&(!cq||b.dataset.n.toLowerCase().includes(cq)))});G.scrollTop=0}
 $('#cct').onclick=e=>{const b=e.target.closest('button');if(!b)return;ccat=+b.dataset.t;renderCT();applyCF()};
@@ -3545,7 +3568,7 @@ function popWT(x,y,z){[[1,0,1],[-1,0,0],[0,1,3],[0,-1,2]].forEach(a=>{const nx=x
 const drops=[],dTex={},dGeo=new THREE.BoxGeometry(.25,.25,.25);
 const mkTx=cv=>{const q=new THREE.CanvasTexture(cv);q.magFilter=q.minFilter=THREE.NearestFilter;q.generateMipmaps=false;return q};
 function dropObj(b){
- if(b>=IB||FOOD[b]||CRS[b]||b==LAD||b==RL){const k='s'+b,t=dTex[k]||(dTex[k]=mkTx(b>=IB?ART[b]:atlasCv(b,1))),m=new THREE.Sprite(new THREE.SpriteMaterial({map:t}));m.scale.set(.5,.5,1);return m}
+ if(b>=IB||FOOD[b]||CRS[b]||b==LAD||b==RL||b==PRL){const k='s'+b,t=dTex[k]||(dTex[k]=mkTx(b>=IB?ART[b]:atlasCv(b,1))),m=new THREE.Sprite(new THREE.SpriteMaterial({map:t}));m.scale.set(.5,.5,1);return m}
  const mk=f=>{const k=b+'_'+f,t=dTex[k]||(dTex[k]=mkTx(atlasCv(b,f)));return new THREE.MeshBasicMaterial({map:t,transparent:TR[b]>0,alphaTest:.5})},sd=mk(1);
  return new THREE.Mesh(dGeo,[sd,sd,mk(0),mk(2),sd,sd])}
 const rmD=(d,i)=>{scene.remove(d.o);[].concat(d.o.material).forEach(m=>m.dispose());drops.splice(i,1)};
@@ -3587,11 +3610,11 @@ function place(){{const ct=aimCart();if(ct&&!keys[KB.sp]){const n=performance.no
  const x=h.x+h.n[0],y=h.y+h.n[1],z=h.z+h.n[2];if(y<0||y>=H)return;const c=get(x,y,z);if(c&&c!=WATER&&c!=MAGMA)return;
  const wt=b==TORCH&&h.n[1]===0&&solid(h.x,h.y,h.z)&&c!=WATER&&c!=MAGMA;
  if(b==TORCH&&!wt&&(!solid(x,y-1,z)||c==WATER)){tip('松明は地面の上か壁の側面に置けます');return}
- if(b==RL&&(!solid(x,y-1,z)||c==WATER)){tip('線路は地面の上に置けます');return}
- let pb=b;if(b>=STA0&&b<SLB0&&(b-STA0)%4==0){const ddx=-Math.sin(yaw),ddz=-Math.cos(yaw);pb=b+(Math.abs(ddx)>Math.abs(ddz)?(ddx>0?0:1):(ddz>0?2:3))}if(wt)pb=WTO+(h.n[0]>0?1:h.n[0]<0?0:h.n[2]>0?3:2);if(b==RL)pb=RL+(Math.abs(Math.sin(yaw))>Math.abs(Math.cos(yaw))?1:0);if(b==LAD){if(h.n[1]!==0||!solid(h.x,h.y,h.z)){tip('はしごは壁の側面に設置します');return}pb=LAD+(h.n[0]>0?1:h.n[0]<0?0:h.n[2]>0?3:2)}
+ if((b==RL||b==PRL)&&(!solid(x,y-1,z)||c==WATER)){tip('線路は地面の上に置けます');return}
+ let pb=b;if(b>=STA0&&b<SLB0&&(b-STA0)%4==0){const ddx=-Math.sin(yaw),ddz=-Math.cos(yaw);pb=b+(Math.abs(ddx)>Math.abs(ddz)?(ddx>0?0:1):(ddz>0?2:3))}if(wt)pb=WTO+(h.n[0]>0?1:h.n[0]<0?0:h.n[2]>0?3:2);if(b==RL||b==PRL)pb=b+(Math.abs(Math.sin(yaw))>Math.abs(Math.cos(yaw))?1:0);if(b==LAD){if(h.n[1]!==0||!solid(h.x,h.y,h.z)){tip('はしごは壁の側面に設置します');return}pb=LAD+(h.n[0]>0?1:h.n[0]<0?0:h.n[2]>0?3:2)}
   if(b==TDC&&p.x-.3<x+1&&p.x+.3>x&&p.z-.3<z+1&&p.z+.3>z&&p.y<y+.1875&&p.y+1.8>y)return;
  if(b!=WATER&&!CRS[b]&&!NS[b]&&p.x-.3<x+1&&p.x+.3>x&&p.y<y+(b==D1?2:1)&&p.y+1.8>y&&p.z-.3<z+1&&p.z+.3>z)return;
- if(b==D1){const c2=get(x,y+1,z);if(y+1>=H||c2&&c2!=WATER&&c2!=MAGMA)return;setB(x,y,z,D1);setB(x,y+1,z,D2)}else if(b>=BED0&&b<BED0+16){if(!placeBed(b,x,y,z))return}else{setB(x,y,z,pb);if(pb==CH)chests.delete(chK(x,y,z));if(b==RL)railAround(x,y,z)}ST.placed++;placeSnd(pb);if(!cre){if(--sl.n<=0)slots[sel]=null;renderHot()}}
+ if(b==D1){const c2=get(x,y+1,z);if(y+1>=H||c2&&c2!=WATER&&c2!=MAGMA)return;setB(x,y,z,D1);setB(x,y+1,z,D2)}else if(b>=BED0&&b<BED0+16){if(!placeBed(b,x,y,z))return}else{setB(x,y,z,pb);if(pb==CH)chests.delete(chK(x,y,z));if(b==RL||b==PRL)railAround(x,y,z)}ST.placed++;placeSnd(pb);if(!cre){if(--sl.n<=0)slots[sel]=null;renderHot()}}
 // ---- v7.10 TNT
 const tnts=[],tntQ=[];let tntG=null;
 function primeTnt(x,y,z,fuse,vx,vy,vz){if(!chunks.get(K(x>>4,z>>4)))return;setB(x,y,z,0);
@@ -3629,9 +3652,10 @@ function tntUpdate(dt){for(let i=tnts.length-1;i>=0;i--){const t=tnts[i];if(t.di
 // ---- elytra
 function useFw(sl){const n=performance.now();if(n-fwLast<450)return;if(!glide){tip('滑空中に使うと前へ加速する');return}
  fwLast=n;fwT=1.6;if(!cre){sl.n--;if(sl.n<=0)slots[sel]=null;renderHot()}playS('fizz',.9,1.6);tip('ロケット花火で加速!')}
+function endGlide(){glide=0;v.y=Math.min(v.y,0);const s=Math.hypot(v.x,v.z);if(s>8){v.x*=8/s;v.z*=8/s}}
 function jumpGlide(){if(paused||!world||dead||ride)return;
- if(glide){glide=0;tip('滑空をやめた');return}
- if(eq[1]&&eq[1].b==ELY&&!gnd&&!fly&&falling){glide=1;gT=0;fwT=0;gSp=Math.max(7,Math.hypot(v.x,v.z));tip('滑空開始')}}
+ if(glide){endGlide();tip('滑空をやめた');return}
+ if(eq[1]&&eq[1].b==ELY&&!gnd&&!fly&&falling&&v.y<0){glide=1;gT=0;fwT=0;gSp=Math.max(7,Math.hypot(v.x,v.z));tip('滑空開始')}}
 function glideStep(dt){const cp=Math.cos(pitch),sP=Math.sin(pitch),dx=-Math.sin(yaw)*cp,dz=-Math.cos(yaw)*cp;
  if(wh){if(gSp>20&&!cre)hurt(Math.floor((gSp-20)/3),0,'壁に激突した');gSp=5}
  gSp+=(-sP*14-gSp*.25)*dt;if(fwT>0){fwT-=dt;gSp+=70*dt}gSp=Math.max(5,Math.min(fwT>0?46:34,gSp));
@@ -3647,7 +3671,7 @@ function update(dt){tickStats(dt);cartsUpdate(dt);cmpTick();tntUpdate(dt);
  let spd=fly?(sh?0:1)*10.5:inL?2.15:wat?2.6:sh?6:4.3;if(fly)spd=10.5;if(fx.spd>0&&!fly)spd*=1.45;
  const tx=(-Math.sin(yaw)*f+Math.cos(yaw)*r)/l*spd,tz=(-Math.cos(yaw)*f-Math.sin(yaw)*r)/l*spd,k=1-Math.exp(-dt*(fly?8:gnd?14:5));
  v.x+=(tx-v.x)*k;v.z+=(tz-v.z)*k;
- const onLd=lad(Math.floor(p.x),Math.floor(p.y+.2),Math.floor(p.z))||lad(Math.floor(p.x),Math.floor(p.y+1.2),Math.floor(p.z)),jmp=!fly&&!wat&&!inL&&!onLd&&keys[KB.jp]&&gnd;if(jmp)v.y=fx.jmp>0?11.3:8.6;const vy0=v.y;if(glide&&(!(eq[1]&&eq[1].b==ELY)||wat||inL||fly||onLd||ride||gnd))glide=0;if(glide)glideStep(dt);else if(fly){v.y+=(((keys[KB.jp]?1:0)-(sh?1:0))*9-v.y)*(1-Math.exp(-dt*10))}
+ const onLd=lad(Math.floor(p.x),Math.floor(p.y+.2),Math.floor(p.z))||lad(Math.floor(p.x),Math.floor(p.y+1.2),Math.floor(p.z)),jmp=!fly&&!wat&&!inL&&!onLd&&keys[KB.jp]&&gnd;if(jmp)v.y=fx.jmp>0?11.3:8.6;const vy0=v.y;if(glide&&(!(eq[1]&&eq[1].b==ELY)||wat||inL||fly||onLd||ride||gnd))endGlide();if(glide)glideStep(dt);else if(fly){v.y+=(((keys[KB.jp]?1:0)-(sh?1:0))*9-v.y)*(1-Math.exp(-dt*10))}
  else if(inL){v.y-=4*dt;if(keys[KB.jp])v.y+=40*dt;v.y=Math.max(-1.2,Math.min(keys[KB.jp]?8.6:1.6,v.y))}
  else if(onLd){v.y=keys[KB.jp]||wh&&f>0?3.6:sh?0:-2.4}
  else if(wat){v.y-=7*dt;const up=keys[KB.jp];if(up){v.y+=18*dt;if(wh&&get(Math.floor(p.x),Math.floor(p.y+1.1),Math.floor(p.z))!=WATER)v.y=Math.max(v.y,7.6)}v.y=Math.max(-3,Math.min(up&&wh?8:3.4,v.y))}
@@ -3675,7 +3699,7 @@ function update(dt){tickStats(dt);cartsUpdate(dt);cmpTick();tntUpdate(dt);
  if(night!=wasN){wasN=night;if(!cre&&!dim)tip(night?'夜になった…モンスターが出現する':'朝になった')}
  if((covT-=dt)<=0){covT=.25;let c=0;const fx=Math.floor(p.x),fz=Math.floor(p.z);for(let yy=Math.floor(p.y+2);yy<Math.min(H,p.y+34);yy++){const b=get(fx,yy,fz);if(b&&b!=WATER&&b!=9)c++}ugT=c>=5?1:0}
  ug+=(ugT-ug)*(1-Math.exp(-dt*3));
- dkV=dk;uSkC.value.set(1-.8*dk,1-.74*dk,1-.58*dk);{const hs0=slots[sel],hid=hs0?hs0.b:0;uHl.value=hid&&hid<IB&&EL[hid]?EL[hid]-1:0;uHp.value.set(p.x,p.y+1.3,p.z);const lc=lightRGB(p.x,p.y+1.2,p.z,LRC);hmats.forEach(m=>m.color.setRGB(lc[0],lc[1],lc[2]))}
+ dkV=dk;uSkC.value.set(1-.8*dk,1-.74*dk,1-.58*dk);{const hs0=slots[sel],hid=hs0?hs0.b:0;uHl.value=hid&&hid<IB&&EL[hid]?EL[hid]:0;uHp.value.set(p.x,p.y+1.3,p.z);const lc=lightRGB(p.x,p.y+1.2,p.z,LRC);hmats.forEach(m=>m.color.setRGB(lc[0],lc[1],lc[2]))}
  skyC.copy(cDay).lerp(cNight,dk).multiplyScalar(1-.8*ug);if(uw)skyC.setHex(0x1d4aa8).multiplyScalar(Math.max(.25,1-.7*dk));if(ul)skyC.setHex(0xb83208);
  scene.fog.color.copy(skyC);scene.background.copy(skyC);scene.fog.near=uw?1:RD*9*(1-.7*ug);scene.fog.far=uw?18:RD*15*(1-.55*ug);if(ul){scene.fog.near=.1;scene.fog.far=3.5}
  sky.position.copy(cam.position);sky.rotation.z=tod*6.2832;sky.rotation.x=shdE()?.4:0;if(shdE())shSunSet(tod);sunS.visible=sH>-.25;moonS.visible=sH<.25;stM.opacity=Math.max(0,(dk-.4)/.6)*(1-ug);
@@ -3843,7 +3867,7 @@ const newSplash=()=>{$('#splash').textContent=SPL[Math.floor(Math.random()*SPL.l
 function showScr(n,back){if(!back&&scr&&scr!=n)nav.push(scr);scr=n;rebind=null;
  document.querySelectorAll('#menu .gui').forEach(g=>g.classList.toggle('on',g.id=='s-'+n));
  MENU.classList.toggle('inw',!!world);MENU.classList.toggle('t',!world&&n=='title');MENU.classList.toggle('d',!world&&n!='title');
- if(n=='worlds')renderSaves();else if(n=='adv')renderAdv();else if(n=='sts')renderSts();else if(n=='ctrl'||n=='opts'||n=='video'||n=='sound'||n=='shader'||n=='ui'||n=='opt')renderSet();else if(n=='snd')renderSnd();else if(n=='help')refreshLabels();else if(n=='title')newSplash();if(n=='skin')skOpen();if(n=='create')renderRows($('#cwrows'),nw,1);if(n=='game')renderRows($('#gsrows'),ws,0);requestAnimationFrame(fitGui)}
+ if(n=='wtpl')renderTpl();if(n=='worlds')renderSaves();else if(n=='adv')renderAdv();else if(n=='sts')renderSts();else if(n=='ctrl'||n=='opts'||n=='video'||n=='sound'||n=='shader'||n=='ui'||n=='opt')renderSet();else if(n=='snd')renderSnd();else if(n=='help')refreshLabels();else if(n=='title')newSplash();if(n=='skin')skOpen();if(n=='create')renderRows($('#cwrows'),nw,1);if(n=='game')renderRows($('#gsrows'),ws,0);requestAnimationFrame(fitGui)}
 const menuRoot=n=>{nav=[];scr='';showScr(n)};
 function menuBack(){if(nav.length)showScr(nav.pop(),true);else if(world&&!dead&&scr=='pause')pause(0)}
 MENU.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;selSnd();
@@ -3862,7 +3886,14 @@ $('#wlist').ondblclick=e=>{if(e.target.closest('.wi'))playW()};
 $('#wsearch').oninput=e=>{wq=e.target.value;drawW()};
 $('#wplay').onclick=playW;
 function openCreate(o){$('#wname').value=o?o.name:'新規ワールド';$('#seed').value=o?o.seed:'';nw=Object.assign({},WSD,o&&o.ws||{},{mode:o?+o.cre:0});showScr('create')}
-$('#wnew').onclick=()=>openCreate();
+$('#wnew').onclick=()=>showScr('wtpl');
+$('#tnew').onclick=()=>openCreate();
+let TPL=[];try{const j=JSON.parse(document.getElementById('wtpl-data').textContent);if(Array.isArray(j))TPL=j.filter(t=>t&&t.name)}catch(e){}
+function renderTpl(){$('#tmsg').textContent='';$('#tlist').innerHTML=TPL.length?TPL.map((t,i)=>`<div class="wi" data-i="${i}"><span class="material-symbols-outlined tpi">${esc(t.icon||'public')}</span><div><b>${esc(t.name)}</b><small>${esc(t.desc||'')}</small><small>${t.world?'ワールドデータ付き (そのまま遊ぶ)':'設定のテンプレート (作成画面で調整できる)'}</small></div></div>`).join(''):'<p class="em">テンプレートがありません</p>'}
+async function useTpl(t){
+ if(t.world){try{const buf=B64.dec(String(t.world).replace(/\s+/g,''));const txt=buf[0]==0x1f&&buf[1]==0x8b?await gunz(buf):new TextDecoder().decode(buf),j=JSON.parse(txt),o=(Array.isArray(j.worlds)?j.worlds:[j])[0],r=cleanW(o);if(!r)throw 0;r.name=String(t.name).slice(0,24);if(await DB.put(r)===null)throw 0;start(r)}catch(e){$('#tmsg').textContent='テンプレートのワールドデータを読み込めませんでした'}return}
+ openCreate({name:t.name,seed:t.seed||'',cre:+(t.mode!=null?t.mode:(t.ws&&t.ws.mode)||0),ws:t.ws})}
+$('#tlist').onclick=e=>{const w=e.target.closest('.wi');if(w&&TPL[+w.dataset.i])useTpl(TPL[+w.dataset.i])};
 $('#wre').onclick=()=>{const o=wl.find(w=>w.id==selW);if(o)openCreate({name:(o.name||'ワールド')+' (再生成)',seed:o.seed,cre:o.cre,ws:o.ws})};
 $('#wedit').onclick=()=>{const o=wl.find(w=>w.id==selW);if(!o)return;$('#ename').value=o.name||'ワールド';showScr('edit')};
 $('#esave').onclick=async()=>{const o=await DB.get(selW);if(o){o.name=$('#ename').value.trim()||'新規ワールド';await DB.put(o)}menuBack()};
@@ -4131,7 +4162,7 @@ mApply();
 
 // ===================== v7 =====================
 // 【開発メモ】更新するたびに必ずバージョンを上げること (VER / <title> / PATCH の先頭 / ファイル名)
-const VER='release v5',PATCH=[['release v5','2026-11-13',['オープニング(起動画面)・タイトルロゴ・エンドロールをPV風の演出に変更: 上下のシネマスコープ帯、ぼかしから浮かび上がるロゴ文字、光の筋が走る演出、キャッチコピー表示、エンドロールは字間を広げた金色の見出しと上下のフェード','ダメージを受けたとき、画面が揺れるようになった(ダメージが大きいほど強く揺れる。OSの「視差効果を減らす」設定がオンなら揺れない)','ロゴの「ø」がその場でくるくる回り、そこから左右の文字が順に回転しながら現れる演出を追加(起動画面とタイトル画面。タイトル画面では「ø」がその後も時々1回転する)。起動画面の最短表示時間を2.6秒に延長','モーションブラーを0〜300%まで選べるように変更(旧: 0〜100%)。強い値でも残像が崩れにくいようサンプル数を増やした','レシピ欄が左に寄っていた表示を修正(4列を均等幅にして中央揃えに)']],['release v4','2026-11-13',['滑空中、三人称視点のスキンが水平に寝て腕を広げる姿勢になった','トロッコを2種類に: トロッコ(ガードレール付)はレールの端で必ず止まり、トロッコはレールが無くても慣性で走り続ける','トロッコ類は溶岩で燃える','ロケット花火が滑空中(ブロックを狙っていなくても)使えるように修正','レシピを左にアイコンのグリッド、インベントリを右に配置','氷のチャンク境界の線を軽減(氷と水の重なり面を描画しない)']],['release v3','2026-11-13',['ベッドを2マス(頭側・足側)にした。置くと向いている方向へ頭側が伸びる。どちらを壊しても両方消えてベッド1個がドロップ。頭側と足側でテクスチャが違う(頭側は枕つき)','旧バージョンのワールドの1マスベッドは、ロード時に空いている隣のマスへ2マスに拡張する。ブロックを貫通・上書きはせず、入りきらない場合はベッドをアイテムとしてドロップする','スポーン地点に設定したベッドが壊されたら(爆発・コマンド含む)、スポーン地点がワールドのスポーン地点に戻り、自分だけにチャットで通知する。その後5分間はコンパスが旧ベッドの位置を指す(新しいベッドを使うと指さなくなる)','モバイル操作のボタン配置編集を追加 (設定 > 操作設定 > ボタン配置・サイズを編集)。ボタンをドラッグで移動、タップで選択してスライダーで個別にサイズ変更。初期化も可能。移動スティックも対象','インベントリの見た目をマイクラ風(グレーのパネル・立体的なスロット)に変更','ワールド生成・ロード時に、起動アニメーションと同じ進行バー(%つき)を表示。生成する周囲25チャンク(5×5)が揃ったら「さあ行こう!」を0.5秒表示してからスタートする']],
+const VER='release v6.1',PATCH=[['release v6.1','2026-11-13',['ワールド新規作成を押すと、先頭に「新規ワールドを作成」、その下にワールドテンプレート一覧が出るようになった。テンプレートはHTMLに埋め込まれていて、設定のテンプレート(作成画面で調整可)と、ワールドデータ付きテンプレート(選ぶとそのまま始まる)に対応','光源の届く距離を修正: 発光レベルNの光源はNブロック先まで届く(光源15=15ブロック)。手に持った光源の明るさの範囲も合わせた']],['release v6','2026-11-13',['パワードレールを追加(金鉱石6+板材1+レッドストーン鉱石1でクラフト→6個)。常に通電している扱いで、上を走るトロッコが加速し続ける(最高速まで)。曲がらず直線・坂のみで、普通の線路ともつながる','一人称の手にスキンを反映(右腕のテクスチャと袖レイヤー。細腕/太腕にも対応)','インベントリのプレイヤーモデルにスキンを反映(帽子・上着・袖・ズボンの外側レイヤーも表示。防具は上から重ねて表示)','滑空をやめた・着地した直後は重力に従って落下するように修正(滑空中の上向きの勢いと高速の横移動を引き継がない)。落下中(下向きの速度が出ている時)にだけ滑空を開始できる']],['release v5','2026-11-13',['オープニング(起動画面)・タイトルロゴ・エンドロールをPV風の演出に変更: 上下のシネマスコープ帯、ぼかしから浮かび上がるロゴ文字、光の筋が走る演出、キャッチコピー表示、エンドロールは字間を広げた金色の見出しと上下のフェード','ダメージを受けたとき、画面が揺れるようになった(ダメージが大きいほど強く揺れる。OSの「視差効果を減らす」設定がオンなら揺れない)','ロゴの「ø」がその場でくるくる回り、そこから左右の文字が順に回転しながら現れる演出を追加(起動画面とタイトル画面。タイトル画面では「ø」がその後も時々1回転する)。起動画面の最短表示時間を2.6秒に延長','モーションブラーを0〜300%まで選べるように変更(旧: 0〜100%)。強い値でも残像が崩れにくいようサンプル数を増やした','レシピ欄が左に寄っていた表示を修正(4列を均等幅にして中央揃えに)']],['release v4','2026-11-13',['滑空中、三人称視点のスキンが水平に寝て腕を広げる姿勢になった','トロッコを2種類に: トロッコ(ガードレール付)はレールの端で必ず止まり、トロッコはレールが無くても慣性で走り続ける','トロッコ類は溶岩で燃える','ロケット花火が滑空中(ブロックを狙っていなくても)使えるように修正','レシピを左にアイコンのグリッド、インベントリを右に配置','氷のチャンク境界の線を軽減(氷と水の重なり面を描画しない)']],['release v3','2026-11-13',['ベッドを2マス(頭側・足側)にした。置くと向いている方向へ頭側が伸びる。どちらを壊しても両方消えてベッド1個がドロップ。頭側と足側でテクスチャが違う(頭側は枕つき)','旧バージョンのワールドの1マスベッドは、ロード時に空いている隣のマスへ2マスに拡張する。ブロックを貫通・上書きはせず、入りきらない場合はベッドをアイテムとしてドロップする','スポーン地点に設定したベッドが壊されたら(爆発・コマンド含む)、スポーン地点がワールドのスポーン地点に戻り、自分だけにチャットで通知する。その後5分間はコンパスが旧ベッドの位置を指す(新しいベッドを使うと指さなくなる)','モバイル操作のボタン配置編集を追加 (設定 > 操作設定 > ボタン配置・サイズを編集)。ボタンをドラッグで移動、タップで選択してスライダーで個別にサイズ変更。初期化も可能。移動スティックも対象','インベントリの見た目をマイクラ風(グレーのパネル・立体的なスロット)に変更','ワールド生成・ロード時に、起動アニメーションと同じ進行バー(%つき)を表示。生成する周囲25チャンク(5×5)が揃ったら「さあ行こう!」を0.5秒表示してからスタートする']],
  ['release v2','2026-11-13',['スキン機能を追加 (設定 > スキン)。マイクラ形式 64×64 の PNG (旧 64×32 も可) を読み込めて、画面上のペイントエディタで直接描ける。ペン・消しゴム・塗りつぶし・スポイト・元に戻す・ガイド表示・前後プレビュー・細腕(Alex)/太腕(Steve)切り替え。PNG書き出しと、名前を付けた保存・呼び出し・削除ができる','スキンは三人称視点のモデル(外側レイヤー: 帽子・上着・袖・ズボンにも対応)と一人称の手の色に反映される','三人称視点(背面・前面)で一人称の腕が画面に残っていた不具合を修正','階段(向きあり・プレイヤーが段差を上れる)とハーフブロックを追加 (板材/丸石/石レンガ/レンガ/砂岩/クォーツ/ネザーレンガ/滑らかな石/苔石)。ハーフブロックの上に同じハーフブロックを置くと元のブロックに戻る。作業台で作れる','装飾ブロックを追加: カーペット(6色)・ランタン・レッドストーンランプ・ひび割れた/苔むした/模様入りの石レンガ・模様入りのクォーツ・クォーツの柱・模様入りの砂岩・銅ブロック・緑青の銅ブロック・プリズマリンレンガ','手抜きだったテクスチャを作り直した: 石・土・砂・砂利・雪・粘土・テラコッタ・ネザーラック・エンドストーン・氷・岩盤・スポンジ・ソウルサンド・草ブロック・磨かれた石類・クォーツ・コンクリート・羊毛・葉・干し草など']],
  ['release v1','2026-11-13',['ゲーム名を「BløckVerse」に統一し、バージョンを release v1 にした','ロケット花火を追加(火薬+板材でクラフト)。エリトラで滑空中に右クリックすると1個消費して一定時間前へ加速する','点火したTNTが重力・衝突・摩擦の影響を受けるようになった(落下・バウンド・斜面で止まる)。爆発で近くの点火済みTNTが吹き飛び、誘爆したTNTは爆風で飛び散る','エリトラ(胸当てスロット)・チェスト・壁松明を追加']],
  ['v7.10','2026-11-13',['TNTを追加。作業台(3×3)に「火薬」と「砂」を格子状(火薬が四隅と中央、砂がその間)に置くと作れる。レシピ一覧からも自動配置できる','TNTは火打ち石と打ち金で右クリックすると点火(約3秒で点滅して爆発)。爆発は範囲内のブロックを壊し、プレイヤーとモブにダメージ、近くのTNTを誘爆させる','火薬アイテムを追加。クリーパーを倒すと0〜2個落とす (クリエイティブのインベントリにもある)','クリーパーの爆発(モブの被害オン時)も近くのTNTを誘爆させる']],
