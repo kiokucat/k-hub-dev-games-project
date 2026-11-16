@@ -2689,7 +2689,7 @@ function freeCart(c,i,dt){let n=Math.max(1,Math.ceil(dt/.04));const h=dt/n;
   if(gd){const f=Math.exp(-h*1.6);c.vx*=f;c.vz*=f;if(Math.hypot(c.vx,c.vz)<.12){c.vx=c.vz=0}}
   const fx=Math.floor(c.x),fy=Math.floor(c.y+.05),fz=Math.floor(c.z),b=get(fx,fy,fz);
   if(isRail(b)&&c.y<fy+.6){const sh=rsh(b),o=RO[sh],sp=Math.hypot(c.vx,c.vz);let ex=o[0],bd=-9;for(const d of o){const dd=RDR[d][0]*c.vx+RDR[d][1]*c.vz;if(dd>bd){bd=dd;ex=d}}
-   c.free=0;c.cx=fx;c.cy=fy;c.cz=fz;c.sh=sh;c.ex=ex;c.en=o[0]==ex?o[1]:o[0];c.u=.5;c.sp=Math.min(CMX[ws.cmax|0]||13,sp);c.vx=c.vy=c.vz=0;cartPose(c);return}
+   c.free=0;c.cx=fx;c.cy=fy;c.cz=fz;c.sh=sh;c.ex=ex;c.en=o[0]==ex?o[1]:o[0];c.u=.5;c.sp=Math.min(cmaxF(),sp);c.vx=c.vy=c.vz=0;cartPose(c);return}
   if(cartLava(c)){burnCart(c,i);return}}
  if(c.y<-20){breakCart(c,i,1);return}
  c.cx=Math.floor(c.x);c.cy=Math.floor(c.y);c.cz=Math.floor(c.z);
@@ -2710,9 +2710,9 @@ function cartsUpdate(dt){
   if(rd){fi=(keys[KB.f]?1:0)-(keys[KB.b]?1:0)+joy.y;if(fi){const dd=-Math.sin(yaw)*(c.hx||0)-Math.cos(yaw)*(c.hz||0);c.sp+=fi*(dd>=-.25?1:-1)*7*dt}}
   c.sp-=(railH(c.sh,c.ex)-railH(c.sh,c.en))*6*dt;
   c.sp*=Math.exp(-dt*(rd&&fi?.05:.3));
-  if(b>=PRL&&c.sp>.05)c.sp+=14*(RML[ws.rmul|0]||1)*dt;
+  if(b>=PRL&&c.sp>.05)c.sp+=14*rmulF()*dt;
   if(c.sp<0){revC(c);c.sp=-c.sp}
-  c.sp=Math.min(c.sp,CMX[ws.cmax|0]||13);
+  c.sp=Math.min(c.sp,cmaxF());
   let rem=c.sp*dt;
   while(rem>0){const L=cellLen(c.sh),adv=rem/L,left=1-c.u;
    if(adv<left){c.u+=adv;rem=0}
@@ -4477,7 +4477,7 @@ async function start0(sv){reqPersist();SAVED=sv?sv.ch:null;bedO=new Map(sv&&Arra
   if(y>SEA&&b!=WATER&&b!=9&&b!=7&&b!=39&&b!=41&&b!=44&&b!=MAGMA&&!get(x,y+1,z)&&!get(x,y+2,z)){sp.x=x+.5;sp.y=y+1.01;sp.z=z+.5;f=1}}
  if(!f){const{h}=col(0,0);sp.x=sp.z=.5;sp.y=Math.max(h,SEA)+1.01}if(WT==4||WT==5){const q=wtSp();sp.x=q[0];sp.y=q[1];sp.z=q[2]}}
  wsp=sv&&sv.sw?{x:sv.sw.x,y:sv.sw.y,z:sv.sw.z}:{x:sp.x,y:sp.y,z:sp.z};Object.assign(p,sp);v.x=v.y=v.z=0;
- yaw=0;pitch=-.15;fly=0;glide=0;falling=0;hp=20;dead=0;burn=0;hg=20;hgq=10;stv=0;eatCd=0;hab=0;hsat=5;hexh=0;eatT=0;regen=0;fvClear();slots.fill(null);held=null;gt=DAYLEN*.1;dkV=0;wasN=0;arrows.slice().forEach(a=>rmA(a,0));clearDrops();bowC=xbC=xbH=0;ug=ugT=0;while(tnts.length)tntRm(tnts[0],0);mobs.forEach(rmMob);mobs.length=0;clearCarts();pendC=[];ride=null;lastDeath=null;eq.fill(null);hk=null;spT=3;xp=0;$('#inv').hidden=true;cg.fill(null);tbl=0;chOpen=null;chests.clear();if(WT!=4&&WT!=5)STC.clear();ws=Object.assign({},WSD,sv?(sv.ws||{}):nw);if(!ws.km){ws.km=1;ws.keep=1}cre=sv?+sv.cre:+nw.mode;ws.mode=cre;fx={};fxr=0;showFx();ms=0;
+ yaw=0;pitch=-.15;fly=0;glide=0;falling=0;hp=20;dead=0;burn=0;hg=20;hgq=10;stv=0;eatCd=0;hab=0;hsat=5;hexh=0;eatT=0;regen=0;fvClear();slots.fill(null);held=null;gt=DAYLEN*.1;dkV=0;wasN=0;arrows.slice().forEach(a=>rmA(a,0));clearDrops();bowC=xbC=xbH=0;ug=ugT=0;while(tnts.length)tntRm(tnts[0],0);mobs.forEach(rmMob);mobs.length=0;clearCarts();pendC=[];ride=null;lastDeath=null;eq.fill(null);hk=null;spT=3;xp=0;$('#inv').hidden=true;cg.fill(null);tbl=0;chOpen=null;chests.clear();if(WT!=4&&WT!=5)STC.clear();ws=Object.assign({},WSD,sv?(sv.ws||{}):nw);if(sv&&sv.ws&&sv.ws.cmaxV==null){ws.cmaxV=[13,20,30,50][sv.ws.cmax|0]||13;ws.rmulV=[1,1.5,2,3][sv.ws.rmul|0]||1}if(!ws.km){ws.km=1;ws.keep=1}cre=sv?+sv.cre:+nw.mode;ws.mode=cre;fx={};fxr=0;showFx();ms=0;
  if(cre)[1,2,3,8,7,9,11,D1,TB].forEach((b,i)=>slots[i]={b,n:1});if(!sv&&!cre&&ws.kit)giveKit();sel=0;world=1;if(sv)applySave(sv);
  $('#hud').hidden=false;$('#menu').hidden=true;$('#dead').hidden=true;paused=0;resetIn();renderHot();renderHp();renderXp();lockPtr();
  if(!cre&&ws.animals)for(let k=0;k<6;k++){const q=spawnPos(0);if(q)spawnHerd(q)}
@@ -4548,15 +4548,16 @@ __bp(45);
 // ===================== UI v5: screens / worlds / options / advancements / stats =====================
 const KS={f:'前進',b:'後退',l:'左移動',r:'右移動',jp:'ジャンプ/上昇',sp:'ダッシュ/降下',brk:'破壊・攻撃',pl:'設置・食べる',inv:'インベントリ',map:'マップ',dr:'アイテムを捨てる'};
 let scr='',nav=[],selW=null,wl=[],wq='',atab='story',advSel=null;
-const CMX=[13,20,30,50],RML=[1,1.5,2,3],WSD={wt:0,mode:0,diff:2,mobs:1,creeper:0,mdmg:0,animals:2,day:0,hunger:0,fall:0,kit:0,keep:1,km:1,cmax:0,rmul:0};
-const WSC=[['mode','ゲームモード',['サバイバル','クリエイティブ']],['diff','難易度',['ピース','イージー','ノーマル','ハード']],['mobs','敵の湧き量',['なし','少なめ','ふつう','多め']],['creeper','クリーパーのスポーン',['オフ','オン']],['mdmg','モブの被害',['オフ','オン']],['animals','動物の湧き量',['なし','少なめ','ふつう','多め']],['day','昼夜',['通常','常に昼','常に夜','時間停止']],['hunger','空腹',['あり','なし']],['fall','落下ダメージ',['あり','なし']],['cmax','トロッコの最高速度',['標準(13)','20','30','50']],['rmul','レールの速さ倍率',['x1','x1.5','x2','x3']],['keep','インベントリキープ',['なし','あり']],['kit','初期アイテム',['なし','スターターセット'],1],['wt','ワールドタイプ',WTN,1]];
+const cmaxF=()=>{const n=parseFloat(ws.cmaxV);return n>0?n:13},rmulF=()=>{const n=parseFloat(ws.rmulV);return n>=0?n:1},WSD={wt:0,mode:0,diff:2,mobs:1,creeper:0,mdmg:0,animals:2,day:0,hunger:0,fall:0,kit:0,keep:1,km:1,cmaxV:13,rmulV:1};
+const WSC=[['mode','ゲームモード',['サバイバル','クリエイティブ']],['diff','難易度',['ピース','イージー','ノーマル','ハード']],['mobs','敵の湧き量',['なし','少なめ','ふつう','多め']],['creeper','クリーパーのスポーン',['オフ','オン']],['mdmg','モブの被害',['オフ','オン']],['animals','動物の湧き量',['なし','少なめ','ふつう','多め']],['day','昼夜',['通常','常に昼','常に夜','時間停止']],['hunger','空腹',['あり','なし']],['fall','落下ダメージ',['あり','なし']],['cmaxV','トロッコの最高速度 (ブロック/秒)','num'],['rmulV','レールの加速倍率 (x)','num'],['keep','インベントリキープ',['なし','あり']],['kit','初期アイテム',['なし','スターターセット'],1],['wt','ワールドタイプ',WTN,1]];
 let nw=Object.assign({},WSD),ws=Object.assign({},WSD);
 const dmul=()=>[0,.5,1,1.5][ws.diff];
 function giveKit(){[[TI.pk1],[TI.sw1],[TI.ax1],[TORCH,16],[NI.bread,5]].forEach(([b,n])=>{addN(b,n||1,b>=IB&&IT[b-IB].dur?IT[b-IB].dur:null)})}
-function renderRows(el,o,cr){el.innerHTML=WSC.filter(r=>cr||!r[3]).map(([k,l,v])=>`<button class="mb" data-w="${k}">${l}: ${v[o[k]]}</button>`).join('')}
+function renderRows(el,o,cr){el.innerHTML=WSC.filter(r=>cr||!r[3]).map(([k,l,v])=>v=='num'?`<label class="mb" style="display:flex;align-items:center;gap:6px;cursor:text">${l}: <input type="number" min="0" step="any" data-n="${k}" value="${o[k]}" style="flex:1;min-width:0;width:60px;font:inherit"></label>`:`<button class="mb" data-w="${k}">${l}: ${v[o[k]]}</button>`).join('')}
 function setMode(m){m=+m;ws.mode=m;if(!world||m==cre)return;cre=m;fly=0;v.y=0;held=null;spT=1;renderHp();renderArm();renderXp();renderHot();tip(cre?'クリエイティブに切り替えた':'サバイバルに切り替えた');saveNow()}
 function applyWs(k){if(k=='creeper'&&!ws.creeper)for(let i=mobs.length-1;i>=0;i--)if(mobs[i].t==7){rmMob(mobs[i]);mobs.splice(i,1)}if((k=='diff'||k=='mobs')&&(ws.diff==0||ws.mobs==0))for(let i=mobs.length-1;i>=0;i--)if(TY[mobs[i].t].hs){rmMob(mobs[i]);mobs.splice(i,1)}if(world)saveNow()}
 [['#cwrows',()=>nw,1],['#gsrows',()=>ws,0]].forEach(([s,g,cr])=>$(s).onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.w,r=WSC.find(x=>x[0]==k),o=g(),n=(o[k]+1)%r[2].length;if(!cr&&k=='mode')setMode(n);else{o[k]=n;if(!cr)applyWs(k)}renderRows($(s),o,cr)});
+[['#cwrows',()=>nw,1],['#gsrows',()=>ws,0]].forEach(([s,g,cr])=>{const el=$(s);el.addEventListener('input',e=>{const i=e.target.closest('input[data-n]');if(!i)return;const n=parseFloat(i.value);if(isFinite(n)&&n>=0)g()[i.dataset.n]=n});el.addEventListener('change',e=>{const i=e.target.closest('input[data-n]');if(!i)return;const k=i.dataset.n,o=g();if(!(parseFloat(i.value)>=0))i.value=o[k];if(!cr)applyWs(k)});['keydown','keyup'].forEach(t=>el.addEventListener(t,e=>{if(e.target.closest('input[data-n]'))e.stopPropagation()}))});
 const MENU=$('#menu');
 // --- GUI scale (Minecraft style)
 var guiP=1000,guiMax=300,guiT=0;
