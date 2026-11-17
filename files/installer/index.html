@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>K-HUB Desktop – オフラインで遊べるゲームランチャー</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#05040d;--panel:#141030;--raise:#1c1745;--text:#ece9ff;--muted:#8f8ab8;--cyan:#25f4ff;--pink:#ff2fd0;--violet:#8a5cff;--line:rgba(138,92,255,.28);--ink:#021318;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f5f3ff;--panel:#fff;--raise:#ece8ff;--text:#1a1440;--muted:#5d5788;--cyan:#0090a8;--pink:#c3159f;--violet:#5a36d6;--line:rgba(90,54,214,.25);--ink:#fff;color-scheme:light}}
+:root[data-theme="dark"]{--bg:#05040d;--panel:#141030;--raise:#1c1745;--text:#ece9ff;--muted:#8f8ab8;--cyan:#25f4ff;--pink:#ff2fd0;--violet:#8a5cff;--line:rgba(138,92,255,.28);--ink:#021318}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"BIZ UDPGothic","Yu Gothic UI","Segoe UI","Meiryo",sans-serif;line-height:1.7}
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+.neon{background:linear-gradient(135deg,var(--cyan),#6f7bff 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+header.hero{text-align:center;padding:72px 0 56px;background:radial-gradient(ellipse at 50% 0,rgba(138,92,255,.28),transparent 60%)}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:4px 14px;font-size:13px;color:var(--muted);margin-bottom:18px}
+h1{font-size:clamp(40px,9vw,76px);margin:0;letter-spacing:.04em;line-height:1.1}
+.lead{max-width:600px;margin:18px auto 28px;color:var(--muted);font-size:18px}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;padding:12px 26px;border-radius:10px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:var(--text);background:var(--raise)}
+.btn.p{background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--ink);border:0;box-shadow:0 0 24px rgba(37,244,255,.3)}
+.cart{margin:44px auto 0;width:min(300px,80%);aspect-ratio:4/3;border-radius:18px;background:linear-gradient(160deg,var(--raise),var(--panel));border:1px solid var(--line);padding:18px;box-shadow:0 20px 60px rgba(138,92,255,.25);transform:perspective(700px) rotateY(-14deg) rotateX(6deg)}
+.cart .scr{height:100%;border-radius:10px;background:linear-gradient(135deg,#0a0818,#1c1745);display:grid;place-items:center;border:1px solid var(--line);font-weight:800;font-size:22px}
+section{padding:52px 0}
+h2{font-size:clamp(24px,5vw,34px);margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card h3{margin:0 0 6px;font-size:18px;color:var(--cyan)}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.steps li{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px 16px 64px;position:relative}
+.steps li::before{content:counter(s);position:absolute;left:16px;top:14px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--pink));color:var(--ink)}
+.steps b{display:block}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.tags span{border:1px solid var(--line);background:var(--raise);border-radius:8px;padding:4px 12px;font-size:14px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:15px}
+th{color:var(--muted);font-weight:600}
+code{background:var(--raise);padding:2px 7px;border-radius:5px;font-size:14px}
+.dl{text-align:center;background:radial-gradient(ellipse at 50% 100%,rgba(37,244,255,.14),transparent 65%)}
+.dlgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:680px;margin:0 auto;text-align:left}
+.dlbtn{display:block;text-decoration:none;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px;transition:border-color .2s,box-shadow .2s}
+.dlbtn:hover,.dlbtn:focus-visible{border-color:var(--cyan);box-shadow:0 0 28px rgba(37,244,255,.25);outline:none}
+.dlbtn.main{background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--ink);border:0}
+.dlbtn strong{display:block;font-size:20px}
+.dlbtn span{display:block;font-size:14px;opacity:.85}
+.dlbtn small{display:block;margin-top:10px;font-size:12px;opacity:.7;word-break:break-all}
+.win{margin-top:18px;color:var(--muted);font-size:14px}
+footer{text-align:center;color:var(--muted);padding:40px 0 56px;font-size:14px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <span class="badge">Windows 10 / 11 ・ 無料 ・ オフライン対応</span>
+  <h1><span class="neon">K-HUB</span> Desktop</h1>
+  <p class="lead">ゲームをダウンロードして、カセットのように並べて遊べるデスクトップランチャー。一度入れれば、ネットがなくても起動できます。</p>
+  <div class="btns"><a class="btn p" href="#start">使い方を見る</a><a class="btn" href="#features">機能を見る</a></div>
+  <div class="cart" aria-hidden="true"><div class="scr"><span class="neon">▶ PLAY</span></div></div>
+</div></header>
+
+<section id="features"><div class="wrap">
+  <h2>主な機能</h2><p class="sub">シンプルで軽く、安全に遊べることを大事にしています。</p>
+  <div class="grid">
+    <div class="card"><h3>ゲームハブ</h3><p>配信者が公開したゲームが一覧に並びます。ボタン一つでダウンロードから展開まで自動で完了。進捗は％で表示されます。</p></div>
+    <div class="card"><h3>3Dカセットのライブラリ</h3><p>ダウンロード済みのゲームをカセットで表示。←→で選んで「プレイ」を押すと画面が点灯し、そのままゲームが起動します。</p></div>
+    <div class="card"><h3>完全オフライン起動</h3><p>導入済みのゲームはネットなしで遊べます。ゲームごとに保存先もセーブデータも分離されます。</p></div>
+    <div class="card"><h3>安全なアップデート</h3><p>更新は一時フォルダに展開→検証→入れ替えの順。失敗しても元のゲームが残るので、遊べなくなりません。</p></div>
+    <div class="card"><h3>状態がひと目で分かる</h3><p>「最新」「更新あり」「通信失敗」「取得失敗」を区別して表示。サイドバーには更新件数も出ます。</p></div>
+    <div class="card"><h3>演出とやさしさ</h3><p>カセットを差し込む起動演出つき（クリックでスキップ可）。OSの「視覚効果を減らす」設定ならアニメは省略されます。</p></div>
+  </div>
+</div></section>
+
+<section id="start"><div class="wrap">
+  <h2>使い方</h2><p class="sub">3ステップで遊べます。</p>
+  <ol class="steps">
+    <li><b>ゲームハブでダウンロード</b>気になるゲームを選んで「ダウンロード」を押すだけ。</li>
+    <li><b>ライブラリでカセットを選ぶ</b>←→ボタン（またはキーボードの←→）で中央に合わせます。</li>
+    <li><b>「▶ プレイ」で起動</b>以後はネットがなくても遊べます。更新があれば「アップデート」が出ます。</li>
+  </ol>
+</div></section>
+
+<section><div class="wrap">
+  <h2>安心して使える設計</h2><p class="sub">ゲームは専用の隔離環境で動き、PCの他の場所には触れません。</p>
+  <div class="grid">
+    <div class="card"><h3>隔離された実行環境</h3><p>Electronのsandbox・contextIsolationを有効化し、ゲームは専用プロトコルで配信。許可なしの権限要求はすべて拒否します。</p></div>
+    <div class="card"><h3>ZIPを事前に検証</h3><p>不正なパスや展開先の外へ出るファイルは、書き込む前にすべて拒否します。</p></div>
+    <div class="card"><h3>外部リンクは限定</h3><p>外部URLとして開けるのは GitHub の公式ドメインのみです。</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>動作環境・技術</h2><p class="sub">低スペックのPCでも軽快に動くよう、フレームワークなしで作られています。</p>
+  <div class="scroll"><table>
+    <tr><th>対応OS</th><td>Windows 10 / 11</td></tr>
+    <tr><th>形式</th><td>インストーラ（NSIS）／ポータブルexe</td></tr>
+    <tr><th>費用</th><td>0円（コード署名なしのため、初回はSmartScreenの警告が出ます）</td></tr>
+    <tr><th>データの場所</th><td><code>%APPDATA%/k-hub-desktop/</code></td></tr>
+    <tr><th>注意</th><td>外部APIが必要なゲームは、完全オフラインでは動かない場合があります</td></tr>
+  </table></div>
+  <div class="tags"><span>Electron</span><span>HTML / CSS / JavaScript</span><span>electron-builder</span><span>GitHub Releases</span></div>
+</div></section>
+
+<section class="dl" id="download"><div class="wrap">
+  <h2>ダウンロード</h2><p class="sub">Windows 10 / 11 専用です（macOS・Linuxには対応していません）。</p>
+  <div class="dlgrid">
+    <a class="dlbtn main" href="https://github.com/kiokucat/K-hub-desktop-Downloads/releases/download/release/K-HUB.Desktop.-.install.exe" target="_blank" rel="noopener"><strong>インストーラー版</strong><span>インストール先を選んで導入。スタートメニューに登録されます。</span><small>K-HUB Desktop-Setup-0.1.0.exe</small></a>
+    <a class="dlbtn" href="https://github.com/kiokucat/K-hub-desktop-Downloads/releases/download/release/K-HUB.Desktop.exe" target="_blank" rel="noopener"><strong>ポータブル版</strong><span>インストール不要。好きなフォルダやUSBメモリから起動できます。</span><small>K-HUB Desktop-0.1.0-portable.exe</small></a>
+  </div>
+  <p class="win">初回起動時はSmartScreenの警告が出ることがあります（コード署名なしのため）。</p>
+</div></section>
+
+<footer><div class="wrap">K-HUB Desktop v0.1.0 ・ 更新されるのはゲームのみで、本体は自動更新しません</div></footer>
+</body>
+</html>
