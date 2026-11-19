@@ -329,6 +329,10 @@ em{border:2px solid var(--ink);border-radius:8px;font-weight:800;text-shadow:1px
 .sky,.pf::after{display:none}
 .field::before{z-index:1}
 .ct{position:absolute;right:8px;top:6px;z-index:9;padding:2px 10px;border:3px solid var(--ink);border-radius:999px;background:var(--yl);color:var(--ink);font-family:var(--hd);font-size:.8em;opacity:0;pointer-events:none;box-shadow:0 3px 0 var(--ink)}
+.sg,.su>.sg,.mid>.sg{overflow:hidden!important}.sg .tile{content-visibility:visible}
+.pgr{grid-column:1/-1;display:flex;align-items:center;gap:4px}.pgr span{flex:1;text-align:center;font-weight:800;font-size:.9em}.pgr button{flex:none;min-width:2.2em;border:2px solid #5b6aa0;border-radius:8px;padding:2px 8px;background:#1c2648;text-align:center;font-weight:800}.pgr button:disabled{opacity:.3}
+/* 先頭ポケモン選択中は相手の情報を隠す */
+.leadsel .bx{visibility:hidden}
 </style></head><body>
 <div id="h1" class="half r"></div><div id="h0" class="half"></div>
 <script>
@@ -506,7 +510,7 @@ const sk=`<div class="set"></div><div class="bt"><div class="field"><canvas clas
 const ri=()=>({iv:Array.from({length:6},()=>R()*32|0),u:1+R()*5|0,d:1+R()*5|0});
 const P=[['6'],['445']].map(f=>({pk:[],hi:[],ind:[],bg:{po:3,su:2,hy:1,rv:1,el:1},scr:'setup',so:{k:'id',d:1},lv:50,foc:f[0],rdy:0}));
 const RL={pm:0,n:3,lv:50,xp:1,it:1,bag:1,cr:1,an:1,sp:1,bm:8};let phase='title',M='',LK='ram',MODE='2p',ST_I=0,NOPK=0,TS='main',NAME=['1P','2P'];const lockpk=()=>RL.pm||NOPK;
-const act=p=>P[p].team[P[p].a],nm=p=>SP[act(p).s][0],need=p=>act(p).hp<=0&&P[p].team.some(m=>m.hp>0),bst=s=>SP[s][3].reduce((a,b)=>a+b);
+let LEAD=0,LEADRES=null;const act=p=>P[p].team[P[p].a],nm=p=>SP[act(p).s][0],need=p=>LEAD?(!P[p].cpu&&P[p].team.filter(m=>m.hp>0).length>1):act(p).hp<=0&&P[p].team.some(m=>m.hp>0),bst=s=>SP[s][3].reduce((a,b)=>a+b);
 const sv=(v,i,L,n)=>{const x=Math.floor((2*v+n.iv[i])*L/100)+(i?5:L+10);return i&&n.u!=n.d?Math.floor(x*(i==n.u?1.1:i==n.d?.9:1)):x};
 const stats=m=>{m.st=SP[m.s][3].map((v,i)=>sv(v,i,m.L,m.ind))};
 const mk=(s,L,it,ind)=>{const m={s,L,it,ind,sg:[0,0,0,0,0,0],exp:L**3,mv:movesFor(s,ind)};m.pp=m.mv.map(k=>MV[k][5]);stats(m);m.hp=m.st[0];return m};
@@ -524,27 +528,32 @@ if(cr(),P[0].rdy&&P[1].rdy){P.forEach(x=>{x.pk.length=Math.min(x.pk.length,RL.n)
 const radar=(f,nt)=>{const R=68,pt=(i,r)=>{const a=(-90+60*i)*Math.PI/180;return[110+Math.cos(a)*R*r,100+Math.sin(a)*R*r]},pp=a=>a.map(n=>n.toFixed(1)).join(','),poly=r=>r.map((v,i)=>pp(pt(i,Math.min(1,v/170)))).join(' '),ring=k=>[0,1,2,3,4,5].map(i=>pp(pt(i,k))).join(' '),
 eff=nt&&f[3].map((v,i)=>(v+nt.iv[i]/2)*(i&&nt.u!=nt.d?(i==nt.u?1.1:i==nt.d?.9:1):1));
 return `<svg viewBox="15 5 190 190" class="rd">${[.33,.66,1].map(k=>`<polygon points="${ring(k)}" fill="none" stroke="#46558a"/>`).join('')}${[0,1,2,3,4,5].map(i=>`<line x1="110" y1="100" x2="${pt(i,1)[0].toFixed(1)}" y2="${pt(i,1)[1].toFixed(1)}" stroke="#46558a"/>`).join('')}<polygon points="${poly(f[3])}" fill="#2b6fd8aa" stroke="#6aa8ff" stroke-width="2"/>${eff?`<polygon points="${poly(eff)}" fill="#ffe27a33" stroke="#ffe27a" stroke-width="2"/>`:''}${f[3].map((v,i)=>`<text x="${pt(i,1.24)[0].toFixed(1)}" y="${pt(i,1.24)[1].toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="22" font-weight="800" fill="#fff">${SS[i]}</text>`).join('')}</svg>`};
-const GRID=[];
-function gridFor(p,S){let g=GRID[p];const sk=S.so.k+':'+S.so.d;if(!g){g=GRID[p]=document.createElement('div');g.className='sg'}
-if(g._s!==sk){g._s=sk;g.innerHTML=sorted(S.so).map(k=>`<button class="tile" data-a="pk" data-k="${k}"><i class="sp ${spc(k)}"></i>${SP[k][0]}</button>`).join('')}
+const GRID=[],PGS=12,PGN=ps=>Math.ceil(Object.keys(SP).length/(ps||PGS));
+function gridFor(p,S){let g=GRID[p];const ps=S.ps||PGS,pg=S.pg=Math.max(0,Math.min(S.pg||0,PGN(ps)-1)),sk=S.so.k+':'+S.so.d+':'+pg+':'+ps;if(!g){g=GRID[p]=document.createElement('div');g.className='sg'}
+if(g._s!==sk){g._s=sk;const n=PGN(ps),b=(l,i,d)=>`<button class="pgb" data-a="pg" data-i="${i}" ${d?'disabled':''}>${l}</button>`;g.innerHTML=`<div class="pgr">${b('«',-5,pg==0)}${b('‹',-1,pg==0)}<span>${pg+1} / ${n}</span>${b('›',1,pg>=n-1)}${b('»',5,pg>=n-1)}</div>`+sorted(S.so).slice(pg*ps,pg*ps+ps).map(k=>`<button class="tile" data-a="pk" data-k="${k}"><i class="sp ${spc(k)}"></i>${SP[k][0]}</button>`).join('')}
 g.querySelectorAll('.tile').forEach(b=>b.classList.toggle('on',S.pk.includes(b.dataset.k)));return g}
+function fitGrid(p){const S=P[p],g=GRID[p];if(!g||!g.isConnected||!g.clientHeight)return;const ts=[...g.querySelectorAll('.tile')],pr=g.querySelector('.pgr');if(!ts.length||!pr)return;
+const cs=getComputedStyle(g),gap=parseFloat(cs.rowGap)||0,cols=Math.max(1,cs.gridTemplateColumns.split(' ').length),th=Math.max(...ts.map(t=>t.offsetHeight))+1,
+rows=Math.max(1,Math.floor((g.clientHeight-pr.offsetHeight-2)/(th+gap))),ps=rows*cols,old=S.ps||PGS;
+if(ps===old){S.ps=ps;return}S.pg=Math.floor((S.pg||0)*old/ps);S.ps=ps;g._s=null;gridFor(p,S)}
+addEventListener('resize',()=>{if(phase=='setup')[0,1].forEach(fitGrid)});
 const SO=[['id','ずかん'],['name','なまえ'],['bst','ごうけい'],['0','HP'],['1','こうげき'],['2','ぼうぎょ'],['3','とくこう'],['4','とくぼう'],['5','すばやさ'],['ty','タイプ']];
 const sorted=so=>Object.keys(SP).sort((a,b)=>{const f=k=>so.k=='id'?+k:so.k=='name'?SP[k][0]:so.k=='bst'?bst(k):so.k=='ty'?Object.keys(TN).indexOf(SP[k][2][0]):SP[k][3][+so.k],x=f(a),y=f(b);return(typeof x=='string'?x.localeCompare(y,'ja'):x-y)*so.d||a-b});
 const ivs=n=>n.iv.reduce((a,b)=>a+b);
 function setupH(p){const S=P[p],f=SP[S.foc],hi=j=>HI[S.hi[j]],fj=S.pk.indexOf(S.foc),nt=fj>=0?S.ind[fj]:null;return `${tabs(S)}<h3>${p+1}P ポケモンを ${RL.n}ひき えらべ（${S.pk.length}/${RL.n}）</h3>
 <div class="so">${SO.map(([k,l])=>`<button class="${S.so.k==k?'on':''}" data-a="so" data-k="${k}">${l}${S.so.k==k?(S.so.d>0?'▲':'▼'):''}</button>`).join('')}</div>
-<div class="mid"><div class="sg" data-p="${S.pk}"></div>
+<div class="mid"><div class="sg" data-p="${S.pk}" data-g="${S.pg||0}"></div>
 <div class="dt"><div class="w2">${f[0]} ${f[2].map(chip).join('')} しゅぞくち ごうけい${bst(S.foc)}</div><div class="w2 dsr"><div class="sts">${f[3].map((v,i)=>`<div class="sr"><span>${SS[i]}</span><b>${v}</b><s><u style="width:${Math.min(100,v/1.6)}%;--c:hsl(${Math.min(v,150)*.9} 90% 50%)"></u></s>${nt?`<i class="av" style="color:${nt.iv[i]>=28?'#ffe27a':nt.iv[i]<=5?'#ff8a8a':'#fff'}">${sv(v,i,RL.lv,nt)}</i>`:''}</div>`).join('')}</div><div class="rw">${radar(f,nt)}<small>青 しゅぞくち／黄 こたいちこみ</small></div></div><div class="w2">${nt?`こたいち ${nt.iv.join('・')}（${ivs(nt)}/186）　せいかく ${nt.u==nt.d?'ふつう':SS[nt.u]+'↑ '+SS[nt.d]+'↓'}　右は Lv${RL.lv}の のうりょく`:'えらぶと こたいちが きまる'}</div><div class="w2">${(nt?movesFor(S.foc,nt):f[4]).map(k=>`<em style="background:${TC[MV[k][1]]}">${MV[k][0]} ${pw(MV[k])}</em>`).join('')}</div></div></div>
 <button class="rrb" data-a="rr" data-i="-1" ${S.pk.length?'':'disabled'}>🎲 リセマラ<small>${p+1}Pの ポケモンぜんいんの こたいち・せいかくを ひきなおす</small></button>
 <div class="sel">${S.pk.map((k,j)=>`<button data-a="rr" data-i="${j}">🎲 ${SP[k][0]}<small>こたいち ${ivs(S.ind[j])}/186</small></button>`).join('')}</div>
 ${RL.it?`<div class="sel">${S.pk.map((k,j)=>`<button data-a="ho" data-i="${j}">${SP[k][0]}<small>${hi(j)[1]}</small><small>${hi(j)[3]}</small></button>`).join('')}</div>`:''}
 <button class="go${S.rdy?' on':''}" data-a="rdy" ${S.pk.length<RL.n?'disabled':''}>${S.rdy?'あいてを まっています…':(MODE=='2p'?'バトルかいし！（ふたりの どうい）':'バトルかいし！')}</button>`}
 const btot=S=>Object.values(S.bg).reduce((a,b)=>a+b,0);
-const tabs=S=>lockpk()?'':`<div class="so tb"><button class="${S.scr!='order'?'on':''}" data-a="scr" data-k="setup">① ポケモンを えらぶ</button><button class="${S.scr=='order'?'on':''}" data-a="scr" data-k="order">② じゅんばん・どうぐ</button></div>`;
+const tabs=S=>lockpk()?'':`<div class="so tb"><button class="${S.scr!='order'?'on':''}" data-a="scr" data-k="setup">① ポケモンを えらぶ</button><button class="${S.scr=='order'?'on':''}" data-a="scr" data-k="order">② どうぐ</button></div>`;
 const bmRow=()=>RL.bag?`<div class="rl"><span>バッグの じょうげん</span>${[-5,-1].map(d=>`<button data-a="rl" data-k="bm" data-i="${Math.max(1,RL.bm+d)}">${d<-1?'－5':'－'}</button>`).join('')}<b class="cn">${RL.bm}こ</b>${[1,5].map(d=>`<button data-a="rl" data-k="bm" data-i="${Math.min(32,RL.bm+d)}">${d>1?'＋5':'＋'}</button>`).join('')}<small>（1〜32）</small></div>`:'';
-function orderH(p){const S=P[p];return `${tabs(S)}<h3>${p+1}P じゅんばんと どうぐ${RL.pm?'（ランダムで きまった！）':''}</h3>
-<div class="lb">たたかう じゅんばん（いちばん うえが さいしょに でる）</div>
-${S.pk.map((k,j)=>{const m=SP[k];return `<div class="or"><b>${j+1}</b><i class="sp ${spc(k)}"></i><span>${m[0]}<small>${m[2].map(t=>TN[t]).join('・')}${RL.it&&HI[S.hi[j]][0]?'　'+HI[S.hi[j]][1]:''}</small>${RL.pm?'<small>'+movesFor(k,S.ind[j]).map(q=>MV[q][0]).join(' / ')+'</small>':''}</span><button data-a="up" data-i="${j}" ${j?'':'disabled'}>▲</button><button data-a="dn" data-i="${j}" ${j<S.pk.length-1?'':'disabled'}>▼</button></div>`}).join('')}
+function orderH(p){const S=P[p];return `${tabs(S)}<h3>${p+1}P どうぐ${RL.pm?'（ランダムで きまった！）':''}</h3>
+<div class="lb">えらんだ ポケモン（さいしょに だす ポケモンは バトルで きめる）</div>
+${S.pk.map((k,j)=>{const m=SP[k];return `<div class="or"><i class="sp ${spc(k)}"></i><span>${m[0]}<small>${m[2].map(t=>TN[t]).join('・')}${RL.it&&HI[S.hi[j]][0]?'　'+HI[S.hi[j]][1]:''}</small>${RL.pm?'<small>'+movesFor(k,S.ind[j]).map(q=>MV[q][0]).join(' / ')+'</small>':''}</span></div>`}).join('')}
 ${RL.bag?`<div class="lb">バッグに いれる どうぐ（ごうけい ${btot(S)}/${RL.bm}）</div>${Object.keys(BAG).map(k=>`<div class="or"><span>${BAG[k][0]}<small>${BD[k]}</small></span>${[-5,-1].map(d=>`<button data-a="bg" data-k="${k}" data-i="${d}" ${S.bg[k]>0?'':'disabled'}>${d<-1?'－5':'－'}</button>`).join('')}<b class="cn">${S.bg[k]}</b>${[1,5].map(d=>`<button data-a="bg" data-k="${k}" data-i="${d}" ${btot(S)<RL.bm?'':'disabled'}>${d>1?'＋5':'＋'}</button>`).join('')}</div>`).join('')}`:''}
 <button class="go${S.rdy?' on':''}" data-a="rdy" ${S.pk.length<RL.n?'disabled':''}>${S.rdy?'あいてを まっています…':S.pk.length<RL.n?`ポケモンを ${RL.n}ひき えらんでね`:(MODE=='2p'?'バトルかいし！（ふたりの どうい）':'バトルかいし！')}</button>`}
 function order(p,a,i,k){const S=P[p];
@@ -557,11 +566,11 @@ const gh=q('.gh');if(e.dataset.s!=m.s){q('.ht')._v=void 0;gh.style.transition='n
 q('.nm').textContent=SP[m.s][0];q('.lv').textContent=':L'+m.L;u.style.width=r*100+'%';gh.style.width=r*100+'%';q('.bar').classList.toggle('low',r<=.2&&r>0);u.style.background=r>.5?'#00a800':r>.2?'#f8b800':'#d82800';
 cnt(q('.ht'),m.hp,m.st[0]);q('.dots').innerHTML=NAME[pl]+' '+P[pl].team.map(x=>`<i class="pb${x.hp>0?'':' x'}"></i>`).join('');q('.ii').textContent=((RL.it?HI.find(x=>x[0]==m.it)[1]:'')+' '+m.sg.map((v,i)=>v?SS[i]+(v>0?'+':'')+v:'').join(' ')).replace(/\s+/g,' ').trim();
 if(mine)q('.xp u').style.width=Math.min(100,(m.exp-m.L**3)/((m.L+1)**3-m.L**3)*100)+'%'}
-const msg=p=>SUR>=0&&phase=='over'?(p==SUR?(MODE=='wild'?'うまく にげきれた！':'こうさんしました…'):'あいてが こうさんしました！'):(phase=='pick'||phase=='sw')&&P[p].pend&&!P[p].ch?cfT(p):phase=='pick'?(P[p].ch?'あいての こうどうを\nまっている…':`${nm(p)}は\nどうする？`):phase=='sw'?(need(p)&&!P[p].ch?'つぎに だす\nポケモンを えらぼう':'あいての いれかえを\nまっている…'):M;
+const msg=p=>SUR>=0&&phase=='over'?(p==SUR?(MODE=='wild'?'うまく にげきれた！':'こうさんしました…'):'あいてが こうさんしました！'):(phase=='pick'||phase=='sw')&&P[p].pend&&!P[p].ch?cfT(p):phase=='pick'?(P[p].ch?'あいての こうどうを\nまっている…':`${nm(p)}は\nどうする？`):phase=='sw'?(need(p)&&!P[p].ch?(LEAD?'さいしょに だす\nポケモンを えらぼう':'つぎに だす\nポケモンを えらぼう'):'あいての いれかえを\nまっている…'):M;
 function menu(p){const S=P[p],a=act(p),d=act(1-p),T=S.team,bk='<button class="w2" data-a="back">もどる</button>';
 if(phase=='over'){if(p==1&&P[1].cpu)return '';const b=(a,t)=>`<button class="w2" data-a="${a}">${t}</button>`;return MODE=='wild'?b('exnext','▶ たんけんに もどる'):MODE=='story'?b('stnext',WIN==0?'▶ つぎへ すすむ':'もういちど ちょうせん')+b('title','タイトルへ'):b('again','もういちど あそぶ')+b('title','タイトルへ')}
 const sw=phase=='sw'&&need(p)&&!S.ch,pk=phase=='pick'&&!S.ch;if(!pk&&!sw)return '';if(S.pend)return '<button class="ok" data-a="ok">✔ 決定</button><button class="no" data-a="no">✖ キャンセル</button>';
-if(sw||S.ui=='party'||S.ui=='tgt'){const tg=!sw&&S.ui=='tgt',k=S.bi;return T.map((m,i)=>`<button data-a="${tg?'tg':'sw'}" data-i="${i}" ${(tg?(k=='rv'?m.hp>0:k=='el'?m.hp<=0:m.hp<=0||m.hp>=m.st[0]):m.hp<=0||i==S.a)?'disabled':''}><img class="mi" src="${IMG[m.s]||spr(SP[m.s][1])}" alt=""><span>${SP[m.s][0]} :L${m.L}<small>HP ${m.hp}/${m.st[0]}</small><i class="hb"><u style="width:${m.hp/m.st[0]*100}%"></u></i></span></button>`).join('')+(sw?'':bk)}
+if(sw||S.ui=='party'||S.ui=='tgt'){const tg=!sw&&S.ui=='tgt',k=S.bi;return T.map((m,i)=>`<button data-a="${tg?'tg':'sw'}" data-i="${i}" ${(tg?(k=='rv'?m.hp>0:k=='el'?m.hp<=0:m.hp<=0||m.hp>=m.st[0]):m.hp<=0||(!LEAD&&i==S.a))?'disabled':''}><img class="mi" src="${IMG[m.s]||spr(SP[m.s][1])}" alt=""><span>${SP[m.s][0]} :L${m.L}<small>HP ${m.hp}/${m.st[0]}</small><i class="hb"><u style="width:${m.hp/m.st[0]*100}%"></u></i></span></button>`).join('')+(sw?'':bk)}
 if(S.ui=='fight')return a.mv.map((k,i)=>{const m=MV[k],e=emk(m,d),x=e<0?['－',(m[6]||'')[0]=='c'?'あいて':'じぶん','#9aa4c8']:e==0?['×','きかない','#9aa4c8']:e>1?['◎','ばつぐん','#ff9a5a']:e<1?['△','いまひとつ','#7ec8ff']:['○','ふつう','#fff'];return `<button class="mvb" data-a="mv" data-i="${i}" style="--c:${TC[m[1]]}" ${a.pp[i]<=0&&a.pp.some(x=>x>0)?'disabled':''}><span class="mn" style="--n:${m[0].length}">${m[0]}</span><span class="mr"><small><em style="background:${TC[m[1]]}">${TN[m[1]]}</em>${a.pp[i]}/${m[5]}</small><b class="ef" style="color:${x[2]}">${x[0]}<small>${x[1]}</small></b></span></button>`}).join('')+bk;
 if(S.ui=='bag')return Object.keys(BAG).map(k=>`<button data-a="bi" data-k="${k}" ${S.bag[k]?'':'disabled'}>${BAG[k][0]}<small>×${S.bag[k]}</small></button>`).join('')+bk;
 return `<button data-a="fight">⚔️ たたかう</button>${MODE=='wild'?`<button data-a="ball" ${S.bag.bl>0?'':'disabled'}>⚪ ボール ×${S.bag.bl||0}</button>`:''}<button data-a="sr">${MODE=='wild'?'🏃 にげる':'🏳️ こうさん'}</button>${RL.bag?'<button data-a="bag">🎒 バッグ</button>':''}<button data-a="party">🔁 ポケモン</button>`}
@@ -578,7 +587,7 @@ if(c.t=='mv'){const k=a.mv[c.i],m=MV[k],e=m[3]?eff(m[1],SP[d.s][2]):1;return `�
 if(c.t=='sw'){const m=S.team[c.to],s=SP[m.s];return (phase=='sw'?`${s[0]}を くりだしますか？`:`${nm(p)}を もどして\n${s[0]}と いれかえますか？`)+`\n${s[2].map(t=>TN[t]).join('・')}　HP ${m.hp}/${m.st[0]}`+(RL.it&&m.it?`　${HI.find(x=>x[0]==m.it)[1]}`:'')}
 const m=S.team[c.to],B=BAG[c.k];return `${B[0]}を ${SP[m.s][0]}に つかいますか？\n${BD[c.k]}\n${SP[m.s][0]}　HP ${m.hp}/${m.st[0]}`}
 function dr(p){if(phase=='title')return;const set=$(p,'.set'),bt=$(p,'.bt'),ui=phase=='setup'||phase=='rules';set.hidden=!ui;bt.hidden=ui;
-if(ui){bt.querySelectorAll('.fin').forEach(x=>x.remove());const t=set.scrollTop,g0=set.querySelector('.sg'),gt=g0?g0.scrollTop:0;set.classList.toggle('su',phase=='setup'&&P[p].scr!='order');const h=phase=='rules'?rulesH(p):P[p].scr=='order'?orderH(p):setupH(p),key=phase+P[p].scr;if(set._h===h)return;set.classList.toggle('nr',set._k===key);set._k=key;set._h=h;set.innerHTML=h;const ph=set.querySelector('.sg');if(ph)ph.replaceWith(gridFor(p,P[p]));set.scrollTop=t;const g1=set.querySelector('.sg');if(g1)g1.scrollTop=gt;return}
+if(ui){bt.querySelectorAll('.fin').forEach(x=>x.remove());const t=set.scrollTop,g0=set.querySelector('.sg'),gt=g0?g0.scrollTop:0;set.classList.toggle('su',phase=='setup'&&P[p].scr!='order');const h=phase=='rules'?rulesH(p):P[p].scr=='order'?orderH(p):setupH(p),key=phase+P[p].scr;if(set._h===h)return;set.classList.toggle('nr',set._k===key);set._k=key;set._h=h;set.innerHTML=h;const ph=set.querySelector('.sg');if(ph){ph.replaceWith(gridFor(p,P[p]));fitGrid(p)}set.scrollTop=t;const g1=set.querySelector('.sg');if(g1)g1.scrollTop=gt;return}
 set._h=null;side(p,'foe',act(1-p),0,1-p);side(p,'me',act(p),1,p);const S=P[p],mt=msg(p),mg=$(p,'.msg');const cfm=S.pend&&!S.ch;mg.classList.toggle('cm',!!cfm);if(cfm){const h=cfH(p);if(mg._h!==h){mg._h=h;mg._t=null;mg.innerHTML=h}}else{mg._h=null;if(mg._t!==mt){mg._t=mt;mg._s=performance.now();mg._n=-1}}const mh=menu(p),mn=$(p,'.menu');if(mn.dataset.k!==mh){mn.innerHTML=mh;mn.dataset.k=mh}fin(p)}
 const draw=()=>{applyOri();[0,1].forEach(dr)},say=async(t,ms=1000)=>{M=t;window.SND&&SND.msg(t);draw();await sleep(ms*RL.sp)};
 const fx=async(p,c,ms)=>{const es=[0,1].map(h=>$(h,'.pf.'+(h==p?'me':'foe')+' .em'));es.forEach(e=>e.classList.add(c));await sleep(ms);es.forEach(e=>e.classList.remove(c))};
@@ -681,11 +690,11 @@ f.innerHTML=`<div class="ft">${FT(w)}</div>`+(w?Array.from({length:48},()=>`<i s
 async function splash(){const hs=[0,1].map(h=>{const d=document.createElement('div'),mons=pl=>P[pl].team.map(m=>`<img src="${IMG[m.s]||spr(SP[m.s][1])}" alt="">`).join('');d.className='vs';
 d.innerHTML=`<div class="vb b"><b>${NAME[1-h]}</b><div>${mons(1-h)}</div></div><div class="vt">VS</div><div class="vb a"><b>${NAME[h]}</b><div>${mons(h)}</div></div>`;$(h,'.bt').append(d);return d});
 await sleep(1800);hs.forEach(d=>d.animate([{opacity:1},{opacity:0}],{duration:300,fill:'forwards'}).onfinish=()=>d.remove());await sleep(300)}
-async function turn(){phase='run';draw();
+async function turn(){phase='run';CAMSELF[0]=CAMSELF[1]=0;draw();
 const sc=p=>{const c=P[p].ch;return(c.t=='sw'?9e3:c.t=='it'||c.t=='ball'?8e3:({p2:2,p1:1}[MV[act(p).mv[c.i]][6]]||0)*1e3+sm(act(p),5))+R()},s=[sc(0),sc(1)],ord=s[0]>=s[1]?[0,1]:[1,0];
 for(const p of ord){if(phase=='over')return;const c=P[p].ch;
 if(c.t=='sw')await swapMon(p,c.to,1);
-else if(c.t=='it')await item(p,c);else if(c.t=='ball')await ball(p);else if(act(p).hp>0)await mv(p,c.i)}
+else if(c.t=='it')await item(p,c);else if(c.t=='ball')await ball(p);else if(act(p).hp>0)await mv(p,c.i);CAMSELF[p]=1}
 if(phase=='over')return;
 for(const p of [0,1]){const m=act(p);if(m.hp>0&&m.it=='lf'&&m.hp<m.st[0]){m.hp=Math.min(m.st[0],m.hp+Math.max(1,m.st[0]>>4));draw();pop(p,'+HP','hl');await say(`${nm(p)}は たべのこしで\nたいりょくを かいふくした！`)}}
 const nd=[0,1].filter(need);reset();phase=nd.length?'sw':'pick';nd.forEach(p=>P[p].ui='party');draw();tryRun()}
@@ -693,10 +702,11 @@ async function doSw(){const nd=[0,1].filter(p=>P[p].ch&&need(p));phase='run';dra
 for(const p of nd)await swapMon(p,P[p].ch.to,0);reset();phase='pick';draw()}
 let SUR=-1;function surrender(p){SUR=p;WIN=1-p;phase='over';draw()}
 async function begin(){SUR=-1;if(P[1].cpu)({story:stSet,wild:wdSet}[MODE]||cpuSet)();P.forEach(S=>{S.team=S.pk.map((k,j)=>{const m=mk(k,S.lvs?S.lvs[j]:RL.lv,RL.it?HI[S.hi[j]][0]:'',S.ind[j]);if(S.exps)m.exp=S.exps[j];if(S.hps&&S.hps[j]!=null)m.hp=Math.min(m.st[0],S.hps[j]);return m});S.a=Math.max(0,S.team.findIndex(m=>m.hp>0));S.bag={...S.bg}});reset();
-HOLD=1;document.querySelectorAll('.pf .em').forEach(e=>e.classList.add('dead'));phase='run';draw();if(MODE=='wild')await say(`あっ！ やせいの ${SP[P[1].pk[0]][0]}が\nとびだしてきた！`,1300);else{await splash();await say(`${NAME[0]}と ${NAME[1]}の\nポケモンバトル かいし！`,1300)}HOLD=0;M='ゆけっ！';draw();await Promise.all([swIn(0),swIn(1),sleep(500*RL.sp)]);phase='pick';draw()}
+HOLD=1;document.querySelectorAll('.pf .em').forEach(e=>e.classList.add('dead'));phase='run';draw();if(MODE=='wild')await say(`あっ！ やせいの ${SP[P[1].pk[0]][0]}が\nとびだしてきた！`,1300);else{await splash();await say(`${NAME[0]}と ${NAME[1]}の\nポケモンバトル かいし！`,1300)}await pickLead();HOLD=0;M='ゆけっ！';draw();await Promise.all([swIn(0),swIn(1),sleep(500*RL.sp)]);phase='pick';draw()}
 function setup(p,a,i,k){const S=P[p];
 if(a=='pk'){const j=S.pk.indexOf(k);S.foc=k;if(j>=0){S.pk.splice(j,1);S.hi.splice(j,1);S.ind.splice(j,1)}else if(S.pk.length<RL.n){S.pk.push(k);S.hi.push(0);S.ind.push(ri())};S.rdy=0}
-else if(a=='so')S.so=S.so.k==k?{k,d:-S.so.d}:{k,d:/^\d|^bst/.test(k)?-1:1};
+else if(a=='so'){S.so=S.so.k==k?{k,d:-S.so.d}:{k,d:/^\d|^bst/.test(k)?-1:1};S.pg=0}
+else if(a=='pg')S.pg=Math.max(0,Math.min(PGN(S.ps)-1,(S.pg||0)+i));
 else if(a=='rr'){if(i<0)S.ind=S.pk.map(ri);else{S.ind[i]=ri();S.foc=S.pk[i]}S.rdy=0}
 else if(a=='ho'){S.hi[i]=(S.hi[i]+1)%HI.length;S.foc=S.pk[i];S.rdy=0}
 else if(a=='rdy'&&S.pk.length==RL.n)S.rdy=!S.rdy;
@@ -732,7 +742,8 @@ const rnd=S=>{S.pk=rp(RL.n);S.ind=S.pk.map(ri);S.hi=S.pk.map(()=>RL.it?R()*HI.le
 function cpuSet(){const S=P[1];S.pk=rp(RL.n);S.dif=.6;S.bg={po:1,su:1,hy:0,rv:0,el:0};S.ind=S.pk.map(ri);S.hi=S.pk.map(()=>RL.it?1+R()*(HI.length-1)|0:0)}
 function over(a){if(a=='exnext')return exAfter();if(a=='stnext')return stAfter(WIN==0);if(a=='again'){phase='rules';P.forEach(x=>x.rdy=0)}else if(a=='title')return toTitle();
 draw()}
-function tryRun(){if(P[1].cpu)cpuMove();if(phase=='pick'&&P[0].ch&&P[1].ch)turn();else if(phase=='sw'&&[0,1].every(q=>!need(q)||P[q].ch))doSw()}
+function pickLead(){if(![0,1].some(q=>!P[q].cpu&&P[q].team.filter(m=>m.hp>0).length>1))return Promise.resolve();return new Promise(res=>{LEAD=1;LEADRES=res;document.documentElement.classList.add('leadsel');reset();P.forEach(S=>S.ui='party');phase='sw';draw()})}
+function tryRun(){if(P[1].cpu)cpuMove();if(phase=='pick'&&P[0].ch&&P[1].ch)turn();else if(phase=='sw'&&[0,1].every(q=>!need(q)||P[q].ch)){if(LEAD){LEAD=0;document.documentElement.classList.remove('leadsel');[0,1].forEach(q=>{const c=P[q].ch;if(c&&c.t=='sw')P[q].a=c.to});reset();phase='run';draw();const r=LEADRES;LEADRES=null;r&&r()}else doSw()}}
 const dEst=(a,d,k)=>{const m=MV[k];if(!m[3]||m[6]=='k')return 0;const ph=m[2]=='p';return(Math.floor(Math.floor(2*a.L/5+2)*m[3]*sm(a,ph?1:3)/sm(d,ph?2:4)/50)+2)*(SP[a.s][2].includes(m[1])?1.5:1)*eff(m[1],SP[d.s][2])*(m[4]||100)/100*.93};
 const best=(a,d)=>Math.max(0,...a.mv.map(k=>dEst(a,d,k))),mu=(m,d)=>best(m,d)*(m.hp/m.st[0]+.5)-best(d,m)*.5;
 function cpuMove(){const S=P[1];if(S.ch)return;const T=S.team,d=act(0),a=act(1);
@@ -994,14 +1005,16 @@ const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1]
 cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],nrm=a=>mul(a,1/(Math.hypot(a[0],a[1],a[2])||1)),
 basis=(p,t)=>{const f=nrm(sub(t,p)),r=nrm(cross(UP,f));return{f,r,u:cross(f,r)}},lv=(a,b,e)=>a.map((x,i)=>x+(b[i]-x)*e),ease=k=>k<.5?2*k*k:1-2*(1-k)*(1-k);
 const MID=[(ME[0]+FO[0])/2,.9,(ME[2]+FO[2])/2];
-const VW=[{n:'見下ろし',d:[0,1,-.16]},{n:'右下から',d:[1,.34,-.9]},{n:'真ん中から',d:[0,.13,-1]},{n:'中央',d:[0,.32,-1]},{n:'うしろから（相手が奥）',sho:1}];
+const VW=[{n:'見下ろし',d:[0,1,-.16]},{n:'右下から',d:[1,.34,-.9]},{n:'真ん中から',d:[0,.13,-1]},{n:'中央',d:[0,.32,-1]},{n:'うしろから（相手が奥）',sho:1},{n:'じぶんの ポケモンを まえから',self:1}];
+window.CAMSELF=[0,0];
 const SC=new Map();
 const ry=(v,a)=>[v[0]*Math.cos(a)+v[2]*Math.sin(a),v[1],-v[0]*Math.sin(a)+v[2]*Math.cos(a)];
 function fits(p,t,fov,W,Ht){for(let a=0;a<TWO;a+=PI/6)if(!fits1(add(t,ry(sub(p,t),a)),t,fov,W,Ht))return 0;return 1}
 function fits1(p,t,fov,W,Ht){const b=basis(p,t),F=Ht/2/Math.tan(fov*PI/360);
 for(const q of [ME,FO])for(const y of [0,SH])for(const s of [-1,1]){const Q=add(add(q,[0,y,0]),mul(b.r,s*.95)),d=sub(Q,p),z=dot(d,b.f);if(z<.6)return 0;const x=W/2+dot(d,b.r)/z*F,yy=Ht/2-dot(d,b.u)/z*F;if(x<W*.06||x>W*.94||yy<Ht*.08||yy>Ht*.92)return 0}return 1}
 function solve(i,W,Ht){const k=i+':'+W+'x'+Ht;let s=SC.get(k);if(s)return s;const v=VW[i];
-if(v.sho){const hd=nrm([ME[0]-FO[0],0,ME[2]-FO[2]]),rt=cross(UP,mul(hd,-1));s={p:add(add(ME,mul(hd,4.2)),add(mul(rt,.9),[0,2.4,0])),t:[FO[0],.7,FO[2]],f:56}}
+if(v.self){const df=nrm([FO[0]-ME[0],0,FO[2]-ME[2]]),rt0=cross(UP,mul(df,-1));s={p:add(add(FO,mul(df,2.4)),add(mul(rt0,1.5),[0,1.9,0])),t:[ME[0],.8,ME[2]],f:44}}
+else if(v.sho){const hd=nrm([ME[0]-FO[0],0,ME[2]-FO[2]]),rt=cross(UP,mul(hd,-1));s={p:add(add(ME,mul(hd,4.2)),add(mul(rt,.9),[0,2.4,0])),t:[FO[0],.7,FO[2]],f:56}}
 else{const d=nrm(v.d);let r=4;for(;r<70;r+=.5)if(fits(add(MID,mul(d,r)),MID,FOV,W,Ht))break;s={p:add(MID,mul(d,r)),t:MID,f:FOV}}
 if(SC.size>60)SC.clear();SC.set(k,s);return s}
 /* 時間で変わる背景 */
@@ -1021,7 +1034,8 @@ let st=fl._cm;if(!st)st=fl._cm={cv:fl.querySelector('.cv')};
 const cv=st.cv,dpr=Math.min(devicePixelRatio||1,1.5),bw=Math.round(W*dpr),bh=Math.round(Ht*dpr);if(cv.width!=bw||cv.height!=bh){cv.width=bw;cv.height=bh}
 const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
 /* カメラ */
-const base=solve(IDX,W,Ht),ang=(now-T0)*ROT/1000,rt=(c,i)=>VW[i].sho?{p:add(ME,ry(sub(c.p,ME),Math.sin(ang*.8)*.55)),t:c.t,f:c.f}:{p:add(c.t,ry(sub(c.p,c.t),ang)),t:c.t,f:c.f};
+if(window.CAMSELF&&window.CAMSELF[p])IDX=4;
+const base=solve(IDX,W,Ht),ang=(now-T0)*ROT/1000,rt=(c,i)=>VW[i].self?{p:add(ME,ry(sub(c.p,ME),Math.sin(ang*.8)*.2)),t:c.t,f:c.f}:VW[i].sho?{p:add(ME,ry(sub(c.p,ME),Math.sin(ang*.8)*.55)),t:c.t,f:c.f}:{p:add(c.t,ry(sub(c.p,c.t),ang)),t:c.t,f:c.f};
 if(st.e!==E){st.e=E;st.i=IDX;st.fb=base;st.fi=IDX;st.t0=-1e9;tag(fl,VW[IDX].n)}
 else if(st.i!==IDX){st.fb=st.pb;st.fi=st.i;st.i=IDX;st.t0=now;tag(fl,VW[IDX].n)}
 st.pb=base;
@@ -1046,13 +1060,14 @@ g.fillStyle=C(th.g1);g.fill(A);g.fillStyle=C(th.g2);g.fill(B);
 if(hy>-Ht*.4){const hh=Math.min(Ht*.35,Ht-hy),y0=Math.max(0,hy),gr=g.createLinearGradient(0,hy,0,hy+hh);gr.addColorStop(0,C(th.hor,.95));gr.addColorStop(1,C(th.hor,0));g.fillStyle=gr;g.fillRect(0,y0,W,hy+hh-y0)}}
 /* 台座 */
 const disc=(q,y,rad)=>{const pts=[];for(let n=0;n<28;n++){const a=n/28*TWO,c=cs([q[0]+Math.cos(a)*rad,y,q[2]+Math.sin(a)*rad]);if(c[2]<Z0)return 0;pts.push([sx(c),sy(c)])}g.beginPath();pts.forEach((s,n)=>n?g.lineTo(s[0],s[1]):g.moveTo(s[0],s[1]));g.closePath();return 1};
-[ME,FO].forEach(q=>{if(disc(q,0,1.6)){g.fillStyle='rgba(0,0,0,.28)';g.fill()}if(disc(q,-.16,1.25)){g.fillStyle=C(mul(th.pad,.4));g.fill()}if(disc(q,0,1.25)){g.fillStyle=C(th.pad,.9);g.fill()}if(disc(q,.01,.85)){g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2.5;g.stroke()}});
+[ME,FO].forEach(q=>{const pc=q===ME?[255,212,60]:th.pad;if(disc(q,0,1.6)){g.fillStyle='rgba(0,0,0,.28)';g.fill()}if(disc(q,-.16,1.25)){g.fillStyle=C(mul(pc,.4));g.fill()}if(disc(q,0,1.25)){g.fillStyle=C(pc,.9);g.fill()}if(disc(q,.01,.85)){g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2.5;g.stroke()}});
 /* ポケモン（ビルボード）: 位置と大きさを遠近で決める。わざの演出はこの位置を基準に出る */
 const yq=Math.max(.5,Math.cos(pit*.85)),zs=[];
 const ps=[['me',ME],['foe',FO]].map(([c,q])=>{const pf=$(p,'.pf.'+c),fz=cs(q),cc=cs([q[0],SH/2,q[2]]),ph=pf.offsetHeight||1,pw=pf.offsetWidth||1,s=Math.max(.15,Math.min(4,SH*F/Math.max(.5,cc[2])/ph)),cy=sy(fz)-ph*s*yq*.42;zs.push(cc[2]);return{pf,pw,ph,s,cx:sx(fz),cy}});
 ps.forEach((o,n)=>{const s=o.pf.style;s.right='auto';s.bottom='auto';s.left=(o.cx-o.pw/2)+'px';s.top=(o.cy-o.ph/2)+'px';s.scale=o.s+' '+(o.s*yq);s.zIndex=zs[n]<=zs[1-n]?3:2})}
 function frame(now){requestAnimationFrame(frame);
 if(idle(pp)&&!idle(phase)){T0=now;OFF=Math.random()*4|0;E++}pp=phase;
+if(idle(phase))CAMSELF[0]=CAMSELF[1]=0;
 if(phase=='title'||document.hidden)return;
 const e=Math.max(0,now-T0),IDX=(3+Math.floor(e/STEP))%5,tt=e/TSTEP+OFF,i=Math.floor(tt),f=tt-i,kk=Math.max(0,Math.min(1,(f-.6)/.4)),th=mixT(KF[i%4],KF[(i+1)%4],kk*kk*(3-2*kk));
 try{[0,1].forEach(p=>render(p,now,th,IDX))}catch(err){}}
