@@ -22,8 +22,9 @@
   新しいブロックは必ず「ブロック定義の末尾 (LMP0 の後ろ〜NB の前)」に追加する (途中に挟むと既存ワールドのIDがずれる)。
 【光源のルール】
   ブロックの発光レベルは EL に定義し、レベル N の光源は N ブロック先まで届く (光源15 = 15ブロック、1ブロックごとに1下がる)。新しい光源ブロックを足すときは EL に登録し、この距離の仕様を変えないこと。
+【オンライン (v1.6〜)】 Convex。共有ワールドは MP (同期エンジン)、画面は #s-mp / #s-mk / #s-pub、通信は CV / OL。ブロックを書き換える箇所 (setB, setRaw, bulk, 爆発2か所) は MP.on&&MP.rec() を呼ぶこと。共有ワールドのセーブは ch を保存せず、地形は seed から生成してサーバーの差分を genAny の後で重ねる。
 -->
-<title>BløckVerse release 1.5</title>
+<title>BløckVerse release 1.10</title>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Material+Symbols+Outlined" rel="stylesheet">
 <style>
 :root{--bg:#f1efe6;--pn:#fff;--tx:#1b1d1f;--mu:#666b6f;--bd:#cfcbbd;--ac:#3b7f36;--at:#fff;color-scheme:light}
@@ -251,6 +252,14 @@ body.mob #chl{bottom:calc(150px + env(safe-area-inset-bottom));width:min(60vw,42
 #rain.r{opacity:.55}#rain.t{opacity:.8;background-color:#0a1a3a55}
 #rain.t:after{content:"";position:absolute;inset:0;background:#fff;opacity:0;animation:th 7s infinite}
 @keyframes rn{to{background-position:-12px 60px,0 0}}@keyframes th{0%,96%{opacity:0}97%{opacity:.7}98%{opacity:0}99%{opacity:.5}100%{opacity:0}}
+#olnote{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:100000;max-width:min(92vw,520px);background:rgba(0,0,0,.82);color:#fff;border:1px solid #ffffff90;padding:6px 14px;font:14px/1.4 'DotGothic16',sans-serif;pointer-events:none;text-align:center;white-space:pre-line}
+#s-mp .wi small .material-symbols-outlined,#s-mk .wi small .material-symbols-outlined{font-size:9px;vertical-align:-1px}
+#s-mp .win,#s-mk .win{min-height:40px}
+.mb.on[data-sort]{background-color:#4f7f45}
+#s-sks .wi img{image-rendering:pixelated;background:#2a3a4a}
+#s-sks .win,#s-gc .win{min-height:40px}
+#s-gc .gm{padding:1px 3px;white-space:normal;word-break:break-all;font-size:8px}
+#s-gc .gm small{color:#8a8a8a;font-size:6px}
 </style><style id="mcui">
 :root{--g:1}
 #menu{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);font-family:'DotGothic16',sans-serif;display:block;padding:0}
@@ -269,14 +278,14 @@ body.mob #chl{bottom:calc(150px + env(safe-area-inset-bottom));width:min(60vw,42
 .gui small{color:#a8a8a8;font-size:7px}
 .gui .sp{flex:1}
 .gr{display:flex;gap:4px;margin-top:4px;flex:none}
-.mb{box-sizing:border-box;width:200px;height:20px;flex:none;border:1px solid #000;background:#707070 var(--stone);background-size:32px;image-rendering:pixelated;color:#e0e0e0;font:inherit;font-size:8px;text-shadow:1px 1px 0 #3f3f3f;box-shadow:inset 1px 1px 0 #ffffff70,inset -1px -2px 0 #00000070;cursor:pointer;padding:0 2px;margin:4px 0 0;display:inline-grid;place-items:center;white-space:nowrap;overflow:hidden}
+.mb{box-sizing:border-box;width:200px;height:20px;flex:none;border:1px solid #000;background:#707070 var(--stone);background-size:32px;image-rendering:pixelated;color:#e0e0e0;font:inherit;font-size:8px;text-shadow:1px 1px 0 #3f3f3f;box-shadow:inset 1px 1px 0 #ffffff70,inset -1px -2px 0 #00000070;cursor:pointer;padding:0 2px;margin:4px 0 0;display:inline-flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap;overflow:hidden}
 .gr .mb{margin:0}
 .mb:hover:not(:disabled),.mb:focus-visible{background-color:#8c8ca8;color:#ffffa0;border-color:#fff;outline:none}
 .mb:disabled{background-color:#4a4a4a;color:#8a8a8a;cursor:default;text-shadow:none}
 .mb.on{background-color:#4f7f45}
 .mb.w2{width:98px}.mb.h{width:150px}.mb.q{width:74px}.mb.sm{width:46px;height:14px;font-size:7px}
 .mb.red:hover:not(:disabled){background-color:#a84444}
-.mb .material-symbols-outlined{font-size:11px}
+.mb .material-symbols-outlined{font-size:11px;line-height:1;flex:none;vertical-align:baseline}
 .mcs{position:relative;width:150px;height:20px;box-sizing:border-box;background:#000;border:1px solid #a0a0a0;flex:none;margin:4px 0 0}
 .gr .mcs{margin:0}
 .mcs input{-webkit-appearance:none;appearance:none;position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;background:transparent}
@@ -600,7 +609,7 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
    <h4>表示レイヤー</h4><div class="bmt"><button class="bs on" data-l="bio">バイオーム</button><button class="bs on" data-l="st">構造物</button><button class="bs on" data-l="wp">ウェイポイント</button></div>
    <h4>ピン / ウェイポイント</h4>
    <input id="bmn" maxlength="16" placeholder="名前 (空欄なら自動)" autocomplete="off"><div class="bmt" id="bmsw"></div>
-   <div class="bmt"><button class="bs" id="bmpm">📍 タップで設置</button><button class="bs" id="bmhr">現在地に追加</button></div>
+   <div class="bmt"><button class="bs" id="bmpm"><span class="material-symbols-outlined">location_on</span> タップで設置</button><button class="bs" id="bmhr">現在地に追加</button></div>
    <h4>一覧 <small id="bmwc"></small></h4><div id="bmwl"></div>
   </div><div class="bb" id="bmmb" role="button" title="メニュー"><span class="material-symbols-outlined">menu</span></div></div></div>
  <div id="bml"><span><i class="pl"></i>プレイヤー</span><span><i class="en"></i>敵</span><span><i class="an"></i>動物</span><span><i class="sp"></i>スポーン地点</span><span><i class="dt"></i>死亡地点</span><span id="bmbl" style="display:contents"></span><span id="bmh2" style="margin-left:auto"></span></div>
@@ -624,8 +633,9 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
  <div id="s-title" class="gui on">
   <div class="logo"><div class="lg"><span class="lc" style="--d:0.76s">B</span><span class="lc" style="--d:0.68s">l</span><span class="lc lgo">ø</span><span class="lc" style="--d:0.68s">c</span><span class="lc" style="--d:0.76s">k</span><span class="lc" style="--d:0.84s">V</span><span class="lc" style="--d:0.92s">e</span><span class="lc" style="--d:1.00s">r</span><span class="lc" style="--d:1.08s">s</span><span class="lc" style="--d:1.16s">e</span></div><div class="ed">BROWSER EDITION</div><div id="splash"></div></div>
   <button class="mb" data-go="worlds">シングルプレイ</button>
-  <button class="mb" disabled>マルチプレイ</button>
-  <button class="mb" disabled>Realms</button>
+  <button class="mb" data-go="mp">マルチプレイ</button>
+  <button class="mb" data-go="mk">マーケットプレイス</button>
+  <button class="mb" data-go="gc">全体チャット</button>
   <div class="gr"><button class="mb w2" data-go="opts">設定...</button><button class="mb w2" id="quit">ゲームを終了</button></div>
   <div class="foot"><span id="verf">BløckVerse release v1</span><span>ブラウザエディション</span></div>
  </div>
@@ -635,9 +645,45 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
   <div class="gr"><button class="mb h" id="wplay" disabled>選択したワールドで遊ぶ</button><button class="mb h" id="wnew">ワールド新規作成</button></div>
   <div class="gr"><button class="mb q" id="wedit" disabled>編集</button><button class="mb q red" id="wdel" disabled>削除</button><button class="mb q" id="wre" disabled>再生成</button><button class="mb q" data-back>戻る</button></div>
   <div class="gr"><button class="mb q" id="wexp" disabled>書き出し</button><button class="mb q" id="wexpall">全て書き出し</button><button class="mb q" id="wimp">読み込み</button></div>
+   <div class="gr"><button class="mb h" id="wshare" disabled><span class="material-symbols-outlined">cloud_upload</span>オンライン共有</button><button class="mb h" id="wpub" disabled><span class="material-symbols-outlined">storefront</span>マーケットに出品</button></div>
   <small id="wmsg" style="margin-top:3px;flex:none;text-align:center;max-width:300px;white-space:normal;min-height:9px"></small>
   <input type="file" id="wfile" accept=".blockland,.json,application/json,application/gzip" multiple hidden>
  </div>
+  <div id="s-mp" class="gui"><h2>マルチプレイ (共有ワールド)</h2>
+   <div class="gr" style="margin-top:3px"><input id="mpname" class="mi" style="width:98px" placeholder="プレイヤー名" maxlength="16" autocomplete="off"><button class="mb w2" id="mpsave">名前を保存</button></div>
+   <div class="gr"><input id="mpcode" class="mi" style="width:98px;text-transform:uppercase" placeholder="参加コード" maxlength="6" autocomplete="off"><button class="mb w2" id="mpjoin"><span class="material-symbols-outlined">login</span>コードで参加</button></div>
+   <div class="lbl" style="margin-top:4px">公開ワールドとあなたのワールド</div>
+   <div class="win wl" id="mplist"></div>
+   <div class="gr"><button class="mb q" id="mpplay" disabled>参加</button><button class="mb q" id="mptog" disabled>公開にする</button><button class="mb q red" id="mpdel" disabled>削除</button><button class="mb q" id="mpref">更新</button></div>
+   <div class="gr"><button class="mb h" data-back>戻る</button></div>
+  </div>
+  <div id="s-mk" class="gui"><h2>マーケットプレイス</h2>
+   <input id="mksearch" class="mi" placeholder="タイトルで検索" autocomplete="off" maxlength="32">
+   <div class="gr" style="margin-top:3px"><button class="mb q on" data-sort="new">新着</button><button class="mb q" data-sort="likes">人気</button><button class="mb q" data-sort="dl">入手数</button></div>
+   <div class="win wl" id="mklist" style="margin-top:4px"></div>
+   <div class="gr"><button class="mb q" id="mkget" disabled><span class="material-symbols-outlined">download</span>入手</button><button class="mb q" id="mklike" disabled>いいね</button><button class="mb q" id="mkrep" disabled>通報</button><button class="mb q red" id="mkdel" disabled>取り下げ</button></div>
+   <div class="gr"><button class="mb h" data-go="sks"><span class="material-symbols-outlined">checkroom</span>スキンマーケット</button><button class="mb h" data-back>戻る</button></div>
+  </div>
+  <div id="s-sks" class="gui"><h2>スキンマーケット</h2>
+   <input id="smsearch" class="mi" placeholder="名前で検索" autocomplete="off" maxlength="24">
+   <div class="gr" style="margin-top:3px"><button class="mb q on" data-ssort="new">新着</button><button class="mb q" data-ssort="likes">人気</button><button class="mb q" data-ssort="dl">入手数</button></div>
+   <div class="win wl" id="smlist" style="margin-top:4px"></div>
+   <div class="gr"><button class="mb q" id="smwear" disabled>着る</button><button class="mb q" id="smget" disabled>保存</button><button class="mb q" id="smpng" disabled><span class="material-symbols-outlined">download</span>PNG</button><button class="mb q" id="smlike" disabled>いいね</button></div>
+   <div class="gr"><button class="mb q" id="smrep" disabled>通報</button><button class="mb q red" id="smdel" disabled>取り下げ</button><button class="mb h" data-back>戻る</button></div>
+  </div>
+  <div id="s-gc" class="gui"><h2>全体チャット</h2>
+   <small style="width:300px;text-align:center;margin-bottom:3px">全員に見える公開チャットです。ゲーム中は /g メッセージ でも送れます</small>
+   <div class="win wl" id="gclist"></div>
+   <div class="gr" style="margin-top:4px"><input id="gcin" class="mi" style="width:200px" maxlength="200" placeholder="メッセージ" autocomplete="off"><button class="mb q" id="gcsend">送信</button></div>
+   <div class="gr"><button class="mb h" data-back>戻る</button></div>
+  </div>
+  <div id="s-pub" class="gui"><h2>マーケットプレイスに出品</h2>
+   <div class="lbl">タイトル</div><input id="pubt" class="mi" maxlength="32" autocomplete="off">
+   <div class="lbl">説明 (任意)</div><input id="pubd" class="mi" maxlength="120" autocomplete="off" placeholder="どんなワールド?">
+   <small style="width:200px;margin-top:6px;white-space:normal">出品されるのは地形・建築物・チェストの中身・ワールド設定です。持ち物・体力・進捗などの個人データは含まれず、入手した人は初期状態から始まります。</small>
+   <small id="pubm" style="width:200px;margin-top:4px;white-space:normal;color:#ff8080;min-height:9px"></small>
+   <div class="gr" style="margin-top:6px"><button class="mb q" id="pubgo">出品する</button><button class="mb q" data-back>キャンセル</button></div>
+  </div>
  <div id="s-wtpl" class="gui"><h2>ワールドを作る</h2>
   <button class="mb" id="tnew">新規ワールドを作成</button>
   <div class="lbl" style="margin-top:6px">ワールドテンプレート</div>
@@ -681,7 +727,18 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
   <div class="gr"><button class="mb h" data-go="game" id="ogame">ゲーム設定...</button><button class="mb h" id="oas"></button></div>
   <div class="gr"><button class="mb h" data-go="help">操作ガイド...</button><button class="mb h" data-go="patch">パッチノート...</button></div>
   <button class="mb" data-go="skin" style="margin:4px auto 0;display:block">スキン変更・作成...</button>
+  <button class="mb" data-go="rp" style="margin:4px auto 0;display:block">リソースパック...</button>
    <div class="gr"><button class="mb h" data-go="cred">クレジット...</button><button class="mb h" id="wtut">チュートリアルワールド</button></div>
+  </div>
+  <div class="ft"><button class="mb" data-back>完了</button></div>
+ </div>
+ <div id="s-rp" class="gui"><h2>リソースパック</h2>
+  <div class="body" style="text-align:center">
+   <small style="white-space:normal;display:block;margin:4px 0">読み込み順: 1.内蔵テクスチャ → 2../assets/ → 3.ここで追加したパック (後のものが優先)。<br>zip(Minecraft形式: assets/minecraft/textures/block|item/名前.png。名前はマイクラと同じ) か PNG を選べます。16×16 に縮小して使います。</small>
+   <small id="rpst" style="display:block;margin:6px 0;white-space:normal"></small>
+   <small id="rpm" style="display:block;margin:2px 0;white-space:pre-line;min-height:9px;color:#ffff80"></small>
+   <div class="gr"><button class="mb h" id="rpl">パックを追加...</button><button class="mb h" id="rpc">すべて外す</button></div>
+   <input type="file" id="rpf" accept=".zip,application/zip,image/png" multiple hidden>
   </div>
   <div class="ft"><button class="mb" data-back>完了</button></div>
  </div>
@@ -698,7 +755,7 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
   <div class="col">
    <button class="mb" id="sku">元に戻す</button><button class="mb" id="skgt">ガイド: オン</button><button class="mb" id="sksl">腕: 太腕 (Steve)</button>
    <button class="mb" id="skim">PNGを読み込む</button><button class="mb" id="skex">PNGを書き出す</button><button class="mb" id="skdf">初期スキンに戻す</button>
-   <select id="skl"></select><button class="mb" id="sksv">名前を付けて保存</button><button class="mb" id="skld">呼び出す</button><button class="mb" id="skdl">保存を削除</button>
+   <select id="skl"></select><button class="mb" id="sksv">名前を付けて保存</button><button class="mb" id="skld">呼び出す</button><button class="mb" id="skdl">保存を削除</button><button class="mb" id="skpub">スキンを出品</button><button class="mb" id="skmk">スキンマーケット</button>
    <input type="file" id="skf" accept="image/png,image/*" hidden>
   </div></div>
   <p id="skm" style="margin:4px 0 0;text-align:center;color:#ffd">64×64 (または 64×32) のマイクラ形式スキンを読み込めます。画像のドラッグ&ドロップも可</p></div>
@@ -763,6 +820,7 @@ setTimeout(function(){fonts=1},4000);setTimeout(function(){done=1;fonts=1},20000
   <div class="gr" id="ctl"><button class="mb h" data-c="0">PC操作</button><button class="mb h" data-c="1">モバイル操作</button></div>
    <button class="mb" id="medb">モバイルのボタン配置・サイズを編集</button>
   <div class="gr"><div class="mcs" data-k="sens"><input type="range"><i></i><span></span></div><button class="mb h" id="invy"></button></div>
+   <div class="gr"><button class="mb" id="crm" style="width:200px"></button></div>
   <div class="lbl" style="width:310px">キー割り当て (ボタンを押してから新しいキーを押す / Escでキャンセル)</div>
   <div id="kl"></div><div id="kmsg" class="lbl" style="width:310px;margin:2px 0 0"></div>
   </div>
@@ -3402,12 +3460,13 @@ function genEnd(cx,cz){const D=new Uint16Array(16*H*256),bx=cx*16,bz=cz*16,ES=ID
  top=Math.max(top,endCity(D,bx,bz,ES));top=Math.max(top,endShrine(D,bx,bz,ES));
  chunks.set(K(cx,cz),{d:D,top,m:null,built:0,cx,cz,em:scanEm(D,bx,bz,top)})}
 function genAny(cx,cz){dim==0?gen(cx,cz):dim==1?genNether(cx,cz):genEnd(cx,cz);
- const sv=SAVED&&SAVED[dim+':'+cx+','+cz];if(sv){const c=chunks.get(K(cx,cz));c.d.set(sv);if(!dim)migBeds(c);let t=0;for(let y=H-1;y>=0&&!t;y--)for(let i=0;i<256;i++)if(c.d[i+256*y]){t=y;break}c.top=t;c.em=scanEm(c.d,cx*16,cz*16,t);c.mod=1}}
+ const sv=SAVED&&SAVED[dim+':'+cx+','+cz];if(sv){const c=chunks.get(K(cx,cz));c.d.set(sv);if(!dim)migBeds(c);let t=0;for(let y=H-1;y>=0&&!t;y--)for(let i=0;i<256;i++)if(c.d[i+256*y]){t=y;break}c.top=t;c.em=scanEm(c.d,cx*16,cz*16,t);c.mod=1}
+ if(MP.link)MP.patch(cx,cz)}
 function ensureGen(x,z){const pc=Math.floor(x/16),pz=Math.floor(z/16);for(let a=-3;a<=3;a++)for(let b=-3;b<=3;b++)if(!chunks.has(K(pc+a,pz+b)))genAny(pc+a,pz+b)}
 function buildAround(x,z){if(loading)return;const pc=Math.floor(x/16),pz=Math.floor(z/16);for(let a=-2;a<=2;a++)for(let b=-2;b<=2;b++){const c=chunks.get(K(pc+a,pz+b));if(c&&!c.built)build(c)}}
 function switchDim(d){setLoading(1);chunks.forEach(dispose);chunks=dimChunks[d];dim=d;FQ.clear();lcx=1e9;need=[];dirty.length=0;clearDrops();carts.forEach(c=>pendC.push(cartState(c)));while(tnts.length)tntRm(tnts[0],0);clearCarts();ride=null;mobs.forEach(rmMob);mobs.length=0;arrows.slice().forEach(a=>rmA(a,0))}
 function setRaw(x,y,z,b){const c=chunks.get(K(x>>4,z>>4));if(!c||y<0||y>=H)return;const i=(x&15)+16*((z&15)+16*y),ob=c.d[i];if(y==0||y==H-1)if(dim==1)return;
- c.d[i]=b;c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;if(EL[ob]||EL[b]){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}}
+ c.d[i]=b;MP.on&&MP.rec(c,i,b);c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;if(EL[ob]||EL[b]){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}}
 function makePortalAt(x,y,z){for(let i=-1;i<=2;i++)for(let k=-1;k<=1;k++)for(let j=-1;j<=3;j++){const wx=x+i,wy=y+j,wz=z+k,ring=k==0&&(i==-1||i==2||j==-1||j==3);
   if(ring||j==-1)setRaw(wx,wy,wz,OBS);else if(k==0&&i>=0&&i<=1&&j<=2)setRaw(wx,wy,wz,PT);else setRaw(wx,wy,wz,0)}
  const r={sx:x,sy:y,sz:z,dx:1,dz:0,w:2,h:3};portals[dim].push(r);return r}
@@ -3434,7 +3493,7 @@ function updPortal(dt){const fx=Math.floor(p.x),fz=Math.floor(p.z),y0=Math.floor
 const rb=(a,b)=>{const c=chunks.get(K(a,b));if(c&&c.built)build(c)};
 /*PATCH-FL*/let fBatch=0,flT=0;const FL=[new Map(),new Map(),new Map()],FQ=new Map();/*END-PATCH-FL*/
 function setB(x,y,z,b){const c=chunks.get(K(x>>4,z>>4));if(!c||y<0||y>=H)return;
- const oi=(x&15)+16*((z&15)+16*y),ob=c.d[oi];c.d[oi]=b;c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;const ec=EL[ob]||EL[b];if(ec){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}if(fBatch){c.fl=1;if(!c.dq){c.dq=1;dirty.push(c)}}else build(c);const lx=x&15,lz=z&15,lim=ec?16:15;
+ const oi=(x&15)+16*((z&15)+16*y),ob=c.d[oi];c.d[oi]=b;MP.on&&MP.rec(c,oi,b);c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;const ec=EL[ob]||EL[b];if(ec){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}if(fBatch){c.fl=1;if(!c.dq){c.dq=1;dirty.push(c)}}else build(c);const lx=x&15,lz=z&15,lim=ec?16:15;
  for(let a=-1;a<=1;a++)for(let q=-1;q<=1;q++){if(!a&&!q)continue;const n=chunks.get(K(c.cx+a,c.cz+q));if(!n||!n.built||n.dq)continue;
   const gx=a<0?lx+1:a>0?16-lx:0,gz=q<0?lz+1:q>0?16-lz:0;if(gx<=lim&&gz<=lim){n.dq=1;dirty.push(n)}}
  if(ob&&ob!=b&&world)torchCheck(x,y,z);if(ob!=b)fvChanged(x,y,z)}
@@ -3596,7 +3655,7 @@ addEventListener('pointerup',e=>{if(!dn||!held||$('#inv').hidden){dn=null;return
  hcp=0;renderAll()});
 addEventListener('pointermove',e=>{gP.x=e.clientX;gP.y=e.clientY;if(held&&!ghost.hidden)ghost.style.transform=`translate(${e.clientX-22}px,${e.clientY-22}px)`});
 $('#inv').oncontextmenu=e=>e.preventDefault();
-function resetIn(){for(const k in keys)delete keys[k];joy.x=joy.y=0;$('#joy i').style.transform='';mL=mR=0;prog=0;$('#prog i').style.width=0}
+function resetIn(){for(const k in keys)delete keys[k];if(typeof crMode!='undefined'&&crMode)csn=0;joy.x=joy.y=0;$('#joy i').style.transform='';mL=mR=0;prog=0;$('#prog i').style.width=0}
 const tInv=t=>{const o=$('#inv');if(!o.hidden){if(held&&!hcp&&!cre){const l=addN(held.b,held.n,held.d);if(l)tip('インベントリがいっぱい')}held=null;clearCg();chOpen=null}else{tbl=t===1?1:0;if(t!==2)chOpen=null};o.hidden=!o.hidden;renderHot();paused=!o.hidden;if(paused){renderInv();renderGuide()}gh();resetIn();paused?unlockPtr():lockPtr()};
 const pause=on=>{if(on&&world&&!dead)saveNow().then(renderSaves);else if(on)renderSaves();$('#menu').hidden=!on;paused=on;resetIn();if(on){unlockPtr();menuRoot(world&&!dead?'pause':'title')}else lockPtr()};
 let shkA=null;
@@ -3855,12 +3914,12 @@ function skBox(W,H,D,u,v,pad,mat,hs){const g=new THREE.BoxGeometry(W/16+pad,H/16
  return new THREE.Mesh(g,mat)}
 function buildPm(){const g=pm;while(g.children.length){const c=g.children[0];g.remove(c);c.traverse(o=>{if(o.geometry)o.geometry.dispose()})}
  const legs=[],S=skSlim?3:4,add=(m,x,y,z,par)=>{m.position.set(x,y,z);(par||g).add(m);return m},HS=.9333,
- J=(x,y,w,u,v,uo,vo)=>{const q=new THREE.Group();q.position.set(x,y,0);g.add(q);add(skBox(w,12,4,u,v,0,skM,HS),0,-.35,0,q);add(skBox(w,12,4,uo,vo,.03,skO,HS),0,-.35,0,q);legs.push(q)},
- hd=new THREE.Group();hd.position.y=1.4;g.add(hd);add(skBox(8,8,8,0,0,0,skM,1),0,.25,0,hd);add(skBox(8,8,8,32,0,.06,skO,1),0,.25,0,hd);
- add(skBox(8,12,4,16,16,0,skM,HS),0,1.05,0);add(skBox(8,12,4,16,32,.03,skO,HS),0,1.05,0);
+ J=(x,y,w,u,v,uo,vo,par)=>{const q=new THREE.Group();q.position.set(x,y,0);(par||g).add(q);add(skBox(w,12,4,u,v,0,skM,HS),0,-.35,0,q);add(skBox(w,12,4,uo,vo,.03,skO,HS),0,-.35,0,q);legs.push(q)},
+ ub=(()=>{const q=new THREE.Group();q.position.y=.7;g.add(q);return q})(),hd=new THREE.Group();hd.position.y=.7;ub.add(hd);add(skBox(8,8,8,0,0,0,skM,1),0,.25,0,hd);add(skBox(8,8,8,32,0,.06,skO,1),0,.25,0,hd);
+ add(skBox(8,12,4,16,16,0,skM,HS),0,.35,0,ub);add(skBox(8,12,4,16,32,.03,skO,HS),0,.35,0,ub);
  J(-.125,.7,4,0,16,0,32);J(.125,.7,4,16,48,0,48);
- const ax=.25+S/32;J(-ax,1.4,S,40,16,40,32);J(ax,1.4,S,32,48,48,48);
- g.userData.legs=legs;g.userData.hd=hd}
+ const ax=.25+S/32;J(-ax,.7,S,40,16,40,32,ub);J(ax,.7,S,32,48,48,48,ub);
+ g.userData.legs=legs;g.userData.hd=hd;g.userData.ub=ub}
 function skDefault(){const c=skx;c.clearRect(0,0,64,64);
  const reg=(x,y,w,h,f)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++){const col=f(i,j);if(!col)continue;const r=rgb(col),k=.94+rnd(x+i,y+j,77)*.12;c.fillStyle=`rgb(${r[0]*k|0},${r[1]*k|0},${r[2]*k|0})`;c.fillRect(x+i,y+j,1,1)}};
  const bx=(u,v,W,H,D,fn)=>[['t',u+D,v,W,D],['b',u+D+W,v,W,D],['r',u,v+D,D,H],['f',u+D,v+D,W,H],['l',u+D+W,v+D,D,H],['k',u+2*D+W,v+D,W,H]].forEach(([n,x,y,w,h])=>reg(x,y,w,h,(i,j)=>fn(n,i,j)));
@@ -3883,17 +3942,17 @@ function skLoad(){skDefault();buildPm();skAvg();try{const o=JSON.parse(localStor
 skLoad();
 function cycView(){vw=(vw+1)%3;document.body.classList.toggle('tp',vw>0);tip(VWN[vw])}
 function updView(dt){pm.visible=vw>0&&!dead;if(!vw)return;
- const cp=Math.cos(pitch),dx=-Math.sin(yaw)*cp,dy=Math.sin(pitch),dz=-Math.cos(yaw)*cp,s=vw==1?-1:1,ex=p.x,ey=p.y+1.62,ez=p.z;let t=.3;
+ const cp=Math.cos(pitch),dx=-Math.sin(yaw)*cp,dy=Math.sin(pitch),dz=-Math.cos(yaw)*cp,s=vw==1?-1:1,ex=p.x,ey=p.y+(ride?1.62:eyeH),ez=p.z;let t=.3;
  for(;t<4.2;t+=.15)if(solid(Math.floor(ex+dx*s*t),Math.floor(ey+dy*s*t),Math.floor(ez+dz*s*t)))break;t=Math.max(.3,t-.35);
  cam.position.set(ex+dx*s*t,ey+dy*s*t,ez+dz*s*t);if(vw==2)cam.rotation.set(-pitch,yaw+Math.PI,0);
- pm.position.set(p.x,p.y-(ride?.6:0),p.z);pm.rotation.y=yaw+Math.PI;pm.userData.hd.rotation.x=glide?0:-pitch;
- const sp=Math.hypot(v.x,v.z);pmPh+=dt*Math.min(sp,9)*1.5;const sw=gnd&&sp>.3?Math.sin(pmPh)*.8:0,lg=pm.userData.legs;lg[0].rotation.x=sw;lg[1].rotation.x=-sw;lg[2].rotation.x=-sw;lg[3].rotation.x=sw;
+ pm.position.set(p.x,p.y-(ride?.6:0),p.z);pm.rotation.y=yaw+Math.PI;{const U=pm.userData,k0=U.ck||0;U.ck=k0+((csE?1:0)-k0)*Math.min(1,dt*12);const ln=U.ck*.5;U.ub.rotation.x=ln;U.ub.position.y=.7-U.ck*.12;U.hd.rotation.x=glide?0:-pitch-ln}
+ const sp=Math.hypot(v.x,v.z);pmPh+=dt*Math.min(sp,9)*1.5;const U2=pm.userData;U2.sa=(U2.sa||0)+((sp>.3?.8:0)-(U2.sa||0))*Math.min(1,dt*12);const sw=Math.sin(pmPh)*U2.sa,ck=U2.ck||0,lg=U2.legs;lg[0].rotation.x=sw+ck*.2;lg[1].rotation.x=-sw+ck*.2;lg[2].rotation.x=-sw+ck*.4;lg[3].rotation.x=sw+ck*.4;
  {const gl=glide?1:0;pm.userData.gk=(pm.userData.gk||0)+(gl-(pm.userData.gk||0))*Math.min(1,dt*10);const k=pm.userData.gk;if(k>.01){const sp2=Math.hypot(v.x,v.z),tl=Math.atan2(-v.y,Math.max(.5,sp2));pm.rotation.order='YXZ';pm.rotation.x=(Math.PI/2+tl*.6)*k;const th=pm.rotation.x;pm.position.y=p.y+.9-.9*Math.cos(th);pm.position.x=p.x+Math.sin(yaw)*.9*Math.sin(th);pm.position.z=p.z+Math.cos(yaw)*.9*Math.sin(th);const fl=Math.sin(gt*14)*.05;lg[0].rotation.x=lg[0].rotation.x*(1-k)+fl*k;lg[1].rotation.x=lg[1].rotation.x*(1-k)-fl*k;lg[2].rotation.z=.25*k;lg[3].rotation.z=-.25*k;lg[2].rotation.x*=1-k;lg[3].rotation.x*=1-k}else{pm.rotation.x=0;lg[2].rotation.z=0;lg[3].rotation.z=0}}
  tintG(pm,lightRGB(p.x,p.y+1,p.z,LTM),0)}
 const ARG=16,arrows=[],LTM=[1,1,1];let bowC=0,xbC=0,xbH=0;
 function boom(m){const i=mobs.indexOf(m);if(i>=0)mobs.splice(i,1);rmMob(m);playS('fizz',1,.4);boomFx(m.x,m.y+.8,m.z,3);const R=3,cx=Math.floor(m.x),cy=Math.floor(m.y+.8),cz=Math.floor(m.z),ch=new Set(),rmc=[];
  for(let x=-R;x<=R;x++)for(let y=-R;y<=R;y++)for(let z=-R;z<=R;z++){if(x*x+y*y+z*z>R*R+1)continue;const X=cx+x,Y=cy+y,Z=cz+z;if(Y<1||Y>=H-1)continue;const c=chunks.get(K(X>>4,Z>>4));if(!c)continue;
-  const o=(X&15)+16*((Z&15)+16*Y),b=c.d[o];if(!ws.mdmg||!b||b==TNTB&&(tntQ.push([X,Y,Z]),1)||b==14||b==WATER||b==MAGMA||b==OBS||b==PT||b==EP||b==EFR)continue;if(b==CH)spillChest(X,Y,Z);c.d[o]=0;c.mod=1;c.ver=(c.ver|0)+1;ch.add(c);rmc.push([X,Y,Z])}
+  const o=(X&15)+16*((Z&15)+16*Y),b=c.d[o];if(!ws.mdmg||!b||b==TNTB&&(tntQ.push([X,Y,Z]),1)||b==14||b==WATER||b==MAGMA||b==OBS||b==PT||b==EP||b==EFR)continue;if(b==CH)spillChest(X,Y,Z);c.d[o]=0;MP.on&&MP.rec(c,o,0);c.mod=1;c.ver=(c.ver|0)+1;ch.add(c);rmc.push([X,Y,Z])}
  ch.forEach(c=>{c.em=scanEm(c.d,c.cx*16,c.cz*16,c.top);build(c);for(let a=-1;a<=1;a++)for(let q=-1;q<=1;q++){const n=chunks.get(K(c.cx+a,c.cz+q));if((a||q)&&n&&n.built&&!n.dq){n.dq=1;dirty.push(n)}}});mmEd++;tntQ.splice(0).forEach(q=>tntPop(q,m.x,m.y+.8,m.z));tntKnock(m.x,m.y+.8,m.z,6);rmc.forEach(q=>{torchCheck(q[0],q[1],q[2]);fvChanged(q[0],q[1],q[2])});
  const d=Math.hypot(m.x-p.x,m.y+.8-p.y-1,m.z-p.z);if(d<7){hurt(Math.max(1,16*(1-d/7)*dmul()),0,'クリーパーの爆発で倒された');v.x+=(p.x-m.x)/(d||1)*8;v.z+=(p.z-m.z)/(d||1)*8;v.y=Math.max(v.y,6)}}
 function mkMob(t){const g=new THREE.Group(),legs=[];
@@ -4002,8 +4061,8 @@ const rmA=(a,i)=>{scene.remove(a.g);a.g.traverse(o=>{if(o.geometry){o.geometry.d
 function updArrows(dt){for(let i=arrows.length-1;i>=0;i--){const a=arrows[i];a.age+=dt;
  if(a.st){a.st-=dt;if(a.st<=0){rmA(a,i);continue}
   if(!a.hs){const dx=p.x-a.x,dy=p.y+.9-a.y,dz=p.z-a.z,d=Math.hypot(dx,dy,dz)||1;
-   if(d<3.4&&a.age>.5&&!cre&&cap(NI.arw)>0){const s=Math.min(d,(2.5+(3.4-d)*4)*dt);a.x+=dx/d*s;a.y+=dy/d*s;a.z+=dz/d*s;a.g.position.set(a.x,a.y,a.z)}
-   if(d<.95&&a.age>.5&&!cre&&cap(NI.arw)>0){addN(NI.arw,1);tip('矢を回収した');popSnd();pfx(a.x,a.y,a.z,8,{c:['#fff3a0','#ffffff'],sp:1.2,sy:1,g:-1,l:.5,gl:1,sz:.1,dr:2});renderHot();rmA(a,i);continue}}
+   if(d<3.4&&a.age>.5&&cap(NI.arw)>0){const s=Math.min(d,(2.5+(3.4-d)*4)*dt);a.x+=dx/d*s;a.y+=dy/d*s;a.z+=dz/d*s;a.g.position.set(a.x,a.y,a.z)}
+   if(d<.95&&a.age>.5&&cap(NI.arw)>0){addN(NI.arw,1);tip('矢を回収した');popSnd();pfx(a.x,a.y,a.z,8,{c:['#fff3a0','#ffffff'],sp:1.2,sy:1,g:-1,l:.5,gl:1,sz:.1,dr:2});renderHot();rmA(a,i);continue}}
   a.gl=(a.gl||0)-dt;if(a.gl<=0){a.gl=.55;pfx(a.x,a.y+.05,a.z,1,{c:['#fff3a0','#ffffff'],sp:.25,sy:.5,vy:.5,g:-.5,l:.7,gl:1,sz:.11,rx:.1,dr:1})}
   continue}
  if(a.age>12){rmA(a,i);continue}
@@ -4013,7 +4072,7 @@ function updArrows(dt){for(let i=arrows.length-1;i>=0;i--){const a=arrows[i];a.a
   const bx=Math.floor(a.x),by=Math.floor(a.y),bz=Math.floor(a.z);
   if(solid(bx,by,bz)){const bb=get(bx,by,bz);a.x=lx;a.y=ly;a.z=lz;a.st=60;a.vx=a.vy=a.vz=0;playAt('bowhit',a.x,a.y,a.z,.8,1,26);bkFx(bx+.5,by+.5,bz+.5,bb,6,1);pfx(lx,ly,lz,6,{c:['#ffe9a0','#ffffff'],sp:1.6,sy:1,g:6,l:.35,sz:.07,gl:1,rx:.05});dead=1;break}
   if(a.hs){if(Math.abs(a.x-p.x)<.4&&Math.abs(a.z-p.z)<.4&&a.y>p.y&&a.y<p.y+1.8){hurt(Math.max(.5,a.dmg*dmul()),0,'スケルトンに射抜かれた');v.x+=a.vx*.04;v.z+=a.vz*.04;rmA(a,i);dead=2}}
-  else for(const m of mobs){const T=TY[m.t];if(Math.abs(a.x-m.x)<T.r+.1&&Math.abs(a.z-m.z)<T.r+.1&&a.y>m.y-.05&&a.y<m.y+T.h+.1){const l=Math.hypot(a.vx,a.vz)||1;adv('adventure/shoot_arrow');playS('ding',.6,1,0);hurtMob(m,a.dmg,a.vx/l*5,a.vz/l*5);pfx(a.x,a.y,a.z,10,{c:['#ffe36a','#ffffff'],sp:2.6,sy:1,g:6,l:.4,sz:.08,gl:1,rx:.05});if(!cre)spawnDrop(NI.arw,1,null,m.x,m.y+T.h*.6,m.z,(Math.random()-.5)*1.5,2.5,(Math.random()-.5)*1.5,.4);rmA(a,i);dead=2;break}}}
+  else for(const m of mobs){const T=TY[m.t];if(Math.abs(a.x-m.x)<T.r+.1&&Math.abs(a.z-m.z)<T.r+.1&&a.y>m.y-.05&&a.y<m.y+T.h+.1){const l=Math.hypot(a.vx,a.vz)||1;adv('adventure/shoot_arrow');playS('ding',.6,1,0);hurtMob(m,a.dmg,a.vx/l*5,a.vz/l*5);pfx(a.x,a.y,a.z,10,{c:['#ffe36a','#ffffff'],sp:2.6,sy:1,g:6,l:.4,sz:.08,gl:1,rx:.05});spawnDrop(NI.arw,1,null,m.x,m.y+T.h*.6,m.z,(Math.random()-.5)*1.5,2.5,(Math.random()-.5)*1.5,.4);rmA(a,i);dead=2;break}}}
  if(dead==2)continue;
  a.g.position.set(a.x,a.y,a.z);if(!a.st)a.g.lookAt(a.x+a.vx,a.y+a.vy,a.z+a.vz);const lc=lightRGB(a.x,a.y,a.z,LTM);tintG(a.g,[Math.max(.8,lc[0]),Math.max(.8,lc[1]),Math.max(.8,lc[2])],0)}}
 function fireP(c,x){akick=1;ST.arrows++;if(x)adv('adventure/ol_betsy');const cp=Math.cos(pitch),dx=-Math.sin(yaw)*cp,dy=Math.sin(pitch),dz=-Math.cos(yaw)*cp,spd=x?42:12+28*c,dm=x?9:Math.max(2,Math.round(2+7*c*c)),rx=Math.cos(yaw),rz=-Math.sin(yaw);
@@ -4282,7 +4341,7 @@ function updDrops(dt){const px=p.x,py=p.y+.8,pz=p.z;
    if(!solid(Math.floor(nx),iy,fz))d.x=nx;else d.vx*=-.3;
    if(!solid(fx,iy,Math.floor(nz)))d.z=nz;else d.vz*=-.3;
    if(solid(Math.floor(d.x),Math.floor(ny),Math.floor(d.z))){if(d.vy<0)d.y=Math.floor(ny)+1;d.vy=0;const f=Math.exp(-dt*10);d.vx*=f;d.vz*=f}else d.y=ny}
-  if(!cre&&!dead&&d.age>=d.pd&&cap(d.b)>0){const dx=px-d.x,dy=py-(d.y+.2),dz=pz-d.z,dd=Math.hypot(dx,dy,dz);
+  if((!cre||d.b==NI.arw)&&!dead&&d.age>=d.pd&&cap(d.b)>0){const dx=px-d.x,dy=py-(d.y+.2),dz=pz-d.z,dd=Math.hypot(dx,dy,dz);
    if(dd<1.15){const left=addN(d.b,d.n,d.d);renderHot();if(left<=0){rmD(d,i);popSnd();continue}d.n=left}
    else if(dd<2.4){const k=Math.min(1,dt*8);d.x+=dx*k;d.y+=dy*k;d.z+=dz*k}}
   d.o.position.set(d.x,d.y+.2+Math.sin(d.age*3+i)*.03,d.z);if(d.o.isMesh)d.o.rotation.y=d.age*1.4;
@@ -4291,7 +4350,43 @@ function toggleDoor(h){const t=h.b==D2||h.b==D4,op=h.b==D3||h.b==D4,by=t?h.y-1:h
 function breakAt(h){const b=h.b;if(b==WATER||b==MAGMA||b==14||b==PT||b==EP)return;playS('b.'+matOf(b),.95,.8);bkFx(h.x+.5,h.y+.5,h.z+.5,b,20);if(BEDS[b]){breakBed(h);return}if(DK[b]){const by=b==D2||b==D4?h.y-1:h.y;setB(h.x,by,h.z,0);setB(h.x,by+1,h.z,0);if(!cre)dropAt(h.x+.5,by+.5,h.z+.5,D1,1);return}if(b==CH)spillChest(h.x,h.y,h.z);ST.broke++;setB(h.x,h.y,h.z,0);popLad(h.x,h.y,h.z);popWT(h.x,h.y,h.z);railPop(h.x,h.y,h.z);if(isRail(b))railAfter(h.x,h.y,h.z);if(get(h.x,h.y+1,h.z)==TORCH){setB(h.x,h.y+1,h.z,0);if(!cre)dropAt(h.x+.5,h.y+1.5,h.z+.5,TORCH,1)}if(b==OBS)killPortal(h.x,h.y,h.z);if(!cre){if(b==ID('スイカ')){const n=3+(Math.random()*3|0);dropAt(h.x+.5,h.y+.5,h.z+.5,NI.melon,n)}else dropAt(h.x+.5,h.y+.5,h.z+.5,DR[b]!==undefined?DR[b]:b,1);hexh+=.12;if(DF[b].p=='o')giveXp(({石炭:1,鉄:2,金:3,ダイヤ:6,レッドストーン:3,ラピスラズリ:4,エメラルド:7})[NM[b].replace('鉱石','')]||1);
   const r=Math.random(),gi=q=>dropAt(h.x+.5,h.y+.5,h.z+.5,q,1);
   if(b==9){if(r<.1)gi(AP);else if(r<.17)gi(NI.berry)}else if(b==1){if(r<.06)gi(NI.wheat);else if(r<.10)gi(NI.carrot);else if(r<.14)gi(NI.potato)}}}
-function place(){{const ct=aimCart();if(ct&&!keys[KB.sp]){const n=performance.now();if(n-dT>300){dT=n;rideCart(ct)}return}}{const h0=ray();if(h0&&(DK[h0.b]||h0.b==TB||BEDS[h0.b]||h0.b==TDC||h0.b==CH||h0.b>=TDO&&h0.b<TDO+4)&&!keys[KB.sp]){const n=performance.now();if(n-dT>300){dT=n;if(h0.b==TB){playS('tbl',.7,1);tInv(1)}else if(h0.b==CH){chOpen=chArr(h0.x,h0.y,h0.z);playS('doorO',.7,1.2,.05);tInv(2)}else if(BEDS[h0.b])sleepBed(h0);else if(DK[h0.b])toggleDoor(h0);else toggleTrap(h0)}return}}const sl=slots[sel],b=sl&&sl.b;if(!b||!cre&&!(sl.n>0))return;if(FOOD[b])return;if(b>=IB){const t=IT[b-IB];if(t.k=='ar'){equip(sel);renderHot()}else if(t.k=='bk')useBucket(sl);else if(t.k=='fs')useFlint(sl);else if(t.k=='ey')useEye(sl);else if(t.k=='pt')drinkPt(sl);else if(t.k=='fw')useFw(sl);else if(t.k=='ct')placeCart(sl);else if(t.k=='cmp'||t.k=='rcmp')cmpInfo(t.k);return}const h=ray();if(!h)return;
+// ---- フロントブリッジ (統合版の足元スナップ設置): 右クリック長押し + 足元の先の空間を見下ろすと、進行方向の1マス先に自動で足場を伸ばす
+let brY=0,brG=9,brT=0,brX=0,brZ=0,brAct=0,brLock=0,brHas=0,brLX=0,brLZ=0,brDX=0,brDZ=0;const BR_MIN=65,BR_FAST=65,BR_SLOW=80,BR_DIST=.75;
+function brOK(b){return b>0&&b<IB&&b!=TORCH&&b!=RL&&b!=PRL&&b!=LAD&&b!=WATER&&b!=MAGMA&&b!=TDC&&b!=D1&&b!=D2&&b!=D3&&b!=D4&&b!=PT&&b!=EP&&b!=CH&&b!=TB&&!CRS[b]&&!NS[b]&&!BEDS[b]&&!DK[b]&&!isSl(b)&&!isSt(b)&&!(b>=BED0&&b<BED0+16)}
+function bridgeTick(dt,h){
+ if(!mR){brLock=0;brHas=0}
+ if(gnd&&!fly&&!(brLock&&mR)){brY=Math.ceil(p.y-.01)-1;brG=0}else if(gnd&&!fly)brG=0;else brG+=dt;
+ const sl=slots[sel],b=sl&&sl.b;
+ if(!mR||paused||dead||fly||glide||ride||!world||!b||!brOK(b)||!cre&&!(sl.n>0)){brLock=0;brHas=0;return 0}
+ // 長押しブリッジ中は通常の上面設置を完全に排他(視点を上げても/足場を離れても継続)
+ if(pitch>-.5||brG>.75||get(Math.floor(p.x),Math.floor(p.y+.4),Math.floor(p.z))==WATER)return brLock?1:0;
+ const now=performance.now(),see=!h||h.y<brY;
+ if(see)brAct=now;
+ const top=!!h&&h.y==brY&&h.n[1]==1&&now-brAct<900,bo=see||top?1:0;
+ if(!bo)return brLock?1:0;
+ brLock=1;
+ const sp=Math.hypot(v.x,v.z);let dx,dz;if(sp>.8){dx=v.x/sp;dz=v.z/sp}else if(brHas){dx=brDX;dz=brDZ}else{dx=-Math.sin(yaw);dz=-Math.cos(yaw)}
+ const px=Math.floor(p.x),pz=Math.floor(p.z),rp=(x,z)=>{const c=get(x,brY,z);return!c||c==WATER||c==MAGMA},at=(x,z)=>solid(x+1,brY,z)||solid(x-1,brY,z)||solid(x,brY,z+1)||solid(x,brY,z-1);
+ let cx=-1e9,cz=0;
+ if(rp(px,pz)){if(at(px,pz)){cx=px;cz=pz}}
+ else{const ax=Math.abs(dx),az=Math.abs(dz),sx=dx>0?1:-1,sz=dz>0?1:-1;
+  if(az<.38){cx=px+sx;cz=pz}else if(ax<.38){cx=px;cz=pz+sz}
+  else{const rx=sx>0?px+1-p.x:p.x-px,rz=sz>0?pz+1-p.z:p.z-pz,o=rx<=rz?[[px+sx,pz,rx],[px,pz+sz,rz]]:[[px,pz+sz,rz],[px+sx,pz,rx]];
+   for(let i=0;i<2;i++){const q=o[i];if(rp(q[0],q[1])&&at(q[0],q[1])&&(i==0||q[2]<.5)){cx=q[0];cz=q[1];break}}}
+  if(cx>-1e8&&!(rp(cx,cz)&&at(cx,cz)))cx=-1e9}
+ if(cx<-1e8)return bo;
+ // 直近に置いたブロックに隣接する1マス(または足元)のみ許可。視点回転で周囲へ広がらない
+ if(brHas&&!(cx==px&&cz==pz)&&Math.abs(cx-brLX)+Math.abs(cz-brLZ)>1)return bo;
+ // クールダウン短縮は実際にプレイヤー座標が動いた時のみ。ハードキャップ BR_MIN は常に適用
+ const moved=!brHas||Math.hypot(p.x-brX,p.z-brZ)>=BR_DIST,need=Math.max(BR_MIN,moved?BR_FAST:BR_SLOW);
+ if(now-brT<need)return bo;
+ const ns=[[1,0],[-1,0],[0,1],[0,-1]].filter(q=>solid(cx+q[0],brY,cz+q[1])).sort((a,c)=>(a[0]*dx+a[1]*dz)-(c[0]*dx+c[1]*dz)),q=ns[0];
+ if(!q)return bo;
+ const nx=cx+q[0],nz=cz+q[1],before=get(cx,brY,cz);
+ place({x:nx,y:brY,z:nz,n:[-q[0],0,-q[1]],b:get(nx,brY,nz)});
+ if(get(cx,brY,cz)!=before){brT=now;brX=p.x;brZ=p.z;brAct=now;brHas=1;brLX=cx;brLZ=cz;if(Math.hypot(dx,dz)>.1){brDX=dx;brDZ=dz}}
+ return bo}
+function place(ov){if(!ov){{const ct=aimCart();if(ct&&!keys[KB.sp]){const n=performance.now();if(n-dT>300){dT=n;rideCart(ct)}return}}{const h0=ray();if(h0&&(DK[h0.b]||h0.b==TB||BEDS[h0.b]||h0.b==TDC||h0.b==CH||h0.b>=TDO&&h0.b<TDO+4)&&!keys[KB.sp]){const n=performance.now();if(n-dT>300){dT=n;if(h0.b==TB){playS('tbl',.7,1);tInv(1)}else if(h0.b==CH){chOpen=chArr(h0.x,h0.y,h0.z);playS('doorO',.7,1.2,.05);tInv(2)}else if(BEDS[h0.b])sleepBed(h0);else if(DK[h0.b])toggleDoor(h0);else toggleTrap(h0)}return}}}const sl=slots[sel],b=sl&&sl.b;if(!b||!cre&&!(sl.n>0))return;if(FOOD[b])return;if(b>=IB){const t=IT[b-IB];if(t.k=='ar'){equip(sel);renderHot()}else if(t.k=='bk')useBucket(sl);else if(t.k=='fs')useFlint(sl);else if(t.k=='ey')useEye(sl);else if(t.k=='pt')drinkPt(sl);else if(t.k=='fw')useFw(sl);else if(t.k=='ct')placeCart(sl);else if(t.k=='cmp'||t.k=='rcmp')cmpInfo(t.k);return}const h=ov||ray();if(!h)return;
  if(isSl(b)&&h.b==b&&h.n[1]==1){setB(h.x,h.y,h.z,slBase(b));ST.placed++;placeSnd(b);if(!cre){if(--sl.n<=0)slots[sel]=null;renderHot()}return}
  const x=h.x+h.n[0],y=h.y+h.n[1],z=h.z+h.n[2];if(y<0||y>=H)return;const c=get(x,y,z);if(c&&c!=WATER&&c!=MAGMA)return;
  const wt=b==TORCH&&h.n[1]===0&&solid(h.x,h.y,h.z)&&c!=WATER&&c!=MAGMA;
@@ -4325,7 +4420,7 @@ function tntBlast(x,y,z,R){boomFx(x,y,z,R);const cx=Math.floor(x),cy=Math.floor(
   const c=chunks.get(K(X>>4,Z>>4));if(!c)continue;const o=(X&15)+16*((Z&15)+16*Y),bk=c.d[o];if(!bk)continue;
   if(bk==TNTB){pr.push([X,Y,Z]);continue}
   if(bk==14||bk==WATER||bk==MAGMA||bk==OBS||bk==PT||bk==EP||bk==EFR)continue;
-  if(bk==CH)spillChest(X,Y,Z);c.d[o]=0;c.mod=1;c.ver=(c.ver|0)+1;ch.add(c);rmc.push([X,Y,Z])}
+  if(bk==CH)spillChest(X,Y,Z);c.d[o]=0;MP.on&&MP.rec(c,o,0);c.mod=1;c.ver=(c.ver|0)+1;ch.add(c);rmc.push([X,Y,Z])}
  ch.forEach(c=>{c.em=scanEm(c.d,c.cx*16,c.cz*16,c.top);build(c);for(let a=-1;a<=1;a++)for(let q=-1;q<=1;q++){const n=chunks.get(K(c.cx+a,c.cz+q));if((a||q)&&n&&n.built&&!n.dq){n.dq=1;dirty.push(n)}}});mmEd++;
  pr.forEach(q=>tntPop(q,x,y,z));tntKnock(x,y,z,R*2);rmc.forEach(q=>{torchCheck(q[0],q[1],q[2]);fvChanged(q[0],q[1],q[2])});
  playS('fizz',1,.3);
@@ -4353,8 +4448,8 @@ function update(dt){updPart(dt);fwUpTick(dt);pAmbient(dt);tickStats(dt);cartsUpd
  pitch=Math.max(-1.55,Math.min(1.55,pitch+((keys.ArrowUp?1:0)-(keys.ArrowDown?1:0))*1.8*dt));
  const cc=chunks.get(K(Math.floor(p.x/16),Math.floor(p.z/16)));if(!cc)return;
  const f=(keys[KB.f]?1:0)-(keys[KB.b]?1:0)+joy.y,r=(keys[KB.r]?1:0)-(keys[KB.l]?1:0)+joy.x,l=Math.max(1,Math.hypot(f,r));
- const wat=get(Math.floor(p.x),Math.floor(p.y+.4),Math.floor(p.z))==WATER,inL=[.1,.9].some(o=>get(Math.floor(p.x),Math.floor(p.y+o),Math.floor(p.z))==MAGMA),sh=keys[KB.sp]||(KB.sp=='ShiftLeft'&&keys.ShiftRight);
- let spd=fly?(sh?0:1)*10.5:inL?2.15:wat?2.6:sh?6:4.3;if(fly)spd=10.5;if(fx.spd>0&&!fly)spd*=1.45;
+ const wat=get(Math.floor(p.x),Math.floor(p.y+.4),Math.floor(p.z))==WATER,inL=[.1,.9].some(o=>get(Math.floor(p.x),Math.floor(p.y+o),Math.floor(p.z))==MAGMA),sh=keys[KB.sp]||(KB.sp=='ShiftLeft'&&keys.ShiftRight),cs=csn&&!fly&&!ride&&!glide&&!wat&&!inL;
+ let spd=fly?(sh?0:1)*10.5:inL?2.15:wat?2.6:cs?1.3:sh?6:4.3;if(fly)spd=10.5;if(fx.spd>0&&!fly)spd*=1.45;
  const tx=(-Math.sin(yaw)*f+Math.cos(yaw)*r)/l*spd,tz=(-Math.cos(yaw)*f-Math.sin(yaw)*r)/l*spd,k=1-Math.exp(-dt*(fly?8:gnd?14:5));
  v.x+=(tx-v.x)*k;v.z+=(tz-v.z)*k;
  const onLd=lad(Math.floor(p.x),Math.floor(p.y+.2),Math.floor(p.z))||lad(Math.floor(p.x),Math.floor(p.y+1.2),Math.floor(p.z)),jmp=!fly&&!wat&&!inL&&!onLd&&keys[KB.jp]&&gnd;if(jmp)v.y=fx.jmp>0?11.3:8.6;const vy0=v.y;if(glide&&(!(eq[1]&&eq[1].b==ELY)||wat||inL||fly||onLd||ride||gnd))endGlide();if(glide)glideStep(dt);else if(fly){v.y+=(((keys[KB.jp]?1:0)-(sh?1:0))*9-v.y)*(1-Math.exp(-dt*10))}
@@ -4362,10 +4457,10 @@ function update(dt){updPart(dt);fwUpTick(dt);pAmbient(dt);tickStats(dt);cartsUpd
  else if(onLd){v.y=keys[KB.jp]||wh&&f>0?3.6:sh?0:-2.4}
  else if(wat){v.y-=7*dt;const up=keys[KB.jp];if(up){v.y+=18*dt;if(wh&&get(Math.floor(p.x),Math.floor(p.y+1.1),Math.floor(p.z))!=WATER)v.y=Math.max(v.y,7.6)}v.y=Math.max(-3,Math.min(up&&wh?8:3.4,v.y))}
  else{v.y=Math.max(-50,v.y-28*dt)}
- const g0=gnd,stepUp=()=>{if(!(g0||gnd))return 0;p.y+=.2;if(!hit())return 1;p.y+=.311;if(!hit())return 1;p.y-=.511;return 0};gnd=0;wh=0;let vm=(vy0+v.y)/2;const n=Math.max(1,Math.ceil(Math.max(Math.abs(v.x),Math.abs(vm),Math.abs(v.z))*dt/.15)),sd=dt/n;
+ const g0=gnd,stepUp=()=>{if(!(g0||gnd))return 0;p.y+=.2;if(!hit())return 1;p.y+=.311;if(!hit())return 1;p.y-=.511;return 0};const sup=()=>{p.y-=.6;const h=hit();p.y+=.6;return h};gnd=0;wh=0;let vm=(vy0+v.y)/2;const n=Math.max(1,Math.ceil(Math.max(Math.abs(v.x),Math.abs(vm),Math.abs(v.z))*dt/.15)),sd=dt/n;
  for(let i=0;i<n;i++){
-  p.x+=v.x*sd;if(hit()&&!stepUp()){p.x-=v.x*sd;v.x=0;wh=1}
-  p.z+=v.z*sd;if(hit()&&!stepUp()){p.z-=v.z*sd;v.z=0;wh=1}
+  p.x+=v.x*sd;if(hit()&&!stepUp()){p.x-=v.x*sd;v.x=0;wh=1}if(cs&&g0&&vm<=.01&&!sup()){p.x-=v.x*sd;v.x=0}
+  p.z+=v.z*sd;if(hit()&&!stepUp()){p.z-=v.z*sd;v.z=0;wh=1}if(cs&&g0&&vm<=.01&&!sup()){p.z-=v.z*sd;v.z=0}
   p.y+=vm*sd;if(hit()){if(vm<0){p.y=landY();gnd=1}else p.y=Math.floor(p.y+1.8)-1.8-1e-3;v.y=0;vm=0}}
  pMove(dt,gnd,g0,vy0,wat,inL,sh);if(p.y<(WT==4||WT==5?-8:-20)){if(dim==2)travelTo(0);else if(!dim&&(WT==4||WT==5)){if(cre){p.x=sp.x;p.y=sp.y;p.z=sp.z;v.x=v.y=v.z=0}else if(!dead)hurt(999,1,'奈落に落ちた')}else{p.y=SEA+5;v.y=0}}
  if(gnd||wat||inL||fly||onLd){if(falling&&gnd&&!wat&&!inL&&!fly){const dm=Math.floor(fallY-p.y-3-(fx.jmp>0?3:0));landSnd(fallY-p.y,dm);if(dm>0&&!ws.fall)hurt(dm,0,'高いところから落ちた')}falling=0}
@@ -4379,7 +4474,7 @@ function update(dt){updPart(dt);fwUpTick(dt);pAmbient(dt);tickStats(dt);cartsUpd
    {const f1=hg>=20&&hsat>0;if(hp<20&&!dead&&hg>=18){regen+=dt;if(regen>=(f1?.5:4)){regen=0;hp=Math.min(20,hp+(f1?1:REGEN_SLOW));if(f1)hsat=Math.max(0,hsat-1);else hexh+=6;renderHp()}}else regen=0}
   if(hg<=0&&hp>1&&!dead){stv+=dt;if(stv>4){stv=0;hurt(1,1,'空腹で餓死した')}}
   const hq=Math.ceil(hg/2);if(hq!=hgq){hgq=hq;renderHp()}}
- if(ride)rideSnap();cam.position.set(p.x,p.y+(ride?1.05:1.62),p.z);cam.rotation.set(pitch,yaw,0);updView(dt);
+ eyeH+=((cs?1.32:1.62)-eyeH)*(1-Math.exp(-dt*14));csE=cs?1:0;if(ride)rideSnap();cam.position.set(p.x,p.y+(ride?1.05:eyeH),p.z);cam.rotation.set(pitch,yaw,0);updView(dt);
  const uw=get(Math.floor(p.x),Math.floor(p.y+1.62),Math.floor(p.z))==WATER,ul=get(Math.floor(p.x),Math.floor(p.y+1.62),Math.floor(p.z))==MAGMA;ambTick(dt,uw,ul);
  gt=ws.day==3?gt:ws.day==1?DAYLEN*.25:ws.day==2?DAYLEN*.75:gt+dt;const tod=(gt/DAYLEN)%1,sH=Math.sin(tod*6.2832),dk=Math.max(0,Math.min(1,.5-sH*2.5));night=sH<0?1:0;
  if(night!=wasN){wasN=night;if(!cre&&!dim)tip(night?'夜になった…モンスターが出現する':'朝になった')}
@@ -4397,13 +4492,13 @@ function update(dt){updPart(dt);fwUpTick(dt);pAmbient(dt);tickStats(dt);cartsUpd
  if(tm&&acd<=0){acd=.5;const wi=hI();const dmg=!wi?1:wi.k=='sw'?SW[wi.t]:wi.k=='ax'?Math.max(2,SW[wi.t]-1):Math.max(1.5,SW[wi.t]*.5);wear(wi?(wi.k=='sw'?1:2):0);const dd=Math.hypot(tm.x-p.x,tm.z-p.z)||1;atkSnd(dmg);if(!gnd&&v.y<-1&&!fly)critFx(tm);const knk=Math.min(11,3.5+dmg*.6)+(Math.hypot(v.x,v.z)>5.5?3:0);hurtMob(tm,dmg+(fx.str>0?3:0),(tm.x-p.x)/dd*knk,(tm.z-p.z)/dd*knk)}
  updBow(dt);updEat(dt);fluidTick(dt);gmTick(dt);updMobs(dt);updDrops(dt);
  setHeld();hw=mL&&!cre||mL&&cre?hw+dt*11:0;{const sw=Math.abs(Math.sin(hw)),mv2=Math.min(1,Math.hypot(v.x,v.z)/4);if(hk){handAnim(sw,mv2,dt)}else{hand.position.set(.46,-.5+Math.sin(gt*9)*.014*mv2,-.22);hand.rotation.set(.12-sw*.4,.22+sw*.45,-.05-sw*.1)}}
- const h=ray();hl.visible=!!h;cool-=dt;
+ const h=ray();hl.visible=!!h;cool-=dt;const bo=bridgeTick(dt,h);
  if(h){if(h.bb){const q=h.bb;hl.scale.set((q[3]-q[0]+.004)/1.004,(q[4]-q[1]+.004)/1.004,(q[5]-q[2]+.004)/1.004);hl.position.set(h.x+(q[0]+q[3])/2,h.y+(q[1]+q[4])/2,h.z+(q[2]+q[5])/2)}else{hl.scale.set(1,1,1);hl.position.set(h.x+.5,h.y+.5,h.z+.5)}
   if(mL&&h.b!=14&&!tm&&!tcart){if(cre){if(cool<=0){breakAt(h);cool=.22}}else{const kk=h.x+','+h.y+','+h.z;if(kk!=mk){mk=kk;prog=0;hitT=0}
    const wi=hI(),nd=NEEDP[h.b]||0,pt=wi&&wi.k=='pk'?wi.t:0;
    if(pt<nd){prog=0;if(performance.now()-ntp>1500){ntp=performance.now();tip(NM[h.b]+'は'+TN[nd]+'以上のツルハシが必要')}}
    else{const ok=wi&&(AXB[DF[h.b].p]?wi.k=='ax':wi.k=='pk');prog+=dt/HD[h.b]*(ok?PK[wi.t]:1);if(prog<1&&(hitT-=dt)<=0){hitT=.25;hitSnd(h.b);bkFx(h.x+.5,h.y+.5,h.z+.5,h.b,3,1)}if(prog>=1){breakAt(h);if(ok)wear(1);prog=0;mk=''}}}}else{prog=0;mk=''}
-  if(mR&&cool<=0){place();cool=.22}}else{prog=0;if(mR&&cool<=0){const fs=slots[sel];if(fs&&fs.b>=IB&&IT[fs.b-IB].k=='fw'){useFw(fs);cool=.22}}}
+  if(mR&&cool<=0&&!bo){place();cool=.22}}else{prog=0;if(mR&&cool<=0){const fs=slots[sel];if(fs&&fs.b>=IB&&IT[fs.b-IB].k=='fw'){useFw(fs);cool=.22}}}
  $('#prog i').style.width=Math.min(100,Math.max(prog,bowC,xbC/1.1)*100)+'%';$('#prog').style.display=vw?'none':'';updCrack();
  if((infT+=dt)>.15&&!(infT=0))$('#info').innerHTML=`<span class="material-symbols-outlined">${cre?'flight':'forest'}</span> ${cre?'クリエイティブ':'サバイバル'}${fly?' (飛行中)':''}<br><span class="material-symbols-outlined">casino</span> シード: ${seedTxt.replace(/</g,'&lt;')}<br><span class="material-symbols-outlined">location_on</span> ${DIMN[dim]} ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}<br><span class="material-symbols-outlined">${night?'dark_mode':'light_mode'}</span> ${String(Math.floor((6+tod*24)%24)).padStart(2,'0')}:${String(Math.floor(tod*1440%60)).padStart(2,'0')}${cre?'':'<br><span class="material-symbols-outlined">swords</span> 手持ち: '+(slots[sel]?idesc(slots[sel].b):'素手')+' / 防御 '+defTot()}<br><span class="material-symbols-outlined">arrow_upward</span> 矢: ${cnt(NI.arw)}<br><span class="material-symbols-outlined">speed</span> ${fpsTxt()}`}
 
@@ -4425,9 +4520,9 @@ function wlTail(){if(!wlOn)return;let n=0;const pc=Math.floor(p.x/16),pz=Math.fl
 function wlDone(){if(!wlOn)return;wlOn=0;wlSet(100,'準備完了!');wlEl.classList.add('go');wlG.hidden=false;wlG.style.animation='none';void wlG.offsetWidth;wlG.style.animation='';
  setTimeout(()=>{wlEl.classList.add('out');wHold=0;setTimeout(()=>{if(!wlOn){wlEl.hidden=true;wlEl.classList.remove('out','go')}},300)},500)}
 // ---- start
-async function start0(sv){reqPersist();SAVED=sv?sv.ch:null;bedO=new Map(sv&&Array.isArray(sv.bo)?sv.bo:[]);spBed=sv&&sv.sb||null;wsp=null;oldSp=null;pendBD=[];wid=sv?sv.id:Date.now();wname=sv?(sv.name||'ワールド'):($('#wname').value.trim()||'新規ワールド');ADV={};ST=newST();tut=sv?(sv.tu|0):tutNew;tutI=sv?(sv.ti|0):0;tutB=null;tutNew=0;thumb=sv?(sv.th||''):'';crt=sv?(sv.c||sv.t):Date.now();lpx=null;thT=2;$('#toasts').innerHTML='';
+async function start0(sv){if(MP.link)await MP.leave();{const ml=(sv&&sv.mp)||MP.pendLink||null;MP.pendLink=null;if(ml){try{await MP.connect(ml)}catch(e){olNote('接続できませんでした: '+olErr(e),7000);return}}}reqPersist();SAVED=sv?sv.ch:null;bedO=new Map(sv&&Array.isArray(sv.bo)?sv.bo:[]);spBed=sv&&sv.sb||null;wsp=null;oldSp=null;pendBD=[];wid=sv?sv.id:Date.now();wname=sv?(sv.name||'ワールド'):($('#wname').value.trim()||'新規ワールド');ADV={};ST=newST();tut=sv?(sv.tu|0):tutNew;tutI=sv?(sv.ti|0):0;tutB=null;tutNew=0;thumb=sv?(sv.th||''):'';crt=sv?(sv.c||sv.t):Date.now();lpx=null;thT=2;$('#toasts').innerHTML='';
  let s=sv?sv.seed:$('#seed').value.trim();if(!s)s=String(Math.floor(Math.random()*1e9));$('#seed').value=s;seedTxt=s;S=hs(s);WT=+((sv?(sv.ws||{}).wt:nw.wt)||0)|0;swF=null;bwF=null;GM=null;gmUi(0);fpsB.length=0;fpsLast=0;
- dimChunks.forEach(m=>{m.forEach(dispose);m.clear()});mmReset();chunks=dimChunks[0];dim=0;portals=[[],[],[]];wps=[];ptT=ptWait=0;lcx=1e9;
+ dimChunks.forEach(m=>{m.forEach(dispose);m.clear()});MP.gen=1;mmReset();chunks=dimChunks[0];dim=0;portals=[[],[],[]];wps=[];ptT=ptWait=0;lcx=1e9;
  await wlGen(sv);setLoading(1);
  {let f=0;for(let r=0;r<=44&&!f;r+=2)for(let a=0;a<=6.28&&!f;a+=r?2/r:7){const x=Math.round(Math.cos(a)*r),z=Math.round(Math.sin(a)*r);
   let y=H-1;while(y>0&&!get(x,y,z))y--;const b=get(x,y,z);
@@ -4438,13 +4533,96 @@ async function start0(sv){reqPersist();SAVED=sv?sv.ch:null;bedO=new Map(sv&&Arra
  if(cre)[1,2,3,8,7,9,11,D1,TB].forEach((b,i)=>slots[i]={b,n:1});if(!sv&&!cre&&ws.kit)giveKit();sel=0;world=1;if(sv)applySave(sv);
  $('#hud').hidden=false;$('#menu').hidden=true;$('#dead').hidden=true;paused=0;resetIn();renderHot();renderHp();renderXp();lockPtr();
  if(!cre&&ws.animals)for(let k=0;k<6;k++){const q=spawnPos(0);if(q)spawnHerd(q)}
- gmStart();tutShow();playBgm();setLoading(1);tip(tut?'チュートリアル: 画面上部の指示に従おう':cre?'ダブルジャンプで飛行':'木や地面を壊して素材を集めよう');if(!sv)saveNow()}
+ gmStart();if(OL.o.gc&&OL.url)GC.start().catch(()=>{});if(MP.link)msg('共有ワールドに接続しました'+(MP.link.c?' (参加コード: '+MP.link.c+')':''),'#55ff55');tutShow();playBgm();setLoading(1);tip(tut?'チュートリアル: 画面上部の指示に従おう':cre?'ダブルジャンプで飛行':'木や地面を壊して素材を集めよう');if(!sv)saveNow()}
 function start(sv){sndEnsure(()=>{if(wlOn)return;start0(sv).catch(e=>{wlAbort();console.error(e)})})}
+// ---- リソースパック: 読み込み順 1.内蔵テクスチャ 2../assets/ 3.設定のリソースパック (後勝ち)
+// マイクラ互換のテクスチャ名 (ブロック/アイテムID → ファイル名)。階段・ハーフブロック・カーペットは元素材と同じ名前
+const MCN=[null,"grass_block","dirt","stone","cobblestone","sand","gravel","oak_log","oak_planks","oak_leaves","water_still","glass","snow","ice","bedrock","coal_ore","iron_ore","gold_ore","diamond_ore","redstone_ore","lapis_ore","emerald_ore","sandstone","magma","bricks","stone_bricks","obsidian","netherrack","glowstone","white_wool","red_wool","orange_wool","yellow_wool","lime_wool","light_blue_wool","blue_wool","purple_wool","pink_wool","black_wool","birch_log","birch_planks","spruce_log","spruce_planks","dark_oak_planks","cactus","clay","terracotta","mossy_cobblestone","andesite","diorite","granite","iron_block","gold_block","diamond_block","emerald_block","lapis_block","redstone_block","coal_block","bookshelf","pumpkin","melon","nether_bricks","end_stone","blue_ice","apple","rotten_flesh","oak_door_bottom","oak_door_top","oak_door_bottom","oak_door_top","crafting_table","gray_wool","light_gray_wool","brown_wool","green_wool","magenta_wool","cyan_wool","jungle_log","jungle_planks","acacia_log","acacia_planks","cherry_log","cherry_planks","polished_andesite","polished_diorite","polished_granite","smooth_stone","deepslate","basalt","calcite","tuff","red_sandstone","quartz_block","cobbled_deepslate","deepslate_bricks","mud_bricks","prismarine","red_sand","soul_sand","sponge","hay_block","sea_lantern","jack_o_lantern","white_concrete","red_concrete","orange_concrete","yellow_concrete","blue_concrete","green_concrete","purple_concrete","black_concrete","red_stained_glass","blue_stained_glass","green_stained_glass","yellow_stained_glass","nether_portal","end_portal","end_portal_frame","torch","bv_white_bed","bv_red_bed","bv_orange_bed","bv_yellow_bed","bv_lime_bed","bv_light_blue_bed","bv_blue_bed","bv_purple_bed","bv_pink_bed","bv_black_bed","bv_gray_bed","bv_light_gray_bed","bv_brown_bed","bv_green_bed","bv_magenta_bed","bv_cyan_bed","ladder","ladder","ladder","ladder","oak_trapdoor","oak_trapdoor","oak_trapdoor","oak_trapdoor","oak_trapdoor","rail","rail","rail_corner","rail_corner","rail_corner","rail_corner","rail","rail","rail","rail","tnt","torch","torch","torch","torch","chest","oak_planks","oak_planks","oak_planks","oak_planks","cobblestone","cobblestone","cobblestone","cobblestone","stone_bricks","stone_bricks","stone_bricks","stone_bricks","bricks","bricks","bricks","bricks","sandstone","sandstone","sandstone","sandstone","quartz_block","quartz_block","quartz_block","quartz_block","nether_bricks","nether_bricks","nether_bricks","nether_bricks","smooth_stone","smooth_stone","smooth_stone","smooth_stone","mossy_cobblestone","mossy_cobblestone","mossy_cobblestone","mossy_cobblestone","oak_planks","cobblestone","stone_bricks","bricks","sandstone","quartz_block","nether_bricks","smooth_stone","mossy_cobblestone","white_wool","red_wool","blue_wool","green_wool","yellow_wool","black_wool","lantern","redstone_lamp","cracked_stone_bricks","mossy_stone_bricks","chiseled_stone_bricks","chiseled_quartz_block","quartz_pillar","chiseled_sandstone","copper_block","oxidized_copper","prismarine_bricks","bv_white_bed_head","bv_red_bed_head","bv_orange_bed_head","bv_yellow_bed_head","bv_lime_bed_head","bv_light_blue_bed_head","bv_blue_bed_head","bv_purple_bed_head","bv_pink_bed_head","bv_black_bed_head","bv_gray_bed_head","bv_light_gray_bed_head","bv_brown_bed_head","bv_green_bed_head","bv_magenta_bed_head","bv_cyan_bed_head","powered_rail","powered_rail","powered_rail","powered_rail","powered_rail","powered_rail","powered_rail","powered_rail","powered_rail","powered_rail","jungle_planks","jungle_planks","jungle_planks","jungle_planks","acacia_planks","acacia_planks","acacia_planks","acacia_planks","cherry_planks","cherry_planks","cherry_planks","cherry_planks","birch_planks","birch_planks","birch_planks","birch_planks","spruce_planks","spruce_planks","spruce_planks","spruce_planks","dark_oak_planks","dark_oak_planks","dark_oak_planks","dark_oak_planks","cobbled_deepslate","cobbled_deepslate","cobbled_deepslate","cobbled_deepslate","deepslate_bricks","deepslate_bricks","deepslate_bricks","deepslate_bricks","copper_block","copper_block","copper_block","copper_block","oxidized_copper","oxidized_copper","oxidized_copper","oxidized_copper","prismarine_bricks","prismarine_bricks","prismarine_bricks","prismarine_bricks","mossy_stone_bricks","mossy_stone_bricks","mossy_stone_bricks","mossy_stone_bricks","cracked_stone_bricks","cracked_stone_bricks","cracked_stone_bricks","cracked_stone_bricks","mud_bricks","mud_bricks","mud_bricks","mud_bricks","end_stone","end_stone","end_stone","end_stone","netherrack","netherrack","netherrack","netherrack","andesite","andesite","andesite","andesite","granite","granite","granite","granite","diorite","diorite","diorite","diorite","jungle_planks","acacia_planks","cherry_planks","birch_planks","spruce_planks","dark_oak_planks","cobbled_deepslate","deepslate_bricks","copper_block","oxidized_copper","prismarine_bricks","mossy_stone_bricks","cracked_stone_bricks","mud_bricks","end_stone","netherrack","andesite","granite","diorite","bv_lamp_white","bv_lamp_blue","bv_lamp_green","bv_lamp_purple","bv_lamp_orange","bv_jack_o_lantern_angry","bv_jack_o_lantern_surprised","bv_jack_o_lantern_cat","bv_jack_o_lantern_soul","white_terracotta","red_terracotta","orange_terracotta","yellow_terracotta","lime_terracotta","light_blue_terracotta","blue_terracotta","purple_terracotta","pink_terracotta","black_terracotta","gray_terracotta","light_gray_terracotta","brown_terracotta","green_terracotta","magenta_terracotta","cyan_terracotta","white_glazed_terracotta","red_glazed_terracotta","orange_glazed_terracotta","yellow_glazed_terracotta","lime_glazed_terracotta","light_blue_glazed_terracotta","blue_glazed_terracotta","purple_glazed_terracotta","pink_glazed_terracotta","black_glazed_terracotta","gray_glazed_terracotta","light_gray_glazed_terracotta","brown_glazed_terracotta","green_glazed_terracotta","magenta_glazed_terracotta","cyan_glazed_terracotta","lime_concrete","light_blue_concrete","pink_concrete","gray_concrete","light_gray_concrete","brown_concrete","magenta_concrete","cyan_concrete","orange_stained_glass","pink_stained_glass","purple_stained_glass","light_blue_stained_glass","lime_stained_glass","magenta_stained_glass","white_stained_glass","black_stained_glass","orange_wool","pink_wool","purple_wool","light_blue_wool","lime_wool","magenta_wool","cyan_wool","gray_wool","light_gray_wool","brown_wool","polished_deepslate","deepslate_tiles","chiseled_deepslate","polished_basalt","smooth_basalt","blackstone","polished_blackstone","polished_blackstone_bricks","purpur_block","purpur_pillar","end_stone_bricks","red_nether_bricks","bv_gold_bricks","bv_iron_bricks","bv_copper_bricks","bv_snow_bricks","bv_blue_ice_bricks","bv_sandstone_bricks","bv_red_sandstone_bricks","bone_block","honeycomb_block","nether_wart_block","warped_wart_block","moss_block","bv_hedge","bv_cherry_hedge","bv_white_tile","bv_blue_tile","bv_green_tile","bv_red_tile","bv_black_tile","bv_yellow_tile","bv_checker_white_black","bv_checker_red_white","bv_checker_blue_white","bv_checker_yellow_black","bv_stripe_red_white","bv_stripe_blue_white","bv_stripe_green_white","bv_stripe_pink_white","bv_stripe_black_yellow","bv_dots_pink","bv_dots_light_blue","bv_dots_yellow","bv_dots_red","bv_oak_panel","bv_birch_panel","bv_spruce_panel","bv_dark_oak_panel","bv_jungle_panel","bv_acacia_panel","bv_cherry_panel","bv_neon_pink","bv_neon_light_blue","bv_neon_lime","bv_neon_red","bv_neon_white","polished_deepslate","polished_deepslate","polished_deepslate","polished_deepslate","deepslate_tiles","deepslate_tiles","deepslate_tiles","deepslate_tiles","polished_blackstone_bricks","polished_blackstone_bricks","polished_blackstone_bricks","polished_blackstone_bricks","polished_blackstone","polished_blackstone","polished_blackstone","polished_blackstone","bv_gold_bricks","bv_gold_bricks","bv_gold_bricks","bv_gold_bricks","purpur_block","purpur_block","purpur_block","purpur_block","end_stone_bricks","end_stone_bricks","end_stone_bricks","end_stone_bricks","red_nether_bricks","red_nether_bricks","red_nether_bricks","red_nether_bricks","bv_sandstone_bricks","bv_sandstone_bricks","bv_sandstone_bricks","bv_sandstone_bricks","bv_snow_bricks","bv_snow_bricks","bv_snow_bricks","bv_snow_bricks","polished_deepslate","deepslate_tiles","polished_blackstone_bricks","polished_blackstone","bv_gold_bricks","purpur_block","end_stone_bricks","red_nether_bricks","bv_sandstone_bricks","bv_snow_bricks","wooden_sword","wooden_pickaxe","wooden_axe","stone_sword","stone_pickaxe","stone_axe","iron_sword","iron_pickaxe","iron_axe","diamond_sword","diamond_pickaxe","diamond_axe","iron_helmet","iron_chestplate","iron_leggings","iron_boots","golden_helmet","golden_chestplate","golden_leggings","golden_boots","diamond_helmet","diamond_chestplate","diamond_leggings","diamond_boots","bow","crossbow","arrow","porkchop","cooked_porkchop","beef","cooked_beef","mutton","cooked_mutton","chicken","cooked_chicken","wheat","egg","sugar","bread","carrot","golden_carrot","potato","baked_potato","melon_slice","sweet_berries","bv_fried_egg","cookie","pumpkin_pie","golden_apple","bv_meat_sandwich","bv_stew","bv_jerky","bucket","water_bucket","lava_bucket","flint_and_steel","ender_eye","glass_bottle","bv_potion_healing","bv_potion_regeneration","bv_potion_swiftness","bv_potion_leaping","bv_potion_fire_resistance","bv_potion_night_vision","bv_potion_strength","bv_potion_resistance","bv_minecart_guard","compass","recovery_compass","gunpowder","elytra","firework_rocket","minecart"];
+const RP=(()=>{
+ const AT0=document.createElement('canvas');AT0.width=AT0.height=1024;AT0.getContext('2d').drawImage(AT,0,0);
+ const ART0=new Map(),ICON0=[];
+ const isCmp=i=>{const t=IT[i-IB];return !t||t.k=='cmp'||t.k=='rcmp'};
+ const mkL=()=>({b:new Map(),i:new Map()});
+ let L2=mkL(),L3=mkL(),NMS=null,saved=[],msg='';
+ const base=p=>p.split('/').pop().replace(/\.png$/i,'').toLowerCase();
+ function names(id){if(!NMS){NMS=new Map();const add=(i,n)=>{if(i>0&&n){const a=NMS.get(i)||[];if(!a.includes(n))a.push(n);NMS.set(i,a)}};
+  MCN.forEach((n,i)=>add(i,n));
+  Object.entries(EN).forEach(([k,j])=>add(NM.indexOf(j),k));
+  Object.keys(MT).forEach(m=>Object.keys(WD).forEach(w=>{try{const i=item(m+'_'+w);if(i>=IB)add(i,m+'_'+w)}catch(e){}}));
+  Object.entries(XM).forEach(([k,i])=>add(i,k));
+  for(let i=1;i<NM.length;i++)if(NM[i])add(i,String(NM[i]).toLowerCase())}
+  return NMS.get(id)||[]}
+ const eng=n=>/^[a-z0-9_]+$/.test(n);
+ function addPng(L,path,bm){const p=path.replace(/\\/g,'/').toLowerCase(),n=base(p);
+  if(/(^|\/)(blocks?)\/[^/]+$/.test(p))L.b.set(n,bm);else if(/(^|\/)(items?)\/[^/]+$/.test(p))L.i.set(n,bm);
+  else if(!/\/(gui|entity|environment|particle|misc|colormap|painting|font|models?)\//.test(p)){L.b.set(n,bm);L.i.set(n,bm)}}
+ async function unzip(buf){const dv=new DataView(buf),u8=new Uint8Array(buf);let e=-1;
+  for(let i=u8.length-22;i>=Math.max(0,u8.length-65558);i--)if(dv.getUint32(i,true)==0x06054b50){e=i;break}
+  if(e<0)throw new Error('zip');const n=dv.getUint16(e+10,true);let o=dv.getUint32(e+16,true);const out=[];
+  for(let k=0;k<n;k++){if(dv.getUint32(o,true)!=0x02014b50)break;
+   const meth=dv.getUint16(o+10,true),cs=dv.getUint32(o+20,true),nl=dv.getUint16(o+28,true),el=dv.getUint16(o+30,true),cl=dv.getUint16(o+32,true),lo=dv.getUint32(o+42,true),name=new TextDecoder().decode(u8.subarray(o+46,o+46+nl));o+=46+nl+el+cl;
+   if(!/\.png$/i.test(name))continue;
+   const ds=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),raw=u8.subarray(ds,ds+cs);let d=raw;
+   if(meth==8)d=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());else if(meth!=0)continue;
+   out.push([name,d])}
+  return out}
+ const dec=d=>createImageBitmap(new Blob([d],{type:'image/png'}));
+ async function addFile(L,f){const u=new Uint8Array(f.buf);
+  if(u[0]==0x50&&u[1]==0x4b){for(const[n,d]of await unzip(f.buf)){try{addPng(L,n,await dec(d))}catch(e){}}}
+  else try{addPng(L,f.n,await dec(u))}catch(e){}}
+ async function loadLoose(){L2=mkL();if(location.protocol=='file:')return;
+  const get=async p=>{try{const r=await fetch(p,{cache:'no-cache'});if(!r.ok)return null;return r}catch(e){return null}};
+  const img=async(p,k)=>{const r=await get(p);if(!r||!/image\/png/i.test(r.headers.get('content-type')||''))return;try{addPng(L2,k||p,await dec(await r.arrayBuffer()))}catch(e){}};
+  {const r=await get('assets/pack.zip');if(r)try{await addFile(L2,{n:'pack.zip',buf:await r.arrayBuffer()})}catch(e){}}
+  const mr=await get('assets/index.json');let man=null;if(mr)try{man=await mr.json()}catch(e){}
+  if(Array.isArray(man)){await pool(man.filter(s=>/\.png$/i.test(s)).map(s=>()=>img('assets/'+s.split('/').map(encodeURIComponent).join('/'),s)));return}
+  const T=[],seen=new Set();
+  for(let id=1;id<NM.length;id++){if(!NM[id]||(id>=IB&&isCmp(id)))continue;
+   for(const n of names(id).filter(eng)){const ks=id<IB?[n,n+'_top',n+'_side',n+'_bottom']:[n],d=id<IB?'block':'item';
+    for(const k of ks)for(const r of['assets/minecraft/textures/','assets/textures/']){const p=r+d+'/'+k+'.png';if(!seen.has(p)){seen.add(p);T.push(()=>img(p))}}}}
+  await pool(T)}
+ async function pool(T,n=12){let i=0;await Promise.all(Array.from({length:n},async()=>{while(i<T.length){const f=T[i++];try{await f()}catch(e){}}}))}
+ function pick(id,f){const blk=id<IB;
+  for(const L of[L3,L2]){const Ms=blk?[L.b,L.i]:[L.i];
+   for(const n of names(id)){const c=blk?(f==0?[n+'_top',n]:f==2?(n=='grass_block'?['dirt']:[n+'_bottom',n+'_top',n]):[n+'_side',n]):[n];
+    for(const M of Ms)for(const k of c){const b=M.get(k);if(b)return b}}}
+  return null}
+ const px=(g,b,x,y,w,h)=>{g.imageSmoothingEnabled=false;const s=Math.min(b.width,b.height);g.clearRect(x,y,w,h);g.drawImage(b,0,0,s,s,x,y,w,h)};
+ function apply(){const ax2=AT.getContext('2d');ax2.clearRect(0,0,1024,1024);ax2.drawImage(AT0,0,0);
+  ART0.forEach((c,i)=>{if(isCmp(i))return;const t=ART[i];if(!t)return;const g=t.getContext('2d');g.clearRect(0,0,t.width,t.height);g.drawImage(c,0,0)});
+  ICON0.forEach((u,i)=>{if(u&&(i<IB||!isCmp(i)))ICON[i]=u});
+  const mk=(c)=>{const o=document.createElement('canvas');o.width=o.height=32;const g=o.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(c,0,0,32,32);return o.toDataURL()};
+  for(let id=1;id<NM.length;id++){if(!NM[id])continue;
+   if(id<IB){let ch=0;for(let f=0;f<3;f++){const b=pick(id,f);if(b){const t=id*3+f;px(ax2,b,(t%64)*16,(t>>6)*16,16,16);if(f==1)ch=1}}
+    if(ch)try{ICON[id]=mk(atlasCv(id,1))}catch(e){}}
+   else if(!isCmp(id)){const b=pick(id,0),t=ART[id];if(b&&t){px(t.getContext('2d'),b,0,0,t.width,t.height);try{ICON[id]=mk(t)}catch(e){}}}}
+  tex.needsUpdate=true;
+  for(const k in dTex){try{dTex[k].dispose()}catch(e){}delete dTex[k]}
+  try{if(world){hk=null;renderHot()}}catch(e){}}
+ const idb=()=>new Promise((r,j)=>{const q=indexedDB.open('bv-rp',1);q.onupgradeneeded=()=>q.result.createObjectStore('k');q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
+ const idbGet=async()=>{try{const d=await idb();return await new Promise(r=>{const q=d.transaction('k').objectStore('k').get('files');q.onsuccess=()=>r(q.result||[]);q.onerror=()=>r([])})}catch(e){return[]}};
+ const idbSet=async v=>{try{const d=await idb();await new Promise(r=>{const t=d.transaction('k','readwrite');t.objectStore('k').put(v,'files');t.oncomplete=t.onerror=()=>r()})}catch(e){}};
+ const cnt=L=>L.b.size+L.i.size;
+ function ui(m){if(m!=null)msg=m;const a=$('#rpst'),b=$('#rpm');if(!a)return;a.textContent=saved.length?'設定のリソースパック: '+saved.map(f=>f.n).join(', ').slice(0,80)+' ('+cnt(L3)+'枚)':'設定のリソースパック: なし';b.textContent=msg+(cnt(L2)?(msg?'\n':'')+'./assets/ から '+cnt(L2)+' 枚読込済み':'')}
+ async function rebuild3(){L3=mkL();for(const f of saved)await addFile(L3,f)}
+ async function boot(){for(let i=IB;i<NM.length;i++)if(ART[i]){const c=document.createElement('canvas');c.width=ART[i].width;c.height=ART[i].height;c.getContext('2d').drawImage(ART[i],0,0);ART0.set(i,c)}
+  ICON.forEach((u,i)=>ICON0[i]=u);
+  try{await loadLoose()}catch(e){}
+  try{saved=await idbGet();await rebuild3()}catch(e){saved=[];L3=mkL()}
+  if(cnt(L2)||cnt(L3))apply();ui('')}
+ async function add(files){try{const A=[];for(const f of files)A.push({n:f.name,buf:await f.arrayBuffer()});
+   const bef=cnt(L3);saved=saved.concat(A);await rebuild3();if(cnt(L3)==bef){saved=saved.slice(0,saved.length-A.length);await rebuild3();ui('使えるPNGが見つかりませんでした');return}
+   await idbSet(saved);apply();ui('読み込みました')}catch(e){ui('読み込みに失敗しました')}}
+ async function clear(){saved=[];L3=mkL();await idbSet([]);apply();ui('リソースパックを外しました')}
+ return{boot,add,clear,ui}})();
+$('#rpl').onclick=()=>$('#rpf').click();$('#rpf').onchange=e=>{const f=[...e.target.files];e.target.value='';if(f.length)RP.add(f)};$('#rpc').onclick=()=>RP.clear();
+document.querySelector('[data-go="rp"]').addEventListener('click',()=>RP.ui());
+setTimeout(()=>RP.boot(),0);
 $('#go').onclick=()=>start();
 $('#rnd').onclick=()=>$('#seed').value=String(Math.floor(Math.random()*1e9));
 $('#invc').onclick=tInv;
 $('#resp').onclick=()=>{glide=0;fx={};showFx();burn=0;hp=20;hg=20;hgq=10;hab=0;hsat=5;hexh=0;eatT=0;dead=0;if(!ws.keep||cre)xp=0;renderXp();if(dim){switchDim(0);ensureGen(sp.x,sp.z)}Object.assign(p,sp);buildAround(p.x,p.z);v.x=v.y=v.z=0;falling=0;$('#dead').hidden=true;paused=0;renderHp();lockPtr()};
-$('#dtitle').onclick=()=>{dead=0;world=0;$('#dead').hidden=true;$('#hud').hidden=true;pause(true)};
+$('#dtitle').onclick=()=>{dead=0;world=0;$('#dead').hidden=true;$('#hud').hidden=true;pause(true);MP.leave()};
 // ---- settings
 // ---- save data (IndexedDB)
 let wid=0,saving=0,asT=0;
@@ -4463,24 +4641,25 @@ const DB={db:null,err:'',
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let noDbW=0;
 async function saveNow(msg){if(!world||noSave||(saving&&Date.now()-saving<20000)||dead)return;if(!DB.db){if(!noDbW){noDbW=1;tip('セーブ不可: この環境ではIndexedDBが使えません')}return}saving=Date.now();
- try{const ch=Object.assign({},SAVED||{});dimChunks.forEach((m,d)=>m.forEach(c=>{if(c.mod)ch[d+':'+c.cx+','+c.cz]=c.d.slice()}));
-  const r=await DB.put({id:wid,v:1,seed:seedTxt,name:wname,adv:ADV,st:ST,th:thumb,c:crt,cre,ws,fx,ib:IB,gt,dim,p:{x:p.x,y:p.y,z:p.z},yaw,pitch,hp,hg,sat:hsat,fv:fvSave(),xp,sel,slots:slots.map(s=>s?{...s}:null),eq:eq.map(s=>s?{...s}:null),sp:{x:sp.x,y:sp.y,z:sp.z},bo:[...bedO],sb:spBed,sw:wsp,os:oldSp&&performance.now()<oldSp.until?{x:oldSp.x,z:oldSp.z,left:oldSp.until-performance.now()}:null,ct:cartSave(),chs:[...chests].map(([k,a])=>[k,a.map(s=>s?{...s}:null)]),ver:VER,ld:lastDeath,portals,ch,wp:wps,tu:tut,ti:tutI,t:Date.now()});
+ try{const ch=MP.link?{}:Object.assign({},SAVED||{});if(!MP.link)dimChunks.forEach((m,d)=>m.forEach(c=>{if(c.mod)ch[d+':'+c.cx+','+c.cz]=c.d.slice()}));
+  const r=await DB.put({id:wid,v:1,seed:seedTxt,name:wname,adv:ADV,st:ST,th:thumb,c:crt,cre,ws,fx,ib:IB,gt,dim,p:{x:p.x,y:p.y,z:p.z},yaw,pitch,hp,hg,sat:hsat,fv:fvSave(),xp,sel,slots:slots.map(s=>s?{...s}:null),eq:eq.map(s=>s?{...s}:null),sp:{x:sp.x,y:sp.y,z:sp.z},bo:[...bedO],sb:spBed,sw:wsp,os:oldSp&&performance.now()<oldSp.until?{x:oldSp.x,z:oldSp.z,left:oldSp.until-performance.now()}:null,ct:cartSave(),chs:[...chests].map(([k,a])=>[k,a.map(s=>s?{...s}:null)]),ver:VER,mp:MP.link||undefined,ld:lastDeath,portals,ch,wp:wps,tu:tut,ti:tutI,t:Date.now()});
   if(r===null){const q=DB.err=='QuotaExceededError';tip(q?'セーブ失敗: 保存容量が足りません(書き出しでバックアップを)':'セーブに失敗しました。自動で再試行します');if(!q&&(svFail=(svFail|0)+1)<=3)setTimeout(()=>saveNow(),6000*svFail)}else{svFail=0;if(msg)tip('セーブしました')}}catch(e){console.error(e);tip('セーブに失敗しました')}finally{saving=0}}
 function applySave(o){ADV=o.adv||{};ST=Object.assign(newST(),o.st||{});gt=o.gt;hp=o.hp;hg=Math.max(0,Math.min(20,Math.round(o.hg)));hsat=isFinite(o.sat)?Math.max(0,Math.min(hg,o.sat)):Math.min(5,hg);hexh=0;eatT=0;hab=0;fvLoad(o.fv);xp=o.xp||0;hgq=Math.ceil(hg/2);{const sib=o.ib||OLD_IB,off=IB-sib,rm=s=>s&&off&&s.b>=sib?{...s,b:s.b+off}:s;slots.fill(null);o.slots.forEach((s,i)=>slots[i]=rm(s));eq.fill(null);o.eq.forEach((s,i)=>eq[i]=rm(s));chests.clear();(o.chs||[]).forEach(e=>{if(Array.isArray(e)&&Array.isArray(e[1]))chests.set(String(e[0]),Array.from({length:27},(_,i)=>{const s=e[1][i];return s&&isFinite(s.b)&&s.n>0?rm(s):null}))});if(off&&ST.fd)ST.fd=ST.fd.map(b=>b>=sib?b+off:b);fx=Object.assign({},o.fx||{})}sel=o.sel;yaw=o.yaw;pitch=o.pitch;portals=o.portals||[[],[],[]];wps=(o.wp||[]).slice();Object.assign(sp,o.sp);pendC=(o.ct||[]).slice();lastDeath=o.ld||null;oldSp=o.os?{x:o.os.x,z:o.os.z,until:performance.now()+(+o.os.left||0)}:null;
  if(o.dim)switchDim(o.dim);ensureGen(o.p.x,o.p.z);Object.assign(p,o.p);v.x=v.y=v.z=0;buildAround(p.x,p.z)}
 DB.open().then(renderSaves);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveNow()});addEventListener('pagehide',()=>saveNow());
-const KD={f:'KeyW',b:'KeyS',l:'KeyA',r:'KeyD',jp:'Space',sp:'ShiftLeft',brk:'KeyC',pl:'KeyV',inv:'KeyE',map:'KeyM',dr:'KeyQ'},
+const KD={f:'KeyW',b:'KeyS',l:'KeyA',r:'KeyD',jp:'Space',sp:'ShiftLeft',cr:'KeyC',brk:'KeyX',pl:'KeyV',inv:'KeyE',map:'KeyM',dr:'KeyQ'},
 KL={f:'前進',b:'後退',l:'左移動',r:'右移動',jp:'ジャンプ / 飛行上昇',sp:'ダッシュ / 飛行降下',brk:'破壊・攻撃 (左クリックと同じ)',pl:'設置・食べる (右クリックと同じ)',inv:'インベントリ',map:'マップ'},
-KB={...KD};let sens=1,invY=0,rebind=null;
-try{const j=JSON.parse(localStorage.getItem('bl-kb')||'{}');if(j.k)for(const a in KD)if(typeof j.k[a]=='string')KB[a]=j.k[a];if(j.s>=.3&&j.s<=3)sens=+j.s;invY=j.y?1:0}catch(e){}
+KB={...KD};let sens=1,invY=0,rebind=null,crMode=0,csn=0,eyeH=1.62,csE=0;
+try{const j=JSON.parse(localStorage.getItem('bl-kb')||'{}');if(j.k)for(const a in KD)if(typeof j.k[a]=='string')KB[a]=j.k[a];if(j.s>=.3&&j.s<=3)sens=+j.s;invY=j.y?1:0;crMode=j.c?1:0}catch(e){}
+if(KB.brk==KB.cr)KB.brk=KD.brk==KB.cr?'KeyZ':KD.brk;
 if(Object.keys(KB).some(a=>a!='map'&&KB[a]==KB.map))KB.map='KeyN';
-const saveKB=()=>{try{localStorage.setItem('bl-kb',JSON.stringify({k:KB,s:sens,y:invY}))}catch(e){}};
+const saveKB=()=>{try{localStorage.setItem('bl-kb',JSON.stringify({k:KB,s:sens,y:invY,c:crMode}))}catch(e){}};
 const kn=c=>({Space:'Space',ShiftLeft:'Shift',ShiftRight:'右Shift',ControlLeft:'Ctrl',ControlRight:'右Ctrl',AltLeft:'Alt',AltRight:'右Alt',Backquote:'`',CapsLock:'Caps'}[c]||c.replace(/^(Key|Digit)/,'').replace(/^Numpad/,'Num'));
 function refreshLabels(){
  $('#invc').lastChild.textContent='閉じる ('+kn(KB.inv)+')';
  $('#help').innerHTML=[`移動: ${[KB.f,KB.l,KB.b,KB.r].map(kn).join(' ')} / マウス: カメラ(クリックでカーソルロック・Escで解除) / 矢印キー: カメラ / ${kn(KB.jp)}: ジャンプ (クリエイティブは2回押しで飛行・エリトラ装備で空中ジャンプ2回目に滑空/滑空中のジャンプでキャンセル)`,
-  `${kn(KB.sp)}: ダッシュ (飛行中は降下) / 左クリック・${kn(KB.brk)}(長押し): 破壊・攻撃 / 右クリック・${kn(KB.pl)}: 設置`,
+  `${kn(KB.sp)}: ダッシュ (飛行中は降下) / ${kn(KB.cr)}: しゃがむ (ゆっくり歩く・端から落ちない。設定で切り替え/長押しを選べる) / 左クリック・${kn(KB.brk)}(長押し): 破壊・攻撃 / 右クリック・${kn(KB.pl)}: 設置`,
   `1〜9・ホイール: ホットバー / ${kn(KB.inv)}: インベントリ(クラフトもここ) / ${kn(KB.map)}: マップ(全画面) / 食べ物を持って右クリック長押し(1.5秒): 食べる / Esc: 一時停止`,
   'サバイバルでは暗い場所(夜・洞窟)でゾンビ・スライム・スケルトンが出現(明るい所では消える)。昼は豚・牛・羊・ニワトリが草原に出現。左クリックで攻撃',
   '石・鉱石はツルハシがないと掘れない(木→石→鉄→ダイヤの順に硬いものが掘れる)。斧は木材を速く掘れる。ツールは耐久あり',
@@ -4503,7 +4682,7 @@ function refreshLabels(){
 'Hキー: デバッグ画面(座標・FPS・ターゲット・描画情報など)の表示/非表示を切り替える','Qキー: 手に持ったアイテムを1個捨てる(押しっぱなしで連続)。インベントリでアイテムを持ったまま枠の外をクリックで全部、右クリックで1個ドロップ。壊したブロックやモブの落とし物はアイテムとして落ち、近づくと拾える','ベッド(16色): 同色の羊毛3+板材3。右クリックでリスポーン地点を設定、夜なら朝までスキップ。はしご: 壁の側面に設置、ジャンプ長押しで登り、Shiftで停止。トラップドア: 右クリックで開閉。板材のレシピはどの木の板材でも使える','全画面マップ(M): ドラッグ / 矢印キーで1ブロックずつ移動、ホイール / ＋－でズーム。左下のメニューでバイオーム・構造物の表示切替とウェイポイント(ピン)の設置ができます(マップ右クリックでもピン設置)','チュートリアルワールド: 設定の「チュートリアルワールド」ボタンから、操作を順番に練習できます','モバイル操作: 左スティックで移動 / 画面ドラッグで視点 / 右のボタンで操作(ゴミ箱ボタン: タップで1個、長押しで全部捨てる)'].map(t=>`<li>${t}</li>`).join('')}
 __bp(45);
 // ===================== UI v5: screens / worlds / options / advancements / stats =====================
-const KS={f:'前進',b:'後退',l:'左移動',r:'右移動',jp:'ジャンプ/上昇',sp:'ダッシュ/降下',brk:'破壊・攻撃',pl:'設置・食べる',inv:'インベントリ',map:'マップ',dr:'アイテムを捨てる'};
+const KS={f:'前進',b:'後退',l:'左移動',r:'右移動',jp:'ジャンプ/上昇',sp:'ダッシュ/降下',cr:'しゃがむ',brk:'破壊・攻撃',pl:'設置・食べる',inv:'インベントリ',map:'マップ',dr:'アイテムを捨てる'};
 let scr='',nav=[],selW=null,wl=[],wq='',atab='story',advSel=null;
 const CMX=[13,20,30,50],RML=[1,1.5,2,3],WSD={wt:0,mode:0,diff:2,mobs:1,creeper:0,mdmg:0,animals:2,day:0,hunger:0,fall:0,kit:0,keep:1,km:1,cmax:0,rmul:0};
 const WSC=[['mode','ゲームモード',['サバイバル','クリエイティブ']],['diff','難易度',['ピース','イージー','ノーマル','ハード']],['mobs','敵の湧き量',['なし','少なめ','ふつう','多め']],['creeper','クリーパーのスポーン',['オフ','オン']],['mdmg','モブの被害',['オフ','オン']],['animals','動物の湧き量',['なし','少なめ','ふつう','多め']],['day','昼夜',['通常','常に昼','常に夜','時間停止']],['hunger','空腹',['あり','なし']],['fall','落下ダメージ',['あり','なし']],['cmax','トロッコの最高速度',['標準(13)','20','30','50']],['rmul','レールの速さ倍率',['x1','x1.5','x2','x3']],['keep','インベントリキープ',['なし','あり']],['kit','初期アイテム',['なし','スターターセット'],1],['wt','ワールドタイプ',WTN,1]];
@@ -4553,20 +4732,20 @@ const newSplash=()=>{$('#splash').textContent=SPL[Math.floor(Math.random()*SPL.l
 function showScr(n,back){if(!back&&scr&&scr!=n)nav.push(scr);scr=n;rebind=null;
  document.querySelectorAll('#menu .gui').forEach(g=>g.classList.toggle('on',g.id=='s-'+n));
  MENU.classList.toggle('inw',!!world);MENU.classList.toggle('t',!world&&n=='title');MENU.classList.toggle('d',!world&&n!='title');
- if(n=='wtpl')renderTpl();if(n=='worlds')renderSaves();else if(n=='adv')renderAdv();else if(n=='sts')renderSts();else if(n=='ctrl'||n=='opts'||n=='video'||n=='sound'||n=='shader'||n=='ui'||n=='opt')renderSet();else if(n=='snd')renderSnd();else if(n=='help')refreshLabels();else if(n=='title')newSplash();if(n=='skin')skOpen();if(n=='create')renderRows($('#cwrows'),nw,1);if(n=='game')renderRows($('#gsrows'),ws,0);requestAnimationFrame(fitGui)}
+ if(n=='mp')mpOpen();if(n=='mk')mkOpen();if(n=='sks')sksOpen();if(n=='gc')gcOpen();if(n=='wtpl')renderTpl();if(n=='worlds')renderSaves();else if(n=='adv')renderAdv();else if(n=='sts')renderSts();else if(n=='ctrl'||n=='opts'||n=='video'||n=='sound'||n=='shader'||n=='ui'||n=='opt')renderSet();else if(n=='snd')renderSnd();else if(n=='help')refreshLabels();else if(n=='title')newSplash();if(n=='skin')skOpen();if(n=='create')renderRows($('#cwrows'),nw,1);if(n=='game')renderRows($('#gsrows'),ws,0);requestAnimationFrame(fitGui)}
 const menuRoot=n=>{nav=[];scr='';showScr(n)};
 function menuBack(){if(nav.length)showScr(nav.pop(),true);else if(world&&!dead&&scr=='pause')pause(0)}
 MENU.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;selSnd();
  if(b.dataset.go)showScr(b.dataset.go);else if('back' in b.dataset)menuBack();else if(b.dataset.act=='resume')pause(0)});
 $('#quit').onclick=function(){if(document.getElementById('quit-end'))return;const o=document.createElement('div');o.id='quit-end';o.style.cssText='position:fixed;inset:0;z-index:99999;background:#000;color:#ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font:inherit;font-size:16px;opacity:0;transition:opacity .5s';o.innerHTML='<div>ゲームを終了しました</div><div style="font-size:11px;color:#888">ご利用ありがとうございました</div>';document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity='1'});try{window.__quit=1;if(typeof audioCtx!=='undefined'&&audioCtx&&audioCtx.close)audioCtx.close()}catch(e){}setTimeout(()=>{try{window.close()}catch(e){}setTimeout(()=>{try{location.replace('about:blank')}catch(e){}},200)},900)};
-$('#qt').onclick=async()=>{await saveNow();world=0;$('#hud').hidden=true;await renderSaves();menuRoot('title')};
+$('#qt').onclick=async()=>{await saveNow();await MP.leave();world=0;$('#hud').hidden=true;await renderSaves();menuRoot('title')};
 // --- world list
 async function renderSaves(){const L=await DB.list();if(L===null){$('#wlist').innerHTML='<p class="em">セーブデータを読み込めませんでした。ページを再読み込みしてください</p>';['wplay','wedit','wdel','wre','wexp'].forEach(i=>$('#'+i).disabled=1);updSt();return}wl=L.filter(o=>o&&o.slots).sort((a,b)=>b.t-a.t);drawW();updSt()}
 const verLbl=v=>!v?'旧バージョン':v==VER?v:'旧バージョン ('+v+')';
   function drawW(){const q=wq.toLowerCase(),a=wl.filter(o=>!q||(o.name||'').toLowerCase().includes(q)||String(o.seed).toLowerCase().includes(q));
  if(selW&&!wl.some(o=>o.id==selW))selW=null;
- $('#wlist').innerHTML=a.length?a.map(o=>{const nm=esc(o.name||'ワールド');return`<div class="wi${o.id==selW?' on':''}" data-id="${o.id}"><img src="${o.th||ICON[1]}" alt=""><div><b>${nm}</b><small>${nm} (${new Date(o.c||o.t).toLocaleString('ja-JP')})</small><small>${o.cre?'クリエイティブ':'サバイバル'}モード、バージョン: ${esc(verLbl(o.ver))}、シード: ${esc(o.seed)}、進捗 ${Object.keys(o.adv||{}).length}/${TOT}</small></div></div>`}).join(''):'<p class="em">ワールドがありません</p>';
- ['wplay','wedit','wdel','wre','wexp'].forEach(i=>$('#'+i).disabled=!selW)}
+ $('#wlist').innerHTML=a.length?a.map(o=>{const nm=esc(o.name||'ワールド');return`<div class="wi${o.id==selW?' on':''}" data-id="${o.id}"><img src="${o.th||ICON[1]}" alt=""><div><b>${nm}</b><small>${nm} (${new Date(o.c||o.t).toLocaleString('ja-JP')})</small><small>${o.mp?'<span class="material-symbols-outlined">cloud</span> オンライン / ':''}${o.cre?'クリエイティブ':'サバイバル'}モード、バージョン: ${esc(verLbl(o.ver))}、シード: ${esc(o.seed)}、進捗 ${Object.keys(o.adv||{}).length}/${TOT}</small></div></div>`}).join(''):'<p class="em">ワールドがありません</p>';
+ ['wplay','wedit','wdel','wre','wexp'].forEach(i=>$('#'+i).disabled=!selW);$('#wshare').disabled=$('#wpub').disabled=!selW}
 const playW=async()=>{if(!selW)return;const o=await DB.get(selW);if(o&&o.slots)start(o)};
 $('#wlist').onclick=e=>{const w=e.target.closest('.wi');if(w){selW=+w.dataset.id;drawW()}};
 $('#wlist').ondblclick=e=>{if(e.target.closest('.wi'))playW()};
@@ -4661,9 +4840,10 @@ function syncS(){document.querySelectorAll('.mcs').forEach(el=>{const d=SLD[el.d
 document.querySelectorAll('.mcs').forEach(el=>{const d=SLD[el.dataset.k],i=el.querySelector('input');i.oninput=()=>{d.set(+i.value);syncS()};i.onchange=()=>{if(el.dataset.k=='se')sfx(1,1)}});
 function renderSet(){syncS();$('#kl').innerHTML=Object.keys(KS).map(a=>`<div class="kk"><span>${KS[a]}</span><button class="mb sm${rebind==a?' on':''}" data-a="${a}">${rebind==a?'> <':esc(kn(KB[a]))}</button></div>`).join('');
  [...$('#ctl').children].forEach(x=>x.classList.toggle('on',+x.dataset.c==mob));
- $('#invy').textContent='視点の上下を反転: '+(invY?'オン':'オフ');$('#vmute').textContent='音を消す: '+(au.x?'オン':'オフ');$('#thm').textContent='インベントリの配色: '+(root.dataset.theme=='dark'?'ダーク':'ライト');const SZ=['小','標準','大'];$('#oinfo').textContent='座標などの情報: '+(oInfo?'表示':'非表示');$('#ohud').textContent='ホットバーの大きさ: '+SZ[oHud];$('#oflash').textContent='被ダメージの赤い演出: '+(oFl?'オン':'オフ');$('#omz').textContent='モバイルボタン: '+SZ[oMz];$('#omm').textContent='ミニマップ: '+(oMm?'表示':'非表示');{const ok=ren.capabilities.isWebGL2&&!shBad;document.querySelectorAll('[data-shd]').forEach(b=>{const i=+b.dataset.shd;b.textContent=(shd==i?'✔ ':'')+(i?SHN[i]:'シェーダーなし')+(i&&!ok?' (非対応)':shd==i&&i&&LTV('sh')?' (軽量化でオフ)':'');b.disabled=i>0&&!ok})}$('#oshq').textContent='影の解像度: '+['低','標準','高'][shq];$('#oshq').disabled=!shd;$('#oas').textContent='自動セーブ: '+(asv?asv+'秒ごと':'オフ');$('#ogame').disabled=!world;renderSnd();renderOpt();refreshLabels()}
+ $('#invy').textContent='視点の上下を反転: '+(invY?'オン':'オフ');$('#crm').textContent='しゃがみ操作: '+(crMode?'長押し':'切り替え');$('#vmute').textContent='音を消す: '+(au.x?'オン':'オフ');$('#thm').textContent='インベントリの配色: '+(root.dataset.theme=='dark'?'ダーク':'ライト');const SZ=['小','標準','大'];$('#oinfo').textContent='座標などの情報: '+(oInfo?'表示':'非表示');$('#ohud').textContent='ホットバーの大きさ: '+SZ[oHud];$('#oflash').textContent='被ダメージの赤い演出: '+(oFl?'オン':'オフ');$('#omz').textContent='モバイルボタン: '+SZ[oMz];$('#omm').textContent='ミニマップ: '+(oMm?'表示':'非表示');{const ok=ren.capabilities.isWebGL2&&!shBad;document.querySelectorAll('[data-shd]').forEach(b=>{const i=+b.dataset.shd;b.textContent=(shd==i?'✔ ':'')+(i?SHN[i]:'シェーダーなし')+(i&&!ok?' (非対応)':shd==i&&i&&LTV('sh')?' (軽量化でオフ)':'');b.disabled=i>0&&!ok})}$('#oshq').textContent='影の解像度: '+['低','標準','高'][shq];$('#oshq').disabled=!shd;$('#oas').textContent='自動セーブ: '+(asv?asv+'秒ごと':'オフ');$('#ogame').disabled=!world;renderSnd();renderOpt();refreshLabels()}
 $('#kl').onclick=e=>{const b=e.target.closest('button');if(b){rebind=b.dataset.a;$('#kmsg').textContent='';renderSet()}};
 $('#invy').onclick=()=>{invY=invY?0:1;saveKB();renderSet()};
+$('#crm').onclick=()=>{crMode=crMode?0:1;csn=0;saveKB();renderSet()};
 $('#vmute').onclick=()=>{au.x=au.x?0:1;applyAu();saveAu();if(!au.x&&world&&bgm.paused)playBgm();renderSet()};
 // --- サウンドのダウンロード設定 UI
 function renderSnd(){const a=$('#sdl'),b=$('#sno'),t=$('#sst');if(!a||!b||!t)return;
@@ -4696,7 +4876,7 @@ $('#olt').onclick=()=>{olt=olt?0:1;applyLite();renderSet()};
 $('#olp').onclick=()=>{olp=(olp+1)%4;if(olp){Object.assign(lo,PRE[olp]);olt=1}applyLite();renderSet()};
 $('#optrows').onclick=e=>{const b=e.target.closest('button');if(!b)return;const x=LK.find(q=>q[0]==b.dataset.o);lo[x[0]]=(lo[x[0]]+1)%x[2].length;olp=0;applyLite();renderSet()};
 
-$('#kreset').onclick=()=>{Object.assign(KB,KD);sens=1;invY=0;rebind=null;saveKB();renderSet()};
+$('#kreset').onclick=()=>{Object.assign(KB,KD);sens=1;invY=0;crMode=0;csn=0;rebind=null;saveKB();renderSet()};
 addEventListener('keydown',e=>{if(!rebind)return;e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;
  if(e.code=='Escape'){rebind=null;renderSet();return}
  if(/^(Digit[1-9]|Arrow.*|MetaLeft|MetaRight)$/.test(e.code)){$('#kmsg').textContent='そのキーは割り当てできません(数字キー・矢印キー)';return}
@@ -4765,9 +4945,10 @@ addEventListener('keydown',e=>{
  if(paused)return;if(c=='KeyP'&&!e.repeat)cycView();if(c==KB.dr)dropSel(0);
  if(c==KB.jp&&!e.repeat){const n=performance.now();if(cre&&n-lastSp<300){fly=!fly;v.y=0}lastSp=n;jumpGlide()}
  if(/^Digit[1-9]$/.test(c)){sel=+c[5]-1;renderHot();tip()}
+ if(c==KB.cr&&!e.repeat)csn=crMode?1:csn?0:1;
  if(c==KB.brk)mL=1;if(c==KB.pl&&!e.repeat){mR=1;cool=0}
  keys[c]=1});
-addEventListener('keyup',e=>{delete keys[e.code];if(e.code==KB.brk)mL=0;if(e.code==KB.pl)mR=0});addEventListener('blur',resetIn);
+addEventListener('keyup',e=>{delete keys[e.code];if(crMode&&e.code==KB.cr)csn=0;if(e.code==KB.brk)mL=0;if(e.code==KB.pl)mR=0});addEventListener('blur',resetIn);
 const cv=$('#cv');
 let noLock=0,lockErr=0,lastUl=0;
 let lockTry=0,lockTm=0;function lockPtr(){if(mob||!world||paused||dead||document.pointerLockElement===cv)return;try{const r=cv.requestPointerLock();if(r&&r.catch)r.catch(()=>retryLock())}catch(e){retryLock()}}
@@ -4851,7 +5032,312 @@ mApply();
 
 // ===================== v7 =====================
 // 【開発メモ】更新するたびに必ずバージョンを上げること (VER / <title> / PATCH の先頭 / ファイル名)。表記は シーズン.バージョン (例: 1.1)
-const VER='release 1.5',PATCH=[['release 1.5','2026-11-15',['ワールドテンプレートを「設定だけ」から「その世界そのもの」に変更。作成時に選ぶと地形そのものが変わる (新設定: ワールドタイプ)','はじめてのサバイバル: 穏やかな草原と、ベッド・チェスト・作業台のある小屋','クリエイティブ建築: 区画の道が走る真っ平らな建築場と、中央のカラーパレット','冒険・探検: 起伏の激しい大地と、空に浮かぶ宝島 (宝箱つき)','ハードサバイバル: 木が枯れて溶岩だまりが点在する荒れ地と、廃墟の補給所','スカイウォーズ (新): 奈落に浮かぶ島々。中央の島に最強の宝箱。落ちるとアウト','ベッドウォーズ (新): 4チームの浮島。ベッドが羊毛で守られていて、資源チェストと作業台つき','パーティクルを全体に追加: 走ったときの土埃、着地、ジャンプ、水しぶき、ブロックを壊す/置く/掘る、爆発、花火、矢、食事、モブの被弾/撃破、溶岩の火の粉、松明、葉っぱ、荒れ地の灰など。最適化設定に「パーティクル」を追加','矢を見やすく: 太く明るい矢と軌跡のパーティクル。発射時の煙。刺さった矢はきらっと光る','矢を回収できるように: 刺さった矢は近づくと吸い寄せられて回収。モブに当たった矢もアイテムとして落ちる。クリエイティブでも矢が飛ぶように','ベッドのアイコンを2マス分 (頭側+足側) で表示','クリエイティブにカテゴリ「インベントリ」を追加 (従来のインベントリを表示)。チェストを開いている間はカテゴリを選べず、インベントリを表示','チェストや作業台を開いている間は、プレイヤーモデルと装備欄を表示しない。インベントリ上部の左寄りを中央に調整','デバッグ画面のグラフの線を小さく細く修正']],['release 1.4','2026-11-15',['シェーダー設定を1ボタン切り替えから個別ボタンに変更: シェーダーなし / ソフト / シネマ / PBR / Ultra+ から直接選べる','シェーダー「PBR」を追加: 太陽光のGGX鏡面反射(テクスチャの明るさから粗さを推定)・縁の空の反射・ACESトーンマッピングを追加した、質感重視のシェーダー','シェーダー「Ultra+」を追加: PBRに加えて、影の解像度を最高に固定し、AO・ブルーム・光芒・色収差・グレイン・シャープネスを強化した最高画質シェーダー','Hキーでデバッグ画面を表示/非表示できるようにした (表示中は左上の通常情報を隠す)。FPS・チャンク数・座標・ブロック座標・向き・ターゲットブロック・時刻・描画負荷・GPU情報と、左下にFPS、右下にフレーム時間のグラフを表示','ワールド選択画面のバージョン表示を変更: 保存時のバージョン名が読める旧バージョンのワールドは「旧バージョン (release 1.2)」のように前のバージョン名つきで表示。読めない場合のみ「旧バージョン」と表示']],['release 1.3','2026-11-15',['ジャックオランタンの見た目を一新: 畝のあるツヤのある表面に、内側からぼうっと光る彫り込みの顔を追加。上面にはヘタがつく。表情ちがいの「おこり」「びっくり」「ねこ」と、青い炎の「魂」(光源レベル10)も追加','カボチャの上面にヘタを追加','装飾ブロックを大量に追加: 色付きテラコッタ16色と模様入りの彩釉テラコッタ16色、コンクリート(残り8色)、色ガラス(8色追加)、カーペット10色、タイル6色、チェッカー・ストライプ・水玉の模様ブロック、木の羽目板7種、ネオン5色(光源レベル15)','レンガ・石材を追加: 金/鉄/銅のレンガ、雪レンガ、青氷レンガ、砂岩レンガ、赤い砂岩レンガ、エンドストーンレンガ、赤いネザーレンガ、磨かれた深層岩、深層岩タイル、チゼル加工の深層岩、磨かれた/滑らかな玄武岩、ブラックストーン系3種、プルプァブロックと柱','そのほか: 骨ブロック、ハニカムブロック、ネザーウォートブロック(赤・青緑)、苔ブロック、生垣(緑・桜)を追加。新素材10種に階段とハーフブロックも追加 (作業台でクラフト可)','内部の修正: ブロックIDが255を超えると別のブロックに化けてしまう問題を修正 (v1.2の後半の階段・ハーフブロック・ランプが該当)。ワールドの保存形式を16ビットにした。旧バージョンのワールドもそのまま読み込める。テクスチャアトラスも拡大']],['release 1.2','2026-11-15',['階段とハーフブロックを19素材ぶん追加 (板材6種・深層岩の丸石・深層岩レンガ・銅・緑青の銅・プリズマリンレンガ・苔むした/ひび割れた石レンガ・泥レンガ・エンドストーン・ネザーラック・安山岩・花崗岩・閃緑岩)。作業台でクラフト可、ハーフブロックは重ねて置くと元のブロックになる','光源ブロック「ランプ(白・青・緑・紫・橙)」を追加 (光源レベル15、グロウストーン+ガラスでクラフト)','クリエイティブでもホットバーとインベントリにアイテムの個数を表示','クリエイティブUIに「1個/64個」の切り替えを追加。クリックでその個数をホットバーへ、Shift+クリックで逆の個数。同じアイテムがホットバーにあれば個数を足す']],['release 1.1','2026-11-14',['バージョン表記を「v6.4」から「シーズン.バージョン」(例: 1.1)に変更。大型アップデートでシーズンを上げ、通常の更新ではバージョンを上げる','クリエイティブのインベントリを使いやすく刷新: カテゴリタブに名前を表示し、「お気に入り」と「最近」のタブを追加。検索は複数の言葉・ひらがなでも探せて、件数と消去ボタンを表示','アイテムにカーソルを合わせる (スマホはタップ) と、名前・分類・説明が下の情報欄に出る。右クリック (スマホは長押し) でお気に入りに登録','クリックで取り出すとき、ホットバーにあればその枠を選択、なければ空いている枠へ入れる (満杯なら選択中の枠を置き換え)','画面が広いときは、装備とプレイヤーモデルを右側に置いて、アイテム一覧を広く表示']],['release v6.4','2026-11-14',['モーションブラーをシェーダー設定からビデオ設定へ移動。影シェーダーをオフにしていても使えるようになった(ブラーだけを描画する軽い経路で動く)','構造物を大幅に追加。地上: 石レンガの小屋・柱の祭壇・螺旋階段つき見張り塔・テント・砂漠のピラミッド・木の家・柱廊の遺跡(出現数も約3倍)。ネザー: ネザーレンガの塔・黒曜石の祭壇・廃ポータル(要塞とは別の場所)。エンド: 外周の島に祭壇・オベリスク・小屋・アーチ、メインアイランドの周りに8か所の小さな建物','すべての構造物のチェストにランダムなアイテムが入る(ピラミッドは宝物庫向けの豪華な中身)']],['release v6.3','2026-11-14',['ビデオ設定に「ダメージチルト」を追加(ダメージを受けたときのカメラの揺れの強さ。1〜100%、標準100%)','地上に構造物を追加: 石レンガの小屋と柱の祭壇(平らな場所に点在。中にチェストと松明)','ジ・エンドの外周の島に「エンドの祭壇」を追加(紫のコンクリートの柱と中央のチェスト)','ネザー要塞・エンドシティ・地上の小屋と祭壇・エンドの祭壇のチェストに、ランダムなアイテムが入る(場所ごとに固定。ネザー/エンド向けは豪華め)']],['release v6.2','2026-11-14',['ネザー要塞(中央広間・塔)とエンドシティの塔にチェストが生成されるようになった','三人称視点(背面・前面)では照準(十字)を表示しないようにした']],['release v6.1','2026-11-13',['ワールド新規作成を押すと、先頭に「新規ワールドを作成」、その下にワールドテンプレート一覧が出るようになった。テンプレートはHTMLに埋め込まれていて、設定のテンプレート(作成画面で調整可)と、ワールドデータ付きテンプレート(選ぶとそのまま始まる)に対応','光源の届く距離を修正: 発光レベルNの光源はNブロック先まで届く(光源15=15ブロック)。手に持った光源の明るさの範囲も合わせた']],['release v6','2026-11-13',['パワードレールを追加(金鉱石6+板材1+レッドストーン鉱石1でクラフト→6個)。常に通電している扱いで、上を走るトロッコが加速し続ける(最高速まで)。曲がらず直線・坂のみで、普通の線路ともつながる','一人称の手にスキンを反映(右腕のテクスチャと袖レイヤー。細腕/太腕にも対応)','インベントリのプレイヤーモデルにスキンを反映(帽子・上着・袖・ズボンの外側レイヤーも表示。防具は上から重ねて表示)','滑空をやめた・着地した直後は重力に従って落下するように修正(滑空中の上向きの勢いと高速の横移動を引き継がない)。落下中(下向きの速度が出ている時)にだけ滑空を開始できる']],['release v5','2026-11-13',['オープニング(起動画面)・タイトルロゴ・エンドロールをPV風の演出に変更: 上下のシネマスコープ帯、ぼかしから浮かび上がるロゴ文字、光の筋が走る演出、キャッチコピー表示、エンドロールは字間を広げた金色の見出しと上下のフェード','ダメージを受けたとき、画面が揺れるようになった(ダメージが大きいほど強く揺れる。OSの「視差効果を減らす」設定がオンなら揺れない)','ロゴの「ø」がその場でくるくる回り、そこから左右の文字が順に回転しながら現れる演出を追加(起動画面とタイトル画面。タイトル画面では「ø」がその後も時々1回転する)。起動画面の最短表示時間を2.6秒に延長','モーションブラーを0〜300%まで選べるように変更(旧: 0〜100%)。強い値でも残像が崩れにくいようサンプル数を増やした','レシピ欄が左に寄っていた表示を修正(4列を均等幅にして中央揃えに)']],['release v4','2026-11-13',['滑空中、三人称視点のスキンが水平に寝て腕を広げる姿勢になった','トロッコを2種類に: トロッコ(ガードレール付)はレールの端で必ず止まり、トロッコはレールが無くても慣性で走り続ける','トロッコ類は溶岩で燃える','ロケット花火が滑空中(ブロックを狙っていなくても)使えるように修正','レシピを左にアイコンのグリッド、インベントリを右に配置','氷のチャンク境界の線を軽減(氷と水の重なり面を描画しない)']],['release v3','2026-11-13',['ベッドを2マス(頭側・足側)にした。置くと向いている方向へ頭側が伸びる。どちらを壊しても両方消えてベッド1個がドロップ。頭側と足側でテクスチャが違う(頭側は枕つき)','旧バージョンのワールドの1マスベッドは、ロード時に空いている隣のマスへ2マスに拡張する。ブロックを貫通・上書きはせず、入りきらない場合はベッドをアイテムとしてドロップする','スポーン地点に設定したベッドが壊されたら(爆発・コマンド含む)、スポーン地点がワールドのスポーン地点に戻り、自分だけにチャットで通知する。その後5分間はコンパスが旧ベッドの位置を指す(新しいベッドを使うと指さなくなる)','モバイル操作のボタン配置編集を追加 (設定 > 操作設定 > ボタン配置・サイズを編集)。ボタンをドラッグで移動、タップで選択してスライダーで個別にサイズ変更。初期化も可能。移動スティックも対象','インベントリの見た目をマイクラ風(グレーのパネル・立体的なスロット)に変更','ワールド生成・ロード時に、起動アニメーションと同じ進行バー(%つき)を表示。生成する周囲25チャンク(5×5)が揃ったら「さあ行こう!」を0.5秒表示してからスタートする']],
+// ===== オンライン機能 (Convex): 共有ワールド / マーケットプレイス (release 1.6) =====
+// ★ Convex をデプロイしたら、そのURL (https://xxxx.convex.cloud) を下の '' の中に入れる (埋め込み型。画面での入力欄は無い)
+const CONVEX_URL='https://loyal-bobcat-462.ap-southeast-2.convex.cloud';
+const CVX_JS='https://cdn.jsdelivr.net/npm/convex@1.51.0/dist/browser.bundle.js';
+const OL={o:{},
+ load(){try{this.o=JSON.parse(localStorage.getItem('bv-cvx')||'{}')||{}}catch(e){this.o={}}
+  const r=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('')};
+  if(typeof this.o.uid!='string'||this.o.uid.length<8)this.o.uid=r(8);
+  if(typeof this.o.secret!='string'||this.o.secret.length<16)this.o.secret=r(16);
+  if(typeof this.o.name!='string'||!this.o.name)this.o.name='Player'+(1000+Math.floor(Math.random()*9000));
+  this.save()},
+ save(){try{localStorage.setItem('bv-cvx',JSON.stringify(this.o))}catch(e){}},
+ get uid(){return this.o.uid},get secret(){return this.o.secret},get name(){return this.o.name},
+ get url(){return String(CONVEX_URL||'').trim().replace(/\/+$/,'')}};
+OL.load();
+const olErr=e=>{const s=String((e&&e.message)||e||'');const m=s.match(/Uncaught Error:\s*([^\n]*?)(?:\s+at\s|\n|$)/);return(m?m[1]:s).slice(0,140)};
+const CV={cl:null,api:null,url:'',lp:null,
+ lib(){return CV.lp||(CV.lp=new Promise((ok,ng)=>{if(window.convex&&window.convex.ConvexClient)return ok();const s=document.createElement('script');s.src=CVX_JS;
+  s.onload=()=>window.convex&&window.convex.ConvexClient?ok():(CV.lp=null,ng(new Error('Convexライブラリが不正です')));
+  s.onerror=()=>{CV.lp=null;ng(new Error('Convexライブラリを読み込めません (ネットワークを確認してください)'))};document.head.appendChild(s)}))},
+ async c(url){const u=String(url||OL.url||'').replace(/\/+$/,'');
+  if(!u)throw new Error('サーバーURLが未設定です (HTML内の CONVEX_URL に入れてください)');
+  if(!/^https?:\/\/[^\s/]+$/i.test(u))throw new Error('ConvexのURLの形式が違います (例: https://xxxx.convex.cloud)');
+  await CV.lib();if(CV.cl&&CV.url==u)return CV.cl;
+  if(CV.cl){try{CV.cl.close()}catch(e){}CV.cl=null}
+  CV.cl=new window.convex.ConvexClient(u);CV.url=u;CV.api=window.convex.anyApi;return CV.cl},
+ async q(f,a,url){const c=await CV.c(url);return c.query(f(CV.api),a||{})},
+ async m(f,a,url){const c=await CV.c(url);return c.mutation(f(CV.api),a||{})}};
+// ブロック変更の送受信フォーマット: Int32 を3つずつ [cx, cz, (dim<<30 | idx<<16 | block)]
+function olEnc(L){const a=new Int32Array(L.length*3);L.forEach((e,i)=>{a[i*3]=e[1];a[i*3+1]=e[2];a[i*3+2]=((e[0]<<30)|(e[3]<<16)|e[4])|0});return a.buffer}
+function olDec(buf,fn){const a=new Int32Array(buf);for(let i=0;i+2<a.length;i+=3){const w=a[i+2]>>>0;fn(w>>>30,a[i],a[i+1],(w>>>16)&0x3fff,w&0xffff)}}
+const olHash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+
+// ---- 画面上部の通知バー (オンライン機能用。メニューの上にも出る)
+const olNoteEl=document.createElement('div');olNoteEl.id='olnote';olNoteEl.hidden=true;document.body.appendChild(olNoteEl);
+let olNT=0;function olNote(t,ms){olNoteEl.textContent=t||'';olNoteEl.hidden=!t;clearTimeout(olNT);if(t&&ms!==0)olNT=setTimeout(()=>{olNoteEl.hidden=true},ms||4200)}
+const olImg=s=>/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(s||'')?s:ICON[1];
+// ---- 共有ワールドの同期エンジン
+const MP={on:0,link:null,pendLink:null,gen:0,pend:new Map(),buf:[],loaded:0,ap:0,diff:new Map(),seen:new Set(),av:new Map(),off:0,since:0,fl:0,ft:0,pt:0,lq:'',ln:0,cs:null,pl:0,rs:0,ue:null,up:null,uc:null,dirty:new Set(),et:0,at:0,
+ err(e,w){console.error('[online]',e);const n=Date.now();if(n-MP.et>8000){MP.et=n;olNote('オンライン'+(w?' ('+w+')':'')+': '+olErr(e),5000)}MP.ft=3},
+ // 差分の保存 (チャンクごと。f=全体 Uint16Array / m=個別の変更)
+ store(key,full,arr){let e=MP.diff.get(key);if(!e)MP.diff.set(key,e={f:null,m:new Map()});
+  if(full){e.f=new Uint16Array(arr);e.m.clear()}else for(let i=0;i+1<arr.length;i+=2){if(e.f)e.f[arr[i]]=arr[i+1];else e.m.set(arr[i],arr[i+1])}},
+ set1(key,idx,b){let e=MP.diff.get(key);if(!e)MP.diff.set(key,e={f:null,m:new Map()});if(e.f)e.f[idx]=b;else e.m.set(idx,b)},
+ // チャンク生成直後に呼ばれて、サーバー側の変更を重ねる
+ patch(cx,cz){const e=MP.diff.get(dim+':'+cx+','+cz);if(!e)return;const c=chunks.get(K(cx,cz));if(!c)return;
+  if(e.f){if(e.f.length==c.d.length)c.d.set(e.f)}else e.m.forEach((b,i)=>{if(b<NB)c.d[i]=b});
+  let t=0;for(let y=H-1;y>=0&&!t;y--)for(let i=0;i<256;i++)if(c.d[i+256*y]){t=y;break}c.top=t;c.em=scanEm(c.d,cx*16,cz*16,t);c.mod=1},
+ // 自分の変更を記録 (ブロックを書き換える全ての場所から呼ぶ)
+ rec(c,i,b){if(MP.ap)return;MP.pend.set(dim+':'+c.cx+','+c.cz+':'+i,[dim,c.cx,c.cz,i,b])},
+ async flush(force){if(MP.fl||!MP.pend.size||(!MP.on&&!force))return;MP.fl=1;const L=[...MP.pend.values()];MP.pend.clear();
+  try{const by=new Map();for(const e of L){const k=e[0]+':'+e[1]+','+e[2];let a=by.get(k);if(!a)by.set(k,a=[]);a.push(e)}
+   let cur=[],cc=0;
+   const send=async()=>{if(!cur.length)return;const b=cur;cur=[];cc=0;
+    try{await CV.cl.mutation(CV.api.worlds.applyEdits,{worldId:MP.link.w,uid:OL.uid,batch:olEnc(b)})}
+    catch(e){for(const x of b){const k=x[0]+':'+x[1]+','+x[2]+':'+x[3];if(!MP.pend.has(k))MP.pend.set(k,x)}throw e}};
+   for(const a of by.values()){for(let i=0;i<a.length;i+=2000){const s=a.slice(i,i+2000);if(cur.length+s.length>2000||cc>=24)await send();for(const x of s)cur.push(x);cc++}}
+   await send()}catch(e){MP.err(e,'同期')}finally{MP.fl=0}},
+ // 他の人の変更を受け取る
+ onEdits(rows){if(!MP.loaded){for(const r of rows)MP.buf.push(r);return}MP.applyRows(rows)},
+ applyRows(rows){const L=[];let last=0;
+  for(const r of rows){if(r.t>last)last=r.t;if(MP.seen.has(r.id))continue;MP.seen.add(r.id);if(r.uid===OL.uid)continue;MP.applyBatch(r.batch,L)}
+  MP.show(L);
+  if(rows.length>=40&&last-1000>MP.since+500){MP.since=last-1000;MP.subE()}
+  if(MP.seen.size>4000)MP.seen=new Set([...MP.seen].slice(-1500))},
+ applyBatch(buf,L){olDec(buf,(d,cx,cz,idx,b)=>{if(b>=NB)return;MP.set1(d+':'+cx+','+cz,idx,b);if(!MP.gen)return;
+   const c=dimChunks[d].get(K(cx,cz));if(!c)return;
+   if(d===dim&&world&&!loading)L.push([cx*16+(idx&15),idx>>8,cz*16+((idx>>4)&15),b]);
+   else{c.d[idx]=b;c.mod=1;c.ver=(c.ver|0)+1;MP.dirty.add(c)}})},
+ show(L){if(!L.length)return;MP.ap=1;try{bulk(L)}catch(e){console.error(e)}finally{MP.ap=0}},
+ flushDirty(){if(!MP.dirty.size||loading)return;const a=[...MP.dirty];MP.dirty.clear();
+  for(const c of a){c.em=scanEm(c.d,c.cx*16,c.cz*16,c.top);if(c.built&&chunks.get(K(c.cx,c.cz))===c&&!c.dq){c.dq=1;dirty.push(c)}}},
+ subE(){if(MP.ue){try{MP.ue()}catch(e){}}MP.ue=CV.cl.onUpdate(CV.api.worlds.editsSince,{worldId:MP.link.w,since:MP.since},r=>MP.onEdits(r),e=>MP.err(e,'受信'))},
+ subP(){MP.up=CV.cl.onUpdate(CV.api.worlds.presenceList,{worldId:MP.link.w},r=>MP.onPresence(r),e=>MP.err(e))},
+ subC(){MP.cs=null;MP.uc=CV.cl.onUpdate(CV.api.worlds.chatLatest,{worldId:MP.link.w},rows=>{
+   if(!MP.cs){MP.cs=new Set(rows.map(r=>r.id));return}
+   for(const r of rows){if(MP.cs.has(r.id))continue;MP.cs.add(r.id);if(r.uid!==OL.uid)msg('<'+r.name+'> '+r.text,'#fff')}},e=>MP.err(e))},
+ say(t){msg('<'+OL.name+'> '+t,'#fff');CV.cl.mutation(CV.api.worlds.sendChat,{worldId:MP.link.w,uid:OL.uid,name:OL.name,text:t}).catch(e=>MP.err(e,'チャット'))},
+ async connect(link){MP.teardown();const cl=await CV.c(link.u),A=CV.api;
+  try{olNote('サーバーに接続中...',0);
+   const meta=await cl.query(A.worlds.get,{id:link.w});if(!meta)throw new Error('サーバーにこのワールドがありません (削除された可能性があります)');
+   const j=await cl.mutation(A.worlds.join,{worldId:link.w,uid:OL.uid,name:OL.name});
+   MP.off=j.now-Date.now();MP.link=link;MP.since=j.now-1500;MP.loaded=0;MP.gen=0;MP.subE();
+   let cur=null;for(let n=0;n<4000;n++){const r=await cl.query(A.worlds.listChunks,{worldId:link.w,paginationOpts:{numItems:40,cursor:cur}});
+    for(const c of r.page)MP.store(c.key,c.full,new Uint16Array(c.data));if(r.isDone)break;cur=r.continueCursor;olNote('ワールドを読み込み中... '+MP.diff.size+' チャンク',0)}
+   MP.loaded=1;MP.buf.sort((a,b)=>a.t-b.t);const b=MP.buf;MP.buf=[];MP.applyRows(b);
+   MP.on=1;MP.subP();MP.subC();olNote('');return meta}
+  catch(e){MP.teardown();olNote('');throw e}},
+ teardown(){MP.on=0;for(const k of['ue','up','uc']){try{MP[k]&&MP[k]()}catch(e){}MP[k]=null}
+  MP.av.forEach(a=>MP.rmAv(a));MP.av.clear();MP.link=null;MP.pend.clear();MP.diff=new Map();MP.seen=new Set();MP.buf=[];MP.loaded=0;MP.gen=0;MP.cs=null;MP.pl=0;MP.dirty.clear()},
+ async leave(){if(!MP.link)return;const l=MP.link;MP.on=0;
+  try{await MP.flush(1);await CV.cl.mutation(CV.api.worlds.leave,{worldId:l.w,uid:OL.uid})}catch(e){}
+  MP.teardown()},
+ // 画面に戻ってきたとき、長く離れていたら全チャンクを取り直して合わせる
+ async resync(){if(!MP.on||MP.rs)return;MP.rs=1;try{await MP.flush();const cl=CV.cl,A=CV.api;let cur=null;const L=[];
+   for(let n=0;n<4000;n++){const r=await cl.query(A.worlds.listChunks,{worldId:MP.link.w,paginationOpts:{numItems:40,cursor:cur}});
+    for(const c of r.page)MP.syncChunk(c,L);if(r.isDone)break;cur=r.continueCursor}
+   MP.show(L);msg('サーバーと再同期しました','#aaaaaa')}catch(e){MP.err(e,'再同期')}finally{MP.rs=0}},
+ syncChunk(c,L){const m=/^([012]):(-?\d+),(-?\d+)$/.exec(c.key);if(!m)return;const d=+m[1],cx=+m[2],cz=+m[3],a=new Uint16Array(c.data);
+  MP.diff.delete(c.key);MP.store(c.key,c.full,a);const ch=dimChunks[d].get(K(cx,cz));if(!ch)return;
+  const put=(i,b)=>{if(b>=NB||ch.d[i]===b)return;if(d===dim)L.push([cx*16+(i&15),i>>8,cz*16+((i>>4)&15),b]);else{ch.d[i]=b;ch.mod=1;ch.ver=(ch.ver|0)+1;MP.dirty.add(ch)}};
+  if(c.full){for(let i=0;i<a.length;i++)put(i,a[i])}else for(let i=0;i+1<a.length;i+=2)put(a[i],a[i+1])},
+ // ---- 他プレイヤーの表示
+ mkAv(uid,name){const g=new THREE.Group(),hue=olHash(uid)%360,shirt=new THREE.Color().setHSL(hue/360,.6,.45),skin=0xc9956b,pants=0x3a3a8a;
+  const B=(w,h,d,c,x,y,z,par)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({color:c}));m.material.userData.bc=new THREE.Color(c);m.position.set(x,y,z);(par||g).add(m);return m};
+  const piv=(x,y,par)=>{const q=new THREE.Group();q.position.set(x,y,0);(par||g).add(q);return q};
+  B(.5,.7,.25,shirt,0,1.05,0);
+  const hd=piv(0,1.4);B(.4,.4,.4,skin,0,.2,0,hd);B(.4,.12,.41,0x4a2f1b,0,.37,0,hd);B(.07,.06,.02,0x222222,-.09,.22,.205,hd);B(.07,.06,.02,0x222222,.09,.22,.205,hd);
+  const lg=[piv(-.12,.7),piv(.12,.7)];lg.forEach(q=>B(.22,.7,.22,pants,0,-.35,0,q));
+  const ar=[piv(-.36,1.4),piv(.36,1.4)];ar.forEach(q=>{B(.2,.45,.2,shirt,0,-.225,0,q);B(.2,.25,.2,skin,0,-.575,0,q)});
+  const cv=document.createElement('canvas');cv.width=256;cv.height=48;const x=cv.getContext('2d');x.font="bold 26px 'DotGothic16',sans-serif";x.textAlign='center';x.textBaseline='middle';
+  const w=Math.min(250,x.measureText(name).width+18);x.fillStyle='rgba(0,0,0,.5)';x.fillRect(128-w/2,4,w,40);x.fillStyle='#ffffff';x.fillText(name,128,25);
+  const tx=new THREE.CanvasTexture(cv),sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false,fog:false}));sp.scale.set(1.6,.3,1);sp.position.y=2.15;sp.renderOrder=10;g.add(sp);
+  g.visible=false;scene.add(g);return{g,hd,lg,ar,name,tx,init:0,ph:0,dim:0,t:0,x:0,y:0,z:0,yaw:0,pit:0}},
+ rmAv(a){scene.remove(a.g);a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose()}})},
+ onPresence(rows){const now=Date.now()+MP.off,seen=new Set();
+  for(const r of rows){if(r.uid===OL.uid||now-r.t>15000)continue;seen.add(r.uid);let a=MP.av.get(r.uid);
+   if(!a){a=MP.mkAv(r.uid,r.name);MP.av.set(r.uid,a);if(MP.pl)msg(r.name+' が参加しました','#ffff55')}
+   a.x=r.x;a.y=r.y;a.z=r.z;a.yaw=r.yaw;a.pit=r.pitch;a.dim=r.dim;a.t=r.t}
+  for(const[u,a]of[...MP.av])if(!seen.has(u)){MP.rmAv(a);MP.av.delete(u);if(MP.pl)msg(a.name+' が退出しました','#ffff55')}
+  MP.pl=1},
+ avTick(dt){const now=Date.now()+MP.off;
+  for(const[u,a]of[...MP.av]){if(now-a.t>20000){MP.rmAv(a);MP.av.delete(u);continue}
+   const g=a.g;if(a.dim!==dim||!world){g.visible=false;continue}g.visible=true;
+   if(!a.init){g.position.set(a.x,a.y,a.z);g.rotation.y=a.yaw+Math.PI;a.init=1}
+   const k=1-Math.exp(-dt*10),dx=a.x-g.position.x,dz=a.z-g.position.z;
+   g.position.x+=dx*k;g.position.y+=(a.y-g.position.y)*k;g.position.z+=dz*k;
+   let dy=a.yaw+Math.PI-g.rotation.y;dy=Math.atan2(Math.sin(dy),Math.cos(dy));g.rotation.y+=dy*k;
+   a.hd.rotation.x+=(-a.pit-a.hd.rotation.x)*k;
+   const sp=Math.hypot(dx,dz)*10;a.ph+=dt*Math.min(sp,9)*1.5;const sw=sp>.6?Math.sin(a.ph)*.8:0;
+   a.lg[0].rotation.x=sw;a.lg[1].rotation.x=-sw;a.ar[0].rotation.x=-sw;a.ar[1].rotation.x=sw;
+   try{tintG(g,lightRGB(g.position.x,g.position.y+1,g.position.z,LTM),0)}catch(e){}}},
+ tick(dt){if(!MP.on)return;try{
+   MP.ft-=dt;if(MP.ft<=0){MP.ft=.25;MP.flush()}
+   MP.flushDirty();
+   MP.pt-=dt;if(MP.pt<=0&&world&&!dead){MP.pt=.2;const q=[p.x.toFixed(2),p.y.toFixed(2),p.z.toFixed(2),yaw.toFixed(2),pitch.toFixed(2),dim].join(),n=Date.now();
+    if(q!=MP.lq||n-MP.ln>3500){MP.lq=q;MP.ln=n;CV.cl.mutation(CV.api.worlds.setPresence,{worldId:MP.link.w,uid:OL.uid,name:OL.name,dim,x:p.x,y:p.y,z:p.z,yaw,pitch}).catch(()=>{})}}
+   MP.avTick(dt)}catch(e){console.error(e)}}};
+{let hid=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hid=Date.now();else if(MP.on&&hid&&Date.now()-hid>45000)MP.resync()});addEventListener('pagehide',()=>{if(MP.on)MP.flush()})}
+
+// ---- ワールドに入る / 共有する
+async function olJoin(meta,code){
+ try{await CV.c();const ex=((await DB.list())||[]).find(o=>o.mp&&o.mp.w===meta.id&&o.mp.u===CV.url);
+  if(ex){const o=await DB.get(ex.id);if(o&&o.slots){start(o);return}}
+  $('#wname').value=meta.name;$('#seed').value=meta.seed;let w={};try{w=JSON.parse(meta.ws)||{}}catch(e){}
+  nw=Object.assign({},WSD,w,{mode:meta.cre?1:0});MP.pendLink={u:CV.url,w:meta.id,c:code||'',own:code?1:0};start()}
+ catch(e){olNote(olErr(e),6000)}}
+async function olShare(pub){const o=await DB.get(selW);if(!o||!o.slots)return;
+ if(o.mp){olNote('このワールドはすでにオンラインのワールドです');return}
+ try{olNote('サーバーに作成中...',0);
+  const r=await CV.m(a=>a.worlds.create,{name:o.name||'ワールド',seed:String(o.seed),cre:o.cre?1:0,ws:JSON.stringify(o.ws||{}),ver:VER,thumb:/^data:image\//.test(o.th||'')?o.th:'',isPublic:!!pub,uid:OL.uid,uname:OL.name,secret:OL.secret});
+  const keys=Object.keys(o.ch||{}),conv=k=>{let v=o.ch[k];if(!(v instanceof Uint16Array))v=Uint16Array.from(v);return v.length==16384?{key:k,data:v.buffer.slice(v.byteOffset,v.byteOffset+v.byteLength)}:null};
+  for(let i=0;i<keys.length;i+=12){const part=keys.slice(i,i+12).map(conv).filter(Boolean);
+   if(part.length)await CV.m(a=>a.worlds.putChunks,{worldId:r.id,secret:OL.secret,chunks:part});olNote('アップロード中... '+Math.min(i+12,keys.length)+' / '+keys.length,0)}
+  // 元のワールドはそのまま残し、オンライン版を別のセーブとして作る
+  const n=Object.assign({},o,{id:nid(),name:((o.name||'ワールド')+' (オンライン)').slice(0,24),ch:{},mp:{u:CV.url,w:r.id,c:r.code,own:1},t:Date.now()});
+  if(await DB.put(n)===null)throw new Error('ローカルに保存できませんでした');
+  await renderSaves();selW=n.id;drawW();
+  try{await navigator.clipboard.writeText(r.code)}catch(e){}
+  olNote('共有しました! 参加コード: '+r.code+' (コピー済み)。友達にこのコードを教えてください',9000)}
+ catch(e){olNote(olErr(e),6000)}}
+// ---- マルチプレイ画面
+let mpRows=[],mpSel=-1;
+function mpApply(){OL.o.name=$('#mpname').value.trim().slice(0,16)||OL.name;OL.save()}
+function mpOpen(){$('#mpname').value=OL.name;$('#mpcode').value='';mpRefresh()}
+function mpDraw(){const el=$('#mplist');
+ el.innerHTML=mpRows.length?mpRows.map((w,i)=>`<div class="wi${i==mpSel?' on':''}" data-i="${i}"><img src="${olImg(w.thumb)}" alt=""><div><b>${esc(w.name)}</b><small>${w.mine?'<span class="material-symbols-outlined">star</span> あなたのワールド / コード '+esc(w.code)+(w.isPublic?' (公開中)':' (非公開)'):'作成者: '+esc(w.ownerName)}</small><small>${w.cre?'クリエイティブ':'サバイバル'} / シード: ${esc(w.seed)} / ${esc(w.ver||'')}</small></div></div>`).join(''):'<p class="em">ワールドがありません。コードで参加するか、ワールド選択画面から「オンライン共有」してください</p>';
+ const w=mpRows[mpSel];$('#mpplay').disabled=!w;$('#mpdel').disabled=!(w&&w.mine);$('#mptog').disabled=!(w&&w.mine);$('#mptog').textContent=w&&w.mine&&w.isPublic?'非公開にする':'公開にする'}
+async function mpRefresh(){const el=$('#mplist');mpRows=[];mpSel=-1;
+ if(!OL.url){el.innerHTML='<p class="em">サーバーが未設定です</p>';$('#mpplay').disabled=$('#mpdel').disabled=$('#mptog').disabled=true;return}
+ el.innerHTML='<p class="em">読み込み中...</p>';
+ try{const[pubs,mine]=await Promise.all([CV.q(a=>a.worlds.list),CV.q(a=>a.worlds.mine,{uid:OL.uid,secret:OL.secret})]),ids=new Set(mine.map(w=>w.id));
+  mpRows=[...mine.map(w=>({...w,mine:1})),...pubs.filter(w=>!ids.has(w.id)).map(w=>({...w,mine:0}))];mpDraw()}
+ catch(e){el.innerHTML='<p class="em">'+esc(olErr(e))+'</p>';$('#mpplay').disabled=$('#mpdel').disabled=$('#mptog').disabled=true}}
+$('#mplist').onclick=e=>{const w=e.target.closest('.wi');if(w){mpSel=+w.dataset.i;mpDraw()}};
+$('#mplist').ondblclick=e=>{if(e.target.closest('.wi')&&mpRows[mpSel]){mpApply();olJoin(mpRows[mpSel],mpRows[mpSel].mine?mpRows[mpSel].code:'')}};
+$('#mpsave').onclick=()=>{mpApply();olNote('保存しました');mpRefresh()};
+$('#mpref').onclick=()=>{mpApply();mpRefresh()};
+$('#mpplay').onclick=()=>{const w=mpRows[mpSel];if(w){mpApply();olJoin(w,w.mine?w.code:'')}};
+$('#mpjoin').onclick=async()=>{mpApply();const c=$('#mpcode').value.trim().toUpperCase();if(!c){olNote('参加コードを入力してください');return}
+ try{olNote('探しています...',0);const w=await CV.q(a=>a.worlds.byCode,{code:c});if(!w){olNote('そのコードのワールドは見つかりません');return}olNote('');await olJoin(w,c)}catch(e){olNote(olErr(e),6000)}};
+$('#mptog').onclick=async()=>{const w=mpRows[mpSel];if(!w||!w.mine)return;try{await CV.m(a=>a.worlds.update,{worldId:w.id,secret:OL.secret,isPublic:!w.isPublic});mpRefresh()}catch(e){olNote(olErr(e))}};
+$('#mpdel').onclick=async()=>{const w=mpRows[mpSel];if(!w||!w.mine)return;if(!confirm('「'+w.name+'」をサーバーから削除しますか?\nこの操作は取り消せません。'))return;
+ try{olNote('削除中...',0);for(let i=0;i<300;i++){const r=await CV.m(a=>a.worlds.remove,{worldId:w.id,secret:OL.secret});if(r.done)break}olNote('削除しました');mpRefresh()}catch(e){olNote(olErr(e),6000)}};
+// ---- マーケットプレイス
+const MK={sort:'new',q:'',rows:[],sel:-1,busy:0};let mkT=0;
+function mkSortUi(){document.querySelectorAll('#s-mk [data-sort]').forEach(b=>b.classList.toggle('on',b.dataset.sort==MK.sort))}
+function mkOpen(){$('#mksearch').value=MK.q;mkSortUi();mkLoad()}
+const kb=n=>n>=1048576?(n/1048576).toFixed(1)+'MB':Math.max(1,Math.round(n/1024))+'KB';
+function mkDraw(){const el=$('#mklist');
+ el.innerHTML=MK.rows.length?MK.rows.map((r,i)=>`<div class="wi${i==MK.sel?' on':''}" data-i="${i}"><img src="${olImg(r.thumb)}" alt=""><div><b>${esc(r.title)}</b><small>作成者: ${esc(r.authorName)}${r.mine?' (あなた)':''} / ${r.cre?'クリエイティブ':'サバイバル'} / ${kb(r.bytes)}</small><small><span class="material-symbols-outlined${r.liked?' fill':''}">favorite</span> ${r.likes}　<span class="material-symbols-outlined">download</span> ${r.downloads}　${esc(r.desc||'')}</small></div></div>`).join(''):'<p class="em">ワールドがありません</p>';
+ const r=MK.rows[MK.sel];$('#mkget').disabled=!r;$('#mklike').disabled=!r;$('#mkrep').disabled=!r||r.mine;$('#mkdel').disabled=!(r&&r.mine);$('#mklike').innerHTML=r&&r.liked?'<span class="material-symbols-outlined fill">favorite</span>いいね済み':'<span class="material-symbols-outlined">favorite</span>いいね'}
+async function mkLoad(){const el=$('#mklist');MK.rows=[];MK.sel=-1;
+ if(!OL.url){el.innerHTML='<p class="em">サーバーが未設定です</p>';mkDraw();return}
+ el.innerHTML='<p class="em">読み込み中...</p>';
+ try{MK.rows=await CV.q(a=>a.market.list,{sort:MK.sort,q:MK.q,uid:OL.uid});mkDraw()}catch(e){el.innerHTML='<p class="em">'+esc(olErr(e))+'</p>'}}
+document.querySelectorAll('#s-mk [data-sort]').forEach(b=>b.onclick=()=>{MK.sort=b.dataset.sort;mkSortUi();mkLoad()});
+$('#mksearch').oninput=e=>{MK.q=e.target.value.trim();clearTimeout(mkT);mkT=setTimeout(mkLoad,350)};
+$('#mklist').onclick=e=>{const w=e.target.closest('.wi');if(w){MK.sel=+w.dataset.i;mkDraw()}};
+$('#mklist').ondblclick=e=>{if(e.target.closest('.wi'))mkGet()};
+async function mkGet(){const r=MK.rows[MK.sel];if(!r||MK.busy)return;MK.busy=1;
+ try{const m=await CV.q(a=>a.market.meta,{id:r.id});if(!m)throw new Error('この出品は見つかりません (削除された可能性があります)');
+  const arr=[];let n=0;for(let i=0;i<m.parts;i++){olNote('ダウンロード中... '+(i+1)+' / '+m.parts,0);const d=await CV.q(a=>a.market.part,{listingId:r.id,i});if(!d)throw new Error('データが壊れています');const u=new Uint8Array(d);arr.push(u);n+=u.length}
+  if(n!==m.bytes)throw new Error('データのサイズが一致しません');
+  const buf=new Uint8Array(n);let o=0;for(const u of arr){buf.set(u,o);o+=u.length}
+  const txt=buf[0]==0x1f&&buf[1]==0x8b?await gunz(buf):new TextDecoder().decode(buf),j=JSON.parse(txt),w=cleanW((Array.isArray(j.worlds)?j.worlds:[j])[0]);
+  if(!w)throw new Error('ワールドデータの形式が違います');
+  w.name=String(r.title).slice(0,24);if(await DB.put(w)===null)throw new Error('保存できませんでした (容量不足の可能性)');
+  CV.m(a=>a.market.countDownload,{id:r.id}).catch(()=>{});r.downloads++;
+  selW=w.id;olNote('「'+w.name+'」を入手しました! ワールド一覧から遊べます',6000);showScr('worlds')}
+ catch(e){olNote(olErr(e),6000)}finally{MK.busy=0}}
+$('#mkget').onclick=mkGet;
+$('#mklike').onclick=async()=>{const r=MK.rows[MK.sel];if(!r)return;try{const x=await CV.m(a=>a.market.toggleLike,{id:r.id,uid:OL.uid});r.liked=x.liked;r.likes=x.likes;mkDraw()}catch(e){olNote(olErr(e))}};
+$('#mkrep').onclick=async()=>{const r=MK.rows[MK.sel];if(!r||r.mine)return;if(!confirm('「'+r.title+'」を不適切な出品として通報しますか?'))return;
+ try{const x=await CV.m(a=>a.market.report,{id:r.id,uid:OL.uid});olNote(x.already?'すでに通報済みです':'通報しました。ご協力ありがとうございます');mkLoad()}catch(e){olNote(olErr(e))}};
+$('#mkdel').onclick=async()=>{const r=MK.rows[MK.sel];if(!r||!r.mine)return;if(!confirm('「'+r.title+'」の出品を取り下げますか?'))return;
+ try{await CV.m(a=>a.market.remove,{id:r.id,secret:OL.secret});olNote('取り下げました');mkLoad()}catch(e){olNote(olErr(e))}};
+// ---- 出品
+$('#wshare').onclick=()=>{if(selW)olShare(false)};
+$('#wpub').onclick=()=>{const o=wl.find(w=>w.id==selW);if(!o)return;
+ if(o.mp){olNote('オンラインのワールドは出品できません。元のワールドを出品してください',5000);return}
+ $('#pubt').value=String(o.name||'ワールド').slice(0,32);$('#pubd').value='';$('#pubm').textContent='';showScr('pub')};
+let pubBusy=0;
+$('#pubgo').onclick=async()=>{if(pubBusy)return;const o=await DB.get(selW),title=$('#pubt').value.trim();
+ if(!o||!o.slots)return;if(!title){$('#pubm').textContent='タイトルを入力してください';return}
+ pubBusy=1;$('#pubgo').disabled=true;
+ try{await CV.c();
+  const r={...o};delete r.mp;r.slots=Array(slots.length).fill(null);if(o.cre)[1,2,3,8,7,9,11,D1,TB].forEach((b,i)=>r.slots[i]={b,n:1});
+  r.eq=Array(eq.length).fill(null);r.sel=0;r.hp=20;r.hg=20;r.sat=5;r.xp=0;r.fx={};r.adv={};r.st={};delete r.fv;r.dim=0;r.p={x:o.sp.x,y:o.sp.y,z:o.sp.z};r.yaw=0;r.pitch=-.15;r.ct=[];r.ld=null;r.os=null;r.tu=0;r.ti=0;r.t=r.c=Date.now();
+  olNote('ワールドをまとめています...',0);
+  const js=JSON.stringify({app:'blockland',kind:'save',ver:1,t:Date.now(),worlds:[packW(r)]}),bytes=typeof CompressionStream=='function'?await gz(js):new TextEncoder().encode(js),PART=800000,parts=Math.ceil(bytes.length/PART);
+  if(parts>10)throw new Error('ワールドが大きすぎます (圧縮後およそ8MBまで)');
+  const id=await CV.m(a=>a.market.beginPublish,{uid:OL.uid,uname:OL.name,secret:OL.secret,title,desc:$('#pubd').value.trim().slice(0,120),seed:String(o.seed),cre:o.cre?1:0,ver:VER,thumb:/^data:image\//.test(o.th||'')?o.th:'',bytes:bytes.length,parts});
+  for(let i=0;i<parts;i++){olNote('アップロード中... '+(i+1)+' / '+parts,0);await CV.m(a=>a.market.uploadPart,{listingId:id,secret:OL.secret,i,data:bytes.slice(i*PART,(i+1)*PART).buffer})}
+  await CV.m(a=>a.market.finishPublish,{listingId:id,secret:OL.secret});
+  olNote('「'+title+'」をマーケットプレイスに出品しました!',6000);menuBack()}
+ catch(e){olNote('');$('#pubm').textContent=olErr(e)}finally{pubBusy=0;$('#pubgo').disabled=false}};
+
+// ---- 全体チャット (全ワールド共通。ゲーム中は /g メッセージ でも送れる)
+const GC={on:0,rows:[],seen:null,un:null,
+ fmt(r){return '[全体] '+r.name+'#'+String(r.uid).slice(-4)+': '+r.text},
+ async start(){if(GC.on)return;await CV.c();GC.on=1;OL.o.gc=1;OL.save();
+  GC.un=CV.cl.onUpdate(CV.api.gchat.latest,{},rows=>GC.upd(rows),e=>console.error('[gchat]',e))},
+ stop(){GC.on=0;GC.seen=null;try{GC.un&&GC.un()}catch(e){}GC.un=null},
+ upd(rows){GC.rows=rows;
+  if(!GC.seen)GC.seen=new Set(rows.map(r=>r.id));
+  else for(const r of rows){if(GC.seen.has(r.id))continue;GC.seen.add(r.id);if(r.uid!==OL.uid&&world)msg(GC.fmt(r),'#7fe0ff')}
+  if(typeof gcDraw=='function'&&scr=='gc')gcDraw()},
+ async say(t){t=String(t||'').trim();if(!t)return false;
+  try{await GC.start();await CV.m(a=>a.gchat.send,{uid:OL.uid,name:OL.name,text:t});if(world)msg('[全体] '+OL.name+': '+t,'#7fe0ff');return true}
+  catch(e){const m=olErr(e);if(world)msg('全体チャット: '+m,'#ff5555');else olNote(m);return false}}};
+
+// ---- 全体チャット画面
+const gcHue=u=>olHash(String(u))%360;
+function gcDraw(){const el=$('#gclist');if(!el)return;const bot=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
+ el.innerHTML=GC.rows.length?GC.rows.map(r=>`<div class="gm"><b style="color:hsl(${gcHue(r.uid)},70%,72%)">${esc(r.name)}</b><small>#${esc(String(r.uid).slice(-4))}</small> ${esc(r.text)}</div>`).join(''):'<p class="em">まだ発言がありません</p>';
+ if(bot)el.scrollTop=el.scrollHeight}
+function gcOpen(){$('#gcin').value='';
+ if(!OL.url){$('#gclist').innerHTML='<p class="em">サーバーが未設定です</p>';return}
+ $('#gclist').innerHTML='<p class="em">読み込み中...</p>';
+ GC.start().then(()=>{gcDraw();setTimeout(()=>{$('#gclist').scrollTop=1e9},50)}).catch(e=>{$('#gclist').innerHTML='<p class="em">'+esc(olErr(e))+'</p>'})}
+async function gcSend(){const i=$('#gcin'),t=i.value.trim();if(!t)return;i.value='';if(!await GC.say(t))i.value=t}
+$('#gcsend').onclick=gcSend;
+$('#gcin').onkeydown=e=>{e.stopPropagation();if(e.key=='Enter'){e.preventDefault();gcSend()}};
+// ---- スキンマーケット
+const SM={sort:'new',q:'',rows:[],sel:-1,busy:0};let smT=0;
+function smSortUi(){document.querySelectorAll('#s-sks [data-ssort]').forEach(b=>b.classList.toggle('on',b.dataset.ssort==SM.sort))}
+function sksOpen(){$('#smsearch').value=SM.q;smSortUi();smLoad()}
+const okPng=s=>/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(s||'');
+function smDraw(){const el=$('#smlist');
+ el.innerHTML=SM.rows.length?SM.rows.map((r,i)=>`<div class="wi${i==SM.sel?' on':''}" data-i="${i}"><img src="${okPng(r.png)?r.png:ICON[1]}" alt=""><div><b>${esc(r.title)}</b><small>作成者: ${esc(r.authorName)}${r.mine?' (あなた)':''} / ${r.slim?'細腕':'太腕'}</small><small><span class="material-symbols-outlined${r.liked?' fill':''}">favorite</span> ${r.likes}　<span class="material-symbols-outlined">download</span> ${r.downloads}</small></div></div>`).join(''):'<p class="em">スキンがありません</p>';
+ const r=SM.rows[SM.sel];['smget','smwear','smpng','smlike'].forEach(i=>$('#'+i).disabled=!r);$('#smrep').disabled=!r||r.mine;$('#smdel').disabled=!(r&&r.mine);
+ $('#smlike').innerHTML=r&&r.liked?'<span class="material-symbols-outlined fill">favorite</span>いいね済み':'<span class="material-symbols-outlined">favorite</span>いいね'}
+async function smLoad(){const el=$('#smlist');SM.rows=[];SM.sel=-1;
+ if(!OL.url){el.innerHTML='<p class="em">サーバーが未設定です</p>';smDraw();return}
+ el.innerHTML='<p class="em">読み込み中...</p>';
+ try{SM.rows=await CV.q(a=>a.skins.list,{sort:SM.sort,q:SM.q,uid:OL.uid});smDraw()}catch(e){el.innerHTML='<p class="em">'+esc(olErr(e))+'</p>'}}
+document.querySelectorAll('#s-sks [data-ssort]').forEach(b=>b.onclick=()=>{SM.sort=b.dataset.ssort;smSortUi();smLoad()});
+$('#smsearch').oninput=e=>{SM.q=e.target.value.trim();clearTimeout(smT);smT=setTimeout(smLoad,350)};
+$('#smlist').onclick=e=>{const w=e.target.closest('.wi');if(w){SM.sel=+w.dataset.i;smDraw()}};
+// 取得: 保存済みスキンの一覧に追加する (wear=true ならそのまま着る)
+async function smGet(wear){const r=SM.rows[SM.sel];if(!r||SM.busy)return;SM.busy=1;
+ try{if(!okPng(r.png))throw new Error('スキン画像が不正です');
+  const im=await new Promise((ok,ng)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ng(new Error('スキン画像を読み込めません'));i.src=r.png});
+  if(im.width!=64||(im.height!=64&&im.height!=32))throw new Error('スキンの大きさが違います (64x64 / 64x32 のみ)');
+  const L=skLib();if(!L.some(o=>o.d===r.png)){L.push({n:String(r.title).slice(0,24),d:r.png,s:r.slim?1:0});try{localStorage.setItem('bv-skins',JSON.stringify(L.slice(-30)))}catch(e){throw new Error('保存できませんでした (容量不足)')}}
+  CV.m(a=>a.skins.countDownload,{id:r.id}).catch(()=>{});r.downloads++;smDraw();
+  if(wear){skPush();if(!skFromImg(im))throw new Error('このスキンは使えません');skDraw();skStore();sksyn();olNote('「'+r.title+'」を着ました')}
+  else olNote('「'+r.title+'」をスキン一覧に保存しました (設定 > スキン で呼び出せます)')}
+ catch(e){olNote(olErr(e),6000)}finally{SM.busy=0}}
+$('#smget').onclick=()=>smGet(false);$('#smwear').onclick=()=>smGet(true);
+$('#smlist').ondblclick=e=>{if(e.target.closest('.wi'))smGet(true)};
+$('#smpng').onclick=()=>{const r=SM.rows[SM.sel];if(!r||!okPng(r.png))return;
+ dlFile(new Blob([B64.dec(r.png.split(',')[1])],{type:'image/png'}),String(r.title).replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,40)+'.png');olNote('PNGを保存しました')};
+$('#smlike').onclick=async()=>{const r=SM.rows[SM.sel];if(!r)return;try{const x=await CV.m(a=>a.skins.toggleLike,{id:r.id,uid:OL.uid});r.liked=x.liked;r.likes=x.likes;smDraw()}catch(e){olNote(olErr(e))}};
+$('#smrep').onclick=async()=>{const r=SM.rows[SM.sel];if(!r||r.mine)return;if(!confirm('「'+r.title+'」を不適切なスキンとして通報しますか?'))return;
+ try{const x=await CV.m(a=>a.skins.report,{id:r.id,uid:OL.uid});olNote(x.already?'すでに通報済みです':'通報しました。ご協力ありがとうございます');smLoad()}catch(e){olNote(olErr(e))}};
+$('#smdel').onclick=async()=>{const r=SM.rows[SM.sel];if(!r||!r.mine)return;if(!confirm('「'+r.title+'」の出品を取り下げますか?'))return;
+ try{await CV.m(a=>a.skins.remove,{id:r.id,secret:OL.secret});olNote('取り下げました');smLoad()}catch(e){olNote(olErr(e))}};
+// ---- スキン画面から: 今のスキンを出品 / スキンマーケットを開く
+$('#skmk').onclick=()=>showScr('sks');
+$('#skpub').onclick=async()=>{const n=(prompt('出品するスキンの名前 (全員に公開されます)','スキン')||'').trim();if(!n)return;
+ try{await CV.m(a=>a.skins.publish,{uid:OL.uid,uname:OL.name,secret:OL.secret,title:n.slice(0,24),png:SKC.toDataURL('image/png'),slim:!!skSlim});skMsg('「'+n+'」を出品しました')}
+ catch(e){skMsg(olErr(e))}};
+
+const VER='release 1.10',PATCH=[['release 1.10','2026-11-20',['ダッシュジャンプ中のブリッジ(足元スナップ設置)の連続設置を高速化。長押し中は水平方向のみ・直近ブロックに隣接する1マスだけに設置し、2段積みや周囲へのバラ撒きを防止','サバイバル・クリエイティブ問わず矢を回収できるように','設定にリソースパックを追加 (zip / PNG)。読み込み順: 内蔵 → ./assets/ → 設定のパック。テクスチャ名はマイクラ互換 (oak_planks / grass_block_top / iron_sword など)']],['release 1.9','2026-11-20',['三人称視点でもしゃがみのポーズ (前かがみ) になる。ジャンプ中に腕・足の振りが止まって棒立ちになる問題を修正 (空中でも振りを続ける)']],['release 1.8','2026-11-20',['フロントブリッジを追加。ブロックを持って右クリック長押し+足元の先の空間を見下ろして歩く(ダッシュジャンプ中も可)と、進行方向の1マス先に自動で足場を設置する。斜め移動・水の上にも対応。連続設置は最短65msで、設置位置から約0.75ブロック動くまでは80msの間隔を空ける','しゃがみを追加。Cキー(設定で変更可)でしゃがむと、ゆっくり歩き、ブロックの端から落ちない。設定の「しゃがみ操作」で 切り替え / 長押し を選べる (破壊・攻撃の初期キーは C から X に変更)','マーケットプレイス・ワールド選択画面で、アイコン付きボタン (入手・スキンマーケット・オンライン共有・マーケットに出品など) の文字が下で見切れる問題を修正','サーバーURLを埋め込み型に変更。マルチプレイ画面のURL入力欄を廃止し、HTML内の CONVEX_URL を使う (「設定を保存」は「名前を保存」に変更)']],['release 1.7','2026-11-20',['スキンマーケットを追加。設定 > スキン の「スキンを出品」で今のスキンを公開でき、マーケットプレイス画面の「スキンマーケット」で他の人のスキンを「着る」「保存」「PNG」(PNGファイルとして保存) できる。新着/人気/入手数・名前検索・いいね・通報・取り下げ付き','全体チャットを追加。タイトルの「全体チャット」から、全員に見える公開チャットに参加できる。ゲーム中は /g メッセージ で送信でき、他の人の発言は水色で表示される (一度開くと、次回からゲーム開始時に自動で受信)。発言には名前の後ろに ID の末尾4文字が付き、連投は1.5秒おきに制限される']],['release 1.6','2026-11-20',['オンライン機能を追加 (サーバーは Convex)。タイトルの「マルチプレイ」と「マーケットプレイス」が使えるようになった','共有ワールド: ワールド選択画面で「オンライン共有」を押すと、そのワールドをサーバーに置いて参加コード(6文字)を発行。友達はコードか公開ワールド一覧から参加でき、ブロックの設置・破壊がリアルタイムで全員に反映される (元のワールドはそのまま残り、オンライン版が別セーブとして作られる)','共有ワールドでは他のプレイヤーが3Dモデル+名前付きで見え、チャットも共有される。持ち物・体力・進捗は各自のセーブに保存。モブ・ドロップ・チェストの中身は各自の画面だけで動く (ブロックとしてのチェストは共有)','マーケットプレイス: 「出品」で自分のワールド(地形・建築・設定。持ち物や進捗は含まない)を公開し、他の人のワールドを「入手」してワールド一覧に追加できる。新着/人気/入手数の並び替え、タイトル検索、いいね、通報(3件で非表示)、取り下げに対応','サーバーURLは、マルチプレイ画面の「サーバー設定」か、コード先頭の CONVEX_URL に入力する。名前・ID・管理キーはこのブラウザの localStorage (bv-cvx) に保存される','ブロックを書き換える処理は MP.rec() を通して送信される。ブロックを書き換える新しい処理を足したときは、必ず同じように MP.on&&MP.rec(chunk,index,block) を呼ぶこと']],['release 1.5','2026-11-15',['ワールドテンプレートを「設定だけ」から「その世界そのもの」に変更。作成時に選ぶと地形そのものが変わる (新設定: ワールドタイプ)','はじめてのサバイバル: 穏やかな草原と、ベッド・チェスト・作業台のある小屋','クリエイティブ建築: 区画の道が走る真っ平らな建築場と、中央のカラーパレット','冒険・探検: 起伏の激しい大地と、空に浮かぶ宝島 (宝箱つき)','ハードサバイバル: 木が枯れて溶岩だまりが点在する荒れ地と、廃墟の補給所','スカイウォーズ (新): 奈落に浮かぶ島々。中央の島に最強の宝箱。落ちるとアウト','ベッドウォーズ (新): 4チームの浮島。ベッドが羊毛で守られていて、資源チェストと作業台つき','パーティクルを全体に追加: 走ったときの土埃、着地、ジャンプ、水しぶき、ブロックを壊す/置く/掘る、爆発、花火、矢、食事、モブの被弾/撃破、溶岩の火の粉、松明、葉っぱ、荒れ地の灰など。最適化設定に「パーティクル」を追加','矢を見やすく: 太く明るい矢と軌跡のパーティクル。発射時の煙。刺さった矢はきらっと光る','矢を回収できるように: 刺さった矢は近づくと吸い寄せられて回収。モブに当たった矢もアイテムとして落ちる。クリエイティブでも矢が飛ぶように','ベッドのアイコンを2マス分 (頭側+足側) で表示','クリエイティブにカテゴリ「インベントリ」を追加 (従来のインベントリを表示)。チェストを開いている間はカテゴリを選べず、インベントリを表示','チェストや作業台を開いている間は、プレイヤーモデルと装備欄を表示しない。インベントリ上部の左寄りを中央に調整','デバッグ画面のグラフの線を小さく細く修正']],['release 1.4','2026-11-15',['シェーダー設定を1ボタン切り替えから個別ボタンに変更: シェーダーなし / ソフト / シネマ / PBR / Ultra+ から直接選べる','シェーダー「PBR」を追加: 太陽光のGGX鏡面反射(テクスチャの明るさから粗さを推定)・縁の空の反射・ACESトーンマッピングを追加した、質感重視のシェーダー','シェーダー「Ultra+」を追加: PBRに加えて、影の解像度を最高に固定し、AO・ブルーム・光芒・色収差・グレイン・シャープネスを強化した最高画質シェーダー','Hキーでデバッグ画面を表示/非表示できるようにした (表示中は左上の通常情報を隠す)。FPS・チャンク数・座標・ブロック座標・向き・ターゲットブロック・時刻・描画負荷・GPU情報と、左下にFPS、右下にフレーム時間のグラフを表示','ワールド選択画面のバージョン表示を変更: 保存時のバージョン名が読める旧バージョンのワールドは「旧バージョン (release 1.2)」のように前のバージョン名つきで表示。読めない場合のみ「旧バージョン」と表示']],['release 1.3','2026-11-15',['ジャックオランタンの見た目を一新: 畝のあるツヤのある表面に、内側からぼうっと光る彫り込みの顔を追加。上面にはヘタがつく。表情ちがいの「おこり」「びっくり」「ねこ」と、青い炎の「魂」(光源レベル10)も追加','カボチャの上面にヘタを追加','装飾ブロックを大量に追加: 色付きテラコッタ16色と模様入りの彩釉テラコッタ16色、コンクリート(残り8色)、色ガラス(8色追加)、カーペット10色、タイル6色、チェッカー・ストライプ・水玉の模様ブロック、木の羽目板7種、ネオン5色(光源レベル15)','レンガ・石材を追加: 金/鉄/銅のレンガ、雪レンガ、青氷レンガ、砂岩レンガ、赤い砂岩レンガ、エンドストーンレンガ、赤いネザーレンガ、磨かれた深層岩、深層岩タイル、チゼル加工の深層岩、磨かれた/滑らかな玄武岩、ブラックストーン系3種、プルプァブロックと柱','そのほか: 骨ブロック、ハニカムブロック、ネザーウォートブロック(赤・青緑)、苔ブロック、生垣(緑・桜)を追加。新素材10種に階段とハーフブロックも追加 (作業台でクラフト可)','内部の修正: ブロックIDが255を超えると別のブロックに化けてしまう問題を修正 (v1.2の後半の階段・ハーフブロック・ランプが該当)。ワールドの保存形式を16ビットにした。旧バージョンのワールドもそのまま読み込める。テクスチャアトラスも拡大']],['release 1.2','2026-11-15',['階段とハーフブロックを19素材ぶん追加 (板材6種・深層岩の丸石・深層岩レンガ・銅・緑青の銅・プリズマリンレンガ・苔むした/ひび割れた石レンガ・泥レンガ・エンドストーン・ネザーラック・安山岩・花崗岩・閃緑岩)。作業台でクラフト可、ハーフブロックは重ねて置くと元のブロックになる','光源ブロック「ランプ(白・青・緑・紫・橙)」を追加 (光源レベル15、グロウストーン+ガラスでクラフト)','クリエイティブでもホットバーとインベントリにアイテムの個数を表示','クリエイティブUIに「1個/64個」の切り替えを追加。クリックでその個数をホットバーへ、Shift+クリックで逆の個数。同じアイテムがホットバーにあれば個数を足す']],['release 1.1','2026-11-14',['バージョン表記を「v6.4」から「シーズン.バージョン」(例: 1.1)に変更。大型アップデートでシーズンを上げ、通常の更新ではバージョンを上げる','クリエイティブのインベントリを使いやすく刷新: カテゴリタブに名前を表示し、「お気に入り」と「最近」のタブを追加。検索は複数の言葉・ひらがなでも探せて、件数と消去ボタンを表示','アイテムにカーソルを合わせる (スマホはタップ) と、名前・分類・説明が下の情報欄に出る。右クリック (スマホは長押し) でお気に入りに登録','クリックで取り出すとき、ホットバーにあればその枠を選択、なければ空いている枠へ入れる (満杯なら選択中の枠を置き換え)','画面が広いときは、装備とプレイヤーモデルを右側に置いて、アイテム一覧を広く表示']],['release v6.4','2026-11-14',['モーションブラーをシェーダー設定からビデオ設定へ移動。影シェーダーをオフにしていても使えるようになった(ブラーだけを描画する軽い経路で動く)','構造物を大幅に追加。地上: 石レンガの小屋・柱の祭壇・螺旋階段つき見張り塔・テント・砂漠のピラミッド・木の家・柱廊の遺跡(出現数も約3倍)。ネザー: ネザーレンガの塔・黒曜石の祭壇・廃ポータル(要塞とは別の場所)。エンド: 外周の島に祭壇・オベリスク・小屋・アーチ、メインアイランドの周りに8か所の小さな建物','すべての構造物のチェストにランダムなアイテムが入る(ピラミッドは宝物庫向けの豪華な中身)']],['release v6.3','2026-11-14',['ビデオ設定に「ダメージチルト」を追加(ダメージを受けたときのカメラの揺れの強さ。1〜100%、標準100%)','地上に構造物を追加: 石レンガの小屋と柱の祭壇(平らな場所に点在。中にチェストと松明)','ジ・エンドの外周の島に「エンドの祭壇」を追加(紫のコンクリートの柱と中央のチェスト)','ネザー要塞・エンドシティ・地上の小屋と祭壇・エンドの祭壇のチェストに、ランダムなアイテムが入る(場所ごとに固定。ネザー/エンド向けは豪華め)']],['release v6.2','2026-11-14',['ネザー要塞(中央広間・塔)とエンドシティの塔にチェストが生成されるようになった','三人称視点(背面・前面)では照準(十字)を表示しないようにした']],['release v6.1','2026-11-13',['ワールド新規作成を押すと、先頭に「新規ワールドを作成」、その下にワールドテンプレート一覧が出るようになった。テンプレートはHTMLに埋め込まれていて、設定のテンプレート(作成画面で調整可)と、ワールドデータ付きテンプレート(選ぶとそのまま始まる)に対応','光源の届く距離を修正: 発光レベルNの光源はNブロック先まで届く(光源15=15ブロック)。手に持った光源の明るさの範囲も合わせた']],['release v6','2026-11-13',['パワードレールを追加(金鉱石6+板材1+レッドストーン鉱石1でクラフト→6個)。常に通電している扱いで、上を走るトロッコが加速し続ける(最高速まで)。曲がらず直線・坂のみで、普通の線路ともつながる','一人称の手にスキンを反映(右腕のテクスチャと袖レイヤー。細腕/太腕にも対応)','インベントリのプレイヤーモデルにスキンを反映(帽子・上着・袖・ズボンの外側レイヤーも表示。防具は上から重ねて表示)','滑空をやめた・着地した直後は重力に従って落下するように修正(滑空中の上向きの勢いと高速の横移動を引き継がない)。落下中(下向きの速度が出ている時)にだけ滑空を開始できる']],['release v5','2026-11-13',['オープニング(起動画面)・タイトルロゴ・エンドロールをPV風の演出に変更: 上下のシネマスコープ帯、ぼかしから浮かび上がるロゴ文字、光の筋が走る演出、キャッチコピー表示、エンドロールは字間を広げた金色の見出しと上下のフェード','ダメージを受けたとき、画面が揺れるようになった(ダメージが大きいほど強く揺れる。OSの「視差効果を減らす」設定がオンなら揺れない)','ロゴの「ø」がその場でくるくる回り、そこから左右の文字が順に回転しながら現れる演出を追加(起動画面とタイトル画面。タイトル画面では「ø」がその後も時々1回転する)。起動画面の最短表示時間を2.6秒に延長','モーションブラーを0〜300%まで選べるように変更(旧: 0〜100%)。強い値でも残像が崩れにくいようサンプル数を増やした','レシピ欄が左に寄っていた表示を修正(4列を均等幅にして中央揃えに)']],['release v4','2026-11-13',['滑空中、三人称視点のスキンが水平に寝て腕を広げる姿勢になった','トロッコを2種類に: トロッコ(ガードレール付)はレールの端で必ず止まり、トロッコはレールが無くても慣性で走り続ける','トロッコ類は溶岩で燃える','ロケット花火が滑空中(ブロックを狙っていなくても)使えるように修正','レシピを左にアイコンのグリッド、インベントリを右に配置','氷のチャンク境界の線を軽減(氷と水の重なり面を描画しない)']],['release v3','2026-11-13',['ベッドを2マス(頭側・足側)にした。置くと向いている方向へ頭側が伸びる。どちらを壊しても両方消えてベッド1個がドロップ。頭側と足側でテクスチャが違う(頭側は枕つき)','旧バージョンのワールドの1マスベッドは、ロード時に空いている隣のマスへ2マスに拡張する。ブロックを貫通・上書きはせず、入りきらない場合はベッドをアイテムとしてドロップする','スポーン地点に設定したベッドが壊されたら(爆発・コマンド含む)、スポーン地点がワールドのスポーン地点に戻り、自分だけにチャットで通知する。その後5分間はコンパスが旧ベッドの位置を指す(新しいベッドを使うと指さなくなる)','モバイル操作のボタン配置編集を追加 (設定 > 操作設定 > ボタン配置・サイズを編集)。ボタンをドラッグで移動、タップで選択してスライダーで個別にサイズ変更。初期化も可能。移動スティックも対象','インベントリの見た目をマイクラ風(グレーのパネル・立体的なスロット)に変更','ワールド生成・ロード時に、起動アニメーションと同じ進行バー(%つき)を表示。生成する周囲25チャンク(5×5)が揃ったら「さあ行こう!」を0.5秒表示してからスタートする']],
  ['release v2','2026-11-13',['スキン機能を追加 (設定 > スキン)。マイクラ形式 64×64 の PNG (旧 64×32 も可) を読み込めて、画面上のペイントエディタで直接描ける。ペン・消しゴム・塗りつぶし・スポイト・元に戻す・ガイド表示・前後プレビュー・細腕(Alex)/太腕(Steve)切り替え。PNG書き出しと、名前を付けた保存・呼び出し・削除ができる','スキンは三人称視点のモデル(外側レイヤー: 帽子・上着・袖・ズボンにも対応)と一人称の手の色に反映される','三人称視点(背面・前面)で一人称の腕が画面に残っていた不具合を修正','階段(向きあり・プレイヤーが段差を上れる)とハーフブロックを追加 (板材/丸石/石レンガ/レンガ/砂岩/クォーツ/ネザーレンガ/滑らかな石/苔石)。ハーフブロックの上に同じハーフブロックを置くと元のブロックに戻る。作業台で作れる','装飾ブロックを追加: カーペット(6色)・ランタン・レッドストーンランプ・ひび割れた/苔むした/模様入りの石レンガ・模様入りのクォーツ・クォーツの柱・模様入りの砂岩・銅ブロック・緑青の銅ブロック・プリズマリンレンガ','手抜きだったテクスチャを作り直した: 石・土・砂・砂利・雪・粘土・テラコッタ・ネザーラック・エンドストーン・氷・岩盤・スポンジ・ソウルサンド・草ブロック・磨かれた石類・クォーツ・コンクリート・羊毛・葉・干し草など']],
  ['release v1','2026-11-13',['ゲーム名を「BløckVerse」に統一し、バージョンを release v1 にした','ロケット花火を追加(火薬+板材でクラフト)。エリトラで滑空中に右クリックすると1個消費して一定時間前へ加速する','点火したTNTが重力・衝突・摩擦の影響を受けるようになった(落下・バウンド・斜面で止まる)。爆発で近くの点火済みTNTが吹き飛び、誘爆したTNTは爆風で飛び散る','エリトラ(胸当てスロット)・チェスト・壁松明を追加']],
  ['v7.10','2026-11-13',['TNTを追加。作業台(3×3)に「火薬」と「砂」を格子状(火薬が四隅と中央、砂がその間)に置くと作れる。レシピ一覧からも自動配置できる','TNTは火打ち石と打ち金で右クリックすると点火(約3秒で点滅して爆発)。爆発は範囲内のブロックを壊し、プレイヤーとモブにダメージ、近くのTNTを誘爆させる','火薬アイテムを追加。クリーパーを倒すと0〜2個落とす (クリエイティブのインベントリにもある)','クリーパーの爆発(モブの被害オン時)も近くのTNTを誘爆させる']],
@@ -5177,7 +5663,7 @@ function dbgFrame(t){
  dbgL.innerHTML=mk(L);dbgR.innerHTML=mk(R)}
 (function loop(t){requestAnimationFrame(loop);dbgFrame(t);fpsTrack(t);const dt=Math.min(.05,(t-last)/1000);last=t;
  if(world){if(loading){stream(dt);wlTail();if(chunksReady()){setLoading(0);wlDone()}}else{if(!paused&&!crOn&&!wHold)update(dt);stream(dt)}}
- mmTick(t);cam.updateMatrixWorld(true);shRender();if(world&&hk!==null&&vw==0){ren.autoClear=false;ren.clearDepth();ren.render(hsc,cam);ren.autoClear=true}snapTh(dt)})(last);
+ mmTick(t);cam.updateMatrixWorld(true);shRender();if(world&&hk!==null&&vw==0){ren.autoClear=false;ren.clearDepth();ren.render(hsc,cam);ren.autoClear=true}snapTh(dt);MP.tick(dt)})(last);
 __bp(90);
 // ===== v7.3 チャット & コマンド =====
 let noSave=0,kcF=0;
@@ -5220,7 +5706,7 @@ function item(s){s=String(s||'').replace(/^minecraft:/,'').toLowerCase();if(s=='
  if(m)for(let i=IB;i<NM.length;i++)if(NM[i]&&NM[i].startsWith(MT[m[1]])&&NM[i].includes(WD[m[2]]))return i;
  if(XM[s])return XM[s];for(let i=1;i<NM.length;i++)if(NM[i]==(j||s))return i;for(let i=1;i<NM.length;i++)if(NM[i]&&NM[i].includes(s))return i;throw bad('不明なアイテム/ブロック: '+s)}
 const bq=(a,cx)=>cr(a,cx).map(Math.floor),bk=s=>{const b=item(s);if(b>=IB)throw bad('ブロックではない: '+NM[b]);return b};
-function bulk(L){const T=new Set();for(const[x,y,z,b]of L){const c=chunks.get(K(x>>4,z>>4));if(!c||y<0||y>=H)continue;const oi=(x&15)+16*((z&15)+16*y),ob=c.d[oi];if(ob==b)continue;c.d[oi]=b;c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;const ec=EL[ob]||EL[b];if(ec){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}T.add(c)}
+function bulk(L){const T=new Set();for(const[x,y,z,b]of L){const c=chunks.get(K(x>>4,z>>4));if(!c||y<0||y>=H)continue;const oi=(x&15)+16*((z&15)+16*y),ob=c.d[oi];if(ob==b)continue;c.d[oi]=b;MP.on&&MP.rec(c,oi,b);c.mod=1;c.ver=(c.ver|0)+1;mmEd++;if(y>c.top)c.top=y;const ec=EL[ob]||EL[b];if(ec){c.em=c.em.filter(e=>!(e[0]==x&&e[1]==y&&e[2]==z));if(EL[b])c.em.push([x,y,z,EL[b]])}T.add(c)}
  const N=new Set(T);T.forEach(c=>{for(let a=-1;a<=1;a++)for(let q=-1;q<=1;q++){const n=chunks.get(K(c.cx+a,c.cz+q));if(n&&n.built)N.add(n)}});N.forEach(c=>(c.built||T.has(c))&&build(c));return L.length}
 const box=(a,cx)=>{const p1=bq(a.slice(0,3),cx),p2=bq(a.slice(3,6),cx),lo=p1.map((n,i)=>Math.min(n,p2[i])),hi=p1.map((n,i)=>Math.max(n,p2[i]));if((hi[0]-lo[0]+1)*(hi[1]-lo[1]+1)*(hi[2]-lo[2]+1)>32768)throw bad('範囲が大きすぎる (最大32768ブロック)');return{lo,hi}};
 // ---- コマンド本体
@@ -5332,7 +5818,7 @@ function sug(){const v=chi.value;if(v[0]!='/'){chs.hidden=true;return}const t=v.
 function tab(){const v=chi.value,i=v.lastIndexOf(' ')+1;if(!tl||tl.v!=v){const cur=v.slice(i),pool=!i?NAMES.map(n=>'/'+n):cur[0]=='@'?['@p','@a','@e','@s','@r','@n']:[...Object.keys(EN),...Object.keys(XM),...Object.keys(FXM),...Object.keys(TYN)];tl={b:v.slice(0,i),m:pool.filter(x=>x.startsWith(cur)).sort()};ti=0;if(!tl.m.length){tl=null;return}}else ti=(ti+1)%tl.m.length;chi.value=tl.b+tl.m[ti]+' ';tl.v=chi.value;sug()}
 function opn(pre){if(!world||dead||paused||!$('#menu').hidden||chO)return;chO=1;chov.hidden=false;chl.classList.add('o');chi.value=pre||'';chHi=chH.length;tl=null;paused=1;resetIn();unlockPtr();sug();setTimeout(()=>chi.focus(),30)}
 function cls(){if(!chO)return;chO=0;chov.hidden=true;chl.classList.remove('o');chi.blur();paused=0;resetIn();lockPtr()}
-function sub(){const v=chi.value.trim();cls();if(!v)return;chH.push(v);if(chH.length>50)chH.shift();if(v[0]=='/')run(v,{ent:PE,pos:[p.x,p.y,p.z],rot:[yaw,pitch]});else msg('<'+PN+'> '+v,'#fff')}
+function sub(){const v=chi.value.trim();cls();if(!v)return;chH.push(v);if(chH.length>50)chH.shift();if(/^\/(g|global)\s/i.test(v))GC.say(v.replace(/^\/\w+\s+/,''));else if(v[0]=='/')run(v,{ent:PE,pos:[p.x,p.y,p.z],rot:[yaw,pitch]});else if(MP.on)MP.say(v);else msg('<'+PN+'> '+v,'#fff')}
 chi.onkeydown=e=>{e.stopPropagation();const k=e.key;if(k=='Enter'){e.preventDefault();sub()}else if(k=='Escape'){e.preventDefault();cls()}else if(k=='Tab'){e.preventDefault();tab()}
  else if(k=='ArrowUp'||k=='ArrowDown'){e.preventDefault();if(!chH.length)return;chHi=Math.max(0,Math.min(chH.length,chHi+(k=='ArrowUp'?-1:1)));chi.value=chH[chHi]||'';sug()}};
 chi.oninput=sug;chs.onclick=e=>{const d=e.target.closest('[data-c]');if(d){chi.value='/'+d.dataset.c+' ';sug();chi.focus()}};
