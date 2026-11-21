@@ -208,8 +208,13 @@
   @keyframes spblink { 50% { opacity: .15; } }
   #toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 60; padding: 10px 18px; border-radius: 12px; background: #1b2236; color: #fff; font: 700 14px var(--font-ui); transition: .25s; max-width: 90vw; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  #healthCheck { position: absolute; inset: 0; z-index: 25; display: none; align-items: center; justify-content: center; background: var(--veil); backdrop-filter: blur(4px); }
+  #healthCheck .hc-card { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--card-shadow); padding: 28px 36px; text-align: center; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+  #healthCheck h2 { font-family: var(--font-pixel); font-weight: 400; font-size: 28px; color: var(--accent-text); }
+  #healthCheck .hc-sec { font: 400 40px var(--font-pixel); color: var(--heart); font-variant-numeric: tabular-nums; }
 </style>
-  <script type="module" crossorigin src="./assets/index-BvtSqJZA.js"></script>
+  <script type="module" crossorigin src="./assets/index-CUOIweUj.js"></script>
 </head>
 <body>
 
@@ -219,6 +224,7 @@
   <div><kbd>Esc</kbd> タイトルへ戻る<span id="resetBtn" role="button"><span class="ms">restart_alt</span>リセット</span></div>
   <div id="seedDisplayRow">Seed: <span id="seedDisplayVal">-</span></div>
 </div>
+<div id="healthCheck"><div class="hc-card"><h2>まだいますか?</h2><p>操作がありません。あと <span class="hc-sec" id="hcCount">10</span> 秒で切断します</p><button type="button" class="action-btn" id="hcBtn">いるよ!</button></div></div>
 <div id="timeAttackTimer">0.000</div>
 
 <div id="gameOverlay">
