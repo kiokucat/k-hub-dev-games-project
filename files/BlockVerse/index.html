@@ -24,7 +24,7 @@
   ブロックの発光レベルは EL に定義し、レベル N の光源は N ブロック先まで届く (光源15 = 15ブロック、1ブロックごとに1下がる)。新しい光源ブロックを足すときは EL に登録し、この距離の仕様を変えないこと。
 【オンライン (v1.6〜)】 Convex。共有ワールドは MP (同期エンジン)、画面は #s-mp / #s-mk / #s-pub、通信は CV / OL。ブロックを書き換える箇所 (setB, setRaw, bulk, 爆発2か所) は MP.on&&MP.rec() を呼ぶこと。共有ワールドのセーブは ch を保存せず、地形は seed から生成してサーバーの差分を genAny の後で重ねる。
 -->
-<title>BløckVerse release 1.14</title>
+<title>BløckVerse release 1.15</title>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Material+Symbols+Outlined" rel="stylesheet">
 <style>
 :root{--bg:#f1efe6;--pn:#fff;--tx:#1b1d1f;--mu:#666b6f;--bd:#cfcbbd;--ac:#3b7f36;--at:#fff;color-scheme:light}
@@ -3930,7 +3930,7 @@ function skDefault(){const c=skx;c.clearRect(0,0,64,64);
  const leg=(u,v)=>bx(u,v,4,12,4,(n,i,j)=>n=='t'?PNT:n=='b'?SHO:j>=9?SHO:PNT);leg(0,16);leg(16,48);skSlim=0}
 function skAvg(){try{const d=skx.getImageData(44,28,4,4).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4)if(d[i+3]>100){r+=d[i];g+=d[i+1];b+=d[i+2];n++}if(n)AC=[r/n/255*1.02,g/n/255*1.02,b/n/255*1.02]}catch(e){}}
 function skApply(){skTex.needsUpdate=true;skAvg();try{skPrev()}catch(e){}try{drawPv()}catch(e){}try{if(world){hk=null;setHeld()}}catch(e){}}
-function skStore(){try{localStorage.setItem('bv-skin',JSON.stringify({d:SKC.toDataURL(),s:skSlim}))}catch(e){}}
+function skStore(){try{localStorage.setItem('bv-skin',JSON.stringify({d:SKC.toDataURL(),s:skSlim}))}catch(e){}try{MP.pushSkin()}catch(e){}}
 function skFromImg(im){const w=im.width,h=im.height;if(w!=64||(h!=64&&h!=32))return 0;
  skx.clearRect(0,0,64,64);skx.drawImage(im,0,0);
  if(h==32){const fl=(sx,sy,w2,h2,dx,dy)=>{skx.save();skx.translate(dx+w2,dy);skx.scale(-1,1);skx.drawImage(SKC,sx,sy,w2,h2,0,0,w2,h2);skx.restore()};
@@ -5171,7 +5171,7 @@ const MP={on:0,link:null,pendLink:null,gen:0,pend:new Map(),buf:[],loaded:0,ap:0
  rmAv(a){scene.remove(a.g);a.g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose()}})},
  onPresence(rows){const now=Date.now()+MP.off,seen=new Set();
   for(const r of rows){if(r.uid===OL.uid||now-r.t>15000)continue;seen.add(r.uid);let a=MP.av.get(r.uid);
-   if(!a){a=MP.mkAv(r.uid,r.name);a.uid=r.uid;MP.av.set(r.uid,a);if(MP.pl)msg(r.name+' が参加しました','#ffff55')}
+   if(!a){a=MP.mkAv(r.uid,r.name);a.uid=r.uid;MP.av.set(r.uid,a);{const sx=MP.sx.get(r.uid);if(sx)MP.skin(a,sx.png,sx.slim)}if(MP.pl)msg(r.name+' が参加しました','#ffff55')}
    a.x=r.x;a.y=r.y;a.z=r.z;a.yaw=r.yaw;a.pit=r.pitch;a.dim=r.dim;a.t=r.t}
   for(const[u,a]of[...MP.av])if(!seen.has(u)){MP.rmAv(a);MP.av.delete(u);if(MP.pl)msg(a.name+' が退出しました','#ffff55')}
   MP.pl=1},
@@ -5195,12 +5195,30 @@ const MP={on:0,link:null,pendLink:null,gen:0,pend:new Map(),buf:[],loaded:0,ap:0
 
 // ---- release 1.12: エンティティ / チェスト / PvP 同期
 // モブ: 各プレイヤーが「自分の周囲のモブ」をシミュレートして配信し、他の人の画面では補間表示 (pm)。ダメージは持ち主へのイベントで反映
-Object.assign(MP,{pm:new Map(),pd:new Map(),ee:0,ej:'',en:0,ck:null,cj:new Map(),sk:new Set(),lr:[],cc:0,ra:0,sub:[],evSeen:new Set(),
+Object.assign(MP,{pm:new Map(),pd:new Map(),sx:new Map(),sp:'',ee:0,ej:'',en:0,ck:null,cj:new Map(),sk:new Set(),lr:[],cc:0,ra:0,sub:[],evSeen:new Set(),
  targets(){const a=[...mobs];if(MP.on){MP.pm.forEach(m=>{if(m.g.visible)a.push(m)});MP.av.forEach(q=>{if(q.init&&q.dim===dim&&q.g.visible)a.push({pl:1,uid:q.uid,name:q.name,t:0,x:q.g.position.x,y:q.g.position.y,z:q.g.position.z})})}return a},
  nearP(m){let b=p,bd=(p.x-m.x)**2+(p.z-m.z)**2;if(MP.on)MP.av.forEach(a=>{if(!a.init||a.dim!==dim||!a.g.visible)return;const q=a.g.position,d=(q.x-m.x)**2+(q.z-m.z)**2;if(d<bd){bd=d;b={x:q.x,y:q.y,z:q.z,rem:1,uid:a.uid}}});return b},
  mobHit(P,m,ux,uz,d){CV.cl.mutation(CV.api.sync.sendEvent,{worldId:MP.link.w,to:P.uid,from:OL.uid,name:TY[m.t].n,kind:'p',mid:'',dmg:d,kx:ux*12,kz:uz*12}).catch(e=>MP.err(e,'攻撃'))},
  hitOther(m,dmg,kx,kz){if(!MP.on)return;const T=TY[m.t]||TY[0];pfx(m.x,m.y+T.h*.6,m.z,8,{c:['#ff3030','#ffd24a','#ffffff'],sp:2.2,sy:.8,g:9,l:.5,gl:1,sz:.1,rx:.2});m.hf=.3;
   CV.cl.mutation(CV.api.sync.sendEvent,{worldId:MP.link.w,to:m.pl?m.uid:m.own,from:OL.uid,name:OL.name,kind:m.pl?'p':'m',mid:m.mid||'',dmg,kx,kz}).catch(e=>MP.err(e,'攻撃'))},
+ claim(q){const b=q.b,n=q.n,du=q.d==null?null:q.d;
+  CV.cl.mutation(CV.api.sync.claimDrop,{worldId:MP.link.w,owner:q.own,did:q.id,by:OL.uid}).then(ok=>{if(MP.pd.get(q.key)===q){MP.rmD2(q);MP.pd.delete(q.key)}
+   if(!ok||!world)return;const left=addN(b,n,du);if(left<n){renderHot();popSnd()}if(left>0)spawnDrop(b,left,du,p.x,p.y+1,p.z,0,2,0,.5)}).catch(e=>MP.err(e,'拾得'))},
+ onClaims(rows){for(const r of rows){const i=drops.findIndex(d=>d.id===r.did);if(i>=0)rmD(drops[i],i)}},
+ pushSkin(){if(!MP.on)return;let png;try{png=SKC.toDataURL('image/png')}catch(e){return}if(png===MP.sp||png.length>40000)return;MP.sp=png;
+  CV.cl.mutation(CV.api.sync.putSkin,{worldId:MP.link.w,uid:OL.uid,png,slim:!!skSlim}).catch(e=>MP.err(e,'スキン'))},
+ onSkins(rows){for(const r of rows){if(r.uid===OL.uid)continue;const o=MP.sx.get(r.uid);if(o&&o.png===r.png&&o.slim===r.slim)continue;MP.sx.set(r.uid,{png:r.png,slim:r.slim});const a=MP.av.get(r.uid);if(a)MP.skin(a,r.png,r.slim)}},
+ skin(a,png,slim){const im=new Image();im.onload=()=>{if(MP.av.get(a.uid)!==a)return;
+   const cv=document.createElement('canvas');cv.width=cv.height=64;cv.getContext('2d').drawImage(im,0,0);
+   const tx=new THREE.CanvasTexture(cv);tx.magFilter=tx.minFilter=THREE.NearestFilter;tx.generateMipmaps=false;tx.flipY=true;
+   const M=new THREE.MeshBasicMaterial({map:tx,alphaTest:.5}),O=new THREE.MeshBasicMaterial({map:tx,transparent:true,alphaTest:.1,side:THREE.DoubleSide});M.userData.bc=new THREE.Color(1,1,1);O.userData.bc=new THREE.Color(1,1,1);
+   const g=a.g;for(const c of [...g.children]){if(c.isSprite)continue;g.remove(c);c.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}
+   const S=slim?3:4,HS=.9333,add=(m,x,y,z,par)=>{m.position.set(x,y,z);par.add(m)},
+    J=(x,y,w,u,v,uo,vo)=>{const q=new THREE.Group();q.position.set(x,y,0);g.add(q);add(skBox(w,12,4,u,v,0,M,HS),0,-.35,0,q);add(skBox(w,12,4,uo,vo,.03,O,HS),0,-.35,0,q);return q},
+    hd=new THREE.Group();hd.position.y=1.4;g.add(hd);add(skBox(8,8,8,0,0,0,M,1),0,.25,0,hd);add(skBox(8,8,8,32,0,.06,O,1),0,.25,0,hd);
+   add(skBox(8,12,4,16,16,0,M,HS),0,1.05,0,g);add(skBox(8,12,4,16,32,.03,O,HS),0,1.05,0,g);
+   const lg=[J(-.125,.7,4,0,16,0,32),J(.125,.7,4,16,48,0,48)],ax=.25+S/32,ar=[J(-ax,1.4,S,40,16,40,32),J(ax,1.4,S,32,48,48,48)];
+   a.hd=hd;a.lg=lg;a.ar=ar};im.src=png},
  ev(kind,to,data){CV.cl.mutation(CV.api.sync.sendEvent,{worldId:MP.link.w,to,from:OL.uid,name:OL.name,kind,mid:'',data:data||'',dmg:0,kx:0,kz:0}).catch(e=>MP.err(e,'同期'))},
  mobT(){const a=[...mobs];if(MP.on)MP.pm.forEach(m=>{if(m.g.visible)a.push(m)});return a},
  sendArrow(x,y,z,vx,vy,vz,dmg,hs){const f=n=>+n.toFixed(2);MP.ev('a','broadcast',JSON.stringify([f(x),f(y),f(z),f(vx),f(vy),f(vz),dmg,hs?1:0,dim]))},
@@ -5218,7 +5236,7 @@ Object.assign(MP,{pm:new Map(),pd:new Map(),ee:0,ej:'',en:0,ck:null,cj:new Map()
     if(!m){const g=mkMob(e[1]);g.visible=false;scene.add(g);m={rem:1,t:e[1],g,x:e[2],y:e[3],z:e[4],ry:e[5],mid:e[0],own:r.uid,hf:0,pc:0,ph:0,init:0};MP.pm.set(id,m)}
     m.tx=e[2];m.ty=e[3];m.tz=e[4];m.tr=e[5];m.hp=e[6];if(e[7])m.hf=.3;m.d=r.dim}
    for(const e of (L[1]||[])){if(!Array.isArray(e)||e.length<8)continue;const id=r.uid+e[0];sd.add(id);let q=MP.pd.get(id);
-    if(!q){let o;try{o=dropObj(e[1]|0)}catch(x){continue}o.visible=false;scene.add(o);q={o,b:e[1]|0,own:r.uid,id:e[0],cl:0,age:0,init:0,x:e[4],y:e[5],z:e[6]};MP.pd.set(id,q)}
+    if(!q){let o;try{o=dropObj(e[1]|0)}catch(x){continue}o.visible=false;scene.add(o);q={o,key:id,b:e[1]|0,own:r.uid,id:e[0],cl:0,age:0,init:0,x:e[4],y:e[5],z:e[6]};MP.pd.set(id,q)}
     q.n=e[2]|0;q.tx=e[4];q.ty=e[5];q.tz=e[6];q.rd=e[7];q.dm=r.dim}}
   for(const[id,m]of[...MP.pm])if(!seen.has(id)){rmMob(m);MP.pm.delete(id)}
   for(const[id,q]of[...MP.pd])if(!sd.has(id)){MP.rmD2(q);MP.pd.delete(id)}},
@@ -5238,17 +5256,19 @@ Object.assign(MP,{pm:new Map(),pd:new Map(),ee:0,ej:'',en:0,ck:null,cj:new Map()
   MP.sub=[cl.onUpdate(A.sync.entList,{worldId:w},r=>MP.onEnts(r),e=>MP.err(e,'エンティティ')),
    cl.onUpdate(A.sync.eventsSince,{worldId:w,to:OL.uid,since:Date.now()+MP.off-1500},r=>MP.onEv(r),e=>MP.err(e,'受信')),
    cl.onUpdate(A.sync.eventsSince,{worldId:w,to:'broadcast',since:Date.now()+MP.off-1500},r=>MP.onEv(r),e=>MP.err(e,'受信')),
+   cl.onUpdate(A.sync.claimList,{worldId:w,owner:OL.uid},r=>MP.onClaims(r),e=>MP.err(e,'拾得')),
+   cl.onUpdate(A.sync.skinList,{worldId:w},r=>MP.onSkins(r),e=>MP.err(e,'スキン')),
    cl.onUpdate(A.sync.chestList,{worldId:w},r=>MP.onChests(r),e=>MP.err(e,'チェスト'))]},
- stopS(){for(const u of MP.sub||[]){try{u()}catch(e){}}MP.sub=[];MP.pm.forEach(m=>rmMob(m));MP.pm.clear();MP.pd.forEach(q=>MP.rmD2(q));MP.pd.clear();MP.cj=new Map();MP.sk=new Set();MP.ck=null;MP.ra=0;MP.ej=''},
+ stopS(){for(const u of MP.sub||[]){try{u()}catch(e){}}MP.sub=[];MP.pm.forEach(m=>rmMob(m));MP.pm.clear();MP.pd.forEach(q=>MP.rmD2(q));MP.pd.clear();MP.sx=new Map();MP.sp='';MP.cj=new Map();MP.sk=new Set();MP.ck=null;MP.ra=0;MP.ej=''},
  syncTick(dt){MP.ee-=dt;if(MP.ee<=0){MP.ee=.2;MP.pubEnts()}
-  if(world&&!MP.ra){MP.ra=1;MP.cj=new Map();MP.sk=new Set();MP.onChests(MP.lr)}
+  if(world&&!MP.ra){MP.ra=1;setTimeout(()=>MP.pushSkin(),1500);MP.cj=new Map();MP.sk=new Set();MP.onChests(MP.lr)}
   MP.cc-=dt;if(MP.cc<=0){MP.cc=.25;if(chOpen&&MP.ck)MP.chPush()}
   const k=1-Math.exp(-dt*10);
   MP.pd.forEach(q=>{const vis=!!world&&q.dm===dim;q.o.visible=vis;if(!vis)return;if(!q.init){q.x=q.tx;q.y=q.ty;q.z=q.tz;q.init=1}
    q.x+=(q.tx-q.x)*k;q.y+=(q.ty-q.y)*k;q.z+=(q.tz-q.z)*k;q.age+=dt;q.cl-=dt;
    q.o.position.set(q.x,q.y+.2+Math.sin(q.age*3)*.03,q.z);if(q.o.isMesh)q.o.rotation.y=q.age*1.4;
    const c=lightRGB(q.x,q.y+.3,q.z,LTM);[].concat(q.o.material).forEach(m=>m.color.setRGB(c[0],c[1],c[2]));
-   if(q.rd&&q.cl<=0&&!dead&&(!cre||q.b==NI.arw)&&cap(q.b)>0&&Math.hypot(p.x-q.x,p.y+.8-(q.y+.2),p.z-q.z)<1.15){q.cl=1.2;MP.ev('k',q.own,q.id)}});
+   if(q.rd&&q.cl<=0&&!dead&&(!cre||q.b==NI.arw)&&cap(q.b)>0&&Math.hypot(p.x-q.x,p.y+.8-(q.y+.2),p.z-q.z)<1.15){q.cl=1.2;MP.claim(q)}});
   MP.pm.forEach(m=>{const T=TY[m.t],vis=!!world&&m.d===dim;m.g.visible=vis;if(!vis)return;
    if(!m.init){m.x=m.tx;m.y=m.ty;m.z=m.tz;m.ry=m.tr;m.init=1}
    const dx=m.tx-m.x,dz=m.tz-m.z;m.x+=dx*k;m.y+=(m.ty-m.y)*k;m.z+=dz*k;let d=m.tr-m.ry;d=Math.atan2(Math.sin(d),Math.cos(d));m.ry+=d*k;
@@ -5423,7 +5443,7 @@ $('#skpub').onclick=async()=>{const n=(prompt('出品するスキンの名前 (�
  try{await CV.m(a=>a.skins.publish,{uid:OL.uid,uname:OL.name,secret:OL.secret,title:n.slice(0,24),png:SKC.toDataURL('image/png'),slim:!!skSlim});skMsg('「'+n+'」を出品しました')}
  catch(e){skMsg(olErr(e))}};
 
-const VER='release 1.14',PATCH=[['release 1.14','2026-11-21',['オンライン: ドロップアイテムの同期 (捨てたアイテム・壊したチェストの中身を他のプレイヤーも見て拾える)','オンライン: 矢の同期 (他のプレイヤー・スケルトンの矢が見える。当たるとダメージ)','オンライン: チェストの中身を開いている間もリアルタイムで反映']],['release 1.13','2026-11-21',['オンライン: モブが一番近いプレイヤーを狙うように (持ち主以外のプレイヤーも襲われる)。他プレイヤーへの攻撃はイベントで相手側に反映','オンライン: 近接のPvP・他人のモブへの攻撃を全プレイヤーで有効に']],['release 1.12','2026-11-21',['オンライン: エンティティ同期 (各プレイヤーの周囲のモブを全員に表示。他の人のモブにも攻撃できる)','オンライン: チェスト同期 (中身が共有ワールドの全員で共通)','オンライン: プレイヤー同士のPvP (サバイバルのワールドでのみ有効。クリエイティブでは被ダメージなし)']],['release 1.11','2026-11-21',['統合版ブリッジを作り直し: 右クリック長押し+下向きで、向いている方向の足元1マス先に約150ms間隔で自動設置']],
+const VER='release 1.15',PATCH=[['release 1.15','2026-11-21',['オンライン: 他のプレイヤーのドロップアイテムを拾えない問題を修正 (拾う処理をサーバーで1人だけに許可する方式に変更)','オンライン: スキン同期 (他のプレイヤーの見た目が、そのプレイヤーのスキンで表示される)']],['release 1.14','2026-11-21',['オンライン: ドロップアイテムの同期 (捨てたアイテム・壊したチェストの中身を他のプレイヤーも見て拾える)','オンライン: 矢の同期 (他のプレイヤー・スケルトンの矢が見える。当たるとダメージ)','オンライン: チェストの中身を開いている間もリアルタイムで反映']],['release 1.13','2026-11-21',['オンライン: モブが一番近いプレイヤーを狙うように (持ち主以外のプレイヤーも襲われる)。他プレイヤーへの攻撃はイベントで相手側に反映','オンライン: 近接のPvP・他人のモブへの攻撃を全プレイヤーで有効に']],['release 1.12','2026-11-21',['オンライン: エンティティ同期 (各プレイヤーの周囲のモブを全員に表示。他の人のモブにも攻撃できる)','オンライン: チェスト同期 (中身が共有ワールドの全員で共通)','オンライン: プレイヤー同士のPvP (サバイバルのワールドでのみ有効。クリエイティブでは被ダメージなし)']],['release 1.11','2026-11-21',['統合版ブリッジを作り直し: 右クリック長押し+下向きで、向いている方向の足元1マス先に約150ms間隔で自動設置']],
 ['release 1.10','2026-11-20',['ダッシュジャンプ中のブリッジ(足元スナップ設置)の連続設置を高速化。長押し中は水平方向のみ・直近ブロックに隣接する1マスだけに設置し、2段積みや周囲へのバラ撒きを防止','サバイバル・クリエイティブ問わず矢を回収できるように','設定にリソースパックを追加 (zip / PNG)。読み込み順: 内蔵 → ./assets/ → 設定のパック。テクスチャ名はマイクラ互換 (oak_planks / grass_block_top / iron_sword など)']],['release 1.9','2026-11-20',['三人称視点でもしゃがみのポーズ (前かがみ) になる。ジャンプ中に腕・足の振りが止まって棒立ちになる問題を修正 (空中でも振りを続ける)']],['release 1.8','2026-11-20',['フロントブリッジを追加。ブロックを持って右クリック長押し+足元の先の空間を見下ろして歩く(ダッシュジャンプ中も可)と、進行方向の1マス先に自動で足場を設置する。斜め移動・水の上にも対応。連続設置は最短65msで、設置位置から約0.75ブロック動くまでは80msの間隔を空ける','しゃがみを追加。Cキー(設定で変更可)でしゃがむと、ゆっくり歩き、ブロックの端から落ちない。設定の「しゃがみ操作」で 切り替え / 長押し を選べる (破壊・攻撃の初期キーは C から X に変更)','マーケットプレイス・ワールド選択画面で、アイコン付きボタン (入手・スキンマーケット・オンライン共有・マーケットに出品など) の文字が下で見切れる問題を修正','サーバーURLを埋め込み型に変更。マルチプレイ画面のURL入力欄を廃止し、HTML内の CONVEX_URL を使う (「設定を保存」は「名前を保存」に変更)']],['release 1.7','2026-11-20',['スキンマーケットを追加。設定 > スキン の「スキンを出品」で今のスキンを公開でき、マーケットプレイス画面の「スキンマーケット」で他の人のスキンを「着る」「保存」「PNG」(PNGファイルとして保存) できる。新着/人気/入手数・名前検索・いいね・通報・取り下げ付き','全体チャットを追加。タイトルの「全体チャット」から、全員に見える公開チャットに参加できる。ゲーム中は /g メッセージ で送信でき、他の人の発言は水色で表示される (一度開くと、次回からゲーム開始時に自動で受信)。発言には名前の後ろに ID の末尾4文字が付き、連投は1.5秒おきに制限される']],['release 1.6','2026-11-20',['オンライン機能を追加 (サーバーは Convex)。タイトルの「マルチプレイ」と「マーケットプレイス」が使えるようになった','共有ワールド: ワールド選択画面で「オンライン共有」を押すと、そのワールドをサーバーに置いて参加コード(6文字)を発行。友達はコードか公開ワールド一覧から参加でき、ブロックの設置・破壊がリアルタイムで全員に反映される (元のワールドはそのまま残り、オンライン版が別セーブとして作られる)','共有ワールドでは他のプレイヤーが3Dモデル+名前付きで見え、チャットも共有される。持ち物・体力・進捗は各自のセーブに保存。モブ・ドロップ・チェストの中身は各自の画面だけで動く (ブロックとしてのチェストは共有)','マーケットプレイス: 「出品」で自分のワールド(地形・建築・設定。持ち物や進捗は含まない)を公開し、他の人のワールドを「入手」してワールド一覧に追加できる。新着/人気/入手数の並び替え、タイトル検索、いいね、通報(3件で非表示)、取り下げに対応','サーバーURLは、マルチプレイ画面の「サーバー設定」か、コード先頭の CONVEX_URL に入力する。名前・ID・管理キーはこのブラウザの localStorage (bv-cvx) に保存される','ブロックを書き換える処理は MP.rec() を通して送信される。ブロックを書き換える新しい処理を足したときは、必ず同じように MP.on&&MP.rec(chunk,index,block) を呼ぶこと']],['release 1.5','2026-11-15',['ワールドテンプレートを「設定だけ」から「その世界そのもの」に変更。作成時に選ぶと地形そのものが変わる (新設定: ワールドタイプ)','はじめてのサバイバル: 穏やかな草原と、ベッド・チェスト・作業台のある小屋','クリエイティブ建築: 区画の道が走る真っ平らな建築場と、中央のカラーパレット','冒険・探検: 起伏の激しい大地と、空に浮かぶ宝島 (宝箱つき)','ハードサバイバル: 木が枯れて溶岩だまりが点在する荒れ地と、廃墟の補給所','スカイウォーズ (新): 奈落に浮かぶ島々。中央の島に最強の宝箱。落ちるとアウト','ベッドウォーズ (新): 4チームの浮島。ベッドが羊毛で守られていて、資源チェストと作業台つき','パーティクルを全体に追加: 走ったときの土埃、着地、ジャンプ、水しぶき、ブロックを壊す/置く/掘る、爆発、花火、矢、食事、モブの被弾/撃破、溶岩の火の粉、松明、葉っぱ、荒れ地の灰など。最適化設定に「パーティクル」を追加','矢を見やすく: 太く明るい矢と軌跡のパーティクル。発射時の煙。刺さった矢はきらっと光る','矢を回収できるように: 刺さった矢は近づくと吸い寄せられて回収。モブに当たった矢もアイテムとして落ちる。クリエイティブでも矢が飛ぶように','ベッドのアイコンを2マス分 (頭側+足側) で表示','クリエイティブにカテゴリ「インベントリ」を追加 (従来のインベントリを表示)。チェストを開いている間はカテゴリを選べず、インベントリを表示','チェストや作業台を開いている間は、プレイヤーモデルと装備欄を表示しない。インベントリ上部の左寄りを中央に調整','デバッグ画面のグラフの線を小さく細く修正']],['release 1.4','2026-11-15',['シェーダー設定を1ボタン切り替えから個別ボタンに変更: シェーダーなし / ソフト / シネマ / PBR / Ultra+ から直接選べる','シェーダー「PBR」を追加: 太陽光のGGX鏡面反射(テクスチャの明るさから粗さを推定)・縁の空の反射・ACESトーンマッピングを追加した、質感重視のシェーダー','シェーダー「Ultra+」を追加: PBRに加えて、影の解像度を最高に固定し、AO・ブルーム・光芒・色収差・グレイン・シャープネスを強化した最高画質シェーダー','Hキーでデバッグ画面を表示/非表示できるようにした (表示中は左上の通常情報を隠す)。FPS・チャンク数・座標・ブロック座標・向き・ターゲットブロック・時刻・描画負荷・GPU情報と、左下にFPS、右下にフレーム時間のグラフを表示','ワールド選択画面のバージョン表示を変更: 保存時のバージョン名が読める旧バージョンのワールドは「旧バージョン (release 1.2)」のように前のバージョン名つきで表示。読めない場合のみ「旧バージョン」と表示']],['release 1.3','2026-11-15',['ジャックオランタンの見た目を一新: 畝のあるツヤのある表面に、内側からぼうっと光る彫り込みの顔を追加。上面にはヘタがつく。表情ちがいの「おこり」「びっくり」「ねこ」と、青い炎の「魂」(光源レベル10)も追加','カボチャの上面にヘタを追加','装飾ブロックを大量に追加: 色付きテラコッタ16色と模様入りの彩釉テラコッタ16色、コンクリート(残り8色)、色ガラス(8色追加)、カーペット10色、タイル6色、チェッカー・ストライプ・水玉の模様ブロック、木の羽目板7種、ネオン5色(光源レベル15)','レンガ・石材を追加: 金/鉄/銅のレンガ、雪レンガ、青氷レンガ、砂岩レンガ、赤い砂岩レンガ、エンドストーンレンガ、赤いネザーレンガ、磨かれた深層岩、深層岩タイル、チゼル加工の深層岩、磨かれた/滑らかな玄武岩、ブラックストーン系3種、プルプァブロックと柱','そのほか: 骨ブロック、ハニカムブロック、ネザーウォートブロック(赤・青緑)、苔ブロック、生垣(緑・桜)を追加。新素材10種に階段とハーフブロックも追加 (作業台でクラフト可)','内部の修正: ブロックIDが255を超えると別のブロックに化けてしまう問題を修正 (v1.2の後半の階段・ハーフブロック・ランプが該当)。ワールドの保存形式を16ビットにした。旧バージョンのワールドもそのまま読み込める。テクスチャアトラスも拡大']],['release 1.2','2026-11-15',['階段とハーフブロックを19素材ぶん追加 (板材6種・深層岩の丸石・深層岩レンガ・銅・緑青の銅・プリズマリンレンガ・苔むした/ひび割れた石レンガ・泥レンガ・エンドストーン・ネザーラック・安山岩・花崗岩・閃緑岩)。作業台でクラフト可、ハーフブロックは重ねて置くと元のブロックになる','光源ブロック「ランプ(白・青・緑・紫・橙)」を追加 (光源レベル15、グロウストーン+ガラスでクラフト)','クリエイティブでもホットバーとインベントリにアイテムの個数を表示','クリエイティブUIに「1個/64個」の切り替えを追加。クリックでその個数をホットバーへ、Shift+クリックで逆の個数。同じアイテムがホットバーにあれば個数を足す']],['release 1.1','2026-11-14',['バージョン表記を「v6.4」から「シーズン.バージョン」(例: 1.1)に変更。大型アップデートでシーズンを上げ、通常の更新ではバージョンを上げる','クリエイティブのインベントリを使いやすく刷新: カテゴリタブに名前を表示し、「お気に入り」と「最近」のタブを追加。検索は複数の言葉・ひらがなでも探せて、件数と消去ボタンを表示','アイテムにカーソルを合わせる (スマホはタップ) と、名前・分類・説明が下の情報欄に出る。右クリック (スマホは長押し) でお気に入りに登録','クリックで取り出すとき、ホットバーにあればその枠を選択、なければ空いている枠へ入れる (満杯なら選択中の枠を置き換え)','画面が広いときは、装備とプレイヤーモデルを右側に置いて、アイテム一覧を広く表示']],['release v6.4','2026-11-14',['モーションブラーをシェーダー設定からビデオ設定へ移動。影シェーダーをオフにしていても使えるようになった(ブラーだけを描画する軽い経路で動く)','構造物を大幅に追加。地上: 石レンガの小屋・柱の祭壇・螺旋階段つき見張り塔・テント・砂漠のピラミッド・木の家・柱廊の遺跡(出現数も約3倍)。ネザー: ネザーレンガの塔・黒曜石の祭壇・廃ポータル(要塞とは別の場所)。エンド: 外周の島に祭壇・オベリスク・小屋・アーチ、メインアイランドの周りに8か所の小さな建物','すべての構造物のチェストにランダムなアイテムが入る(ピラミッドは宝物庫向けの豪華な中身)']],['release v6.3','2026-11-14',['ビデオ設定に「ダメージチルト」を追加(ダメージを受けたときのカメラの揺れの強さ。1〜100%、標準100%)','地上に構造物を追加: 石レンガの小屋と柱の祭壇(平らな場所に点在。中にチェストと松明)','ジ・エンドの外周の島に「エンドの祭壇」を追加(紫のコンクリートの柱と中央のチェスト)','ネザー要塞・エンドシティ・地上の小屋と祭壇・エンドの祭壇のチェストに、ランダムなアイテムが入る(場所ごとに固定。ネザー/エンド向けは豪華め)']],['release v6.2','2026-11-14',['ネザー要塞(中央広間・塔)とエンドシティの塔にチェストが生成されるようになった','三人称視点(背面・前面)では照準(十字)を表示しないようにした']],['release v6.1','2026-11-13',['ワールド新規作成を押すと、先頭に「新規ワールドを作成」、その下にワールドテンプレート一覧が出るようになった。テンプレートはHTMLに埋め込まれていて、設定のテンプレート(作成画面で調整可)と、ワールドデータ付きテンプレート(選ぶとそのまま始まる)に対応','光源の届く距離を修正: 発光レベルNの光源はNブロック先まで届く(光源15=15ブロック)。手に持った光源の明るさの範囲も合わせた']],['release v6','2026-11-13',['パワードレールを追加(金鉱石6+板材1+レッドストーン鉱石1でクラフト→6個)。常に通電している扱いで、上を走るトロッコが加速し続ける(最高速まで)。曲がらず直線・坂のみで、普通の線路ともつながる','一人称の手にスキンを反映(右腕のテクスチャと袖レイヤー。細腕/太腕にも対応)','インベントリのプレイヤーモデルにスキンを反映(帽子・上着・袖・ズボンの外側レイヤーも表示。防具は上から重ねて表示)','滑空をやめた・着地した直後は重力に従って落下するように修正(滑空中の上向きの勢いと高速の横移動を引き継がない)。落下中(下向きの速度が出ている時)にだけ滑空を開始できる']],['release v5','2026-11-13',['オープニング(起動画面)・タイトルロゴ・エンドロールをPV風の演出に変更: 上下のシネマスコープ帯、ぼかしから浮かび上がるロゴ文字、光の筋が走る演出、キャッチコピー表示、エンドロールは字間を広げた金色の見出しと上下のフェード','ダメージを受けたとき、画面が揺れるようになった(ダメージが大きいほど強く揺れる。OSの「視差効果を減らす」設定がオンなら揺れない)','ロゴの「ø」がその場でくるくる回り、そこから左右の文字が順に回転しながら現れる演出を追加(起動画面とタイトル画面。タイトル画面では「ø」がその後も時々1回転する)。起動画面の最短表示時間を2.6秒に延長','モーションブラーを0〜300%まで選べるように変更(旧: 0〜100%)。強い値でも残像が崩れにくいようサンプル数を増やした','レシピ欄が左に寄っていた表示を修正(4列を均等幅にして中央揃えに)']],['release v4','2026-11-13',['滑空中、三人称視点のスキンが水平に寝て腕を広げる姿勢になった','トロッコを2種類に: トロッコ(ガードレール付)はレールの端で必ず止まり、トロッコはレールが無くても慣性で走り続ける','トロッコ類は溶岩で燃える','ロケット花火が滑空中(ブロックを狙っていなくても)使えるように修正','レシピを左にアイコンのグリッド、インベントリを右に配置','氷のチャンク境界の線を軽減(氷と水の重なり面を描画しない)']],['release v3','2026-11-13',['ベッドを2マス(頭側・足側)にした。置くと向いている方向へ頭側が伸びる。どちらを壊しても両方消えてベッド1個がドロップ。頭側と足側でテクスチャが違う(頭側は枕つき)','旧バージョンのワールドの1マスベッドは、ロード時に空いている隣のマスへ2マスに拡張する。ブロックを貫通・上書きはせず、入りきらない場合はベッドをアイテムとしてドロップする','スポーン地点に設定したベッドが壊されたら(爆発・コマンド含む)、スポーン地点がワールドのスポーン地点に戻り、自分だけにチャットで通知する。その後5分間はコンパスが旧ベッドの位置を指す(新しいベッドを使うと指さなくなる)','モバイル操作のボタン配置編集を追加 (設定 > 操作設定 > ボタン配置・サイズを編集)。ボタンをドラッグで移動、タップで選択してスライダーで個別にサイズ変更。初期化も可能。移動スティックも対象','インベントリの見た目をマイクラ風(グレーのパネル・立体的なスロット)に変更','ワールド生成・ロード時に、起動アニメーションと同じ進行バー(%つき)を表示。生成する周囲25チャンク(5×5)が揃ったら「さあ行こう!」を0.5秒表示してからスタートする']],
  ['release v2','2026-11-13',['スキン機能を追加 (設定 > スキン)。マイクラ形式 64×64 の PNG (旧 64×32 も可) を読み込めて、画面上のペイントエディタで直接描ける。ペン・消しゴム・塗りつぶし・スポイト・元に戻す・ガイド表示・前後プレビュー・細腕(Alex)/太腕(Steve)切り替え。PNG書き出しと、名前を付けた保存・呼び出し・削除ができる','スキンは三人称視点のモデル(外側レイヤー: 帽子・上着・袖・ズボンにも対応)と一人称の手の色に反映される','三人称視点(背面・前面)で一人称の腕が画面に残っていた不具合を修正','階段(向きあり・プレイヤーが段差を上れる)とハーフブロックを追加 (板材/丸石/石レンガ/レンガ/砂岩/クォーツ/ネザーレンガ/滑らかな石/苔石)。ハーフブロックの上に同じハーフブロックを置くと元のブロックに戻る。作業台で作れる','装飾ブロックを追加: カーペット(6色)・ランタン・レッドストーンランプ・ひび割れた/苔むした/模様入りの石レンガ・模様入りのクォーツ・クォーツの柱・模様入りの砂岩・銅ブロック・緑青の銅ブロック・プリズマリンレンガ','手抜きだったテクスチャを作り直した: 石・土・砂・砂利・雪・粘土・テラコッタ・ネザーラック・エンドストーン・氷・岩盤・スポンジ・ソウルサンド・草ブロック・磨かれた石類・クォーツ・コンクリート・羊毛・葉・干し草など']],
  ['release v1','2026-11-13',['ゲーム名を「BløckVerse」に統一し、バージョンを release v1 にした','ロケット花火を追加(火薬+板材でクラフト)。エリトラで滑空中に右クリックすると1個消費して一定時間前へ加速する','点火したTNTが重力・衝突・摩擦の影響を受けるようになった(落下・バウンド・斜面で止まる)。爆発で近くの点火済みTNTが吹き飛び、誘爆したTNTは爆風で飛び散る','エリトラ(胸当てスロット)・チェスト・壁松明を追加']],
