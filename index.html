@@ -209,7 +209,7 @@
         .suggest-list {
             flex: 1 1 auto;
             min-height: 0;
-            max-height: min(168px, 24vh); /* 縮めた一覧。下のお知らせ／チャット／統計が隠れない */
+            max-height: min(230px, 32vh); /* 下のメニュー(1行)が隠れない範囲 */
             overflow-y: auto;
             padding: 6px 0;
         }
@@ -438,6 +438,55 @@
         }
 
         .bell-badge[hidden] { display: none; }
+
+
+        /* 🧰 お知らせ／チャット／統計／k-hubとは?／ヘルプページを1行にまとめる */
+        .suggest-menu {
+            flex: none;
+            display: flex;
+            gap: 4px;
+            padding: 6px 8px 8px;
+            border-top: 1px solid #e8eaed;
+            background: #fff;
+        }
+        .suggest-menu .suggest-bell {
+            flex: 1 1 0;
+            min-width: 0;
+            width: auto;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px 4px;
+            border: 0;
+            border-radius: 12px;
+            font-size: 12px;
+            line-height: 1.3;
+            text-align: center;
+            position: relative;
+        }
+        .suggest-menu .suggest-bell > span:not(.material-symbols-outlined):not(.bell-badge) {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .suggest-menu .suggest-bell .material-symbols-outlined { font-size: 22px; }
+        .suggest-menu .bell-badge {
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            margin-left: 6px;
+            min-width: 16px;
+            height: 16px;
+            line-height: 16px;
+            padding: 0 4px;
+            font-size: 10px;
+            border-radius: 8px;
+        }
+        @media (max-width: 480px) {
+            .suggest-menu { gap: 0; padding: 4px 2px 6px; }
+            .suggest-menu .suggest-bell { padding: 8px 2px; font-size: 10.5px; }
+        }
 
         /* お知らせモーダル：左に一覧、右に本文 */
         .bell-modal {
@@ -942,27 +991,29 @@
                 </div>
                 <div class="suggest" id="suggest">
                     <div class="suggest-list" id="suggestList"></div>
-                    <button type="button" class="suggest-bell" id="suggestBell" hidden>
-                        <span class="material-symbols-outlined">notifications</span>
-                        <span>お知らせ</span>
-                        <span class="bell-badge" id="bellBadge" hidden></span>
-                    </button>
-                    <button type="button" class="suggest-bell suggest-chat" id="chatOpen" aria-haspopup="dialog">
-                        <span class="material-symbols-outlined">chat</span>
-                        <span>チャット</span>
-                    </button>
-                    <button type="button" class="suggest-bell suggest-chat" id="statsOpen" aria-haspopup="dialog">
-                        <span class="material-symbols-outlined">bar_chart</span>
-                        <span>統計</span>
-                    </button>
-                    <button type="button" class="suggest-bell suggest-chat" id="helpOpen" aria-haspopup="dialog">
-                        <span class="material-symbols-outlined">help</span>
-                        <span>k-hubとは?</span>
-                    </button>
-                    <button type="button" class="suggest-bell suggest-chat" id="helpPageOpen" onclick="window.location.href='./help/index.html'">
-                        <span class="material-symbols-outlined">menu_book</span>
-                        <span>ヘルプページ</span>
-                    </button>
+                    <div class="suggest-menu">
+                        <button type="button" class="suggest-bell" id="suggestBell" hidden>
+                            <span class="material-symbols-outlined">notifications</span>
+                            <span>お知らせ</span>
+                            <span class="bell-badge" id="bellBadge" hidden></span>
+                        </button>
+                        <button type="button" class="suggest-bell suggest-chat" id="chatOpen" aria-haspopup="dialog">
+                            <span class="material-symbols-outlined">chat</span>
+                            <span>チャット</span>
+                        </button>
+                        <button type="button" class="suggest-bell suggest-chat" id="statsOpen" aria-haspopup="dialog">
+                            <span class="material-symbols-outlined">bar_chart</span>
+                            <span>統計</span>
+                        </button>
+                        <button type="button" class="suggest-bell suggest-chat" id="helpOpen" aria-haspopup="dialog">
+                            <span class="material-symbols-outlined">help</span>
+                            <span>k-hubとは?</span>
+                        </button>
+                        <button type="button" class="suggest-bell suggest-chat" id="helpPageOpen" onclick="window.location.href='./help/index.html'">
+                            <span class="material-symbols-outlined">menu_book</span>
+                            <span>ヘルプページ</span>
+                        </button>
+                    </div>
                 </div>
             </div>
             
