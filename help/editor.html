@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><title>Book Editor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#fff;--side:#f3f4f6;--fg:#1f2937;--mut:#6b7280;--line:#d1d5db;--acc:#2563eb;--sel:#dbeafe}
+@media(prefers-color-scheme:dark){:root{--bg:#111827;--side:#1f2937;--fg:#e5e7eb;--mut:#9ca3af;--line:#374151;--acc:#60a5fa;--sel:#1e3a5f}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,"Hiragino Sans","Yu Gothic",sans-serif}
+header{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header input{flex:1;min-width:120px;font-size:16px;font-weight:bold}
+button,input,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 10px}
+button{cursor:pointer}button.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{flex:1;display:flex;min-height:0}
+#menu{width:260px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column}
+#tools{display:flex;gap:4px;padding:8px;flex-wrap:wrap}
+#list{flex:1;overflow:auto;margin:0;padding:0;list-style:none}
+#list li{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#list li.on{background:var(--sel);font-weight:bold}
+#ed{flex:1;display:flex;flex-direction:column;padding:12px;gap:8px;min-width:0}
+#ct{font-size:18px;font-weight:bold}
+#body{flex:1;resize:none;line-height:1.8}
+#st{color:var(--mut);font-size:12px}
+@media(max-width:640px){#menu{width:120px}}
+</style></head><body>
+<header>
+<input id="bt" placeholder="本のタイトル">
+<button onclick="openF.click()">開く(book.js)</button>
+<button class="p" onclick="save()">book.js を保存</button>
+<input type="file" id="openF" accept=".js" hidden>
+</header>
+<main>
+<aside id="menu">
+<div id="tools"><button onclick="add()">＋追加</button><button onclick="mv(-1)">↑</button><button onclick="mv(1)">↓</button><button onclick="del()">削除</button></div>
+<ul id="list"></ul>
+</aside>
+<section id="ed">
+<input id="ct" placeholder="章のタイトル">
+<textarea id="body" placeholder="ここに本文を書きます。空行で段落が分かれます。"></textarea>
+<div id="st"></div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let book={title:"",chapters:[]},cur=0;
+try{const s=localStorage.getItem("book-draft");if(s)book=JSON.parse(s)}catch(e){}
+if(!book.chapters.length)book.chapters=[{title:"第1章",body:""}];
+function persist(){try{localStorage.setItem("book-draft",JSON.stringify(book))}catch(e){}
+$("st").textContent=`${book.chapters.length}章 / 現在の章 ${$("body").value.length}文字 (自動保存済み)`}
+function render(){
+$("bt").value=book.title;
+$("list").innerHTML="";
+book.chapters.forEach((c,i)=>{const li=document.createElement("li");
+li.textContent=(i+1)+". "+(c.title||"(無題)");li.className=i===cur?"on":"";
+li.onclick=()=>{cur=i;render()};$("list").appendChild(li)});
+$("ct").value=book.chapters[cur].title;$("body").value=book.chapters[cur].body;persist()}
+$("bt").oninput=e=>{book.title=e.target.value;persist()};
+$("ct").oninput=e=>{book.chapters[cur].title=e.target.value;
+$("list").children[cur].textContent=(cur+1)+". "+(e.target.value||"(無題)");persist()};
+$("body").oninput=e=>{book.chapters[cur].body=e.target.value;persist()};
+function add(){book.chapters.splice(cur+1,0,{title:"第"+(book.chapters.length+1)+"章",body:""});cur++;render();$("ct").select()}
+function del(){if(book.chapters.length<2)return alert("最後の1章は削除できません");
+if(!confirm("この章を削除しますか？"))return;book.chapters.splice(cur,1);cur=Math.max(0,cur-1);render()}
+function mv(d){const j=cur+d;if(j<0||j>=book.chapters.length)return;
+[book.chapters[cur],book.chapters[j]]=[book.chapters[j],book.chapters[cur]];cur=j;render()}
+function save(){
+const txt="window.BOOK = "+JSON.stringify(book,null,2)+";\n";
+const a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([txt],{type:"text/javascript"}));
+a.download="book.js";a.click();URL.revokeObjectURL(a.href)}
+$("openF").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+try{const t=await f.text();const j=t.slice(t.indexOf("=")+1).trim().replace(/;$/,"");
+const b=JSON.parse(j);if(!Array.isArray(b.chapters)||!b.chapters.length)throw 0;
+book={title:b.title||"",chapters:b.chapters.map(c=>({title:c.title||"",body:c.body||""}))};cur=0;render()}
+catch(x){alert("book.js を読み込めませんでした")}e.target.value=""};
+render();
+</script></body></html>

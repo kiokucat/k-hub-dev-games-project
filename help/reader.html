@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><title>Book Reader</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#fffdf8;--side:#f3efe6;--fg:#222;--mut:#777;--line:#ddd6c6;--acc:#9a3412;--sel:#fde6c8}
+@media(prefers-color-scheme:dark){:root{--bg:#16181d;--side:#1e2128;--fg:#d8dae0;--mut:#8b90a0;--line:#2e323c;--acc:#fb923c;--sel:#3a2a1a}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{display:flex;background:var(--bg);color:var(--fg);font-family:"Hiragino Mincho ProN","Yu Mincho",serif}
+#menu{width:260px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column}
+#bt{padding:16px 14px;font-weight:bold;font-size:17px;border-bottom:1px solid var(--line)}
+#list{flex:1;overflow:auto;margin:0;padding:0;list-style:none;font-family:system-ui,"Hiragino Sans",sans-serif;font-size:14px}
+#list li{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--line)}
+#list li.on{background:var(--sel);color:var(--acc);font-weight:bold}
+#ctl{padding:8px;border-top:1px solid var(--line);display:flex;gap:4px;font-family:system-ui,sans-serif}
+button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+#rd{flex:1;overflow:auto;padding:32px 24px 80px}
+#page{max-width:40em;margin:0 auto}
+h1{font-size:1.5em;margin:0 0 1.2em;padding-bottom:.4em;border-bottom:2px solid var(--line)}
+p{line-height:2;margin:0 0 1em;text-indent:1em}
+#nav{display:flex;justify-content:space-between;margin-top:40px;font-family:system-ui,sans-serif}
+#empty{text-align:center;margin-top:20vh;color:var(--mut);font-family:system-ui,sans-serif}
+@media(max-width:640px){#menu{width:130px}#rd{padding:20px 14px}}
+</style>
+<script src="book.js" onerror="void 0"></script>
+</head><body>
+<aside id="menu"><div id="bt">Book Reader</div><ul id="list"></ul>
+<div id="ctl"><button onclick="fs(-1)">A−</button><button onclick="fs(1)">A＋</button><button onclick="openF.click()">開く</button>
+<input type="file" id="openF" accept=".js" hidden></div></aside>
+<main id="rd"><div id="page"></div></main>
+<script>
+const $=id=>document.getElementById(id);
+let book=window.BOOK||null,cur=0,size=17;
+try{size=+localStorage.getItem("rd-size")||17}catch(e){}
+$("rd").style.fontSize=size+"px";
+function fs(d){size=Math.min(30,Math.max(12,size+d));$("rd").style.fontSize=size+"px";try{localStorage.setItem("rd-size",size)}catch(e){}}
+function key(){return "rd-pos:"+(book.title||"")}
+function go(i){cur=i;try{localStorage.setItem(key(),i)}catch(e){}show()}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function show(){
+if(!book||!book.chapters||!book.chapters.length){
+$("page").innerHTML='<div id="empty">book.js が見つかりません。<br>左下の「開く」から book.js を選ぶか、<br>このファイルと同じフォルダに book.js を置いてください。</div>';return}
+document.title=book.title||"Book Reader";$("bt").textContent=book.title||"無題の本";
+$("list").innerHTML="";
+book.chapters.forEach((c,i)=>{const li=document.createElement("li");li.textContent=c.title||"(無題)";
+li.className=i===cur?"on":"";li.onclick=()=>go(i);$("list").appendChild(li)});
+const c=book.chapters[cur];
+const ps=(c.body||"").split(/\n\s*\n/).map(t=>t.trim()).filter(Boolean)
+.map(t=>"<p>"+esc(t).replace(/\n/g,"<br>")+"</p>").join("");
+const n=book.chapters.length;
+$("page").innerHTML="<h1>"+esc(c.title||"")+"</h1>"+ps+'<div id="nav"><button '+(cur?"":"disabled")+' onclick="go(cur-1)">← 前の章</button><button '+(cur<n-1?"":"disabled")+' onclick="go(cur+1)">次の章 →</button></div>';
+$("rd").scrollTop=0}
+function load(b){book=b;let p=0;try{p=+localStorage.getItem(key())||0}catch(e){}cur=p<b.chapters.length?p:0;show()}
+$("openF").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+try{const t=await f.text();load(JSON.parse(t.slice(t.indexOf("=")+1).trim().replace(/;$/,"")))}
+catch(x){alert("book.js を読み込めませんでした")}e.target.value=""};
+document.addEventListener("keydown",e=>{if(!book)return;
+if(e.key==="ArrowRight"&&cur<book.chapters.length-1)go(cur+1);
+if(e.key==="ArrowLeft"&&cur>0)go(cur-1)});
+book?load(book):show();
+</script></body></html>

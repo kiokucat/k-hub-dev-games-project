@@ -6,7 +6,7 @@
     <title>Google</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add,apps,arrow_back,auto_awesome,chat,close,mic,notifications,photo_camera,search,send,table_chart_view,timer_10_alt_1,trending_up,visibility,bar_chart&display=block">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add,apps,arrow_back,auto_awesome,chat,close,mic,notifications,photo_camera,search,send,table_chart_view,timer_10_alt_1,trending_up,visibility,bar_chart,help,chevron_right,open_in_new,menu_book&display=block">
     <style>
         body {
             margin: 0;
@@ -829,6 +829,61 @@
         .stats-row .s-num { flex: none; font-size: 22px; color: #202124; font-variant-numeric: tabular-nums; }
         .stats-note { margin: 4px 0 0; font-size: 12px; color: #70757a; }
 
+        /* ❓ ヘルプ：k-hubとは? + ヘルプページ一覧 */
+        .help-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(32,33,36,0.5);
+        }
+        .help-modal.show { display: flex; }
+        .help-dialog {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+            height: min(600px, 88vh);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(32,33,36,0.35);
+            overflow: hidden;
+        }
+        .help-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 24px 24px; }
+        .help-body h3 { margin: 18px 0 8px; font-size: 16px; font-weight: 500; color: #202124; }
+        .help-text { font-size: 14px; line-height: 1.85; color: #3c4043; white-space: pre-wrap; word-break: break-word; }
+        .help-text a { color: #1a73e8; }
+        .help-pages { margin-top: 6px; border-top: 1px solid #e8eaed; }
+        .help-page-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 6px;
+            border: 0;
+            border-bottom: 1px solid #f1f3f4;
+            background: transparent;
+            font: inherit;
+            font-size: 14px;
+            color: #202124;
+            text-align: left;
+            cursor: pointer;
+        }
+        .help-page-row:hover { background: #f8f9fa; }
+        .help-page-row:focus-visible { outline: 2px solid #1a73e8; outline-offset: -2px; }
+        .help-page-row .material-symbols-outlined { margin-left: auto; font-size: 20px; color: #9aa0a6; }
+        .help-none { padding: 10px 0; font-size: 13px; color: #70757a; }
+        .help-view-title { margin: 14px 0 12px; font-size: 20px; font-weight: 500; color: #202124; }
+        .help-back { display: none; margin-left: -12px; }
+        .help-dialog.show-detail .help-back { display: inline-flex; }
+        @media (max-width: 640px) {
+            .help-modal { padding: 0; }
+            .help-dialog { max-width: none; height: 100%; border-radius: 0; }
+        }
+
         @media (max-width: 520px) {
             .hdr-left { display: none; }
             header { justify-content: flex-end; }
@@ -900,6 +955,14 @@
                         <span class="material-symbols-outlined">bar_chart</span>
                         <span>統計</span>
                     </button>
+                    <button type="button" class="suggest-bell suggest-chat" id="helpOpen" aria-haspopup="dialog">
+                        <span class="material-symbols-outlined">help</span>
+                        <span>k-hubとは?</span>
+                    </button>
+                    <button type="button" class="suggest-bell suggest-chat" id="helpPageOpen" onclick="window.location.href='./help/index.html'">
+                        <span class="material-symbols-outlined">menu_book</span>
+                        <span>ヘルプページ</span>
+                    </button>
                 </div>
             </div>
             
@@ -951,6 +1014,22 @@
                 <div class="bell-list" id="bellList"></div>
                 <div class="bell-view" id="bellView"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- ❓ ヘルプモーダル（ヘルプページへのリンクは別ボタン） -->
+    <div class="help-modal" id="helpModal" aria-hidden="true">
+        <div class="help-dialog" id="helpDialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="bell-head">
+                <button type="button" class="bell-icon-btn help-back" id="helpBack" aria-label="戻る">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <h2 id="helpTitle">k-hubとは?</h2>
+                <button type="button" class="bell-icon-btn" id="helpClose" aria-label="閉じる">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="help-body" id="helpBody"></div>
         </div>
     </div>
 
@@ -1759,6 +1838,94 @@
             sc.onload = init;
             sc.onerror = function () {};
             document.head.appendChild(sc);
+        })();
+    </script>
+    <script>
+        // ❓ ヘルプ：「k-hubとは?」の説明
+        (function () {
+            var INTRO = 'k-hub（ケーハブ）は、ブラウザですぐ遊べるゲームやツールを集めたサイトです。\n' +
+                '・ログインや登録は不要で、検索バーからゲームを探して開けます。\n' +
+                '・検索バーを開くと、急上昇のゲームや、各ゲームのアクセス数が見られます。\n' +
+                '・「お知らせ」で更新情報を、「チャット」で他の利用者との会話ができます。\n' +
+                '・「I\'m Feeling Lucky」にカーソルを置くと、ルーレットでランダムにゲームが選ばれます。';
+            var pages = [];
+            var modal = document.getElementById('helpModal');
+            var dialog = document.getElementById('helpDialog');
+            var body = document.getElementById('helpBody');
+            var title = document.getElementById('helpTitle');
+            var backBtn = document.getElementById('helpBack');
+            var openBtn = document.getElementById('helpOpen');
+            var closeBtn = document.getElementById('helpClose');
+
+            function addText(el, text) {
+                text.split(/(https?:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&'()*+,;=%]+)/g).forEach(function (part, i) {
+                    if (i % 2 === 1) {
+                        var a = document.createElement('a');
+                        a.href = part; a.textContent = part; a.target = '_blank'; a.rel = 'noopener noreferrer';
+                        el.appendChild(a);
+                    } else if (part) {
+                        el.appendChild(document.createTextNode(part));
+                    }
+                });
+            }
+
+            function loadPages() {
+                var raw = window.HELP_PAGES;
+                pages = Array.isArray(raw) ? raw.filter(function (x) { return x && x.title; }) : [];
+            }
+
+            function showTop() {
+                dialog.classList.remove('show-detail');
+                title.textContent = 'k-hubとは?';
+                body.innerHTML = '';
+                var intro = document.createElement('div');
+                intro.className = 'help-text';
+                addText(intro, INTRO);
+                body.appendChild(intro);
+
+                body.scrollTop = 0;
+            }
+
+            function showPage(p) {
+                if (p.url) { window.open(p.url, '_blank', 'noopener'); return; }
+                dialog.classList.add('show-detail');
+                title.textContent = 'ヘルプ';
+                body.innerHTML = '';
+                var h = document.createElement('div');
+                h.className = 'help-view-title';
+                h.textContent = p.title;
+                var t = document.createElement('div');
+                t.className = 'help-text';
+                addText(t, String(p.body || ''));
+                body.append(h, t);
+                body.scrollTop = 0;
+                backBtn.focus();
+            }
+
+            function open() {
+                if (typeof closeSuggest === 'function') closeSuggest();
+                loadPages();
+                showTop();
+                modal.classList.add('show');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                closeBtn.focus();
+            }
+            function close() {
+                modal.classList.remove('show');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                openBtn.focus();
+            }
+
+            openBtn.addEventListener('click', open);
+            closeBtn.addEventListener('click', close);
+            backBtn.addEventListener('click', showTop);
+            modal.addEventListener('mousedown', function (e) { if (e.target === modal) close(); });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && modal.classList.contains('show')) close();
+            });
+
         })();
     </script>
     <script>
