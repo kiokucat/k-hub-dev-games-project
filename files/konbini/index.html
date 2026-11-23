@@ -1,0 +1,2851 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>開拓！マイコンビニDX - カイロ風経営シミュレーション</title>
+<style>
+  :root {
+    --bg-outer: #2c2638;
+    --panel-bg: #fffdf5;
+    --panel-inner: #f7f1e1;
+    --border-dark: #3b2d22;
+    --accent-blue: #2596be;
+    --accent-blue-dark: #196b88;
+    --accent-orange: #f58220;
+    --accent-orange-dark: #c96008;
+    --accent-green: #2cb67d;
+    --accent-green-dark: #1e875b;
+    --accent-red: #e5484d;
+    --accent-gold: #f5b700;
+    --text-main: #3b2d22;
+    --text-muted: #7a6a5c;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 10px;
+    background: var(--bg-outer);
+    background-image: radial-gradient(#3f3750 1px, transparent 1px);
+    background-size: 16px 16px;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  /* カイロ風ゲーム枠クラス */
+  .kairo-box {
+    background: var(--panel-bg);
+    border: 3px solid var(--border-dark);
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 2px #ffffff, 0 4px 0 #1a1410;
+  }
+
+  .kairo-btn {
+    font-family: inherit;
+    font-weight: 800;
+    border: 2px solid var(--border-dark);
+    border-radius: 7px;
+    cursor: pointer;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.4), 0 3px 0 var(--border-dark);
+    transition: transform 0.08s, box-shadow 0.08s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .kairo-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), 0 1px 0 var(--border-dark);
+  }
+  .kairo-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(40%);
+  }
+
+  .btn-blue { background: var(--accent-blue); }
+  .btn-orange { background: var(--accent-orange); }
+  .btn-green { background: var(--accent-green); }
+  .btn-red { background: var(--accent-red); }
+  .btn-gold { background: #eab308; color: #3b2d22; text-shadow: none; }
+  .btn-cream { background: #efe6d0; color: var(--text-main); text-shadow: none; }
+  .btn-active { outline: 3px solid var(--accent-gold); background: #d97706 !important; }
+
+  /* 上部HUD */
+  .top-hud {
+    width: 100%;
+    max-width: 1240px;
+    padding: 8px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    background: linear-gradient(180deg, #fffdf5 0%, #f5ebd6 100%);
+  }
+
+  .store-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rank-tag {
+    background: var(--accent-orange);
+    color: white;
+    border: 2px solid var(--border-dark);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-weight: 900;
+    font-size: 13px;
+    box-shadow: 0 2px 0 var(--border-dark);
+  }
+  .store-title {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+  }
+
+  .hud-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .hud-pill {
+    background: #ffffff;
+    border: 2px solid var(--border-dark);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: inset 0 2px 0 #f1e8d3;
+  }
+  .pill-money { color: #15803d; min-width: 115px; }
+  .pill-money.minus { color: var(--accent-red); }
+  .pill-pt { color: #7e22ce; }
+  .pill-rating { color: #b45309; }
+
+  .hud-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  /* ニュースティッカー */
+  .ticker-bar {
+    width: 100%;
+    max-width: 1240px;
+    background: #1e293b;
+    color: #fde047;
+    border: 3px solid var(--border-dark);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 3px 0 #1a1410;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-label {
+    background: #ef4444;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+
+  /* メイン領域 */
+  .main-grid {
+    width: 100%;
+    max-width: 1240px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  /* キャンバスコンテナ */
+  .stage-wrap {
+    flex: 1;
+    min-width: 0;
+    padding: 8px;
+    position: relative;
+    background: #473b31;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--border-dark);
+    border-radius: 6px;
+    display: block;
+    background: #8fd175;
+    cursor: pointer;
+    image-rendering: pixelated;
+  }
+
+  /* 建築モード中バナー */
+  .build-banner {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 41, 59, 0.94);
+    color: white;
+    border: 2px solid var(--accent-gold);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 800;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 20;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  }
+  .build-banner.show { display: flex; }
+
+  /* キャンバス内クイックインスペクター */
+  .inspector-popup {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    width: 270px;
+    padding: 10px;
+    display: none;
+    z-index: 25;
+    background: #fffdf5;
+  }
+  .inspector-popup.show { display: block; }
+
+  /* 右側コマンドパネル */
+  .side-dock {
+    width: 400px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    height: 540px;
+    overflow: hidden;
+  }
+
+  .dock-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: #e2d5b7;
+    border-bottom: 3px solid var(--border-dark);
+    padding: 4px 4px 0 4px;
+    gap: 3px;
+  }
+
+  .dock-tab {
+    background: #cbbba0;
+    border: 2px solid var(--border-dark);
+    border-bottom: none;
+    border-radius: 7px 7px 0 0;
+    padding: 8px 4px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 900;
+    color: #4a3b2c;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .dock-tab.active {
+    background: var(--panel-bg);
+    color: var(--accent-orange-dark);
+    padding-bottom: 10px;
+    margin-bottom: -3px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .dock-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: var(--panel-inner);
+  }
+
+  .tab-pane { display: none; flex-direction: column; gap: 8px; }
+  .tab-pane.active { display: flex; }
+
+  /* サブタブ・見出しリボン */
+  .ribbon-title {
+    background: var(--accent-blue);
+    color: white;
+    border: 2px solid var(--border-dark);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 0 var(--border-dark);
+  }
+
+  /* カードデザイン */
+  .item-card {
+    background: #ffffff;
+    border: 2px solid var(--border-dark);
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: 0 2px 0 #cbbba0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .item-card.locked { background: #f1ece1; border-style: dashed; }
+  .item-card.sale-active { border-color: #ef4444; background: #fff5f5; }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-name {
+    font-weight: 900;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border-dark);
+  }
+  .badge-cheap { background: #dcfce7; color: #166534; }
+  .badge-fair { background: #e0f2fe; color: #075985; }
+  .badge-high { background: #fef3c7; color: #92400e; }
+  .badge-ripoff { background: #fee2e2; color: #991b1b; }
+  .badge-sale { background: #ef4444; color: white; border-color: #991b1b; }
+
+  /* 能力ゲージバー */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .stat-label { width: 46px; color: var(--text-muted); }
+  .bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #e2d5b7;
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; transition: width 0.25s; }
+
+  /* スライダー */
+  .price-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8f4ea;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #d6c8ad;
+  }
+  input[type=range] {
+    flex: 1;
+    accent-color: var(--accent-orange);
+    cursor: pointer;
+  }
+
+  /* モーダル（月次決算 / ランクアップ / コーナー達成） */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 28, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-backdrop.show { display: flex; }
+
+  .modal-window {
+    width: 100%;
+    max-width: 440px;
+    padding: 0;
+    overflow: hidden;
+    animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal-header {
+    background: var(--accent-orange);
+    color: white;
+    padding: 10px 14px;
+    font-size: 16px;
+    font-weight: 900;
+    border-bottom: 3px solid var(--border-dark);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--panel-bg);
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+  .ledger-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 0;
+    border-bottom: 1px dashed #d6c8ad;
+  }
+  .ledger-total {
+    font-size: 16px;
+    font-weight: 900;
+    border-top: 2px solid var(--border-dark);
+    border-bottom: none;
+    padding-top: 8px;
+  }
+
+  /* スクロールバー装飾 */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #e8dec8; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #a8967a; border-radius: 4px; border: 1px solid var(--border-dark); }
+
+  @media (max-width: 1060px) {
+    .main-grid { flex-direction: column; }
+    .side-dock { width: 100%; height: 460px; }
+  }
+
+:root{--bg-outer:#1b2434;--panel-bg:#fbfaf6;--panel-inner:#f1eee6;--border-dark:#26303f;--accent-blue:#2f7fd1;--accent-orange:#ee7b30;--accent-green:#2fa77a;--accent-red:#dc4b52;--text-main:#26303f;--text-muted:#6b7686}
+body{background:radial-gradient(1200px 600px at 20% -10%,#2b3b57,transparent),var(--bg-outer);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif}
+.kairo-box{border:2px solid var(--border-dark);border-radius:16px;box-shadow:0 10px 24px rgba(8,12,22,.35),inset 0 0 0 1px rgba(255,255,255,.7)}
+.kairo-btn{border:0;border-radius:10px;padding:7px 12px;text-shadow:none;box-shadow:0 2px 0 rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+.kairo-btn:hover:not(:disabled){filter:brightness(1.07)}
+.kairo-btn:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+.btn-cream{background:#e9e4d6;color:var(--text-main)}
+.btn-active{outline:2px solid #ffd45c;outline-offset:1px}
+.top-hud{background:linear-gradient(180deg,#fff,#efebe0)}
+.hud-pill{border:0;border-radius:999px;padding:5px 12px;box-shadow:inset 0 0 0 1px #d8d2c2}
+.rank-tag{border:0;border-radius:8px;background:linear-gradient(135deg,#ff9a4d,#ee6a1f);box-shadow:none}
+.ticker-bar{border:0;border-radius:12px;background:#111a28;box-shadow:inset 0 0 0 1px #2c3a52}
+.stage-wrap{background:#2a3446}
+canvas{border:0;border-radius:10px}
+.dock-tabs{grid-template-columns:repeat(5,1fr);background:#dcd6c6;border-bottom:2px solid var(--border-dark);gap:4px;padding:6px 6px 0}
+.dock-tab{border:0;border-radius:10px 10px 0 0;background:#c9c2b0;font-size:10px}
+.dock-tab.active{background:var(--panel-bg);color:#c25a14}
+.item-card{border:1px solid #d6d0c0;border-radius:12px;box-shadow:0 1px 2px rgba(30,30,30,.08)}
+.item-card.eq-owned{border-color:#2fa77a;background:#f2fbf6}
+.ribbon-title{border:0;border-radius:10px;background:linear-gradient(90deg,#2f7fd1,#4a97e6);box-shadow:none}
+.modal-header{background:linear-gradient(90deg,#ee7b30,#f59a4a);text-shadow:none}
+.bar-bg{border:0;background:#e3ddcc}
+</style>
+</head>
+<body>
+
+  <!-- 上部HUD -->
+  <header class="top-hud kairo-box">
+    <div class="store-badge">
+      <span class="rank-tag" id="hud-rank">ランク F</span>
+      <span class="store-title">開拓！マイコンビニDX</span>
+    </div>
+
+    <div class="hud-stats">
+      <div class="hud-pill" id="hud-date">📅 1年目 4月 第1週 ☀️</div>
+      <div class="hud-pill pill-money" id="hud-money">💰 ¥15,000</div>
+      <div class="hud-pill pill-pt" id="hud-pt">✨ 経営P: 30</div>
+      <div class="hud-pill pill-rating" id="hud-rating">♥ 評判 3.2</div>
+      <div class="hud-pill" id="hud-cust">👥 客 0</div>
+    </div>
+
+    <div class="hud-controls">
+      <button class="kairo-btn btn-cream" id="btn-pause" onclick="togglePause()">⏸</button>
+      <button class="kairo-btn btn-blue" id="btn-spd1" onclick="setSpeed(1)">1x</button>
+      <button class="kairo-btn btn-cream" id="btn-spd2" onclick="setSpeed(2)">2x</button>
+      <button class="kairo-btn btn-cream" id="btn-spd3" onclick="setSpeed(3)">3x</button>
+      <button class="kairo-btn btn-cream" id="btn-sound" onclick="toggleSound()">🔊</button>
+      <button class="kairo-btn btn-cream" id="btn-save" onclick="saveGame(true)" title="今すぐセーブ">💾</button>
+      <button class="kairo-btn btn-cream" onclick="resetGame()" title="データを消して最初から">🗑</button>
+    </div>
+  </header>
+
+  <!-- ニュースティッカー -->
+  <div class="ticker-bar">
+    <span class="ticker-label">街の声</span>
+    <span id="ticker-text">新しいコンビニがオープンしました！棚を並べてお客さんを迎えよう！</span>
+  </div>
+
+  <!-- メインエリア -->
+  <div class="main-grid">
+    <!-- 左：店舗マップ -->
+    <div class="stage-wrap kairo-box">
+      <div class="build-banner" id="build-banner">
+        <span id="build-banner-msg">🏗️ 配置したい場所をクリック！</span>
+        <button class="kairo-btn btn-red" style="padding: 3px 10px; font-size: 11px;" onclick="cancelBuildMode()">✖ キャンセル</button>
+      </div>
+
+      <canvas id="gameCanvas" width="840" height="520"></canvas>
+
+      <!-- マップ内アイテムクリック時のクイックカード -->
+      <div class="inspector-popup kairo-box" id="inspector-popup"></div>
+    </div>
+
+    <!-- 右：カイロ風コマンドドック -->
+    <aside class="side-dock kairo-box">
+      <div class="dock-tabs">
+        <button class="dock-tab active" onclick="switchDock('build', this)"><span>🏗️</span><span>建築・配置</span></button>
+        <button class="dock-tab" onclick="switchDock('price', this)"><span>💰</span><span>商品・価格</span></button>
+        <button class="dock-tab" onclick="switchDock('staff', this)"><span>👥</span><span>店員・求人</span></button>
+        <button class="dock-tab" onclick="switchDock('manage', this)"><span>🏆</span><span>経営・図鑑</span></button>
+        <button class="dock-tab" onclick="switchDock('back', this)"><span>🏭</span><span>バック設備</span></button>
+      </div>
+
+      <div class="dock-body">
+        <!-- タブ1: 建築・配置 -->
+        <div class="tab-pane active" id="pane-build"></div>
+        <!-- タブ2: 商品・価格設定 -->
+        <div class="tab-pane" id="pane-price"></div>
+        <!-- タブ3: 店員雇用・育成 -->
+        <div class="tab-pane" id="pane-staff"></div>
+        <!-- タブ4: 経営・コーナー図鑑 -->
+        <div class="tab-pane" id="pane-manage"></div>
+        <div class="tab-pane" id="pane-back"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- モーダル（決算・祝賀など） -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-window kairo-box">
+      <div class="modal-header">
+        <span id="modal-title">📊 今月の決算</span>
+        <button class="kairo-btn btn-cream" style="padding: 2px 8px;" onclick="closeModal()">✖</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+<script>
+// =========================================================
+// マップ・タイル定数 (21列 x 13行, 1タイル=40px)
+// =========================================================
+const TILE = 40;
+const COLS = 21;
+const ROWS = 13;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// 店舗ランク定義
+const RANKS = [
+  { rank: 'F', name: 'できたて個人商店', needRev: 0, maxStaff: 2, bonus: 1.0 },
+  { rank: 'E', name: '街角のコンビニ', needRev: 6000, maxStaff: 3, bonus: 1.05 },
+  { rank: 'D', name: '駅前人気ショップ', needRev: 18000, maxStaff: 4, bonus: 1.12 },
+  { rank: 'C', name: '地域No.1ストア', needRev: 40000, maxStaff: 5, bonus: 1.2 },
+  { rank: 'B', name: '繁盛スーパーマート', needRev: 80000, maxStaff: 6, bonus: 1.3 },
+  { rank: 'A', name: '名物メガコンビニ', needRev: 150000, maxStaff: 7, bonus: 1.45 },
+  { rank: 'S', name: '伝説のカイロマート', needRev: 300000, maxStaff: 8, bonus: 1.65 }
+];
+
+// =========================================================
+// ゲーム状態 (State)
+// =========================================================
+const state = {
+  money: 15000,
+  totalRevenue: 0,
+  points: 35, // 経営ポイント (✨)
+  rating: 3.2,
+  rankIdx: 0,
+  expansionLevel: 0, // 0: maxX=12, 1: maxX=16, 2: maxX=19
+  year: 1,
+  month: 4,
+  week: 1,
+  weekTimer: 0,      // 1週間 = 22秒
+  totalCustomers: 0,
+  monthStats: { rev: 0, cost: 0, wages: 0, extra: 0, served: 0 },
+  speed: 1,
+  paused: false,
+  autoRestock: true,
+  campaignTimer: 0,  // 宣伝キャンペーン残り秒
+  activeDock: 'build',
+  staffSubTab: 'manage', // 'manage' | 'recruit'
+  buildMode: null,   // { type: 'shelf_onigiri', moveId: null }
+  selectedObjId: null,
+  discoveredCombos: new Set(),
+  comboBonusByProd: {}, // productId -> 魅力倍率加算
+  lastTickUI: 0
+};
+
+function getStoreBounds() {
+  // 拡張レベルに応じた右端X座標 (x=1 が左内壁、x=maxX が右内壁の1つ手前)
+  const maxInnerX = state.expansionLevel === 0 ? 11 : (state.expansionLevel === 1 ? 15 : 19);
+  return { minX: 1, maxX: maxInnerX, minY: 1, maxY: 9 };
+}
+
+// =========================================================
+// サウンドエンジン (カイロ風 8bit ピコピコ音)
+// =========================================================
+let audioCtx = null;
+let soundOn = true;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function tone(freq, dur, type = 'square', vol = 0.04, delay = 0) {
+  if (!soundOn) return;
+  initAudio();
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(g);
+  g.connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + dur);
+}
+
+const SFX = {
+  click: () => tone(720, 0.04, 'triangle', 0.04),
+  place: () => { tone(392, 0.06, 'square', 0.04, 0); tone(523, 0.08, 'square', 0.04, 0.05); },
+  cash: () => { tone(987, 0.06, 'square', 0.035, 0); tone(1318, 0.14, 'square', 0.04, 0.05); },
+  heart: () => { tone(880, 0.08, 'sine', 0.05, 0); tone(1174, 0.12, 'sine', 0.05, 0.06); },
+  combo: () => {
+    [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.12, 'square', 0.045, i * 0.07));
+  },
+  fanfare: () => {
+    [523, 523, 523, 659, 587, 659, 784].forEach((f, i) => tone(f, i===6?0.3:0.1, 'square', 0.045, i * 0.09));
+  },
+  angry: () => tone(185, 0.16, 'sawtooth', 0.035),
+  door: () => { tone(659, 0.09, 'triangle', 0.03, 0); tone(523, 0.14, 'triangle', 0.03, 0.08); }
+};
+
+// =========================================================
+// 商品マスター (価格設定・品質・仕入)
+// =========================================================
+const products = {
+  onigiri:  { id:'onigiri',  name:'おにぎり',     icon:'🍙', basePrice:130, cost:60,  price:130, quality:1, stock:24, onSale:false, unlockRank:0, color:'#fef3c7', dot:'#1e293b' },
+  drink:    { id:'drink',    name:'ドリンク',     icon:'🥤', basePrice:150, cost:65,  price:150, quality:1, stock:24, onSale:false, unlockRank:0, color:'#dbeafe', dot:'#0284c7' },
+  snack:    { id:'snack',    name:'お菓子',       icon:'🍪', basePrice:200, cost:90,  price:200, quality:1, stock:20, onSale:false, unlockRank:0, color:'#ffedd5', dot:'#d97706' },
+  bento:    { id:'bento',    name:'特製お弁当',   icon:'🍱', basePrice:520, cost:240, price:520, quality:1, stock:12, onSale:false, unlockRank:0, color:'#fee2e2', dot:'#dc2626' },
+  chicken:  { id:'chicken',  name:'ホットチキン', icon:'🍗', basePrice:250, cost:110, price:250, quality:1, stock:16, onSale:false, unlockRank:1, color:'#fef08a', dot:'#b45309' },
+  ice:      { id:'ice',      name:'アイス',       icon:'🍦', basePrice:280, cost:120, price:280, quality:1, stock:16, onSale:false, unlockRank:1, color:'#e0f2fe', dot:'#06b6d4' },
+  magazine: { id:'magazine', name:'雑誌・マンガ', icon:'📚', basePrice:480, cost:220, price:480, quality:1, stock:12, onSale:false, unlockRank:2, color:'#f3e8ff', dot:'#9333ea' },
+  daily:    { id:'daily',    name:'日用品',       icon:'🧴', basePrice:650, cost:300, price:650, quality:1, stock:10, onSale:false, unlockRank:3, color:'#dcfce7', dot:'#16a34a' },
+  noodle:   { id:'noodle',   name:'カップ麺',     icon:'🍜', basePrice:210, cost:95,  price:210, quality:1, stock:14, onSale:false, unlockRank:1, color:'#ffedd5', dot:'#ea580c' },
+  sandwich: { id:'sandwich', name:'サンドイッチ', icon:'🥪', basePrice:280, cost:125, price:280, quality:1, stock:14, onSale:false, unlockRank:1, color:'#fef9c3', dot:'#ca8a04' },
+  coffee:   { id:'coffee',   name:'いれたてコーヒー', icon:'☕', basePrice:160, cost:70, price:160, quality:1, stock:14, onSale:false, unlockRank:2, color:'#e7d5c3', dot:'#78350f' },
+  oden:     { id:'oden',     name:'おでん',       icon:'🍢', basePrice:300, cost:135, price:300, quality:1, stock:14, onSale:false, unlockRank:2, color:'#fde68a', dot:'#92400e' },
+  salad:    { id:'salad',    name:'サラダ',       icon:'🥗', basePrice:380, cost:170, price:380, quality:1, stock:12, onSale:false, unlockRank:3, color:'#d9f99d', dot:'#15803d' },
+  cake:     { id:'cake',     name:'ケーキ',       icon:'🍰', basePrice:420, cost:190, price:420, quality:1, stock:12, onSale:false, unlockRank:4, color:'#fce7f3', dot:'#db2777' }
+};
+
+function getFairPrice(p) {
+  const qualMult = 1 + (p.quality - 1) * 0.16;
+  const comboMult = 1 + (state.comboBonusByProd[p.id] || 0);
+  return Math.round((p.basePrice * qualMult * comboMult) / 10) * 10;
+}
+
+function getEffectivePrice(p) {
+  return p.onSale ? Math.round((p.price * 0.8) / 10) * 10 : p.price;
+}
+
+function getPriceFeedback(p) {
+  const fair = getFairPrice(p);
+  const eff = getEffectivePrice(p);
+  const ratio = eff / fair;
+  if (ratio <= 0.82) return { label: '🔥 激安！', cls: 'badge-cheap', buyProb: 0.98, sat: 0.12 };
+  if (ratio <= 1.06) return { label: '👍 適正価格', cls: 'badge-fair', buyProb: 0.88, sat: 0.04 };
+  if (ratio <= 1.28) return { label: '💰 高め', cls: 'badge-high', buyProb: 0.62, sat: -0.02 };
+  return { label: '😱 高すぎ！', cls: 'badge-ripoff', buyProb: 0.22, sat: -0.15 };
+}
+
+// =========================================================
+// 建築設備マスター & 専門コーナー定義
+// =========================================================
+const FACILITY_TYPES = {
+  shelf_onigiri:  { type:'shelf_onigiri',  cat:'shelf', prod:'onigiri',  name:'おにぎり棚',   icon:'🍙', cost:500,  maxCap:8,  desc:'定番のおにぎり陳列棚' },
+  shelf_drink:    { type:'shelf_drink',    cat:'shelf', prod:'drink',    name:'飲料クーラー', icon:'🥤', cost:600,  maxCap:10, desc:'冷たい飲み物用冷蔵庫' },
+  shelf_snack:    { type:'shelf_snack',    cat:'shelf', prod:'snack',    name:'お菓子ラック', icon:'🍪', cost:550,  maxCap:8,  desc:'スナック菓子やチョコ' },
+  shelf_bento:    { type:'shelf_bento',    cat:'shelf', prod:'bento',    name:'お弁当ケース', icon:'🍱', cost:900,  maxCap:6,  desc:'高単価の特製お弁当棚' },
+  shelf_chicken:  { type:'shelf_chicken',  cat:'shelf', prod:'chicken',  name:'揚げ物ケース', icon:'🍗', cost:1100, maxCap:8,  desc:'熱々ホットスナック！' },
+  shelf_ice:      { type:'shelf_ice',      cat:'shelf', prod:'ice',      name:'アイス冷凍庫', icon:'🍦', cost:1200, maxCap:8,  desc:'甘いアイスクリーム各種' },
+  shelf_magazine: { type:'shelf_magazine', cat:'shelf', prod:'magazine', name:'雑誌ラック',   icon:'📚', cost:1400, maxCap:6,  desc:'週刊誌や人気コミック' },
+  shelf_daily:    { type:'shelf_daily',    cat:'shelf', prod:'daily',    name:'日用品棚',     icon:'🧴', cost:1800, maxCap:6,  desc:'利益が高い生活雑貨' },
+  register:       { type:'register',       cat:'register', name:'レジカウンター', icon:'💳', cost:1200, desc:'会計を処理します(最大3台)' },
+  eatin:          { type:'eatin',          cat:'eatin',    name:'イートイン席',   icon:'🪑', cost:1000, desc:'客が食事して✨経営P獲得！' },
+  atm:            { type:'atm',            cat:'atm',      name:'マルチATM',      icon:'🏧', cost:2000, desc:'利用料+¥120 & 来客UP！' },
+  plant:          { type:'plant',          cat:'decor',    name:'観葉植物',       icon:'🌿', cost:450,  desc:'隣接棚の魅力+15%UP!' }
+};
+Object.assign(FACILITY_TYPES, {
+  shelf_noodle:   { type:'shelf_noodle',   cat:'shelf', prod:'noodle',   name:'カップ麺棚',     icon:'🍜', cost:1000, maxCap:8, desc:'夜食の定番！' },
+  shelf_sandwich: { type:'shelf_sandwich', cat:'shelf', prod:'sandwich', name:'サンド冷蔵棚',   icon:'🥪', cost:1000, maxCap:8, desc:'朝ごはん・軽食に' },
+  shelf_coffee:   { type:'shelf_coffee',   cat:'shelf', prod:'coffee',   name:'コーヒーマシン台', icon:'☕', cost:1500, maxCap:6, desc:'いれたての一杯' },
+  shelf_oden:     { type:'shelf_oden',     cat:'shelf', prod:'oden',     name:'おでんケース',   icon:'🍢', cost:1600, maxCap:8, desc:'寒い日に大人気' },
+  shelf_salad:    { type:'shelf_salad',    cat:'shelf', prod:'salad',    name:'サラダ冷蔵棚',   icon:'🥗', cost:1900, maxCap:6, desc:'ヘルシー志向のお客さんに' },
+  shelf_cake:     { type:'shelf_cake',     cat:'shelf', prod:'cake',     name:'ケーキ冷蔵棚',   icon:'🍰', cost:2200, maxCap:6, desc:'高単価スイーツ' }
+});
+
+const COMBO_DEFS = [
+  { id:'lunch',   name:'お手軽ランチコーナー',   a:'shelf_onigiri',  b:'shelf_drink',   bonusProd:['onigiri','drink'],   bonus:0.20, desc:'おにぎり×ドリンク：魅力+20%' },
+  { id:'bento_d', name:'大満足お弁当セット',     a:'shelf_bento',    b:'shelf_drink',   bonusProd:['bento','drink'],     bonus:0.20, desc:'お弁当×ドリンク：魅力+20%' },
+  { id:'heavy',   name:'がっつり満腹コーナー',   a:'shelf_bento',    b:'shelf_chicken', bonusProd:['bento','chicken'],   bonus:0.25, desc:'お弁当×チキン：魅力+25%' },
+  { id:'sweets',  name:'スイーツ天国コーナー',   a:'shelf_snack',    b:'shelf_ice',     bonusProd:['snack','ice'],       bonus:0.22, desc:'お菓子×アイス：魅力+22%' },
+  { id:'snack_h', name:'小腹満たしスポット',     a:'shelf_onigiri',  b:'shelf_chicken', bonusProd:['onigiri','chicken'], bonus:0.18, desc:'おにぎり×チキン：魅力+18%' },
+  { id:'read',    name:'立ち読みおやつコーナー', a:'shelf_magazine', b:'shelf_snack',   bonusProd:['magazine','snack'],  bonus:0.18, desc:'雑誌×お菓子：魅力+18%' },
+  { id:'life',    name:'生活サポートコーナー',   a:'shelf_magazine', b:'shelf_daily',   bonusProd:['magazine','daily'],  bonus:0.18, desc:'雑誌×日用品：魅力+18%' },
+  { id:'cafe',    name:'くつろぎカフェ空間',     a:'eatin',          b:'shelf_bento',   bonusProd:['bento'],             bonus:0.25, desc:'イートイン×お弁当：魅力+25%' },
+  { id:'biz',     name:'ビジネス便利コーナー',   a:'atm',            b:'shelf_magazine',bonusProd:['magazine'],          bonus:0.20, desc:'ATM×雑誌：魅力+20%' },
+  { id:'break',   name:'ブレイクタイム',         a:'shelf_coffee',   b:'shelf_cake',    bonusProd:['coffee','cake'],     bonus:0.24, desc:'コーヒー×ケーキ：魅力+24%' },
+  { id:'morning', name:'モーニングセット',       a:'shelf_sandwich', b:'shelf_coffee',  bonusProd:['sandwich','coffee'], bonus:0.22, desc:'サンド×コーヒー：魅力+22%' },
+  { id:'night',   name:'夜食あったかコーナー',   a:'shelf_noodle',   b:'shelf_oden',    bonusProd:['noodle','oden'],     bonus:0.22, desc:'カップ麺×おでん：魅力+22%' },
+  { id:'healthy', name:'ヘルシーランチ',         a:'shelf_salad',    b:'shelf_sandwich',bonusProd:['salad','sandwich'],  bonus:0.20, desc:'サラダ×サンド：魅力+20%' }
+];
+
+// =========================================================
+// バックヤード設備（自家製で仕入原価ダウン）
+// =========================================================
+const BACK_EQUIP = {
+  fryer:  { id:'fryer',  name:'フライヤー',         icon:'🍳', cost:2500, rank:1, rate:0.35, prods:['chicken'],            desc:'ホットチキンを店内で揚げて原価ダウン！' },
+  rice:   { id:'rice',   name:'炊飯・調理ライン',   icon:'🍚', cost:2200, rank:0, rate:0.22, prods:['onigiri','bento'],    desc:'おにぎりとお弁当を自家製に。' },
+  cooler: { id:'cooler', name:'製氷＆冷凍ストッカー', icon:'🧊', cost:2800, rank:1, rate:0.25, prods:['ice','drink','salad'], desc:'冷たい商品をまとめて安く仕込む。' },
+  coffee: { id:'coffee', name:'コーヒーマシン',     icon:'☕', cost:3200, rank:2, rate:0.40, prods:['coffee'],             desc:'豆から抽出。1杯あたりの原価が激減。' },
+  oven:   { id:'oven',   name:'オーブン＆工房',     icon:'🥐', cost:4000, rank:1, rate:0.30, prods:['cake','sandwich'],    desc:'ケーキとサンドを店内で作る。' },
+  oden:   { id:'oden',   name:'おでん鍋＆給湯器',   icon:'🍲', cost:2000, rank:1, rate:0.30, prods:['oden','noodle'],      desc:'お湯とダシを自前で用意。' },
+  stock:  { id:'stock',  name:'大型冷蔵倉庫',       icon:'🏭', cost:6000, rank:2, rate:0.05, prods:'all',                  desc:'全商品をまとめ買いして少しずつ安く。' }
+};
+const equipLv = {};
+function equipRate(e, lv) { return e.rate * (1 + (lv - 1) * 0.25); }
+function equipDiscount(pid) {
+  let d = 0;
+  Object.values(BACK_EQUIP).forEach(e => {
+    const lv = equipLv[e.id] || 0;
+    if (lv > 0 && (e.prods === 'all' || e.prods.includes(pid))) d += equipRate(e, lv);
+  });
+  return Math.min(0.7, d);
+}
+function getUnitCost(p) { return Math.max(1, Math.round(p.cost * (1 - equipDiscount(p.id)))); }
+function equipUpCost(e) { return Math.round(e.cost * [1, 1.2, 1.8][equipLv[e.id] || 0] / 50) * 50; }
+function buyEquip(id) {
+  const e = BACK_EQUIP[id], lv = equipLv[id] || 0;
+  if (!e || lv >= 3 || state.rankIdx < e.rank) return;
+  const c = equipUpCost(e);
+  if (state.money < c) { SFX.angry(); return setTicker('⚠️ 設備の購入費用が足りません！'); }
+  state.money -= c;
+  equipLv[id] = lv + 1;
+  SFX.combo();
+  setTicker(`🏭 ${e.name} Lv.${lv + 1}！対象商品の仕入原価が下がりました！`);
+  renderBackTab();
+  updateHUD();
+}
+function renderBackTab() {
+  const pane = document.getElementById('pane-back');
+  let h = `<div class="ribbon-title"><span>🏭 バックヤード設備</span><span>自家製で原価ダウン！</span></div>
+    <div style="font-size:11px;color:var(--text-muted);">設備を導入すると対象商品の仕入原価が下がります。レベルを上げるほどお得（最大Lv.3）。</div>`;
+  Object.values(BACK_EQUIP).forEach(e => {
+    const lv = equipLv[e.id] || 0, locked = state.rankIdx < e.rank, up = equipUpCost(e);
+    const pct = l => Math.round(equipRate(e, l) * 100);
+    const tgt = e.prods === 'all' ? '全商品' : e.prods.map(id => products[id].icon + products[id].name).join('・');
+    const eff = lv === 0 ? `未導入（導入で原価 -${pct(1)}%）` : `原価 -${pct(lv)}%` + (lv < 3 ? ` → Lv.${lv + 1}で -${pct(lv + 1)}%` : '（最大）');
+    h += `<div class="item-card ${lv > 0 ? 'eq-owned' : ''} ${locked ? 'locked' : ''}">
+      <div class="card-top"><span class="card-name">${e.icon} ${e.name} <span class="badge" style="background:#fef08a;">Lv.${lv}/3</span></span>
+      <span style="font-weight:900;color:#b45309;font-size:12px;">${lv >= 3 ? 'MAX' : '¥' + up.toLocaleString()}</span></div>
+      <div style="font-size:11px;color:var(--text-muted);">${e.desc}<br>対象: ${tgt}</div>
+      <div style="font-size:12px;font-weight:800;color:#15803d;">${eff}</div>
+      ${locked ? `<div style="font-size:11px;font-weight:800;color:#e5484d;">🔒 店舗ランク ${RANKS[e.rank].rank} で開放</div>`
+        : `<button class="kairo-btn btn-green" onclick="buyEquip('${e.id}')" ${lv >= 3 || state.money < up ? 'disabled' : ''}>${lv === 0 ? '🛠 導入する' : lv >= 3 ? '最大レベル' : '⬆ アップグレード'}</button>`}
+    </div>`;
+  });
+  pane.innerHTML = h;
+}
+
+// 配置された設備インスタンス配列
+let placedObjects = [];
+let nextObjUid = 1;
+
+function addPlacedObject(type, gx, gy, initStock = null) {
+  const def = FACILITY_TYPES[type];
+  const obj = {
+    uid: nextObjUid++,
+    type,
+    x: gx,
+    y: gy,
+    stock: def.cat === 'shelf' ? (initStock !== null ? initStock : Math.ceil(def.maxCap * 0.7)) : 0,
+    progress: 0,
+    queue: [],
+    inCombo: false
+  };
+  placedObjects.push(obj);
+  return obj;
+}
+
+// 初期店内レイアウト
+function initDefaultStore() {
+  addPlacedObject('register', 9, 2);
+  addPlacedObject('shelf_onigiri', 4, 5, 6);
+  addPlacedObject('shelf_drink', 7, 5, 8);
+  addPlacedObject('shelf_snack', 4, 7, 6);
+  addPlacedObject('shelf_bento', 7, 7, 4);
+  recalcCombos(true);
+}
+
+// =========================================================
+// コーナー判定ロジック
+// =========================================================
+function recalcCombos(silent = false) {
+  state.comboBonusByProd = {};
+  placedObjects.forEach(o => o.inCombo = false);
+
+  const newlyFound = [];
+
+  for (let i = 0; i < placedObjects.length; i++) {
+    for (let j = i + 1; j < placedObjects.length; j++) {
+      const o1 = placedObjects[i];
+      const o2 = placedObjects[j];
+      const manhattan = Math.abs(o1.x - o2.x) + Math.abs(o1.y - o2.y);
+      if (manhattan !== 1) continue;
+
+      // 観葉植物ボーナス
+      if (o1.type === 'plant' && FACILITY_TYPES[o2.type].cat === 'shelf') {
+        const pid = FACILITY_TYPES[o2.type].prod;
+        state.comboBonusByProd[pid] = (state.comboBonusByProd[pid] || 0) + 0.15;
+        o1.inCombo = true; o2.inCombo = true;
+      } else if (o2.type === 'plant' && FACILITY_TYPES[o1.type].cat === 'shelf') {
+        const pid = FACILITY_TYPES[o1.type].prod;
+        state.comboBonusByProd[pid] = (state.comboBonusByProd[pid] || 0) + 0.15;
+        o1.inCombo = true; o2.inCombo = true;
+      }
+
+      // 専門コーナー判定
+      COMBO_DEFS.forEach(c => {
+        if ((o1.type === c.a && o2.type === c.b) || (o1.type === c.b && o2.type === c.a)) {
+          o1.inCombo = true;
+          o2.inCombo = true;
+          c.bonusProd.forEach(pid => {
+            state.comboBonusByProd[pid] = Math.max(state.comboBonusByProd[pid] || 0, c.bonus);
+          });
+          if (!state.discoveredCombos.has(c.id)) {
+            state.discoveredCombos.add(c.id);
+            newlyFound.push(c);
+          }
+        }
+      });
+    }
+  }
+
+  if (!silent && newlyFound.length > 0) {
+    SFX.combo();
+    state.points += 15 * newlyFound.length;
+    newlyFound.forEach(c => {
+      setTicker(`🎉 新コーナー【${c.name}】を発見！${c.desc} (✨+15P獲得)`);
+      addFloatText(5 * TILE, 4 * TILE, `✨${c.name} 発見!`, '#f59e0b');
+    });
+  }
+}
+
+// =========================================================
+// グリッド & 接続性チェック (BFS)
+// =========================================================
+function isTileBlocked(gx, gy, ignoreUid = null) {
+  const b = getStoreBounds();
+  if (gx < b.minX || gx > b.maxX || gy < b.minY || gy > b.maxY) return true;
+  // バックヤードゾーン (1..2, 1..2) は納品口なので配置不可
+  if (gx <= 2 && gy <= 2) return true;
+  // 自動ドア前 (5..6, 9) は開けておく
+  if ((gx === 5 || gx === 6) && gy === 9) return true;
+
+  return placedObjects.some(o => o.uid !== ignoreUid && o.x === gx && o.y === gy);
+}
+
+function isWalkableForPath(gx, gy, extraBlock = null) {
+  const b = getStoreBounds();
+  // 店外歩道
+  if (gy === 11 || gy === 12) return gx >= 0 && gx < COLS;
+  // 自動ドアマス
+  if ((gx === 5 || gx === 6) && gy === 10) return true;
+  // 店内
+  if (gx < b.minX || gx > b.maxX || gy < b.minY || gy > b.maxY) return false;
+  if (extraBlock && extraBlock.x === gx && extraBlock.y === gy) return false;
+  return !placedObjects.some(o => o.x === gx && o.y === gy);
+}
+
+// 設置テスト時に「入口からバックヤードや既存設備が塞がれないか」検証
+function canPlaceSafely(type, gx, gy, moveUid = null) {
+  if (isTileBlocked(gx, gy, moveUid)) return { ok: false, reason: 'ここには置けません' };
+  const def = FACILITY_TYPES[type];
+  if (def.cat === 'register') {
+    const regCount = placedObjects.filter(o => o.type === 'register' && o.uid !== moveUid).length;
+    if (regCount >= 3) return { ok: false, reason: 'レジは最大3台までです' };
+    if (gy <= 1) return { ok: false, reason: '店員が後ろに立てるよう1マス空けてください' };
+  }
+
+  // BFSで入口(5,9)からバックヤード(2,2)および他の全設備の隣接タイルへ到達できるか確認
+  const extra = { x: gx, y: gy };
+  const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+  const q = [{x: 5, y: 9}];
+  visited[9][5] = true;
+  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+
+  while (q.length > 0) {
+    const cur = q.shift();
+    for (const [dx, dy] of dirs) {
+      const nx = cur.x + dx, ny = cur.y + dy;
+      if (nx >= 1 && nx < COLS-1 && ny >= 1 && ny <= 9 && !visited[ny][nx]) {
+        const blocked = (nx === gx && ny === gy) || placedObjects.some(o => o.uid !== moveUid && o.x === nx && o.y === ny);
+        if (!blocked) {
+          visited[ny][nx] = true;
+          q.push({x: nx, y: ny});
+        }
+      }
+    }
+  }
+
+  if (!visited[2][2]) return { ok: false, reason: 'バックヤードへの通路が塞がります！' };
+
+  // 置く設備自身の周囲にアクセス可能な床があるか
+  const hasAdj = dirs.some(([dx, dy]) => {
+    const nx = gx + dx, ny = gy + dy;
+    return nx >= 1 && nx < COLS-1 && ny >= 1 && ny <= 9 && visited[ny][nx];
+  });
+  if (!hasAdj) return { ok: false, reason: 'お客さんが近づけません！' };
+
+  // レジの場合は上側(y-1)に店員が立てる必要あり
+  if (def.cat === 'register' && !visited[gy - 1][gx]) {
+    return { ok: false, reason: 'レジの後ろ(上側)に店員が立てません' };
+  }
+
+  return { ok: true };
+}
+
+function findPath(sx, sy, gx, gy) {
+  if (sx === gx && sy === gy) return [];
+  const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+  const parent = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+  const q = [{x: sx, y: sy}];
+  visited[sy][sx] = true;
+  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+
+  let found = false;
+  while (q.length > 0) {
+    const c = q.shift();
+    if (c.x === gx && c.y === gy) { found = true; break; }
+    for (const [dx, dy] of dirs) {
+      const nx = c.x + dx, ny = c.y + dy;
+      if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && !visited[ny][nx]) {
+        if (isWalkableForPath(nx, ny) || (nx === gx && ny === gy)) {
+          visited[ny][nx] = true;
+          parent[ny][nx] = c;
+          q.push({x: nx, y: ny});
+        }
+      }
+    }
+  }
+  if (!found) return [];
+  const path = [];
+  let cur = {x: gx, y: gy};
+  while (cur && !(cur.x === sx && cur.y === sy)) {
+    path.unshift({ x: cur.x * TILE + TILE/2, y: cur.y * TILE + TILE/2, tx: cur.x, ty: cur.y });
+    cur = parent[cur.y][cur.x];
+  }
+  return path;
+}
+
+function getAdjacentWalkable(tx, ty) {
+  const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  return dirs.map(([dx,dy]) => ({x: tx+dx, y: ty+dy})).filter(t => isWalkableForPath(t.x, t.y));
+}
+
+// =========================================================
+// 店員雇用・育成システム
+// =========================================================
+const LAST_NAMES = ['佐藤','鈴木','高橋','田中','伊藤','渡辺','山本','中村','小林','加藤','吉田','山田','佐々木','斎藤'];
+const FIRST_NAMES = ['けんた','あおい','れん','みく','ゴロウ','さくら','たくや','ひなた','りく','ゆい','そら','まい'];
+const TRAITS = [
+  { name: '電卓の鬼',     reg: 22, spd: 0,  charm: 0,  wageMod: 1.05, desc: 'レジ処理がとても速い' },
+  { name: '俊足ランナー', reg: 0,  spd: 24, charm: 0,  wageMod: 1.05, desc: '足が速く品出しが得意' },
+  { name: '神スマイル',   reg: 5,  spd: 0,  charm: 25, wageMod: 1.05, desc: '客を喜ばせ✨Pを稼ぐ' },
+  { name: 'コスパ最強',   reg: 5,  spd: 5,  charm: 5,  wageMod: 0.78, desc: '日給が安くて働き者！' },
+  { name: 'ベテラン職人', reg: 15, spd: 15, charm: 10, wageMod: 1.25, desc: '即戦力のバランス型' },
+  { name: '元コンビニ王', reg: 25, spd: 25, charm: 25, wageMod: 1.45, desc: '超レアなスーパー店員！' }
+];
+const STAFF_COLORS = ['#2cb67d','#3b82f6','#f59e0b','#ec4899','#8b5cf6','#14b8a6'];
+
+let hiredStaff = [
+  // 店長は初期スタッフ（日給¥0）
+  {
+    id: 'manager', name: 'あなた (店長)', isManager: true, level: 1, rank: 'B',
+    trait: { name: '店長魂', desc: '給料0円で年中無休！' },
+    regStat: 55, spdStat: 55, charmStat: 60, wage: 0, role: 'all',
+    color: '#2596be', hair: '#1e293b',
+    x: 4.5 * TILE, y: 3.5 * TILE, path: [], carry: null, cooldown: 0, targetObjId: null, bounce: 0
+  }
+];
+
+let candidateList = [];
+let nextStaffId = 1;
+
+function generateCandidate(isRareBoost = false) {
+  const ln = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+  const fn = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+  const isSuper = isRareBoost ? Math.random() < 0.3 : Math.random() < 0.08;
+  const trait = isSuper ? TRAITS[5] : TRAITS[Math.floor(Math.random() * 5)];
+
+  const base = 32 + Math.floor(Math.random() * 28) + state.rankIdx * 4;
+  const regStat = Math.min(99, base + trait.reg + Math.floor(Math.random()*12));
+  const spdStat = Math.min(99, base + trait.spd + Math.floor(Math.random()*12));
+  const charmStat = Math.min(99, base + trait.charm + Math.floor(Math.random()*12));
+
+  const avg = (regStat + spdStat + charmStat) / 3;
+  const hireCost = Math.round((600 + avg * 25) / 50) * 50;
+  const wage = Math.round(((280 + avg * 7) * trait.wageMod) / 10) * 10;
+
+  return {
+    id: 'st_' + (nextStaffId++),
+    name: `${ln} ${fn}`,
+    trait,
+    regStat, spdStat, charmStat,
+    hireCost, wage,
+    color: STAFF_COLORS[Math.floor(Math.random() * STAFF_COLORS.length)],
+    hair: ['#1e293b','#451a03','#78350f','#713f12'][Math.floor(Math.random()*4)]
+  };
+}
+
+function refreshCandidates(free = false) {
+  if (!free) {
+    if (state.money < 200) return setTicker('⚠️ 求人広告費(¥200)が足りません！');
+    state.money -= 200;
+    SFX.click();
+  }
+  candidateList = [generateCandidate(), generateCandidate(), generateCandidate(true)];
+  renderStaffTab();
+  updateHUD();
+}
+
+function hireCandidate(candId) {
+  const maxS = RANKS[state.rankIdx].maxStaff;
+  if (hiredStaff.length - 1 >= maxS) {
+    return setTicker(`⚠️ 現在のランクでは店員は${maxS}人までしか雇えません！`);
+  }
+  const idx = candidateList.findIndex(c => c.id === candId);
+  if (idx === -1) return;
+  const c = candidateList[idx];
+  if (state.money < c.hireCost) return setTicker('⚠️ 採用契約金が足りません！');
+
+  state.money -= c.hireCost;
+  candidateList.splice(idx, 1);
+  candidateList.push(generateCandidate());
+
+  const newStaff = {
+    ...c,
+    isManager: false,
+    level: 1,
+    rank: getStatRank((c.regStat + c.spdStat + c.charmStat)/3),
+    role: 'all', // 'all' | 'cashier' | 'stocker'
+    x: 2.5 * TILE, y: 2.5 * TILE, path: [], carry: null, cooldown: 0, targetObjId: null, bounce: 0
+  };
+  hiredStaff.push(newStaff);
+  SFX.combo();
+  setTicker(`🎉 新人「${newStaff.name}」を採用しました！`);
+  addFloatText(newStaff.x, newStaff.y, 'よろしく!', '#2cb67d');
+  renderStaffTab();
+  updateHUD();
+}
+
+function getStatRank(avg) {
+  if (avg >= 85) return 'S';
+  if (avg >= 72) return 'A';
+  if (avg >= 58) return 'B';
+  return 'C';
+}
+
+function trainStaff(staffId) {
+  const st = hiredStaff.find(s => s.id === staffId);
+  if (!st || st.level >= 10) return;
+  const ptCost = 10 + st.level * 5;
+  if (state.points < ptCost) return setTicker(`⚠️ 経営Pが足りません (必要: ✨${ptCost}P)`);
+
+  state.points -= ptCost;
+  st.level++;
+  st.regStat = Math.min(99, st.regStat + 6);
+  st.spdStat = Math.min(99, st.spdStat + 6);
+  st.charmStat = Math.min(99, st.charmStat + 6);
+  st.rank = getStatRank((st.regStat + st.spdStat + st.charmStat)/3);
+  SFX.heart();
+  addFloatText(st.x, st.y - 20, `Lv.${st.level} UP!`, '#eab308');
+  setTicker(`💪 ${st.name} の研修を実施！能力がアップしました！(ランク ${st.rank})`);
+  renderStaffTab();
+  updateHUD();
+}
+
+function changeStaffRole(staffId, role) {
+  const st = hiredStaff.find(s => s.id === staffId);
+  if (st) {
+    st.role = role;
+    st.path = [];
+    SFX.click();
+    renderStaffTab();
+  }
+}
+
+function fireStaff(staffId) {
+  const idx = hiredStaff.findIndex(s => s.id === staffId);
+  if (idx <= 0) return; // 店長は解雇不可
+  const name = hiredStaff[idx].name;
+  hiredStaff.splice(idx, 1);
+  SFX.click();
+  setTicker(`👋 ${name} さんが退職しました。`);
+  renderStaffTab();
+}
+
+// =========================================================
+// エンティティ (客・ゴミ・フローティングテキスト)
+// =========================================================
+let customers = [];
+let passers = []; // 店の外を歩く通行人
+let dirts = [];
+let floatingTexts = [];
+let spawnTimer = 1.5;
+let passerTimer = 1.0;
+let dirtTimer = 15.0;
+
+function spawnPasser() {
+  const left = Math.random() < 0.5;
+  const y = 11.4 * TILE + Math.random() * 20;
+  passers.push({
+    x: left ? -15 : COLS * TILE + 15,
+    y,
+    dir: left ? 1 : -1,
+    speed: 45 + Math.random() * 25,
+    shirt: ['#ef4444','#3b82f6','#10b981','#f59e0b','#a855f7','#64748b'][Math.floor(Math.random()*6)],
+    hair: ['#1e293b','#451a03','#78350f'][Math.floor(Math.random()*3)],
+    checkedStore: false,
+    bounce: 0
+  });
+}
+
+function tryEnterCustomerFromPasser(p) {
+  // 店内の全商品棚から在庫がある設備をリストアップ
+  const shelves = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'shelf' && o.stock > 0);
+  if (shelves.length === 0) return false;
+
+  const saleShelves = shelves.filter(o => products[FACILITY_TYPES[o.type].prod].onSale);
+  let enterProb = 0.35 + (state.rating - 2.5) * 0.14 + (saleShelves.length * 0.14);
+  if (state.campaignTimer > 0) enterProb += 0.28;
+
+  if (Math.random() > enterProb || customers.length >= 18) return false;
+
+  // 客を生成
+  const wantCount = Math.random() < (0.2 + state.rating * 0.08) ? 3 : (Math.random() < 0.6 ? 2 : 1);
+  const targets = [];
+  for (let i = 0; i < wantCount; i++) {
+    // 特売棚が選ばれやすい
+    const pool = [...shelves, ...saleShelves, ...saleShelves];
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    if (!targets.includes(pick.uid)) targets.push(pick.uid);
+  }
+
+  // たまにATMやイートインにも興味を持つ
+  const atmObj = placedObjects.find(o => o.type === 'atm');
+  const wantsAtm = atmObj && Math.random() < 0.25;
+
+  const doorX = Math.random() < 0.5 ? 5 : 6;
+  const cust = {
+    id: Math.random(),
+    x: p.x, y: p.y,
+    shirt: p.shirt, hair: p.hair,
+    speed: 68 + Math.random() * 22,
+    state: 'entering', // entering -> shopping -> picking -> eatin -> atm -> queuing -> leaving
+    targets,
+    basket: [],
+    currentObjId: null,
+    waitTimer: 0,
+    patience: 24,
+    maxPatience: 24,
+    regUid: null,
+    wantsAtm,
+    emote: null,
+    emoteTimer: 0,
+    bounce: 0,
+    path: [
+      { x: doorX * TILE + TILE/2, y: 11 * TILE + TILE/2, tx: doorX, ty: 11 },
+      { x: doorX * TILE + TILE/2, y: 9 * TILE + TILE/2, tx: doorX, ty: 9 }
+    ]
+  };
+  customers.push(cust);
+  state.totalCustomers++;
+  return true;
+}
+
+// =========================================================
+// ゲームロジック更新ループ
+// =========================================================
+function updateStaffAI(dt) {
+  hiredStaff.forEach(st => {
+    const spd = 72 + st.spdStat * 0.95;
+    if (st.cooldown > 0) st.cooldown -= dt;
+
+    // 移動処理
+    if (st.path.length > 0) {
+      const t = st.path[0];
+      const dx = t.x - st.x, dy = t.y - st.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 4) {
+        st.path.shift();
+      } else {
+        const step = Math.min(d, spd * dt);
+        st.x += (dx / d) * step;
+        st.y += (dy / d) * step;
+        st.bounce += dt * 12;
+      }
+      // 途中でゴミを踏んだら掃除
+      for (let i = dirts.length - 1; i >= 0; i--) {
+        if (Math.hypot(st.x - dirts[i].x, st.y - dirts[i].y) < 22) {
+          dirts.splice(i, 1);
+          state.rating = Math.min(5.0, state.rating + 0.02);
+          addFloatText(st.x, st.y - 18, '✨掃除!', '#2cb67d');
+        }
+      }
+      return;
+    }
+
+    if (st.cooldown > 0) return;
+
+    const stx = Math.floor(st.x / TILE);
+    const sty = Math.floor(st.y / TILE);
+
+    // レジ対応チェック (role !== 'stocker')
+    if (st.role !== 'stocker') {
+      const regs = placedObjects.filter(o => o.type === 'register');
+      // 自分がすでにどこかのレジ後ろに立っていて客が並んでいるなら最優先
+      const myReg = regs.find(r => stx === r.x && sty === r.y - 1);
+      if (myReg && myReg.queue.length > 0) return; // レジ処理は updateRegisters がやる
+
+      // 客が並んでいるのに店員がいないレジを探す
+      const needyReg = regs.find(r => {
+        if (r.queue.length === 0) return false;
+        const someoneThere = hiredStaff.some(other =>
+          other !== st && Math.floor(other.x/TILE) === r.x && Math.floor(other.y/TILE) === r.y - 1
+        );
+        return !someoneThere;
+      });
+
+      if (needyReg) {
+        st.path = findPath(stx, sty, needyReg.x, needyReg.y - 1);
+        return;
+      }
+
+      // レジ専任なら空いているレジの後ろで待機
+      if (st.role === 'cashier') {
+        const freeReg = regs.find(r => !hiredStaff.some(o => o !== st && Math.floor(o.x/TILE) === r.x && Math.floor(o.y/TILE) === r.y - 1));
+        if (freeReg && (stx !== freeReg.x || sty !== freeReg.y - 1)) {
+          st.path = findPath(stx, sty, freeReg.x, freeReg.y - 1);
+        }
+        return;
+      }
+    }
+
+    // 品出し・清掃チェック (role !== 'cashier')
+    if (st.role !== 'cashier') {
+      // 1. 商品を手に持っているなら対象棚へ運ぶ
+      if (st.carry) {
+        const targetShelf = placedObjects.find(o => o.uid === st.targetObjId);
+        if (!targetShelf) { st.carry = null; return; }
+        const def = FACILITY_TYPES[targetShelf.type];
+        const near = Math.abs(stx - targetShelf.x) + Math.abs(sty - targetShelf.y) <= 1;
+        if (near) {
+          const space = def.maxCap - targetShelf.stock;
+          const put = Math.min(space, st.carry.count);
+          targetShelf.stock += put;
+          if (st.carry.count > put) products[st.carry.prod].stock += (st.carry.count - put);
+          st.carry = null;
+          st.cooldown = 0.25;
+          addFloatText(targetShelf.x*TILE + 20, targetShelf.y*TILE, `+${put}${products[def.prod].icon}`, '#2596be');
+        } else {
+          const adjs = getAdjacentWalkable(targetShelf.x, targetShelf.y);
+          if (adjs.length > 0) {
+            const p = findPath(stx, sty, adjs[0].x, adjs[0].y);
+            if (p.length > 0) st.path = p;
+          }
+        }
+        return;
+      }
+
+      // 2. 補充が必要な棚を探す
+      const emptyShelves = placedObjects
+        .filter(o => {
+          const def = FACILITY_TYPES[o.type];
+          if (def.cat !== 'shelf') return false;
+          const prod = products[def.prod];
+          return o.stock < def.maxCap * 0.75 && prod.stock > 0;
+        })
+        .sort((a, b) => (a.stock / FACILITY_TYPES[a.type].maxCap) - (b.stock / FACILITY_TYPES[b.type].maxCap));
+
+      if (emptyShelves.length > 0) {
+        const tgt = emptyShelves[0];
+        const def = FACILITY_TYPES[tgt.type];
+        const prod = products[def.prod];
+        // バックヤード (2,2) 付近にいるならピックする
+        if (Math.abs(stx - 2) <= 1 && Math.abs(sty - 2) <= 1) {
+          const take = Math.min(4, def.maxCap - tgt.stock, prod.stock);
+          if (take > 0) {
+            prod.stock -= take;
+            st.carry = { prod: def.prod, count: take };
+            st.targetObjId = tgt.uid;
+            st.cooldown = 0.25;
+          }
+        } else {
+          st.path = findPath(stx, sty, 2, 2);
+        }
+        return;
+      }
+
+      // 3. ゴミ掃除
+      if (dirts.length > 0) {
+        st.path = findPath(stx, sty, dirts[0].tx, dirts[0].ty);
+        return;
+      }
+    }
+  });
+}
+
+function updateRegisters(dt) {
+  const regs = placedObjects.filter(o => o.type === 'register');
+  regs.forEach(reg => {
+    if (reg.queue.length === 0) { reg.progress = 0; return; }
+    const head = reg.queue[0];
+    const standPos = { x: reg.x * TILE + TILE/2, y: (reg.y + 1) * TILE + TILE/2 };
+    if (Math.hypot(head.x - standPos.x, head.y - standPos.y) > 12) {
+      reg.progress = 0;
+      return;
+    }
+
+    // 後ろ(y-1)に店員が立っているか
+    const worker = hiredStaff.find(st => Math.floor(st.x/TILE) === reg.x && Math.floor(st.y/TILE) === reg.y - 1);
+    if (worker) {
+      const rate = 0.65 + (worker.regStat / 100) * 1.4; // 秒間進捗
+      reg.progress += rate * dt;
+      if (reg.progress >= 1) {
+        reg.progress = 0;
+        finishCustomerCheckout(reg, head, worker);
+      }
+    }
+  });
+}
+
+function finishCustomerCheckout(reg, cust, worker) {
+  reg.queue.shift();
+  // 列を前に詰める
+  reg.queue.forEach((c, idx) => {
+    const ty = Math.min(9, reg.y + 1 + idx);
+    c.path = findPath(Math.floor(c.x/TILE), Math.floor(c.y/TILE), reg.x, ty);
+  });
+
+  let sum = 0;
+  let extraSat = 0;
+  cust.basket.forEach(item => {
+    sum += item.paidPrice;
+    extraSat += item.sat;
+  });
+
+  state.money += sum;
+  state.totalRevenue += sum;
+  state.monthStats.rev += sum;
+  state.monthStats.served++;
+
+  // スタッフの愛想と商品満足度で経営P＆評判ボーナス
+  const ptGain = (Math.random() < (0.35 + worker.charmStat / 200)) ? 2 : 1;
+  state.points += ptGain;
+  state.rating = Math.max(1.0, Math.min(5.0, state.rating + 0.03 + extraSat * 0.15));
+
+  SFX.cash();
+  addFloatText(cust.x, cust.y - 22, `+¥${sum}`, '#15803d');
+  if (ptGain >= 2) addFloatText(worker.x, worker.y - 24, `✨+${ptGain}P`, '#9333ea');
+
+  // イートイン席が空いていれば少し寄ってから帰ることも
+  const eatin = placedObjects.find(o => o.type === 'eatin');
+  if (eatin && Math.random() < 0.35) {
+    const adjs = getAdjacentWalkable(eatin.x, eatin.y);
+    if (adjs.length > 0) {
+      cust.state = 'eatin';
+      cust.currentObjId = eatin.uid;
+      cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), adjs[0].x, adjs[0].y);
+      return;
+    }
+  }
+
+  cust.emote = '❤️';
+  cust.emoteTimer = 1.5;
+  sendCustomerHome(cust);
+}
+
+function sendCustomerHome(cust) {
+  cust.state = 'leaving';
+  const doorX = Math.random() < 0.5 ? 5 : 6;
+  const cx = Math.floor(cust.x/TILE), cy = Math.floor(cust.y/TILE);
+  const path = findPath(cx, cy, doorX, 9);
+  path.push({ x: doorX * TILE + TILE/2, y: 11.5 * TILE });
+  const exitX = Math.random() < 0.5 ? -20 : COLS * TILE + 20;
+  path.push({ x: exitX, y: 11.5 * TILE });
+  cust.path = path;
+}
+
+function assignCustomerNextTarget(cust) {
+  if (cust.targets.length === 0) {
+    if (cust.wantsAtm) {
+      cust.wantsAtm = false;
+      const atm = placedObjects.find(o => o.type === 'atm');
+      if (atm) {
+        const adjs = getAdjacentWalkable(atm.x, atm.y);
+        if (adjs.length > 0) {
+          cust.state = 'atm';
+          cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), adjs[0].x, adjs[0].y);
+          return;
+        }
+      }
+    }
+
+    if (cust.basket.length > 0) {
+      // レジへ
+      const regs = placedObjects.filter(o => o.type === 'register');
+      if (regs.length === 0) {
+        cust.emote = '💢';
+        sendCustomerHome(cust);
+        return;
+      }
+      regs.sort((a, b) => a.queue.length - b.queue.length);
+      const chosen = regs[0];
+      if (chosen.queue.length >= 5) {
+        state.rating = Math.max(1.0, state.rating - 0.1);
+        cust.emote = '💢';
+        addFloatText(cust.x, cust.y - 20, '混みすぎ!', '#e5484d');
+        sendCustomerHome(cust);
+        return;
+      }
+      cust.state = 'queuing';
+      cust.regUid = chosen.uid;
+      chosen.queue.push(cust);
+      const ty = Math.min(9, chosen.y + chosen.queue.length);
+      cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), chosen.x, ty);
+    } else {
+      sendCustomerHome(cust);
+    }
+    return;
+  }
+
+  const nextUid = cust.targets.shift();
+  const obj = placedObjects.find(o => o.uid === nextUid);
+  if (!obj) return assignCustomerNextTarget(cust);
+  const adjs = getAdjacentWalkable(obj.x, obj.y);
+  if (adjs.length === 0) return assignCustomerNextTarget(cust);
+  const adj = adjs[Math.floor(Math.random() * adjs.length)];
+  cust.state = 'shopping';
+  cust.currentObjId = nextUid;
+  cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), adj.x, adj.y);
+}
+
+function updateCustomers(dt) {
+  for (let i = customers.length - 1; i >= 0; i--) {
+    const c = customers[i];
+    if (c.emoteTimer > 0) {
+      c.emoteTimer -= dt;
+      if (c.emoteTimer <= 0) c.emote = null;
+    }
+
+    if (c.path && c.path.length > 0) {
+      const t = c.path[0];
+      const dx = t.x - c.x, dy = t.y - c.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 4) {
+        c.path.shift();
+      } else {
+        const step = Math.min(d, c.speed * dt);
+        c.x += (dx / d) * step;
+        c.y += (dy / d) * step;
+        c.bounce += dt * 10;
+      }
+    } else {
+      if (c.state === 'entering') {
+        SFX.door();
+        assignCustomerNextTarget(c);
+      } else if (c.state === 'shopping') {
+        c.state = 'picking';
+        c.waitTimer = 0.55;
+      } else if (c.state === 'picking') {
+        c.waitTimer -= dt;
+        if (c.waitTimer <= 0) {
+          const obj = placedObjects.find(o => o.uid === c.currentObjId);
+          if (obj && obj.stock > 0) {
+            const p = products[FACILITY_TYPES[obj.type].prod];
+            const fb = getPriceFeedback(p);
+            if (Math.random() <= fb.buyProb) {
+              obj.stock--;
+              c.basket.push({ prod: p.id, paidPrice: getEffectivePrice(p), sat: fb.sat });
+              if (fb.sat >= 0.1) {
+                c.emote = '🎵'; c.emoteTimer = 1.2;
+                addFloatText(c.x, c.y - 20, `${p.icon}安い!`, '#16a34a');
+              } else {
+                addFloatText(c.x, c.y - 20, `${p.icon}`, '#3b2d22');
+              }
+            } else {
+              // 高すぎて買わない！
+              state.rating = Math.max(1.0, state.rating - 0.08);
+              c.emote = '💦'; c.emoteTimer = 1.3;
+              SFX.angry();
+              addFloatText(c.x, c.y - 20, '高いな…', '#e5484d');
+            }
+          } else {
+            state.rating = Math.max(1.0, state.rating - 0.08);
+            c.emote = '💢'; c.emoteTimer = 1.2;
+            addFloatText(c.x, c.y - 20, '品切れ!', '#e5484d');
+          }
+          assignCustomerNextTarget(c);
+        }
+      } else if (c.state === 'atm') {
+        state.money += 120;
+        state.monthStats.extra += 120;
+        state.points += 1;
+        SFX.cash();
+        addFloatText(c.x, c.y - 20, '🏧+¥120', '#2596be');
+        assignCustomerNextTarget(c);
+      } else if (c.state === 'eatin') {
+        if (c.waitTimer <= 0) c.waitTimer = 1.8;
+        c.waitTimer -= dt;
+        if (c.waitTimer <= 0) {
+          state.points += 2;
+          SFX.heart();
+          addFloatText(c.x, c.y - 20, '✨+2P 満腹!', '#f59e0b');
+          c.emote = '❤️'; c.emoteTimer = 1.2;
+          sendCustomerHome(c);
+        }
+      } else if (c.state === 'leaving') {
+        customers.splice(i, 1);
+        continue;
+      }
+    }
+
+    // レジ待ち我慢ゲージ
+    if (c.state === 'queuing') {
+      const reg = placedObjects.find(o => o.uid === c.regUid);
+      const isProcessing = reg && reg.queue[0] === c && reg.progress > 0;
+      if (!isProcessing) {
+        c.patience -= dt;
+        if (c.patience <= 0) {
+          if (reg) {
+            const idx = reg.queue.indexOf(c);
+            if (idx !== -1) reg.queue.splice(idx, 1);
+          }
+          state.rating = Math.max(1.0, state.rating - 0.14);
+          SFX.angry();
+          addFloatText(c.x, c.y - 20, '待ちすぎ💢', '#e5484d');
+          sendCustomerHome(c);
+        }
+      }
+    }
+  }
+}
+
+function updateCalendarAndEconomy(dt) {
+  // 1週間 = 20秒
+  state.weekTimer += dt;
+  if (state.campaignTimer > 0) state.campaignTimer = Math.max(0, state.campaignTimer - dt);
+
+  if (state.weekTimer >= 20) {
+    state.weekTimer -= 20;
+    state.week++;
+
+    // 週ごとの自動仕入れ（棚で減った分の補填としてバックヤードへ仕入れ）
+    if (state.autoRestock) {
+      Object.values(products).forEach(p => {
+        if (p.unlockRank <= state.rankIdx && p.stock < 16) {
+          const buyQty = 15;
+          const cost = getUnitCost(p) * buyQty;
+          if (state.money >= cost) {
+            state.money -= cost;
+            state.monthStats.cost += cost;
+            p.stock += buyQty;
+          }
+        }
+      });
+    }
+
+    if (state.week > 4) {
+      state.week = 1;
+      state.month++;
+      if (state.month > 12) {
+        state.month = 1;
+        state.year++;
+      }
+      onMonthEnd();
+    }
+  }
+
+  // 通行人スポーン
+  passerTimer -= dt;
+  if (passerTimer <= 0) {
+    passerTimer = (state.campaignTimer > 0 ? 1.1 : 2.1) * (0.7 + Math.random()*0.6);
+    if (passers.length < 14) spawnPasser();
+  }
+
+  // 通行人更新 & 入店判定
+  for (let i = passers.length - 1; i >= 0; i--) {
+    const p = passers[i];
+    p.x += p.dir * p.speed * dt;
+    p.bounce += dt * 9;
+    if (!p.checkedStore && Math.abs(p.x - 6 * TILE) < 35) {
+      p.checkedStore = true;
+      if (tryEnterCustomerFromPasser(p)) {
+        passers.splice(i, 1);
+        continue;
+      }
+    }
+    if (p.x < -30 || p.x > COLS * TILE + 30) passers.splice(i, 1);
+  }
+
+  // ゴミ発生
+  dirtTimer -= dt;
+  if (dirtTimer <= 0) {
+    dirtTimer = 15 + Math.random() * 12;
+    const b = getStoreBounds();
+    if (dirts.length < 5 && customers.length > 0) {
+      for (let t = 0; t < 10; t++) {
+        const rx = 2 + Math.floor(Math.random() * (b.maxX - 1));
+        const ry = 2 + Math.floor(Math.random() * 7);
+        if (isWalkableForPath(rx, ry)) {
+          dirts.push({ tx: rx, ty: ry, x: rx*TILE + TILE/2, y: ry*TILE + TILE/2 });
+          break;
+        }
+      }
+    }
+  }
+
+  if (dirts.length >= 3) {
+    state.rating = Math.max(1.0, state.rating - 0.006 * dt * dirts.length);
+  }
+}
+
+function onMonthEnd() {
+  // 月給（週給×4ではなく月次人件費として日給×4を請求して分かりやすく）
+  let wages = 0;
+  hiredStaff.forEach(s => { if (!s.isManager) wages += s.wage * 3; });
+  state.money -= wages;
+  state.monthStats.wages = wages;
+
+  const net = state.monthStats.rev + state.monthStats.extra - state.monthStats.cost - wages;
+
+  // 店舗ランク昇格チェック
+  let promoted = null;
+  if (state.rankIdx < RANKS.length - 1) {
+    const nextR = RANKS[state.rankIdx + 1];
+    if (state.totalRevenue >= nextR.needRev) {
+      state.rankIdx++;
+      promoted = nextR;
+      state.points += 30;
+    }
+  }
+
+  // 月次決算モーダルを表示（ゲームは自動で一時停止）
+  state.paused = true;
+  if (promoted) SFX.fanfare();
+  else SFX.combo();
+
+  const body = `
+    <div class="ledger-row"><span>🛒 商品売上 (${state.monthStats.served}人会計)</span><span style="color:#15803d">+¥${state.monthStats.rev.toLocaleString()}</span></div>
+    <div class="ledger-row"><span>🏧 ATM等その他収入</span><span style="color:#2596be">+¥${state.monthStats.extra.toLocaleString()}</span></div>
+    <div class="ledger-row"><span>📦 商品仕入コスト</span><span style="color:#e5484d">-¥${state.monthStats.cost.toLocaleString()}</span></div>
+    <div class="ledger-row"><span>👥 スタッフ人件費</span><span style="color:#e5484d">-¥${wages.toLocaleString()}</span></div>
+    <div class="ledger-row ledger-total"><span>💰 今月の純利益</span><span style="color:${net>=0?'#15803d':'#e5484d'}">${net>=0?'+':''}¥${net.toLocaleString()}</span></div>
+    ${promoted ? `
+      <div style="background:#fef3c7; border:2px solid #f59e0b; border-radius:8px; padding:10px; text-align:center;">
+        <div style="font-size:15px; font-weight:900; color:#b45309;">🎉 店舗ランクアップ！！</div>
+        <div style="font-size:13px; font-weight:800; margin-top:4px;">ランク ${promoted.rank}【${promoted.name}】になりました！</div>
+        <div style="font-size:11px; color:#78350f; margin-top:3px;">雇用上限: ${promoted.maxStaff}人 / 新商品アンロック & ✨+30P!</div>
+      </div>
+    ` : ''}
+    <button class="kairo-btn btn-orange" style="padding:10px; font-size:14px;" onclick="closeModal()">👍 翌月へ進む！</button>
+  `;
+  openModal(`📊 ${state.month === 1 ? 12 : state.month - 1}月度 営業決算レポート`, body);
+
+  state.monthStats = { rev: 0, cost: 0, wages: 0, extra: 0, served: 0 };
+  updateHUD();
+  refreshAllTabs();
+}
+
+// =========================================================
+// Canvas 描画 (カイロソフト風 ピクセル＆ポップスタイル)
+// =========================================================
+let hoverTile = null;
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const b = getStoreBounds();
+
+  // 1. 地面・店内床の描画
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const px = x * TILE, py = y * TILE;
+
+      if (y === 11 || y === 12) {
+        // 歩道とアスファルト
+        ctx.fillStyle = y === 11 ? '#d6d3d1' : '#64748b';
+        ctx.fillRect(px, py, TILE, TILE);
+        if (y === 11) {
+          ctx.fillStyle = '#a8a29e';
+          ctx.fillRect(px, py + TILE - 4, TILE, 4);
+        }
+        if (y === 12 && x % 2 === 0) {
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillRect(px + 8, py + 18, 22, 4);
+        }
+      } else if (x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY) {
+        // 店内床
+        if (x <= 2 && y <= 2) {
+          // バックヤード納品ゾーン
+          ctx.fillStyle = (x + y) % 2 === 0 ? '#cbd5e1' : '#94a3b8';
+          ctx.fillRect(px, py, TILE, TILE);
+        } else {
+          ctx.fillStyle = (x + y) % 2 === 0 ? '#fffbeb' : '#fef3c7';
+          ctx.fillRect(px, py, TILE, TILE);
+        }
+        ctx.strokeStyle = 'rgba(180, 140, 80, 0.12)';
+        ctx.strokeRect(px, py, TILE, TILE);
+      } else if (x > b.maxX && x < COLS - 1 && y >= 1 && y <= 9) {
+        // 未拡張の空き地（芝生＋木枠風）
+        ctx.fillStyle = (x + y) % 2 === 0 ? '#86efac' : '#4ade80';
+        ctx.fillRect(px, py, TILE, TILE);
+        if ((x + y) % 5 === 0) {
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(px + 12, py + 14, 6, 6);
+        }
+      } else {
+        // 外壁・屋根境界
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(px, py + TILE - 6, TILE, 6);
+      }
+    }
+  }
+
+  // 店舗の赤いストライプひさし（y=0 と y=10 の店舗上部に飾る）
+  for (let x = b.minX - 1; x <= b.maxX + 1; x++) {
+    ctx.fillStyle = x % 2 === 0 ? '#ef4444' : '#ffffff';
+    ctx.fillRect(x * TILE, 0, TILE, 16);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(x * TILE, 16, TILE, 3);
+  }
+  // 店舗看板「MY MART」
+  const signX = ((b.minX + b.maxX) / 2) * TILE;
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(signX - 74, 2, 148, 28);
+  ctx.fillStyle = state.rankIdx >= 3 ? '#facc15' : '#38bdf8';
+  ctx.fillRect(signX - 71, 5, 142, 22);
+  ctx.fillStyle = '#1e293b';
+  ctx.font = '900 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`🏪 MY MART [${RANKS[state.rankIdx].rank}]`, signX, 16);
+
+  // バックヤード表示
+  ctx.fillStyle = '#334155';
+  ctx.font = 'bold 10px sans-serif';
+  ctx.fillText('📦バックヤード', 2 * TILE, 1.4 * TILE);
+  let ei = 0; ctx.font = '16px sans-serif';
+  Object.values(BACK_EQUIP).forEach(e => {
+    if (equipLv[e.id] > 0) { ctx.fillText(e.icon, 56 + (ei % 3) * 24, 78 + Math.floor(ei / 3) * 19); ei++; }
+  });
+
+  // 自動ドア描画 (x=5,6, y=10)
+  ctx.fillStyle = '#bae6fd';
+  ctx.fillRect(5 * TILE, 10 * TILE + 4, 2 * TILE, TILE - 8);
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(5 * TILE, 10 * TILE + 4, 2 * TILE, TILE - 8);
+  ctx.fillStyle = '#0369a1';
+  ctx.font = 'bold 10px sans-serif';
+  ctx.fillText('自動ドア IN/OUT', 6 * TILE, 10 * TILE + TILE/2);
+
+  // 特売中のぼり旗（店外入口横）
+  const hasSale = Object.values(products).some(p => p.onSale);
+  if (hasSale) {
+    const wave = Math.sin(performance.now() / 180) * 3;
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(4 * TILE + 12, 10.1 * TILE, 3, 34);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(4 * TILE + 15, 10.1 * TILE + wave * 0.2, 20, 22);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('特売', 4 * TILE + 25, 10.35 * TILE);
+  }
+
+  // 2. 建築モード時のグリッドとゴーストプレビュー
+  if (state.buildMode) {
+    ctx.strokeStyle = 'rgba(37, 150, 190, 0.35)';
+    ctx.lineWidth = 1;
+    for (let y = b.minY; y <= b.maxY; y++) {
+      for (let x = b.minX; x <= b.maxX; x++) {
+        ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+      }
+    }
+
+    if (hoverTile) {
+      const check = canPlaceSafely(state.buildMode.type, hoverTile.x, hoverTile.y, state.buildMode.moveUid);
+      ctx.fillStyle = check.ok ? 'rgba(44, 182, 125, 0.45)' : 'rgba(229, 72, 77, 0.45)';
+      ctx.fillRect(hoverTile.x * TILE, hoverTile.y * TILE, TILE, TILE);
+      ctx.strokeStyle = check.ok ? '#15803d' : '#991b1b';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(hoverTile.x * TILE + 1, hoverTile.y * TILE + 1, TILE - 2, TILE - 2);
+
+      // コーナー成立予報！
+      if (check.ok) {
+        const previewCombos = getPreviewCombos(state.buildMode.type, hoverTile.x, hoverTile.y, state.buildMode.moveUid);
+        if (previewCombos.length > 0) {
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(hoverTile.x * TILE - 40, hoverTile.y * TILE - 24, 120, 20);
+          ctx.fillStyle = '#fde047';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.fillText(`✨ ${previewCombos[0]}!`, hoverTile.x * TILE + 20, hoverTile.y * TILE - 14);
+        }
+      } else {
+        ctx.fillStyle = '#991b1b';
+        ctx.fillRect(hoverTile.x * TILE - 50, hoverTile.y * TILE - 22, 140, 18);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText(check.reason, hoverTile.x * TILE + 20, hoverTile.y * TILE - 13);
+      }
+    }
+  }
+
+  // 3. ゴミ描画
+  dirts.forEach(d => {
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🗑️', d.x, d.y);
+  });
+
+  // 4. 配置設備（棚・レジ・イートイン・ATM・観葉植物）
+  placedObjects.forEach(obj => {
+    drawFacility(obj);
+  });
+
+  // 5. 通行人（店外）
+  passers.forEach(p => {
+    drawChibi(p.x, p.y, p.shirt, p.hair, p.bounce, false);
+  });
+
+  // 6. 来店客
+  customers.forEach(c => {
+    drawChibi(c.x, c.y, c.shirt, c.hair, c.bounce, false);
+    if (c.state === 'queuing') {
+      const r = Math.max(0, c.patience / c.maxPatience);
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(c.x - 13, c.y - 25, 26, 5);
+      ctx.fillStyle = r > 0.5 ? '#2cb67d' : (r > 0.25 ? '#f59e0b' : '#ef4444');
+      ctx.fillRect(c.x - 12, c.y - 24, 24 * r, 3);
+    } else if (c.emote) {
+      drawEmoteBubble(c.x, c.y - 24, c.emote);
+    }
+  });
+
+  // 7. 店員（店長含む）
+  hiredStaff.forEach(st => {
+    drawChibi(st.x, st.y, st.color, st.hair, st.bounce, true, st.isManager);
+    if (st.carry) {
+      // 商品箱を持っている描画
+      ctx.fillStyle = '#f59e0b';
+      ctx.strokeStyle = '#3b2d22';
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(st.x + 6, st.y - 4, 11, 10);
+      ctx.strokeRect(st.x + 6, st.y - 4, 11, 10);
+    }
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(st.isManager ? '店長' : st.name.split(' ')[1], st.x, st.y - 20);
+  });
+
+  // 8. キャンペーンキラキラ演出
+  if (state.campaignTimer > 0) {
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.9)';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`📣 宣伝キャンペーン中! 残り${Math.ceil(state.campaignTimer)}秒`, 12, canvas.height - 14);
+  }
+
+  // 9. フローティングテキスト
+  floatingTexts.forEach(ft => {
+    ctx.globalAlpha = Math.max(0, ft.life);
+    ctx.font = '900 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillStyle = ft.color;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.globalAlpha = 1;
+  });
+}
+
+function getPreviewCombos(type, gx, gy, ignoreUid) {
+  const hits = [];
+  placedObjects.forEach(o => {
+    if (o.uid === ignoreUid) return;
+    if (Math.abs(o.x - gx) + Math.abs(o.y - gy) !== 1) return;
+    if (type === 'plant' && FACILITY_TYPES[o.type].cat === 'shelf') hits.push('魅力+15%');
+    if (o.type === 'plant' && FACILITY_TYPES[type].cat === 'shelf') hits.push('魅力+15%');
+    COMBO_DEFS.forEach(c => {
+      if ((type === c.a && o.type === c.b) || (type === c.b && o.type === c.a)) {
+        hits.push(c.name);
+      }
+    });
+  });
+  return hits;
+}
+
+function drawFacility(obj) {
+  const px = obj.x * TILE, py = obj.y * TILE;
+  const def = FACILITY_TYPES[obj.type];
+
+  // コーナー成立中のキラキラ枠
+  if (obj.inCombo) {
+    ctx.strokeStyle = (Math.floor(performance.now() / 350) % 2 === 0) ? '#f5b700' : '#fef08a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(px + 1, py + 1, TILE - 2, TILE - 2);
+  }
+
+  // 選択中のハイライト
+  if (state.selectedObjId === obj.uid) {
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(px, py, TILE, TILE);
+  }
+
+  if (def.cat === 'shelf') {
+    const p = products[def.prod];
+    // 2.5D立体棚
+    ctx.fillStyle = '#3b2d22';
+    ctx.fillRect(px + 3, py + 4, TILE - 6, TILE - 6);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(px + 5, py + 6, TILE - 10, TILE - 14);
+    ctx.fillStyle = '#78350f'; // 前面フチ
+    ctx.fillRect(px + 5, py + TILE - 10, TILE - 10, 6);
+
+    // 商品ドット
+    const cols = 4;
+    for (let i = 0; i < obj.stock; i++) {
+      const r = Math.floor(i / cols), col = i % cols;
+      ctx.fillStyle = p.dot;
+      ctx.beginPath();
+      ctx.arc(px + 10 + col * 6.5, py + 12 + r * 8, 2.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 右上にアイコン、右下に特売/在庫バッジ
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(p.icon, px + 3, py + 1);
+
+    if (p.onSale) {
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(px + 20, py + 2, 17, 10);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('特売', px + 28.5, py + 3);
+    }
+
+    ctx.fillStyle = obj.stock === 0 ? '#ef4444' : '#1e293b';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${obj.stock}`, px + TILE - 6, py + TILE - 11);
+
+  } else if (def.cat === 'register') {
+    // レジカウンター
+    ctx.fillStyle = '#3b2d22';
+    ctx.fillRect(px + 2, py + 6, TILE - 4, TILE - 10);
+    ctx.fillStyle = '#2596be';
+    ctx.fillRect(px + 4, py + 8, TILE - 8, TILE - 14);
+    // レジ機本体
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(px + 10, py + 10, 20, 14);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(px + 12, py + 12, 16, 6);
+    // 店員立ち位置ドット枠
+    ctx.strokeStyle = 'rgba(44, 182, 125, 0.7)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px + 8, (obj.y - 1)*TILE + 8, TILE - 16, TILE - 16);
+
+    if (obj.progress > 0) {
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(px + 4, py - 5, TILE - 8, 5);
+      ctx.fillStyle = '#2cb67d';
+      ctx.fillRect(px + 5, py - 4, (TILE - 10) * obj.progress, 3);
+    }
+
+  } else if (def.cat === 'eatin') {
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(px + 6, py + 8, TILE - 12, TILE - 14);
+    ctx.fillStyle = '#fef3c7';
+    ctx.fillRect(px + 8, py + 10, TILE - 16, TILE - 20);
+    ctx.font = '15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('☕', px + TILE/2, py + TILE/2);
+
+  } else if (def.cat === 'atm') {
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(px + 6, py + 4, TILE - 12, TILE - 8);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(px + 9, py + 8, TILE - 18, 14);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ATM', px + TILE/2, py + 30);
+
+  } else if (def.cat === 'decor') {
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(px + 12, py + 24, 16, 12);
+    ctx.fillStyle = '#16a34a';
+    ctx.beginPath();
+    ctx.arc(px + 20, py + 17, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#14532d';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function drawChibi(x, y, bodyColor, hairColor, bounce, isStaff, isManager = false) {
+  const by = Math.abs(Math.sin(bounce || 0)) * -3;
+
+  // 影
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 9, 10, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 体（エプロン・服）
+  ctx.fillStyle = bodyColor;
+  ctx.strokeStyle = '#2d241e';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x - 8, y - 2 + by, 16, 12, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  if (isStaff) {
+    // 店員の白いエプロン紐
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x - 4, y + 1 + by, 8, 7);
+  }
+
+  // 頭
+  ctx.fillStyle = '#fde68a';
+  ctx.beginPath();
+  ctx.arc(x, y - 7 + by, 8.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // 髪 / 帽子
+  ctx.fillStyle = isManager ? '#2596be' : hairColor;
+  ctx.beginPath();
+  ctx.arc(x, y - 9 + by, 8.5, Math.PI, Math.PI * 2);
+  ctx.fill();
+  if (isManager) {
+    // 店長サンバイザーのツバ
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(x - 6, y - 10 + by, 12, 3);
+  }
+
+  // かわいい目
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(x - 4, y - 7 + by, 2, 3);
+  ctx.fillRect(x + 2, y - 7 + by, 2, 3);
+}
+
+function drawEmoteBubble(x, y, emote) {
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#3b2d22';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x - 12, y - 13, 24, 20, 6);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emote, x, y - 3);
+}
+
+// =========================================================
+// Canvas マウス操作（建築＆インスペクター）
+// =========================================================
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const gx = Math.floor(((e.clientX - rect.left) * (canvas.width / rect.width)) / TILE);
+  const gy = Math.floor(((e.clientY - rect.top) * (canvas.height / rect.height)) / TILE);
+  hoverTile = { x: gx, y: gy };
+});
+
+canvas.addEventListener('mouseleave', () => { hoverTile = null; });
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (state.buildMode) cancelBuildMode();
+  closeInspector();
+});
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 2) return;
+  initAudio();
+  const rect = canvas.getBoundingClientRect();
+  const gx = Math.floor(((e.clientX - rect.left) * (canvas.width / rect.width)) / TILE);
+  const gy = Math.floor(((e.clientY - rect.top) * (canvas.height / rect.height)) / TILE);
+
+  if (state.buildMode) {
+    const check = canPlaceSafely(state.buildMode.type, gx, gy, state.buildMode.moveUid);
+    if (!check.ok) {
+      SFX.angry();
+      setTicker(`⚠️ 設置不可: ${check.reason}`);
+      return;
+    }
+
+    if (state.buildMode.moveUid) {
+      // 移動完了
+      const obj = placedObjects.find(o => o.uid === state.buildMode.moveUid);
+      if (obj) {
+        obj.x = gx;
+        obj.y = gy;
+        SFX.place();
+        recalcCombos();
+      }
+      cancelBuildMode();
+    } else {
+      // 新規設置
+      const def = FACILITY_TYPES[state.buildMode.type];
+      if (state.money < def.cost) {
+        SFX.angry();
+        setTicker('⚠️ 資金が足りません！');
+        return;
+      }
+      state.money -= def.cost;
+      addPlacedObject(state.buildMode.type, gx, gy);
+      SFX.place();
+      recalcCombos();
+      setTicker(`🏗️ ${def.name} を設置しました！`);
+      updateHUD();
+      // 連続配置できるように建築モード維持（資金不足なら解除）
+      if (state.money < def.cost) cancelBuildMode();
+    }
+    return;
+  }
+
+  // 通常クリック：設備を選択してクイックメニュー表示
+  const clicked = placedObjects.find(o => o.x === gx && o.y === gy);
+  if (clicked) {
+    SFX.click();
+    openInspector(clicked);
+  } else {
+    closeInspector();
+  }
+});
+
+function startBuildMode(type, moveUid = null) {
+  closeInspector();
+  const def = FACILITY_TYPES[type];
+  if (!moveUid && state.money < def.cost) {
+    SFX.angry();
+    return setTicker(`⚠️ ${def.name} の建築費用(¥${def.cost.toLocaleString()})が足りません！`);
+  }
+  state.buildMode = { type, moveUid };
+  document.getElementById('build-banner').classList.add('show');
+  document.getElementById('build-banner-msg').textContent = moveUid
+    ? `🚚「${def.name}」の新しい場所をクリック！(右クリックで中止)`
+    : `🏗️「${def.name}」(¥${def.cost}) を置く場所をクリック！(連続設置可 / 右クリック終了)`;
+  SFX.click();
+}
+
+function cancelBuildMode() {
+  state.buildMode = null;
+  document.getElementById('build-banner').classList.remove('show');
+}
+
+function openInspector(obj) {
+  state.selectedObjId = obj.uid;
+  const def = FACILITY_TYPES[obj.type];
+  const pop = document.getElementById('inspector-popup');
+
+  let extra = '';
+  if (def.cat === 'shelf') {
+    const p = products[def.prod];
+    extra = `
+      <div style="font-size:12px; margin:4px 0;">
+        陳列数: <b>${obj.stock}/${def.maxCap}</b> | 販売価格: <b>¥${getEffectivePrice(p)}</b>
+      </div>
+      <button class="kairo-btn btn-blue" style="width:100%; margin-bottom:5px;" onclick="switchDockById('price'); closeInspector();">
+        💰 価格・特売を設定する
+      </button>
+    `;
+  } else if (def.cat === 'register') {
+    extra = `<div style="font-size:12px; margin:4px 0;">待機列: <b>${obj.queue.length}人</b></div>`;
+  }
+
+  const canDelete = !(def.cat === 'register' && placedObjects.filter(o => o.type === 'register').length <= 1);
+
+  pop.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <span style="font-weight:900; font-size:14px;">${def.icon} ${def.name}</span>
+      <button class="kairo-btn btn-cream" style="padding:2px 6px;" onclick="closeInspector()">✖</button>
+    </div>
+    <div style="font-size:11px; color:var(--text-muted);">${def.desc}</div>
+    ${obj.inCombo ? '<div style="font-size:11px; color:#b45309; font-weight:800; margin-top:2px;">✨ コーナーボーナス発動中！</div>' : ''}
+    ${extra}
+    <div style="display:flex; gap:6px; margin-top:6px;">
+      <button class="kairo-btn btn-orange" style="flex:1;" onclick="startBuildMode('${obj.type}', ${obj.uid})">🚚 移動</button>
+      <button class="kairo-btn btn-red" style="flex:1;" onclick="removeObject(${obj.uid})" ${!canDelete ? 'disabled title="最後のレジは撤去できません"' : ''}>
+        🗑 撤去(+¥${Math.floor(def.cost*0.5)})
+      </button>
+    </div>
+  `;
+  pop.classList.add('show');
+}
+
+function closeInspector() {
+  state.selectedObjId = null;
+  document.getElementById('inspector-popup').classList.remove('show');
+}
+
+function removeObject(uid) {
+  const idx = placedObjects.findIndex(o => o.uid === uid);
+  if (idx === -1) return;
+  const obj = placedObjects[idx];
+  const def = FACILITY_TYPES[obj.type];
+  if (def.cat === 'shelf' && obj.stock > 0) {
+    products[def.prod].stock += obj.stock;
+  }
+  const refund = Math.floor(def.cost * 0.5);
+  state.money += refund;
+  placedObjects.splice(idx, 1);
+  closeInspector();
+  recalcCombos();
+  SFX.click();
+  setTicker(`🗑 ${def.name} を撤去しました (+¥${refund})`);
+  updateHUD();
+}
+
+// =========================================================
+// コマンドドック UI レンダリング
+// =========================================================
+function switchDock(tabId, btnEl) {
+  state.activeDock = tabId;
+  document.querySelectorAll('.dock-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btnEl.classList.add('active');
+  document.getElementById('pane-' + tabId).classList.add('active');
+  SFX.click();
+  refreshAllTabs();
+}
+
+function switchDockById(tabId) {
+  const tabs = document.querySelectorAll('.dock-tab');
+  const map = { build: 0, price: 1, staff: 2, manage: 3, back: 4 };
+  switchDock(tabId, tabs[map[tabId]]);
+}
+
+function refreshAllTabs() {
+  if (state.activeDock === 'build') renderBuildTab();
+  else if (state.activeDock === 'price') renderPriceTab();
+  else if (state.activeDock === 'staff') renderStaffTab();
+  else if (state.activeDock === 'manage') renderManageTab();
+  else if (state.activeDock === 'back') renderBackTab();
+}
+
+function renderBuildTab() {
+  const pane = document.getElementById('pane-build');
+  let html = `<div class="ribbon-title"><span>🏗️ 店内設備・商品棚の設置</span><span>移動もOK!</span></div>`;
+  Object.values(FACILITY_TYPES).forEach(def => {
+    const locked = def.cat === 'shelf' && products[def.prod].unlockRank > state.rankIdx;
+    const reqRank = def.cat === 'shelf' ? RANKS[products[def.prod].unlockRank].rank : '';
+    html += `
+      <div class="item-card ${locked ? 'locked' : ''}">
+        <div class="card-top">
+          <span class="card-name">${def.icon} ${def.name}</span>
+          <span style="font-weight:900; color:#b45309; font-size:12px;">¥${def.cost.toLocaleString()}</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">${def.desc}</div>
+        ${locked
+          ? `<div style="font-size:11px; font-weight:800; color:#e5484d;">🔒 店舗ランク ${reqRank} で開放</div>`
+          : `<button class="kairo-btn btn-orange" onclick="startBuildMode('${def.type}')" ${state.money < def.cost ? 'disabled' : ''}>📍 設置場所を選ぶ</button>`
+        }
+      </div>
+    `;
+  });
+  pane.innerHTML = html;
+}
+
+// 価格設定タブ（スライダーのドラッグを邪魔しないよう、構築時と数値更新を分離！）
+function renderPriceTab() {
+  const pane = document.getElementById('pane-price');
+  let html = `
+    <div class="ribbon-title">
+      <span>💰 商品価格・特売・品質開発</span>
+      <label style="font-size:11px; cursor:pointer; display:flex; align-items:center; gap:3px;">
+        <input type="checkbox" ${state.autoRestock ? 'checked' : ''} onchange="state.autoRestock=this.checked;"> 自動仕入
+      </label>
+    </div>
+  `;
+
+  Object.values(products).forEach(p => {
+    if (p.unlockRank > state.rankIdx) {
+      html += `
+        <div class="item-card locked">
+          <div class="card-top">
+            <span class="card-name">${p.icon} ${p.name}</span>
+            <span class="badge">ランク ${RANKS[p.unlockRank].rank} 開放</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const fb = getPriceFeedback(p);
+    const eff = getEffectivePrice(p);
+    const profit = eff - getUnitCost(p);
+    const minP = Math.round((p.basePrice * 0.5)/10)*10;
+    const maxP = Math.round((p.basePrice * (1.7 + p.quality * 0.15))/10)*10;
+    const qualCost = 10 + p.quality * 10;
+
+    html += `
+      <div class="item-card ${p.onSale ? 'sale-active' : ''}" id="pcard-${p.id}">
+        <div class="card-top">
+          <span class="card-name">${p.icon} ${p.name} <span style="font-size:11px; color:#7e22ce;">★質Lv.${p.quality}</span></span>
+          <div style="display:flex; gap:4px; align-items:center;">
+            ${p.onSale ? '<span class="badge badge-sale">特売20%OFF</span>' : ''}
+            <span class="badge ${fb.cls}" id="pbadge-${p.id}">${fb.label}</span>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700;">
+          <span>売価: <b style="font-size:13px; color:#1e293b;" id="peff-${p.id}">¥${eff}</b> (原価¥${getUnitCost(p)}${equipDiscount(p.id) > 0 ? ' 🏭' : ''})</span>
+          <span id="pprof-${p.id}" style="color:${profit>=0?'#15803d':'#e5484d'}">粗利 ${profit>=0?'+':''}¥${profit}</span>
+          <span id="pstock-${p.id}">在庫: ${p.stock}</span>
+        </div>
+
+        <div class="price-slider-row">
+          <button class="kairo-btn btn-cream" style="padding:2px 7px;" onclick="adjustPrice('${p.id}', -10)">-</button>
+          <input type="range" min="${minP}" max="${maxP}" step="10" value="${p.price}"
+            oninput="setPrice('${p.id}', Number(this.value))">
+          <button class="kairo-btn btn-cream" style="padding:2px 7px;" onclick="adjustPrice('${p.id}', 10)">+</button>
+        </div>
+
+        <div style="display:flex; gap:5px;">
+          <button class="kairo-btn ${p.onSale ? 'btn-red' : 'btn-cream'}" style="flex:1;" onclick="toggleSale('${p.id}')">
+            🏷️ ${p.onSale ? '特売中(解除)' : '特売にする'}
+          </button>
+          <button class="kairo-btn btn-blue" style="flex:1;" onclick="upgradeQuality('${p.id}')" ${p.quality >= 5 || state.points < qualCost ? 'disabled' : ''}>
+            ${p.quality >= 5 ? '品質MAX' : `✨品質UP (${qualCost}P)`}
+          </button>
+          <button class="kairo-btn btn-green" onclick="bulkBuy('${p.id}')" title="30個を10%OFFの卸値で仕入れます！">
+            📦30個仕入
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  pane.innerHTML = html;
+}
+
+function updatePriceCardInline(pid) {
+  const p = products[pid];
+  const fb = getPriceFeedback(p);
+  const eff = getEffectivePrice(p);
+  const profit = eff - getUnitCost(p);
+
+  const badge = document.getElementById('pbadge-' + pid);
+  const effEl = document.getElementById('peff-' + pid);
+  const profEl = document.getElementById('pprof-' + pid);
+  if (badge) {
+    badge.className = 'badge ' + fb.cls;
+    badge.textContent = fb.label;
+  }
+  if (effEl) effEl.textContent = '¥' + eff;
+  if (profEl) {
+    profEl.textContent = `粗利 ${profit>=0?'+':''}¥${profit}`;
+    profEl.style.color = profit >= 0 ? '#15803d' : '#e5484d';
+  }
+}
+
+function setPrice(pid, val) {
+  products[pid].price = val;
+  updatePriceCardInline(pid);
+}
+
+function adjustPrice(pid, delta) {
+  const p = products[pid];
+  const minP = Math.round((p.basePrice * 0.5)/10)*10;
+  const maxP = Math.round((p.basePrice * (1.7 + p.quality * 0.15))/10)*10;
+  p.price = Math.max(minP, Math.min(maxP, p.price + delta));
+  SFX.click();
+  renderPriceTab();
+}
+
+function toggleSale(pid) {
+  const p = products[pid];
+  if (!p.onSale) {
+    const activeSales = Object.values(products).filter(x => x.onSale).length;
+    if (activeSales >= 2) {
+      SFX.angry();
+      return setTicker('⚠️ 特売セールは同時に2商品まで指定できます！');
+    }
+    p.onSale = true;
+    setTicker(`📣 「${p.name}」の特売セールを開始！のぼり旗を立てました！`);
+  } else {
+    p.onSale = false;
+  }
+  SFX.place();
+  renderPriceTab();
+}
+
+function upgradeQuality(pid) {
+  const p = products[pid];
+  const cost = 10 + p.quality * 10;
+  if (state.points < cost || p.quality >= 5) return;
+  state.points -= cost;
+  p.quality++;
+  SFX.heart();
+  setTicker(`✨ 「${p.name}」の品質が Lv.${p.quality} に上昇！高価格でも売れやすくなりました！`);
+  renderPriceTab();
+  updateHUD();
+}
+
+function bulkBuy(pid) {
+  const p = products[pid];
+  const cost = Math.round(getUnitCost(p) * 30 * 0.9); // 10%OFF卸売！
+  if (state.money < cost) {
+    SFX.angry();
+    return setTicker(`⚠️ まとめ買い費用(¥${cost.toLocaleString()})が足りません！`);
+  }
+  state.money -= cost;
+  state.monthStats.cost += cost;
+  p.stock += 30;
+  SFX.cash();
+  setTicker(`🚚 ${p.name}を卸値10%OFFで30個仕入れました！(-¥${cost.toLocaleString()})`);
+  renderPriceTab();
+  updateHUD();
+}
+
+function renderStaffTab() {
+  const pane = document.getElementById('pane-staff');
+  const maxS = RANKS[state.rankIdx].maxStaff;
+  const currentS = hiredStaff.length - 1;
+
+  let html = `
+    <div style="display:flex; gap:6px;">
+      <button class="kairo-btn ${state.staffSubTab==='manage'?'btn-orange':'btn-cream'}" style="flex:1;" onclick="state.staffSubTab='manage'; renderStaffTab();">
+        📋 店員管理 (${currentS}/${maxS}人)
+      </button>
+      <button class="kairo-btn ${state.staffSubTab==='recruit'?'btn-blue':'btn-cream'}" style="flex:1;" onclick="state.staffSubTab='recruit'; renderStaffTab();">
+        📢 求人募集 (${candidateList.length}名)
+      </button>
+    </div>
+  `;
+
+  if (state.staffSubTab === 'manage') {
+    hiredStaff.forEach(st => {
+      const ptCost = 10 + st.level * 5;
+      html += `
+        <div class="item-card">
+          <div class="card-top">
+            <span class="card-name">
+              <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${st.color};border:1px solid #000;"></span>
+              ${st.name}
+              <span class="badge" style="background:#fef08a;">Lv.${st.level} [${st.rank}]</span>
+            </span>
+            <span style="font-size:11px; font-weight:800; color:var(--text-muted);">${st.isManager ? '無休¥0' : `月給¥${(st.wage*3).toLocaleString()}`}</span>
+          </div>
+          <div style="font-size:11px; color:#b45309; font-weight:700;">★特性: ${st.trait.name} (${st.trait.desc})</div>
+
+          ${statBar('レジ', st.regStat, '#2596be')}
+          ${statBar('品出し', st.spdStat, '#2cb67d')}
+          ${statBar('接客', st.charmStat, '#f58220')}
+
+          <div style="display:flex; gap:4px; margin-top:3px;">
+            <button class="kairo-btn ${st.role==='all'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','all')">⚖️万能</button>
+            <button class="kairo-btn ${st.role==='cashier'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','cashier')">💳レジ</button>
+            <button class="kairo-btn ${st.role==='stocker'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','stocker')">📦品出</button>
+          </div>
+          <div style="display:flex; gap:5px; margin-top:2px;">
+            <button class="kairo-btn btn-blue" style="flex:2;" onclick="trainStaff('${st.id}')" ${st.level>=10 || state.points<ptCost ? 'disabled' : ''}>
+              ${st.level>=10 ? 'Lv MAX' : `💪 研修して強化 (✨${ptCost}P)`}
+            </button>
+            ${!st.isManager ? `<button class="kairo-btn btn-red" onclick="fireStaff('${st.id}')">解雇</button>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    html += `
+      <div class="ribbon-title">
+        <span>📢 ハローワーク応募者リスト</span>
+        <button class="kairo-btn btn-gold" style="padding:2px 8px; font-size:11px;" onclick="refreshCandidates(false)">🔄 広告更新 (¥200)</button>
+      </div>
+    `;
+    candidateList.forEach(c => {
+      const avg = (c.regStat + c.spdStat + c.charmStat) / 3;
+      const rnk = getStatRank(avg);
+      html += `
+        <div class="item-card">
+          <div class="card-top">
+            <span class="card-name">👤 ${c.name} <span class="badge" style="background:${rnk==='S'?'#fde047':'#e0f2fe'};">評価 ${rnk}</span></span>
+            <span style="font-size:11px; font-weight:800;">月給¥${(c.wage*3).toLocaleString()}</span>
+          </div>
+          <div style="font-size:11px; color:#b45309; font-weight:700;">★${c.trait.name}: ${c.trait.desc}</div>
+          ${statBar('レジ', c.regStat, '#2596be')}
+          ${statBar('品出し', c.spdStat, '#2cb67d')}
+          ${statBar('接客', c.charmStat, '#f58220')}
+          <button class="kairo-btn btn-green" onclick="hireCandidate('${c.id}')" ${state.money < c.hireCost || currentS >= maxS ? 'disabled' : ''}>
+            ${currentS >= maxS ? `定員上限 (${maxS}人)` : `🤝 採用する (契約金 ¥${c.hireCost.toLocaleString()})`}
+          </button>
+        </div>
+      `;
+    });
+  }
+  pane.innerHTML = html;
+}
+
+function statBar(label, val, color) {
+  return `
+    <div class="stat-row">
+      <span class="stat-label">${label} ${val}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${val}%; background:${color};"></div></div>
+    </div>
+  `;
+}
+
+function renderManageTab() {
+  const pane = document.getElementById('pane-manage');
+  const nextRank = RANKS[state.rankIdx + 1];
+  const expCost = state.expansionLevel === 0 ? 6000 : 15000;
+  const expReqRank = state.expansionLevel === 0 ? 1 : 3;
+
+  let html = `
+    <div class="ribbon-title"><span>🏆 店舗成長＆キャンペーン</span></div>
+    <div class="item-card">
+      <div class="card-top">
+        <span class="card-name">👑 現在ランク: ${RANKS[state.rankIdx].rank} (${RANKS[state.rankIdx].name})</span>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted);">
+        累計売上: <b>¥${state.totalRevenue.toLocaleString()}</b>
+        ${nextRank ? ` / 次ランク(${nextRank.rank})目標: ¥${nextRank.needRev.toLocaleString()}` : ' 🎉最高ランク到達！'}
+      </div>
+      ${nextRank ? `
+        <div class="bar-bg" style="height:10px;">
+          <div class="bar-fill" style="width:${Math.min(100, (state.totalRevenue / nextRank.needRev)*100)}%; background:#f5b700;"></div>
+        </div>
+      ` : ''}
+    </div>
+
+    <div class="item-card">
+      <div class="card-top">
+        <span class="card-name">🚧 店舗フロア拡張 (現在Lv.${state.expansionLevel}/2)</span>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted);">店舗を右側に広げて、より多くの棚やイートインを置けます！</div>
+      ${state.expansionLevel < 2
+        ? `<button class="kairo-btn btn-orange" onclick="expandStore()" ${(state.money < expCost || state.rankIdx < expReqRank) ? 'disabled' : ''}>
+             ${state.rankIdx < expReqRank ? `🔒 ランク${RANKS[expReqRank].rank}で開放` : `🔨 拡張工事 (¥${expCost.toLocaleString()})`}
+           </button>`
+        : `<div style="font-size:12px; font-weight:800; color:#15803d;">✨ 最大サイズに拡張済み！</div>`
+      }
+    </div>
+
+    <div class="item-card">
+      <div class="card-top">
+        <span class="card-name">📣 駅前チラシ配りキャンペーン</span>
+        <span style="font-size:11px; font-weight:800;">✨25P</span>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted);">30秒間、通行人と入店率が大幅アップします！</div>
+      <button class="kairo-btn btn-blue" onclick="startCampaign()" ${state.points < 25 || state.campaignTimer > 0 ? 'disabled' : ''}>
+        ${state.campaignTimer > 0 ? `実施中 (残り${Math.ceil(state.campaignTimer)}秒)` : '📣 キャンペーン実施 (✨25P)'}
+      </button>
+    </div>
+
+    <div class="ribbon-title"><span>✨ 専門コーナー図鑑 (${state.discoveredCombos.size}/${COMBO_DEFS.length})</span></div>
+  `;
+
+  COMBO_DEFS.forEach(c => {
+    const found = state.discoveredCombos.has(c.id);
+    html += `
+      <div class="item-card ${found ? '' : 'locked'}" style="padding:6px 10px;">
+        <div class="card-top">
+          <span class="card-name" style="font-size:12px;">${found ? '🌟 ' + c.name : '❓ ？？？？コーナー'}</span>
+          <span class="badge" style="background:${found ? '#fef08a' : '#e2e8f0'}">${found ? '発見済' : '未発見'}</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">${found ? c.desc : `${FACILITY_TYPES[c.a].icon} と ${FACILITY_TYPES[c.b].icon} を隣り合わせに配置しよう`}</div>
+      </div>
+    `;
+  });
+
+  pane.innerHTML = html;
+}
+
+function expandStore() {
+  const cost = state.expansionLevel === 0 ? 6000 : 15000;
+  if (state.money < cost || state.expansionLevel >= 2) return;
+  state.money -= cost;
+  state.expansionLevel++;
+  SFX.fanfare();
+  setTicker('🎉 店舗の増築工事が完了！フロアが広くなりました！');
+  updateHUD();
+  renderManageTab();
+}
+
+function startCampaign() {
+  if (state.points < 25 || state.campaignTimer > 0) return;
+  state.points -= 25;
+  state.campaignTimer = 30;
+  SFX.combo();
+  setTicker('📣 駅前チラシ配りキャンペーン開始！お客さんが続々来店します！');
+  updateHUD();
+  renderManageTab();
+}
+
+// =========================================================
+// HUD・ティッカー・モーダル・制御
+// =========================================================
+function updateHUD() {
+  const r = RANKS[state.rankIdx];
+  document.getElementById('hud-rank').textContent = `ランク ${r.rank}`;
+  const timeIcon = state.weekTimer < 10 ? '☀️' : (state.weekTimer < 16 ? '🌆' : '🌙');
+  document.getElementById('hud-date').textContent = `📅 ${state.year}年目 ${state.month}月 第${state.week}週 ${timeIcon}`;
+
+  const mEl = document.getElementById('hud-money');
+  mEl.textContent = `💰 ¥${state.money.toLocaleString()}`;
+  mEl.className = 'hud-pill pill-money' + (state.money < 0 ? ' minus' : '');
+
+  document.getElementById('hud-pt').textContent = `✨ 経営P: ${state.points}`;
+  document.getElementById('hud-rating').textContent = `♥ 評判 ${state.rating.toFixed(1)}`;
+  document.getElementById('hud-cust').textContent = `👥 客 ${state.totalCustomers}`;
+
+  document.getElementById('btn-pause').className = 'kairo-btn ' + (state.paused ? 'btn-orange' : 'btn-cream');
+  document.getElementById('btn-pause').textContent = state.paused ? '▶' : '⏸';
+  [1, 2, 3].forEach(s => {
+    document.getElementById('btn-spd' + s).className = 'kairo-btn ' + (!state.paused && state.speed === s ? 'btn-blue' : 'btn-cream');
+  });
+  document.getElementById('btn-sound').textContent = soundOn ? '🔊' : '🔇';
+}
+
+function setTicker(msg) {
+  document.getElementById('ticker-text').textContent = msg;
+}
+
+function addFloatText(x, y, text, color = '#15803d') {
+  floatingTexts.push({ x, y, text, color, life: 1.25 });
+}
+
+function openModal(title, html) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-backdrop').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('show');
+  state.paused = false;
+  updateHUD();
+}
+
+function togglePause() { state.paused = !state.paused; SFX.click(); updateHUD(); }
+function setSpeed(s) { state.speed = s; state.paused = false; SFX.click(); updateHUD(); }
+function toggleSound() { soundOn = !soundOn; if (soundOn) initAudio(); updateHUD(); }
+
+// =========================================================
+// メインゲームループ
+// =========================================================
+let lastT = performance.now();
+let uiTimer = 0;
+
+function gameLoop(now) {
+  const rawDt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+
+  if (!state.paused) {
+    const dt = rawDt * state.speed;
+    updateStaffAI(dt);
+    updateCustomers(dt);
+    updateRegisters(dt);
+    updateCalendarAndEconomy(dt);
+
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      floatingTexts[i].y -= 22 * dt;
+      floatingTexts[i].life -= dt;
+      if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+    }
+
+    uiTimer += rawDt;
+    if (uiTimer >= 0.35) {
+      uiTimer = 0;
+      updateHUD();
+      // 価格タブはスライダー操作を阻害しないよう在庫数とラベルのみ更新、他タブも必要な時だけ更新
+      if (state.activeDock === 'price') {
+        Object.values(products).forEach(p => {
+          const el = document.getElementById('pstock-' + p.id);
+          if (el) el.textContent = `在庫: ${p.stock}`;
+        });
+      } else {
+        const sg = tabSig();
+        if (sg !== lastSig) { lastSig = sg; refreshAllTabs(); }
+      }
+    }
+  }
+
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+let lastSig = '';
+function tabSig() {
+  const a = state.activeDock, m = state.money, pt = state.points;
+  if (a === 'build') return [state.rankIdx, ...Object.values(FACILITY_TYPES).map(d => m >= d.cost ? 1 : 0)].join('');
+  if (a === 'back') return [state.rankIdx, ...Object.values(BACK_EQUIP).map(e => (equipLv[e.id] || 0) + (m >= equipUpCost(e) ? 'y' : 'n'))].join('');
+  if (a === 'staff') return [state.rankIdx, hiredStaff.length, candidateList.length, ...candidateList.map(c => m >= c.hireCost ? 1 : 0), ...hiredStaff.map(x => pt >= 10 + x.level * 5 ? 1 : 0)].join('');
+  return [state.rankIdx, Math.floor(state.totalRevenue / 100), m >= 6000 ? 1 : 0, m >= 15000 ? 1 : 0, pt >= 25 ? 1 : 0, Math.ceil(state.campaignTimer), state.discoveredCombos.size, state.expansionLevel].join('|');
+}
+
+// =========================================================
+// IndexedDB オートセーブ
+// =========================================================
+const DB_NAME = 'mycombini_dx', STORE = 'save', SAVE_KEY = 'main';
+let dbp = null, ready = false, saving = false;
+function openDB() {
+  if (dbp) return dbp;
+  dbp = new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('IndexedDB非対応'));
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return dbp;
+}
+function idbOp(mode, fn) {
+  return openDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(STORE, mode);
+    const rq = fn(tx.objectStore(STORE));
+    tx.oncomplete = () => res(rq && rq.result);
+    tx.onerror = tx.onabort = () => rej(tx.error);
+  }));
+}
+function snapshot() {
+  return JSON.parse(JSON.stringify({
+    v: 1, savedAt: Date.now(),
+    state: { ...state, discoveredCombos: [...state.discoveredCombos], buildMode: null, selectedObjId: null },
+    placedObjects: placedObjects.map(o => ({ ...o, queue: [] })),
+    nextObjUid,
+    hiredStaff: hiredStaff.map(s => ({ ...s, path: [], carry: null, targetObjId: null })),
+    candidateList, nextStaffId,
+    products: Object.fromEntries(Object.values(products).map(p => [p.id, { price: p.price, quality: p.quality, stock: p.stock, onSale: p.onSale }])),
+    equipLv, soundOn
+  }));
+}
+async function saveGame(manual = false) {
+  if (!ready || saving) return;
+  saving = true;
+  try {
+    await idbOp('readwrite', s => s.put(snapshot(), SAVE_KEY));
+    const b = document.getElementById('btn-save');
+    if (b) { b.textContent = '✅'; setTimeout(() => { b.textContent = '💾'; }, 900); }
+    if (manual) setTicker('💾 セーブしました！（8秒ごとにオートセーブされます）');
+  } catch (e) {
+    if (manual) setTicker('⚠️ セーブに失敗しました。ブラウザの保存設定を確認してください。');
+  }
+  saving = false;
+}
+async function loadGame() {
+  try {
+    const d = await idbOp('readonly', s => s.get(SAVE_KEY));
+    if (!d || d.v !== 1) return false;
+    Object.assign(state, d.state, { discoveredCombos: new Set(d.state.discoveredCombos || []), buildMode: null, selectedObjId: null, paused: false, activeDock: 'build' });
+    placedObjects = d.placedObjects.filter(o => FACILITY_TYPES[o.type]).map(o => ({ ...o, queue: [] }));
+    nextObjUid = d.nextObjUid;
+    hiredStaff = d.hiredStaff.map(s => ({ ...s, x: (s.isManager ? 4.5 : 2.5) * TILE, y: (s.isManager ? 3.5 : 2.5) * TILE, path: [], carry: null, cooldown: 0, targetObjId: null }));
+    if (d.candidateList && d.candidateList.length) candidateList = d.candidateList;
+    nextStaffId = d.nextStaffId;
+    Object.entries(d.products || {}).forEach(([id, v]) => { if (products[id]) Object.assign(products[id], v); });
+    Object.assign(equipLv, d.equipLv || {});
+    if (typeof d.soundOn === 'boolean') soundOn = d.soundOn;
+    recalcCombos(true);
+    return true;
+  } catch (e) { return false; }
+}
+async function resetGame() {
+  if (!confirm('セーブデータを消して最初から始めます。よろしいですか？')) return;
+  ready = false;
+  try { await idbOp('readwrite', s => s.delete(SAVE_KEY)); } catch (e) {}
+  location.reload();
+}
+setInterval(() => saveGame(), 8000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+window.addEventListener('pagehide', () => saveGame());
+
+// 初期化実行
+initDefaultStore();
+refreshCandidates(true);
+loadGame().then(loaded => {
+  ready = true;
+  updateHUD();
+  refreshAllTabs();
+  if (loaded) setTicker('💾 前回のセーブデータから再開しました！');
+  requestAnimationFrame(gameLoop);
+});
+</script>
+</body>
+</html>
