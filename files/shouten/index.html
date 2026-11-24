@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>まちかど商店</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&family=Zen+Kaku+Gothic+New:wght@400;700&family=Dela+Gothic+One&display=block" rel="stylesheet">
+<style>
+:root{--bg:#e9f0ee;--bg2:#d5e4df;--glass:rgba(255,255,255,.76);--veil:rgba(233,240,238,.55);--text:#12302c;--muted:#55706b;--border:rgba(18,48,44,.13);--accent:#0f8a78;--on-accent:#fff;--gold:#c27a0e;--bad:#b3261e;--shadow:0 8px 28px rgba(18,48,44,.16);--grass:#bfe0a8;--grass2:#b4d99b;--floor:#f1dfbd;--floor2:#e8d3ab;--wall:#55636b;--wallTop:#7f8d95;--door:#b4733a;--shelf:#6b4fa0;--counter:#c4533b;--grid:rgba(0,0,0,.05);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1418;--bg2:#101f26;--glass:rgba(16,28,34,.74);--veil:rgba(8,14,18,.58);--text:#e8f3f0;--muted:#8fa9a3;--border:rgba(255,255,255,.11);--accent:#3fd0b4;--on-accent:#052a24;--gold:#f3b94d;--bad:#ff8a80;--shadow:0 8px 28px rgba(0,0,0,.45);--grass:#1f3a2a;--grass2:#1b3425;--floor:#4a4030;--floor2:#433a2b;--wall:#8d9aa3;--wallTop:#afbcc4;--door:#d79a5a;--shelf:#a583d4;--counter:#e8806a;--grid:rgba(255,255,255,.04);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1418;--bg2:#101f26;--glass:rgba(16,28,34,.74);--veil:rgba(8,14,18,.58);--text:#e8f3f0;--muted:#8fa9a3;--border:rgba(255,255,255,.11);--accent:#3fd0b4;--on-accent:#052a24;--gold:#f3b94d;--bad:#ff8a80;--shadow:0 8px 28px rgba(0,0,0,.45);--grass:#1f3a2a;--grass2:#1b3425;--floor:#4a4030;--floor2:#433a2b;--wall:#8d9aa3;--wallTop:#afbcc4;--door:#d79a5a;--shelf:#a583d4;--counter:#e8806a;--grid:rgba(255,255,255,.04);color-scheme:dark}
+:root{box-sizing:border-box;background:var(--bg);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{color:var(--text);font:14px/1.5 "Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#app{position:relative;height:100%;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.ms{font-family:"Material Symbols Outlined";font-weight:400;font-style:normal;font-size:22px;line-height:1;display:inline-block;width:1em;height:1em;overflow:hidden;white-space:nowrap;letter-spacing:normal;text-transform:none;font-feature-settings:"liga";-webkit-font-smoothing:antialiased;font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 24}
+button{font:inherit;color:inherit;border:1px solid var(--border);background:var(--glass);border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0;transition:transform .15s,background .15s,border-color .15s}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.glass{background:var(--glass);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto}
+.ib{width:40px;height:40px;border-radius:12px}
+.screen{position:absolute;inset:0;transition:opacity .45s,visibility .45s}
+#app:not([data-screen="title"]) #title,#app:not([data-screen="game"]) #game,#app:not([data-screen="cafe"]) #cafe,#app:not([data-screen="factory"]) #factory{opacity:0;visibility:hidden}
+/* タイトル画面 */
+#title{display:flex;background:radial-gradient(ellipse at 25% 45%,transparent,var(--veil) 75%);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.tbox{margin:auto 0 auto clamp(20px,9vw,140px);width:min(400px,calc(100% - 40px))}
+.logo{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--gold));color:var(--on-accent);box-shadow:var(--shadow)}
+.logo .ms{font-size:36px}
+h1{font:400 clamp(42px,8vw,76px)/1.1 "Dela Gothic One","Zen Kaku Gothic New",sans-serif;margin:16px 0 4px;background:linear-gradient(120deg,var(--accent),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:0 0 26px;color:var(--muted);letter-spacing:.12em}
+.menu{display:grid;gap:10px}
+.big{height:54px;padding:0 18px;justify-content:flex-start;font-weight:700;font-size:16px;border-radius:16px}
+.big:hover:not(:disabled){transform:translateX(4px)}
+.big small{margin-left:auto;font-weight:400;font-size:11px;color:var(--muted)}
+.big.pri{background:linear-gradient(120deg,var(--accent),color-mix(in srgb,var(--accent) 70%,var(--gold)));color:var(--on-accent);border-color:transparent;box-shadow:var(--shadow)}
+.ver{margin:22px 0 0;font-size:12px;color:var(--muted)}
+.tt{position:absolute;top:14px;right:14px}
+/* ゲーム画面 */
+#game{pointer-events:none}
+.top{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+.top>div{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.shop .ms.lg{font-size:30px;color:var(--accent)}
+.shop b{display:block;line-height:1.2}
+.bar{width:120px;height:6px;border-radius:3px;background:var(--border);overflow:hidden}.bar i{display:block;height:100%;width:50%;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .4s}
+.shop small,.stat small{color:var(--muted);font-size:11px}
+.clock{font-variant-numeric:tabular-nums}.clock .ms{color:var(--gold);font-size:26px}
+.clock b{font-size:17px}
+.seg{display:flex;gap:2px}.seg button{width:34px;height:34px;border-radius:10px;background:transparent;border-color:transparent}.seg button.on{background:var(--accent);color:var(--on-accent)}
+.money{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}.money .ms{color:var(--gold)}.neg{color:var(--bad)}
+.side{position:absolute;right:12px;top:84px;width:220px;padding:14px}
+.side h2{font-size:12px;color:var(--muted);margin:0 0 6px;font-weight:700;display:flex;align-items:center;gap:4px}.side h2+*{margin-bottom:14px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cards div{background:var(--border);border-radius:12px;padding:8px 10px}.cards b{font-size:17px;display:block;font-variant-numeric:tabular-nums}
+#log{list-style:none;margin:0;padding:0;max-height:150px;overflow:hidden}#log li{font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.zoom{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
+.zoom button{width:40px;height:40px}
+.dock{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);padding:8px 10px 10px}
+.tabs{display:flex;gap:4px;margin-bottom:8px;padding:0 2px}.tabs button{height:28px;padding:0 10px;font-size:12px;border-radius:9px;background:transparent;border-color:transparent;color:var(--muted)}.tabs button.on{background:var(--border);color:var(--text);font-weight:700}.tabs .ms{font-size:14px}
+#tools{display:flex;gap:6px;overflow-x:auto}
+#tools button{flex:0 0 auto;width:68px;height:68px;flex-direction:column;gap:1px;font-size:11px;border-radius:14px}
+#tools button em{font-style:normal;font-size:10px;color:var(--muted);min-height:13px}
+#tools button.on{background:linear-gradient(160deg,var(--accent),color-mix(in srgb,var(--accent) 65%,var(--gold)));color:var(--on-accent);border-color:transparent;transform:translateY(-4px);box-shadow:var(--shadow)}
+#tools button.on em{color:inherit}
+.tbox{max-height:calc(100% - 20px);overflow-y:auto}
+.games{display:grid;gap:8px;margin-bottom:12px}
+.gc{height:58px;padding:0 14px;justify-content:flex-start;text-align:left;border-radius:14px}
+.gc>.ms{font-size:28px;color:var(--accent)}
+.gc span{display:flex;flex-direction:column;line-height:1.25}.gc b{font-size:15px}.gc small{color:var(--muted);font-size:11px}
+.gc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tip{position:fixed;left:0;top:0;z-index:50;max-width:240px;padding:8px 12px;font-size:12px;line-height:1.55;border-radius:12px;background:var(--glass);border:1px solid var(--border);box-shadow:var(--shadow);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:none;opacity:0;transition:opacity .12s}
+.tip b{color:var(--accent)}
+.toast{position:fixed;left:50%;top:78px;z-index:60;padding:8px 16px;border-radius:999px;font-weight:700;opacity:0;transform:translate(-50%,-8px);pointer-events:none;transition:opacity .2s,transform .2s}.toast.on{opacity:1;transform:translate(-50%,0)}
+.modal{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:rgba(0,0,0,.38);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}.modal.open{opacity:1;visibility:visible}
+.mbox{width:min(520px,calc(100% - 24px));max-height:calc(100% - 24px);overflow-y:auto;padding:16px}
+.mh{display:flex;justify-content:space-between;align-items:center}.mh h2{margin:0;font-size:18px}
+.mbox h3{font-size:12px;color:var(--muted);margin:14px 0 6px}.mute{color:var(--muted);font-size:12px}
+.pc{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:var(--border);margin-bottom:6px}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:0 0 auto}
+.pc .info{flex:1;line-height:1.35}.pc small{color:var(--muted)}.pc button{height:34px;padding:0 10px;font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:2px;font-size:11px;padding:0 8px;border-radius:999px;background:var(--glass);border:1px solid var(--border)}.badge .ms{font-size:13px;color:var(--accent)}
+.side{max-height:calc(100% - 96px);overflow-y:auto}#log{max-height:110px}
+.mini{padding:4px 8px;margin-bottom:4px;font-size:12px;cursor:pointer;gap:8px}.mini .av{width:26px;height:26px;font-size:12px}
+.av{border:2px solid var(--glass)}
+.dock{left:auto;right:12px;bottom:76px;transform:none;width:284px;padding:6px 10px 8px;border-radius:30px;border:2px solid var(--border);display:flex;flex-direction:column;transition:transform .3s,opacity .3s}
+.closed .dock{transform:translateY(calc(100% + 90px));opacity:0;pointer-events:none}
+.pst{display:flex;align-items:center;gap:6px;padding:2px 12px 6px;color:var(--muted)}.pst b{flex:1;font-size:11px;text-align:center;color:var(--text);font-variant-numeric:tabular-nums}.pst .ms{font-size:15px}
+#tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;overflow:visible}
+#tools button{width:auto;height:60px;border-radius:14px;font-size:10px}#tools button em{font-size:9px}#tools button.on{transform:none}
+.tabs{order:3;justify-content:space-around;margin:6px 0 0;padding-top:6px;border-top:1px solid var(--border)}
+.tabs button{flex-direction:column;gap:0;height:44px;width:70px;font-size:10px;padding:0}.tabs .ms{font-size:22px}
+.fab{position:absolute;right:12px;bottom:12px;z-index:5;width:52px;height:52px;border-radius:50%}.fab .ms{font-size:26px}
+.side{max-height:calc(100% - 430px)}.closed .side{max-height:calc(100% - 96px)}
+@media (max-width:820px){.side{display:none}.bar{width:80px}.zoom{top:auto;bottom:130px;transform:none}}
+.dock{left:auto;right:12px;top:84px;bottom:12px;width:332px;transform:none;padding:8px;border-radius:24px;border:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.closed .dock{transform:translateX(calc(100% + 24px));opacity:0;pointer-events:none}
+.tabs{order:0;display:flex;gap:4px;margin:0;padding:0 0 8px;border-top:0;border-bottom:1px solid var(--border);justify-content:space-between}
+.tabs button{flex:1;width:auto;height:52px;flex-direction:column;gap:0;font-size:10px;padding:0;border-radius:12px;color:var(--muted);background:transparent;border-color:transparent}
+.tabs button.on{background:var(--accent);color:var(--on-accent);font-weight:700}
+.tabs .ms{font-size:22px}
+.pane{flex:1;min-height:0;overflow-y:auto;padding:2px 2px 8px}
+.pane h2{margin:2px 0 8px;font-size:15px}.pane h3{margin:12px 0 6px}
+.pane .pc{flex-wrap:wrap}.pane .pc .info{min-width:55%}
+.tgrp{font-size:11px;color:var(--muted);margin:12px 0 6px;font-weight:700}
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#tools{display:block}
+#tools button{width:auto;height:66px;flex:none;flex-direction:column;gap:1px;font-size:11px;border-radius:14px}
+.hint{margin:0;padding:8px 10px;border-radius:12px;background:var(--border);font-size:12px;line-height:1.5;min-height:56px}.hint b{color:var(--accent)}
+.side{left:64px;right:auto;top:84px;width:220px;max-height:calc(100% - 96px)}
+.fab{top:84px;bottom:auto;right:352px;width:44px;height:44px;transition:right .3s}.fab .ms{font-size:24px}
+.closed .fab{right:12px}
+@media (max-width:820px){
+.top{top:8px;left:8px;right:8px;gap:6px}
+.top>div{padding:6px 8px;gap:6px}
+.shop .ms.lg{font-size:24px}.bar{width:64px}
+.seg button{width:30px;height:30px}
+.money{font-size:16px}
+.ib{width:36px;height:36px}
+.dock{left:0;right:0;top:auto;bottom:0;width:auto;height:min(46vh,430px);border-radius:22px 22px 0 0;border-bottom:0;padding:8px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.closed .dock{transform:translateY(100%)}
+.fab{top:auto;right:12px;bottom:calc(min(46vh,430px) + 10px + env(safe-area-inset-bottom,0px));transition:bottom .3s}
+.zoom{left:12px;top:auto;transform:none;bottom:calc(min(46vh,430px) + 10px + env(safe-area-inset-bottom,0px));transition:bottom .3s}
+.zoom button{width:44px;height:44px}
+.closed .fab,.closed .zoom{bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+}
+.mg{overflow-y:auto;background:linear-gradient(180deg,var(--bg),var(--bg2));padding:max(12px,env(safe-area-inset-top,0px)) 12px calc(24px + env(safe-area-inset-bottom,0px))}
+.mgw{max-width:640px;margin:0 auto;display:grid;gap:12px}
+.mg .hd{display:flex;align-items:center;gap:10px;padding:8px 12px}.mg .hd b{font-size:17px;flex:1}
+.mg .panel{padding:14px}.mg h3{margin:0 0 8px;font-size:12px;color:var(--muted)}
+.mg .row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:var(--border);margin-bottom:6px}
+.mg .row>.ms{color:var(--accent);font-size:26px}.mg .row .info{flex:1;line-height:1.35}.mg .row small{color:var(--muted)}
+.mg .row button{height:38px;padding:0 12px;font-size:12px;white-space:nowrap}
+.mg .stp{display:flex;gap:8px}.mg .stp button{width:40px;padding:0;font-size:18px}
+.hist{display:flex;align-items:flex-end;gap:4px;height:64px;margin-bottom:8px}.hist i{flex:1;border-radius:4px 4px 0 0;background:var(--accent);min-height:3px}.hist i.n{background:var(--bad)}
+.mglog{margin:0;padding-left:18px;font-size:12px}.mglog li{padding:2px 0}
+.mg .big{width:100%}
+.imenu{position:absolute;z-index:8;left:0;top:0;width:244px;padding:10px;display:none}
+.imenu.on{display:block}
+.ih{display:flex;align-items:center;gap:6px}.ih b{flex:1;font-size:14px}
+.imenu p{margin:4px 0 8px;font-size:11px;color:var(--muted);line-height:1.45}.imenu p b{color:var(--accent)}
+.imenu h4{margin:8px 0 4px;font-size:11px;color:var(--muted)}
+.ig{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ig button{height:46px;flex-direction:column;gap:0;font-size:10px;border-radius:12px;padding:0}.ig button .ms{font-size:20px}
+.ig button.on{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.ig.ar{grid-template-columns:repeat(4,1fr)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app" data-screen="title">
+<canvas id="cv"></canvas>
+
+<section id="title" class="screen">
+  <button class="ib tt theme glass" aria-label="テーマ切替"><i class="ms">dark_mode</i></button>
+  <div class="tbox">
+    <div class="logo"><i class="ms">storefront</i></div>
+    <h1>まちかど経営社</h1>
+    <p class="sub">経営ゲームコレクション</p>
+    <div class="games" id="games"></div>
+    <div class="menu">
+      <button class="big pri" id="start"><i class="ms">play_arrow</i>はじめから</button>
+      <button class="big" id="cont" disabled><i class="ms">folder_open</i>つづきから<small id="sd">セーブなし</small></button>
+    </div>
+    <p class="ver">v0.5 ・ セーブはこのブラウザ内(IndexedDB)に保存されます</p>
+  </div>
+</section>
+
+<section id="cafe" class="screen mg"></section>
+<section id="factory" class="screen mg"></section>
+<section id="game" class="screen">
+  <div class="top">
+    <div class="glass shop"><i class="ms lg">storefront</i><span><b>まちかど商店</b><span class="bar"><i id="repbar"></i></span><small>評判 <span id="rep"></span></small></span></div>
+    <div class="glass clock"><i class="ms" id="sun">wb_sunny</i><b id="clock"></b>
+      <span class="seg" id="speed">
+        <button data-s="0" aria-label="一時停止"><i class="ms">pause</i></button>
+        <button data-s="1" aria-label="通常速度"><i class="ms">play_arrow</i></button>
+        <button data-s="2" aria-label="2倍速"><i class="ms">fast_forward</i></button>
+        <button data-s="4" aria-label="4倍速"><i class="ms">keyboard_double_arrow_right</i></button>
+      </span></div>
+    <div class="glass"><span class="money"><i class="ms">payments</i> <span id="money"></span></span>
+      <button class="ib theme" aria-label="テーマ切替"><i class="ms">dark_mode</i></button>
+      <button class="ib" id="save" aria-label="セーブ" data-tip="セーブ|いまの状態をこのブラウザに保存します。自動でも保存されます。"><i class="ms">save</i></button>
+      <button class="ib" id="home" aria-label="タイトルへ戻る" data-tip="タイトルへ|セーブしてタイトル画面に戻ります。"><i class="ms">home</i></button></div>
+  </div>
+  <aside class="glass side">
+    <h2><i class="ms" style="font-size:16px">trending_up</i>今週の実績</h2>
+    <div class="cards"><div><small>売上</small><b id="ts"></b></div><div><small>来客</small><b id="tv"></b></div><div><small>店内の客</small><b id="cn"></b></div><div data-tip="固定費|家賃と全スタッフの給料(7日分)です。毎週日曜の終わりに引かれます。"><small>固定費(毎週)</small><b id="fx"></b></div></div>
+    <h2><i class="ms" style="font-size:16px">badge</i>スタッフ</h2><div id="sl"></div>
+    <h2><i class="ms" style="font-size:16px">receipt_long</i>営業ログ</h2>
+    <ul id="log"></ul>
+  </aside>
+  <div class="zoom"><button class="glass" id="zi" aria-label="拡大"><i class="ms">zoom_in</i></button><button class="glass" id="zo" aria-label="縮小"><i class="ms">zoom_out</i></button></div>
+  <button class="glass fab" id="fab" aria-label="メニュー開閉" data-tip="メニュー|開閉できます。建築・従業員・仕入れ・店舗・設備はここから使います。"><i class="ms">menu_open</i></button>
+  <div class="glass dock">
+    <div class="tabs" id="tabs">
+      <button data-t="build" class="on" data-tip="建築|床・壁・棚・レジを置いたり撤去したりします。"><i class="ms">construction</i>建築</button>
+      <button data-t="staff" id="staffbtn" data-tip="従業員|スタッフの採用・研修・解雇をします。"><i class="ms">badge</i>従業員<span id="sc"></span></button>
+      <button data-t="stock" id="stockbtn" data-tip="仕入れ|商品の在庫を仕入れます。"><i class="ms">local_shipping</i>仕入れ<span id="sk"></span></button>
+      <button data-t="shop" data-tip="店舗|看板・内装・会員カードなど、お店そのものを強化します。"><i class="ms">storefront</i>店舗</button>
+      <button data-t="equip" data-tip="設備|自動ドア・POS・保冷ケースなどの設備を追加・強化します。"><i class="ms">build</i>設備</button>
+    </div>
+    <div class="pane" id="pane"></div>
+  </div>
+</section>
+<div class="glass imenu" id="imenu"></div>
+<div class="modal" id="modal"><div class="glass mbox" id="mbox"></div></div>
+<div class="tip" id="tip"></div>
+<div class="toast glass" id="toast"></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const W=64,H=48,T=32,RD=4,EY=H-3,PRICE=40,RENT=200,SPD=2.5;
+const TOOLS=[['pan','touch_app','選択'],['floor','grid_view','床',1,5],['wall','fence','壁',2,15],['door','door_front','ドア',3,25],['shelf1','lunch_dining','食品棚',4,60,1],['shelf2','redeem','雑貨棚',4,60,2],['shelf3','checkroom','衣料棚',4,60,3],['counter','point_of_sale','レジ',5,120],['self','qr_code_scanner','セルフレジ',9,90],['back','warehouse','バックヤード',7,8],['rack','inventory_2','倉庫棚',8,50],['upg','upgrade','棚強化'],['erase','delete','撤去',0,0]];
+const D=[[1,0],[-1,0],[0,1],[0,-1]],DX=[0,1,0,-1],DY=[-1,0,1,0],DIRN=['上','右','下','左'],app=$('#app');
+const S={money:1000,day:1,min:540,rep:50,speed:1,spawn:2,tool:'floor',grid:new Uint8Array(W*H),cust:[],today:{sales:0,visits:0},staff:[],cands:[],mgr:null,gen:new Uint8Array(W*H),lv:new Uint8Array(W*H),base:new Uint8Array(W*H),dir:new Uint8Array(W*H),stock:[0,0,0,0,0,0,0,0,0],cam:{x:0,y:0,z:1}};
+const L=[];
+/* 定数・補助関数 (初期化順の都合でここに配置) */
+const walk=t=>t===0||t===1||t===3||t===6;
+const near=(x,y,t)=>D.some(([dx,dy])=>{const a=x+dx,b=y+dy;return a>=0&&b>=0&&a<W&&b<H&&S.grid[a+b*W]===t});
+const find=t=>S.grid.some(v=>v===t);
+/* ===== 仕入れ・在庫 ===== */
+const ITEMS=[[['おにぎり',20,40],['お弁当',50,100],['特選和牛',120,240]],[['文房具',20,40],['食器',50,100],['アンティーク',120,240]],[['Tシャツ',20,40],['ジャケット',50,100],['ブランド服',120,240]]];
+const EXIT=(x,y)=>x===0&&y===EY;
+let modeStock=false;
+const capNow=()=>{let n=6+4*(S.up.inv||0);for(let i=0;i<W*H;i++){const t=S.grid[i];if(t===7)n+=3;else if(t===8)n+=10;else if(t===4)n+=3*(S.lv[i]||1)}return n};
+const stockSum=()=>S.stock.reduce((a,b)=>a+b,0);
+const shelfName=k=>{const g=S.gen[k]||1,l=S.lv[k]||1;return GEN[g]+'棚 Lv'+l+'('+ITEMS[g-1][l-1][0]+')'};
+function pickItem(c){const cx=Math.round(c.x),cy=Math.round(c.y),c2=[];
+  for(const[dx,dy]of D){const a=cx+dx,b=cy+dy;if(a<0||b<0||a>=W||b>=H)continue;const k=a+b*W;if(S.grid[k]===4&&a+DX[S.dir[k]]===cx&&b+DY[S.dir[k]]===cy)c2.push(k)}
+  c2.sort((p,q)=>(S.lv[q]||1)-(S.lv[p]||1));
+  const pref=c2.filter(k=>S.gen[k]===c.fav),pool=pref.length?pref:c2;
+  for(const k of pool){const g=S.gen[k]||1;for(let l=S.lv[k]||1;l>=1;l--){const i=(g-1)*3+l-1;if(S.stock[i]>0){S.stock[i]--;c.item=ITEMS[g-1][l-1];c.g=g;return c.item}}}
+  return null}
+
+const GEN=['','食品','雑貨','衣料'],GC=['','#e0883a','#3fa7a0','#9a62c9'],BUD=[['節約派',.7],['ふつう',1],['太っ腹',1.4]];
+const nearG=(x,y,g)=>D.some(([dx,dy])=>{const a=x+dx,b=y+dy;return a>=0&&b>=0&&a<W&&b<H&&S.grid[a+b*W]===4&&S.gen[a+b*W]===g});
+function mkUp(){return{sign:0,inter:0,card:0,adoor:0,pos:0,cool:0,light:0,inv:0}}
+function reset(){Object.assign(S,{money:1000,day:1,min:540,rep:50,spawn:2,cust:[],today:{sales:0,visits:0},staff:[],cands:[],up:mkUp(),stock:[10,0,0,10,0,0,10,0,0]});L.length=0;$('#log').innerHTML='';S.grid.fill(0);S.gen.fill(0);S.lv.fill(0);S.base.fill(0);S.dir.fill(0);
+  for(let y=H-RD;y<H;y++)for(let x=0;x<W;x++)S.grid[x+y*W]=6;
+  for(let y=30;y<=42;y++)for(let x=26;x<=37;x++){const e=x==26||x==37||y==30||y==42||y==34;S.grid[x+y*W]=e?2:y<34?7:1}
+  S.grid[31+42*W]=3;[27,28,35,36].forEach(x=>S.grid[x+31*W]=8);
+  [30,31,32].forEach((x,i)=>{S.grid[x+36*W]=4;S.gen[x+36*W]=[1,1,2][i];S.lv[x+36*W]=1;S.base[x+36*W]=1;S.dir[x+36*W]=2});S.grid[35+40*W]=9;S.base[35+40*W]=1;S.dir[35+40*W]=2;S.mgr={n:rnd(NAMES),lk:look(),x:31,y:41};newCands();rehome()}
+
+/* ===== 画面切替 (今後の画面追加はここ) ===== */
+const screen=n=>{app.dataset.screen=n};
+const yen=n=>{n=Math.round(n);const a=Math.abs(n),g=n<0?'-':'',m=a%10000,o=a>=10000?Math.floor(a/10000)+'億':'';return g+o+(m?m.toLocaleString('ja-JP')+'万円':o?'円':'0万円')};
+
+/* ===== ゲーム登録 (別ジャンルの経営ゲームはここに追加。start()で自分の画面を開く) ===== */
+/* ===== 週ごとに進む経営ゲーム用の共通エンジン ===== */
+const fmtY=v=>(v<0?'-':'')+'¥'+Math.abs(Math.round(v)).toLocaleString('ja-JP');
+async function goHome(){await save();screen('title')}
+function mkGame(cfg){
+  const el=$('#'+cfg.id);let st=cfg.init(),hist=[];
+  el.innerHTML='<div class="mgw"><div class="glass hd"><button class="ib" data-a="home" aria-label="タイトルへ戻る"><i class="ms">home</i></button><b data-r="ttl"></b><button class="ib" data-a="save" aria-label="セーブ"><i class="ms">save</i></button><button class="ib theme" aria-label="テーマ切替"><i class="ms">dark_mode</i></button></div>'
+   +'<div class="glass panel"><div class="cards" data-r="kpi"></div></div>'
+   +'<div class="glass panel"><h3>経営の判断</h3><div data-r="set"></div></div>'
+   +'<div class="glass panel"><h3>設備・人材への投資(次の週から効果が出ます)</h3><div data-r="ups"></div></div>'
+   +'<div class="glass panel"><h3>週ごとの利益と先週のできごと</h3><div class="hist" data-r="hist"></div><ul class="mglog" data-r="log"></ul></div>'
+   +'<button class="big pri" data-a="next"><i class="ms">skip_next</i>次の週へ進める</button></div>';
+  const q=r=>el.querySelector('[data-r="'+r+'"]');
+  function render(){
+    q('ttl').textContent=cfg.name+' ・ 第'+st.week+'週';
+    const last=hist.length?hist[hist.length-1]:null;
+    q('kpi').innerHTML=[['資金',fmtY(st.money)],['先週の利益',last==null?'-':fmtY(last)]].concat(cfg.stats(st)).map(a=>'<div><small>'+a[0]+'</small><b>'+a[1]+'</b></div>').join('');
+    q('set').innerHTML=cfg.sets.map(s=>'<div class="row"><div class="info"><b>'+s.n+'</b><br><small>'+s.f(st[s.k])+'</small></div><span class="stp"><button data-a="set" data-k="'+s.k+'" data-d="-1" aria-label="下げる">−</button><button data-a="set" data-k="'+s.k+'" data-d="1" aria-label="上げる">+</button></span></div>').join('');
+    q('ups').innerHTML=cfg.ups.map(u=>{const l=st.lv[u.k],mx=l>=u.max;return '<div class="row"><i class="ms">'+u.ic+'</i><div class="info"><b>'+u.n+'</b> <span class="badge">Lv'+l+' / '+u.max+'</span><br><small>'+u.d+'</small></div><button data-a="up" data-k="'+u.k+'"'+(mx?' disabled':'')+'>'+(mx?'MAX':fmtY(u.cost(l)))+'</button></div>'}).join('');
+    const m=Math.max(1,...hist.map(Math.abs));
+    q('hist').innerHTML=hist.length?hist.map(v=>'<i class="'+(v<0?'n':'')+'" style="height:'+Math.max(5,Math.abs(v)/m*100)+'%" data-tip="利益|'+fmtY(v)+'"></i>').join(''):'<small class="mute">まだ記録がありません</small>';
+    q('log').innerHTML=st.log.map(t=>'<li>'+t+'</li>').join('')}
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
+    if(a==='home')return goHome();
+    if(a==='save')return save(1);
+    if(a==='set'){const s=cfg.sets.find(s=>s.k===b.dataset.k);st[s.k]=Math.max(s.min,Math.min(s.max,st[s.k]+s.step*b.dataset.d))}
+    else if(a==='up'){const u=cfg.ups.find(u=>u.k===b.dataset.k),l=st.lv[u.k],c=u.cost(l);if(l>=u.max)return;if(st.money<c)return toast('資金が足りません');st.money-=c;st.lv[u.k]=l+1}
+    else if(a==='next'){const r=cfg.sim(st),p=r.rev-r.cost;st.money+=p;hist.push(p);if(hist.length>26)hist.shift();st.week++;st.log=r.lines;
+      if(st.money<0){st.neg=(st.neg||0)+1;st.log.push('⚠ 資金がマイナスです('+st.neg+'/3週)。3週続くと倒産します')}else st.neg=0;
+      if(st.neg>=3){toast('倒産しました…最初からやり直しです');st=cfg.init();hist=[]}
+      save()}
+    render()};
+  return{start(d){if(d){st=d.st;hist=d.hist||[]}else{st=cfg.init();hist=[]}render();screen(cfg.id)},snap:()=>({v:1,t:Date.now(),st,hist})}}
+const validT=d=>!!(d&&d.v===1&&d.st),labT=d=>'第'+d.st.week+'週 ・ '+fmtY(d.st.money);
+
+/* ===== カフェ経営 ===== */
+const CAFE=mkGame({id:'cafe',name:'カフェ経営',
+  init:()=>({money:300000,week:1,rep:30,price:450,lv:{seat:1,mach:1,staff:1,ad:0,deco:0},log:['開店しました。値段を決めて、設備に投資して、週を進めましょう。']}),
+  sets:[{k:'price',n:'コーヒーの値段',step:50,min:250,max:1200,f:v=>'1杯 ¥'+v+'(安いと客は増えるが、席が足りないと評判が落ちます)'}],
+  ups:[
+   {k:'seat',n:'席を増やす',ic:'chair',d:'1Lvごとに+4席。さばける客数の上限が上がります',max:8,cost:l=>40000*l},
+   {k:'mach',n:'エスプレッソマシン',ic:'coffee_maker',d:'味が良くなり、高い値段でも売れます(原価も少し上がる)',max:5,cost:l=>70000*l},
+   {k:'staff',n:'スタッフ',ic:'badge',d:'接客が速くなり、客をさばきやすくなります(給料 週1.5万円/人)',max:6,cost:l=>20000+10000*l},
+   {k:'ad',n:'宣伝',ic:'campaign',d:'来店客が増えます',max:5,cost:l=>30000*(l+1)},
+   {k:'deco',n:'内装',ic:'weekend',d:'居心地がよくなり、評判が上がりやすくなります',max:5,cost:l=>60000*(l+1)}],
+  stats:st=>[['評判',Math.round(st.rep)+' / 100'],['席数',st.lv.seat*4+'席'],['スタッフ',st.lv.staff+'人'],['コーヒーの値段','¥'+st.price]],
+  sim:st=>{const L=st.lv,seats=L.seat*4,ref=450*(1+.22*(L.mach-1)),wx=.85+Math.random()*.3;
+    const demand=22*(.5+st.rep/70)*(1+.25*L.ad)*Math.pow(ref/st.price,1.6)*wx,cap=seats*(5+1.5*L.staff),cust=Math.round(Math.min(demand,cap));
+    const rev=cust*7*st.price,ing=cust*7*(80+30*(L.mach-1)),wage=L.staff*15000,rent=25000+seats*1000;
+    const full=demand>cap,dear=st.price>ref*1.25;
+    st.rep=Math.max(0,Math.min(100,st.rep+(L.mach-1)*.4+L.deco*.8+(full?-2.5:1.2)+(dear?-2.5:0)));
+    const lines=['天気は'+(wx>1.08?'好天で客足が好調でした':wx<.93?'悪く客足が鈍りました':'まずまずでした'),'1日平均 '+cust+'人が来店(需要 '+Math.round(demand)+'人 / 席とスタッフの限界 '+Math.round(cap)+'人)','売上 '+fmtY(rev)+' ・ 原価 '+fmtY(ing)+' ・ 給料 '+fmtY(wage)+' ・ 家賃 '+fmtY(rent)];
+    if(full)lines.push('行列ができて帰る客が出ました。席かスタッフを増やすか、値段を上げましょう');
+    if(dear)lines.push('値段が高すぎて評判が下がりました');
+    return{rev,cost:ing+wage+rent,lines}}});
+
+/* ===== 工場経営 ===== */
+const FACT=mkGame({id:'factory',name:'工場経営',
+  init:()=>({money:500000,week:1,stock:0,mp:100,hold:0,lv:{mach:1,work:1,auto:0,eff:0,wh:1},log:['稼働開始です。機械1台につき作業員が1人必要です。']}),
+  sets:[{k:'hold',n:'出荷方針',step:1,min:0,max:1,f:v=>v?'市況待ち(相場が¥95未満の週は出荷せず在庫にためる)':'毎週すべて出荷する'}],
+  ups:[
+   {k:'mach',n:'機械を増やす',ic:'precision_manufacturing',d:'1台で週600個を生産(作業員が足りないと止まります)',max:8,cost:l=>120000+60000*l},
+   {k:'work',n:'作業員を雇う',ic:'engineering',d:'機械を動かす人手です(給料 週1.2万円/人)',max:12,cost:l=>15000},
+   {k:'auto',n:'自動化',ic:'smart_toy',d:'1Lvごとに生産量+30%',max:5,cost:l=>150000*(l+1)},
+   {k:'eff',n:'効率改善',ic:'bolt',d:'1Lvごとに原材料費-6%',max:5,cost:l=>80000*(l+1)},
+   {k:'wh',n:'倉庫を広げる',ic:'warehouse',d:'在庫を2000個ずつ多く置けます',max:6,cost:l=>40000*l}],
+  stats:st=>[['市況(1個)',fmtY(st.mp)],['在庫',st.stock+' / '+st.lv.wh*2000+'個'],['稼働機械',Math.min(st.lv.mach,st.lv.work)+' / '+st.lv.mach+'台'],['作業員',st.lv.work+'人']],
+  sim:st=>{const L=st.lv,run=Math.min(L.mach,L.work),units=Math.round(run*600*(1+.3*L.auto)),raw=Math.round(units*40*(1-.06*L.eff));
+    st.mp=Math.round(Math.max(60,Math.min(150,st.mp+(100-st.mp)*.3+(Math.random()-.5)*40)));
+    let stock=st.stock+units;const wait=st.hold&&st.mp<95,sell=wait?0:stock;stock-=sell;
+    const cap=L.wh*2000,lost=Math.max(0,stock-cap);stock-=lost;st.stock=stock;
+    const rev=sell*st.mp,wages=L.work*12000,mt=L.mach*6000,stg=Math.round(stock*.5);
+    const lines=['生産 '+units+'個('+run+'台が稼働)','市況は1個 '+fmtY(st.mp)+' → '+(wait?'相場が安いので出荷を見送りました':sell+'個を出荷して '+fmtY(rev)),'原材料 '+fmtY(raw)+' ・ 給料 '+fmtY(wages)+' ・ 保守 '+fmtY(mt)+' ・ 保管 '+fmtY(stg)];
+    if(L.work<L.mach)lines.push('作業員が足りず '+(L.mach-L.work)+'台が止まっています');
+    if(L.work>L.mach)lines.push('機械より作業員が多く、'+(L.work-L.mach)+'人が遊んでいます');
+    if(lost>0)lines.push('倉庫があふれて '+lost+'個を廃棄しました');
+    return{rev,cost:raw+wages+mt+stg,lines}}});
+
+/* ===== ゲーム登録 (別ジャンルの経営ゲームはここに追加。start(セーブ or null)で自分の画面を開く) ===== */
+const GAMES=[
+ {id:'shop',name:'まちかど商店',icon:'storefront',desc:'小さな店を育てる小売経営(リアルタイム)',ready:true,scr:'game',snap:()=>snap(),
+  valid:d=>d.v>=2&&d.grid&&d.grid.length===W*H,label:d=>'第'+wkOf(d.day)+'週 ・ '+yen(d.money),
+  start:d=>{reset();if(d){Object.assign(S,{money:d.money,day:d.day,min:d.min,rep:d.rep,today:d.today,staff:d.staff||[],cands:d.cands||[]});S.grid.set(d.grid);if(d.lv)S.lv.set(d.lv);if(d.stock)S.stock=d.stock;if(d.gen)S.gen.set(d.gen);else S.grid.forEach((t,i)=>{if(t===4)S.gen[i]=1});if(d.mgr)S.mgr=d.mgr;S.up=Object.assign(mkUp(),d.up||{});
+    if(d.base)S.base.set(d.base);else S.grid.forEach((t,i)=>{const x=i%W,y=i/W|0;if((t===4||t===5||t===9)&&x>=27&&x<=36&&y>=35&&y<=41)S.base[i]=1});
+    if(d.dir)S.dir.set(d.dir);else S.grid.forEach((t,i)=>{if(t===4||t===5||t===9)S.dir[i]=2});S.staff.concat(S.cands).forEach(s=>{s.lk=s.lk||look();s.t=s.t||rnd(TRK)});rehome()}
+    S.speed=1;speedUI();log(d?'セーブデータを読み込みました':'開店準備完了。9:00に開店します');screen('game')}},
+ {id:'cafe',name:'カフェ経営',icon:'local_cafe',desc:'値段と設備を決めて週ごとに利益を伸ばす',ready:true,scr:'cafe',snap:CAFE.snap,valid:validT,label:labT,start:d=>CAFE.start(d)},
+ {id:'factory',name:'工場経営',icon:'factory',desc:'機械・人手・相場を見て週ごとに出荷する',ready:true,scr:'factory',snap:FACT.snap,valid:validT,label:labT,start:d=>FACT.start(d)}];
+let cur=GAMES[0];
+const gl=$('#games');
+GAMES.forEach(g=>{const b=document.createElement('button');b.className='gc';b.disabled=!g.ready;b.innerHTML='<i class="ms">'+g.icon+'</i><span><b>'+g.name+'</b><small>'+g.desc+'</small></span>';b.onclick=()=>{cur=g;gl.querySelectorAll('.gc').forEach(x=>x.classList.toggle('on',x===b));refreshSave()};gl.append(b)});
+gl.firstChild.classList.add('on');
+
+/* ===== IndexedDB セーブ (ゲームIDごとに1枠) ===== */
+const idb=()=>new Promise((ok,ng)=>{const r=indexedDB.open('keiei-hub',1);r.onupgradeneeded=()=>r.result.createObjectStore('saves');r.onsuccess=()=>ok(r.result);r.onerror=()=>ng(r.error)});
+const tx=async(m,f)=>{const d=await idb();return new Promise((ok,ng)=>{const t=d.transaction('saves',m),q=f(t.objectStore('saves'));t.oncomplete=()=>{d.close();ok(q.result)};t.onerror=()=>{d.close();ng(t.error)}})};
+const dbGet=k=>tx('readonly',s=>s.get(k)),dbPut=(k,v)=>tx('readwrite',s=>s.put(v,k));
+const snap=()=>({v:2,t:Date.now(),money:S.money,day:S.day,min:S.min,rep:S.rep,today:S.today,grid:Array.from(S.grid),gen:Array.from(S.gen),lv:Array.from(S.lv),stock:S.stock,mgr:S.mgr,staff:S.staff,cands:S.cands,up:S.up,base:Array.from(S.base),dir:Array.from(S.dir)});
+async function save(msg){if(app.dataset.screen!==cur.scr)return;try{await dbPut(cur.id,cur.snap());if(msg)toast('セーブしました');refreshSave()}catch(e){if(msg)toast('セーブできませんでした')}}
+async function refreshSave(){let d=null;try{d=await dbGet(cur.id)}catch(e){}if(d&&cur.valid&&!cur.valid(d))d=null;$('#cont').disabled=!d;$('#sd').textContent=d?cur.label(d):'セーブなし';return d}
+$('#start').onclick=()=>cur.start(null);
+$('#cont').onclick=async()=>{const d=await refreshSave();if(d)cur.start(d)};
+$('#home').onclick=goHome;
+$('#save').onclick=()=>save(1);
+setInterval(()=>save(),15000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+refreshSave();
+
+/* ===== スタッフ管理 ===== */
+const NAMES=['ミサキ','ハルト','ユイ','ソウタ','アカリ','レン','ココナ','ダイチ','ナツキ','リク'];
+const ROLES={cashier:['レジ係','point_of_sale','レジの隣に立つと、そのレジが使えるようになります(1台につき1人)。会計が速くなり、評判が上がりやすくなります(Lvが高いほど効果大)。'],clerk:['売り子','shopping_basket','おすすめ上手。1回の会計の売上が上がります(Lv×6万円)。商品棚の隣に立ちます。']};
+const TR={sale:['商売上手','客単価+8%',{sale:.08}],spd:['てきぱき','会計が速くなる',{spd:.3}],smile:['笑顔','評判が上がりやすい',{rep:.12}],lure:['呼び込み上手','客が来る間隔が15%短くなる',{lure:.15}],thrift:['節約家','給料が20%安い',{wage:.8}],slow:['のんびり','会計が少し遅いが給料が30%安い',{spd:-.15,wage:.7}]};
+const TRK=Object.keys(TR),SKN=['#f5d5b8','#e8b98f','#c98e63','#8d5a3b','#f2c9a5'],HRC=['#2b1d16','#4a3020','#8a5a2b','#d9a441','#b5382e','#6b6f7a','#1c1c24','#e6d5a8'];
+const rnd=a=>a[Math.random()*a.length|0];
+const look=()=>({sk:rnd(SKN),hr:rnd(HRC),hs:Math.random()*4|0,oh:Math.random()*360|0});
+const tsum=k=>S.staff.reduce((a,s)=>a+((TR[s.t]||[0,0,{}])[2][k]||0)*(1+.5*((s.sl||1)-1)),0);
+const wage=s=>Math.round((30+s.lv*25)*((TR[s.t]||[0,0,{}])[2].wage||1));
+const sumLv=r=>S.staff.reduce((a,s)=>a+(s.r===r?s.lv:0),0);
+function newCands(){S.cands=[0,1,2].map(()=>({id:Math.random().toString(36).slice(2,8),n:NAMES[Math.random()*NAMES.length|0],r:Math.random()<.5?'cashier':'clerk',lv:1+(Math.random()*3|0),lk:look(),t:rnd(TRK)}))}
+function rehome(){if(S.mgr){let p=[31,41];const d=S.grid.indexOf(3);if(d>=0){const dx=d%W,dy=d/W|0;for(const[a,b]of D)if(S.grid[dx+a+(dy+b)*W]===1){p=[dx+a,dy+b];break}}S.mgr.x=p[0];S.mgr.y=p[1]}
+  S.rg={};S.nOpen=0;const regs=[],used=new Set();
+  for(let i=0;i<W*H;i++){if(S.grid[i]===5)regs.push(i);else if(S.grid[i]===9)S.nOpen++}
+  const cs=S.staff.filter(s=>s.r==='cashier');let n=0;
+  regs.forEach(k=>{if(n>=cs.length)return;const rx=k%W,ry=k/W|0,fd=S.dir[k];
+    for(const d of [(fd+2)%4,(fd+1)%4,(fd+3)%4]){const x=rx+DX[d],y=ry+DY[d],kk=x+y*W;if(x>=0&&y>=0&&x<W&&y<H&&S.grid[kk]===1&&!used.has(kk)){used.add(kk);const c=cs[n++];c.x=x;c.y=y;S.rg[k]=c;S.nOpen++;break}}});
+  for(;n<cs.length;n++){cs[n].x=31;cs[n].y=38}
+  const sp=[];for(let j=0;j<H;j++)for(let i=0;i<W;i++)if(S.grid[i+j*W]===1&&near(i,j,4)&&!used.has(i+j*W))sp.push([i,j]);
+  S.staff.filter(s=>s.r==='clerk').forEach((s,k)=>{const p=sp.length?sp[k%sp.length]:[31,38];s.x=p[0];s.y=p[1]})}
+const mod=$('#modal'),mbox=$('#pane'),pane=mbox;
+function card(s,hire){const R=ROLES[s.r];return '<div class="pc"><div class="av" style="'+avs(s.lk)+'"></div><div class="info"><b>'+s.n+'</b> <span class="badge" data-tip="'+R[0]+'|'+R[2]+'"><i class="ms">'+R[1]+'</i>'+R[0]+'</span> <span class="badge" data-tip="'+TR[s.t][0]+'|'+TR[s.t][1]+'">'+TR[s.t][0]+' '+'★'.repeat(s.sl||1)+'</span><br><small>Lv'+s.lv+' ・ 給料 '+yen(wage(s))+'/日</small></div>'+(hire?'<button data-a="hire" data-i="'+s.id+'">採用 '+yen(wage(s)*3)+'</button>':'<button data-a="train" data-i="'+s.id+'" data-tip="研修|Lvを1上げます(最大5)。給料も上がります。">研修 '+yen(s.lv*100)+'</button><button data-a="skill" data-i="'+s.id+'" data-tip="スキル強化|特技の効果が+50%ずつ強くなります(最大ランク3)。">スキル '+yen((s.sl||1)*150)+'</button><button data-a="role" data-i="'+s.id+'" data-tip="配置換え|レジ係と売り子を入れ替えます。無料です。"><i class="ms" style="font-size:16px">swap_horiz</i></button><button data-a="fire" data-i="'+s.id+'">解雇</button>')+'</div>'}
+function renderStaff(){modeStock=false;mbox.innerHTML='<div class="mh"><h2>スタッフ管理</h2></div><h3>在籍 ('+S.staff.length+'人)</h3>'+(S.staff.map(s=>card(s)).join('')||'<p class="mute">まだ誰もいません。下の候補から採用しましょう。</p>')+'<p class="mute">レジ'+S.grid.filter(t=>t===5).length+'台 / レジ係'+S.staff.filter(s=>s.r==='cashier').length+'人 ・ 使える会計 '+S.nOpen+'台。レジは店員が隣に立たないと使えません(セルフレジは不要)。</p><h3>今週の採用候補</h3>'+S.cands.map(s=>card(s,1)).join('')+'<p class="mute">候補は毎週入れ替わります。採用費は給料の3日分です。</p>'}
+mbox.onclick=e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a,id=b.dataset.i;
+  if(a==='close')return mod.classList.remove('open');
+  if(a==='upg'){const u=UPS[b.dataset.kind].find(x=>x[0]===b.dataset.k),l=S.up[u[0]]||0;if(l>=u[4])return;const c=u[5](l);if(S.money<c)return toast('資金が足りません');S.money-=c;S.up[u[0]]=l+1;log(u[2]+'をLv'+(l+1)+'にしました');renderUp(b.dataset.kind);hud();return}
+  if(a==='buy'){const i=+id,n=+b.dataset.n,it=ITEMS[i/3|0][i%3],q=Math.min(n,capNow()-stockSum());if(q<=0)return toast('保管場所がいっぱいです');if(S.money<it[1]*q)return toast('資金が足りません');S.money-=it[1]*q;S.stock[i]+=q;log(it[0]+'を'+q+'個仕入れました');return renderStock(),hud()}
+  if(a==='hire'){const c=S.cands.find(c=>c.id===id);if(!c)return;if(S.money<wage(c)*3)return toast('資金が足りません');S.money-=wage(c)*3;S.cands=S.cands.filter(x=>x!==c);S.staff.push(c);rehome();log(c.n+'を採用しました')}
+  else{const s=S.staff.find(s=>s.id===id);if(!s)return;
+    if(a==='role'){s.r=s.r==='cashier'?'clerk':'cashier';rehome();log(s.n+'を'+ROLES[s.r][0]+'に配置換えしました')}
+    else if(a==='fire'){S.staff=S.staff.filter(x=>x!==s);log(s.n+'を解雇しました')}
+    else if(a==='skill'){const sl=s.sl||1;if(sl>=3)return toast('これ以上は上がりません');if(S.money<sl*150)return toast('資金が足りません');S.money-=sl*150;s.sl=sl+1;log(s.n+'の'+TR[s.t][0]+'がランク'+s.sl+'になりました')}
+    else if(a==='train'){if(s.lv>=5)return toast('これ以上は上がりません');if(S.money<s.lv*100)return toast('資金が足りません');S.money-=s.lv*100;s.lv++;log(s.n+'がLv'+s.lv+'になりました')}}
+  renderStaff();hud()};
+mod.onclick=e=>{if(e.target===mod)mod.classList.remove('open')};
+let sgLast=null;
+const avs=l=>'background:linear-gradient('+l.hr+' 0 42%,'+l.sk+' 42%)';
+const mgrRow=()=>S.mgr?'<div class="pc mini" data-tip="店長 '+S.mgr.n+'|お店の責任者です。見た目はゲームごとにランダムで決まります。"><div class="av" style="'+avs(S.mgr.lk)+'"></div><div class="info"><b>'+S.mgr.n+'</b> <small>店長</small></div><i class="ms" style="font-size:18px;color:var(--gold)">star</i></div>':'';
+function sideStaff(){const sg=(S.mgr?S.mgr.n:'')+S.staff.map(s=>s.id+s.r+s.lv).join();if(sg===sgLast)return;sgLast=sg;
+  $('#sl').innerHTML=mgrRow()+S.staff.map(s=>'<div class="pc mini" data-tip="'+ROLES[s.r][0]+' '+s.n+'|'+TR[s.t][0]+' ・ Lv'+s.lv+' ・ 給料 '+yen(wage(s))+'/日。クリックで管理画面を開きます。"><div class="av" style="'+avs(s.lk)+'"></div><div class="info"><b>'+s.n+'</b> <small>Lv'+s.lv+'</small></div><i class="ms" style="font-size:18px;color:var(--accent)">'+ROLES[s.r][1]+'</i></div>').join('')+(S.staff.length?'':'<p class="mute">スタッフはいません。クリックして採用しましょう。</p>')}
+function renderStock(){modeStock=true;const cap=capNow(),sum=stockSum();
+  mbox.innerHTML='<div class="mh"><h2>仕入れ</h2></div><p class="mute">在庫 <b>'+sum+' / '+cap+'</b> (バックヤード・倉庫棚・棚の強化で保管量が増えます)。棚のLvと同じランクの商品が売れ、在庫切れなら下のランクを売ります。</p>'+ITEMS.map((G,g)=>'<h3>'+GEN[g+1]+'</h3>'+G.map((it,l)=>'<div class="pc"><div class="info"><b>'+it[0]+'</b> <span class="badge">ランク'+(l+1)+'</span><br><small>仕入れ '+yen(it[1])+' / 売値 '+yen(it[2])+' ・ 在庫 '+S.stock[g*3+l]+'</small></div><button data-a="buy" data-i="'+(g*3+l)+'" data-n="1">+1</button><button data-a="buy" data-i="'+(g*3+l)+'" data-n="5">+5</button></div>').join('')).join('')}
+const UPS={
+ shop:[['sign','campaign','看板・広告','来客が+12%/Lvずつ増えます',5,l=>500*(l+1)],['inter','weekend','内装','客が買うたびの評判アップが増えます',5,l=>600*(l+1)],['card','card_membership','会員カード','客単価が+5%/Lvずつ上がります',5,l=>700*(l+1)]],
+ equip:[['adoor','sensor_door','自動ドア','Lv1で設置(客が近づくとドアが開閉します)。Lvごとに来客+7%',3,l=>400*(l+1)],['pos','point_of_sale','POSシステム','全レジの会計時間が-10%/Lvずつ短くなります',5,l=>500*(l+1)],['cool','kitchen','保冷ケース','食品の売値が+10%/Lvずつ上がります',3,l=>500*(l+1)],['light','lightbulb','演出照明','雑貨・衣料の売値が+8%/Lvずつ上がります',3,l=>500*(l+1)],['inv','inventory','在庫管理システム','保管量が+4/Lvずつ増えます',5,l=>300*(l+1)]]};
+let tab='build';
+function renderUp(kind){const U=S.up;mbox.innerHTML='<div class="mh"><h2>'+(kind==='shop'?'店舗アップグレード':'設備アップグレード')+'</h2></div><p class="mute">'+(kind==='shop'?'お店そのものを強くします。効果はすぐ出ます。':'設備の追加・強化です。商品棚そのものの強化は「建築」タブの棚強化で行います。')+'</p>'+UPS[kind].map(u=>{const l=U[u[0]]||0,mx=l>=u[4];return '<div class="pc"><i class="ms" style="color:var(--accent);font-size:26px">'+u[1]+'</i><div class="info"><b>'+u[2]+'</b> <span class="badge">Lv'+l+' / '+u[4]+'</span><br><small>'+u[3]+'</small></div><button data-a="upg" data-kind="'+kind+'" data-k="'+u[0]+'"'+(mx?' disabled':'')+'>'+(mx?'MAX':yen(u[5](l)))+'</button></div>'}).join('')}
+function showTab(t){tab=t;$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(t==='build')renderBuild();else if(t==='staff')renderStaff();else if(t==='stock')renderStock();else renderUp(t)}
+const refreshTab=()=>{if(tab!=='build')showTab(tab)};
+$$('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+$('#sl').onclick=()=>{showTab('staff');app.classList.remove('closed');syncFab()};
+const syncFab=()=>{$('#fab i').textContent=app.classList.contains('closed')?'menu':'menu_open'};
+$('#fab').onclick=()=>{app.classList.toggle('closed');syncFab()};
+
+/* ===== トースト・ツールチップ ===== */
+const toastEl=$('#toast'),tip=$('#tip');let toastT=0,tipT=0;
+function toast(m){toastEl.textContent=m;toastEl.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>toastEl.classList.remove('on'),1800)}
+function showTip(html,x,y,ms,el){tip.innerHTML=html;tip.style.opacity=1;const r=tip.getBoundingClientRect();let l=x+14,t=y+14;
+  if(el){const q=el.getBoundingClientRect();l=q.left+q.width/2-r.width/2;t=q.top-r.height-8;if(t<8)t=q.bottom+8}
+  tip.style.left=Math.max(8,Math.min(innerWidth-r.width-8,l))+'px';tip.style.top=Math.max(8,Math.min(innerHeight-r.height-8,t))+'px';
+  clearTimeout(tipT);if(ms)tipT=setTimeout(hideTip,ms)}
+function hideTip(){tip.style.opacity=0}
+const tipHtml=s=>{const[a,...b]=s.split('|');return '<b>'+a+'</b><br>'+b.join('|')};
+const tipEl=e=>e.target.closest&&e.target.closest('[data-tip]');
+document.addEventListener('pointerover',e=>{const t=tipEl(e);if(t&&e.pointerType==='mouse')showTip(tipHtml(t.dataset.tip),0,0,0,t)});
+document.addEventListener('pointerout',e=>{if(tipEl(e)&&e.pointerType==='mouse')hideTip()});
+document.addEventListener('pointerdown',e=>{const t=tipEl(e);if(t&&e.pointerType!=='mouse')showTip(tipHtml(t.dataset.tip),0,0,2600,t)});
+const INFO={0:['しばふ','店の外の地面。客はここを歩いて入口から来ます。'],1:['床','客や店員が歩ける床です。'],2:['壁','通れない仕切り。ドア以外から入れなくします。'],3:['ドア','壁の出入り口。客はここを通って店に入ります。'],4:['商品棚','客が前側(▲)から商品を見ます。レジとセットで必要です。'],5:['レジ','前側(▲)で客が会計します。レジ係(店員)が前以外の隣の床に立っていないと使えません。'],6:['道路','客が通ってくる道路。ここには建てられません。'],7:['バックヤード','在庫を置く従業員用スペース。保管量+3。'],8:['倉庫棚','バックヤード用の棚。保管量+10。'],9:['セルフレジ','前側(▲)で客が使います。店員がいなくても使えますが、会計は遅めです。']};
+const toolTip=t=>t[0]==='pan'?'選択|ブロックをタップすると、向きの変更・移動・撤去などのメニューが出ます。ドラッグで画面を動かせます。':t[0]==='upg'?'棚強化|商品棚をクリックしてLvを上げます(最大Lv3)。高ランクの商品を置け、保管量も増えます。費用はLv×120万円。':t[0]==='erase'?'撤去|置いたブロックを消します(返金なし)。床の上には直接置けますが、ほかのブロックの上は先に撤去が必要です。':(t[5]?GEN[t[5]]+'棚':INFO[t[3]][0])+(t[4]?' '+yen(t[4]):'')+'|'+(t[5]?GEN[t[5]]+'が好きな客が満足して、買う金額が増えます。':INFO[t[3]][1]);
+function mapTip(e,ms){const p=tileAt(e);if(!p){hideTip();return}const t=S.grid[p[0]+p[1]*W],s=S.staff.find(s=>s.x===p[0]&&s.y===p[1]),m=S.mgr&&S.mgr.x===p[0]&&S.mgr.y===p[1]?S.mgr:null,cu=S.cust.find(c=>Math.round(c.x)===p[0]&&Math.round(c.y)===p[1]);
+  if(!t&&!s&&!m&&!cu){hideTip();return}
+  showTip(((t?'<b>'+(t===4?shelfName(p[0]+p[1]*W):INFO[t][0])+'</b><br>'+INFO[t][1]:'')+(m?'<br><b>店長: '+m.n+'</b>':'')+(s?'<br><b>店員: '+s.n+'</b> ('+ROLES[s.r][0]+' Lv'+s.lv+' / '+TR[s.t][0]+')':'')+(cu?'<br><b>客</b>: 好み「'+GEN[cu.fav]+'」/ '+BUD[cu.bd][0]+(cu.ok?'':' (好みの棚なし)'):'')).replace(/^<br>/,''),e.clientX,e.clientY,ms)}
+
+/* ===== ツールドック ===== */
+let sel=null;
+const TG=[['基本',['pan','floor','wall','door']],['商品棚',['shelf1','shelf2','shelf3','rack']],['レジ(レジは店員が必要)',['counter','self']],['編集',['upg','erase']]];
+function renderBuild(){pane.innerHTML='<p class="hint" id="hint"></p><div id="tools">'+TG.map(g=>'<div class="tgrp">'+g[0]+'</div><div class="tg">'+g[1].map(id=>{const t=TOOLS.find(x=>x[0]===id),c=t[4];return '<button data-id="'+id+'" data-tip="'+toolTip(t)+'"><i class="ms">'+t[1]+'</i><span>'+t[2]+'</span><em>'+(c?yen(c):'')+'</em></button>'}).join('')+'</div>').join('')+'</div>';
+  pane.querySelectorAll('#tools button').forEach(b=>b.onclick=()=>pick(b.dataset.id));pick(S.tool)}
+const pick=id=>{if(id!=='pan'&&sel)closeMenu();S.tool=id;pane.querySelectorAll('#tools button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));const t=TOOLS.find(x=>x[0]===id),h=pane.querySelector('#hint');if(h&&t)h.innerHTML=tipHtml(toolTip(t))};
+S.tool='floor';showTab('build');
+
+/* ===== 時間・ログ ===== */
+const fmt=m=>String(m/60|0).padStart(2,'0')+':'+String(m%60|0).padStart(2,'0');
+function log(m){L.unshift(fmt(S.min)+' '+m);L.length=Math.min(L.length,8);$('#log').innerHTML=L.map(s=>'<li>'+s+'</li>').join('')}
+const DOW=['月','火','水','木','金','土','日'],wkOf=d=>Math.ceil(d/7);
+function endDay(){const we=S.day%7===0;
+  if(we){const w=S.staff.reduce((a,s)=>a+wage(s),0)*7,r=RENT*7;S.money-=r+w;log('第'+wkOf(S.day)+'週 売上'+yen(S.today.sales)+' 来客'+S.today.visits+' 固定費'+yen(r+w));S.today={sales:0,visits:0};newCands()}
+  S.day++;refreshTab();save()}
+
+/* ===== 経路探索と客 ===== */
+function bfs(sx,sy,goal){const q=[[sx,sy]],p=new Map([[sx+sy*W,-1]]);
+  for(let i=0;i<q.length;i++){const[x,y]=q[i];
+    if(goal(x,y)){const r=[];let k=x+y*W;while(k!==-1){r.push([k%W,k/W|0]);k=p.get(k)}return r.reverse()}
+    for(const[dx,dy]of D){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=nx+ny*W;if(p.has(k)||!walk(S.grid[k]))continue;p.set(k,x+y*W);q.push([nx,ny])}}
+  return null}
+const bad=m=>{S.rep=Math.max(0,S.rep-1);log(m)};
+const faces=(x,y,test)=>D.some(([dx,dy])=>{const a=x+dx,b=y+dy;if(a<0||b<0||a>=W||b>=H)return false;const k=a+b*W;return test(k)&&a+DX[S.dir[k]]===x&&b+DY[S.dir[k]]===y});
+const shelfFront=(x,y,g)=>faces(x,y,k=>S.grid[k]===4&&(!g||S.gen[k]===g));
+function spawn(){
+  if(!find(4)||!S.nOpen)return bad('客が来たが、商品棚か使えるレジがない');
+  const fav=1+(Math.random()*3|0),bd=Math.random()*3|0;let ok=true,path=bfs(0,EY,(x,y)=>shelfFront(x,y,fav));if(!path){ok=false;path=bfs(0,EY,(x,y)=>shelfFront(x,y,0))}
+  if(!path)return bad('客が商品棚にたどり着けない');
+  S.cust.push({x:0,y:EY,path,i:0,st:'shelf',t:0,fav,bd,bud:BUD[bd][1],ok,lk:look()})}
+function go(c,st,goal){const p=bfs(Math.round(c.x),Math.round(c.y),goal);if(!p){c.dead=true;bad('客が不満で帰った');return}c.path=p;c.i=0;c.st=st}
+const regOk=k=>S.grid[k]===9||(S.grid[k]===5&&!!S.rg[k]);
+const nearOpen=(x,y)=>faces(x,y,regOk);
+const goalReg=(x,y)=>nearOpen(x,y)&&!S.staff.some(s=>s.x===x&&s.y===y)&&!(S.mgr&&S.mgr.x===x&&S.mgr.y===y);
+function regAt(c){const x=Math.round(c.x),y=Math.round(c.y);for(const[dx,dy]of D){const a=x+dx,b=y+dy;if(a<0||b<0||a>=W||b>=H)continue;{const kk=a+b*W;if(regOk(kk)&&a+DX[S.dir[kk]]===x&&b+DY[S.dir[kk]]===y)return kk}}return -1}
+function stepC(c,dt){
+  if(c.st==='browse'||c.st==='pay'){c.t-=dt;if(c.t>0)return;
+    if(c.st==='browse'){if(!S.nOpen){bad('使えるレジがなく客が帰った');go(c,'leave',EXIT)}else if(pickItem(c))go(c,'counter',goalReg);else{bad('品切れで客が帰った');go(c,'leave',EXIT)}}
+    else{const U=S.up,cs=S.rg[c.rk],cl=cs?cs.lv:0,gb=c.g===1?.1*U.cool:c.g>1?.08*U.light:0,p=Math.round(((c.item?c.item[2]:PRICE)*(1+tsum('sale')+.05*U.card+gb)+6*sumLv('clerk'))*c.bud*(c.ok?1.3:.7));S.money+=p;S.today.sales+=p;S.today.visits++;S.rep=Math.max(0,Math.min(100,S.rep+(c.ok?.6:-.3)+.15*cl+tsum('rep')+.08*U.inter));go(c,'leave',(x,y)=>x===0&&y===EY)}
+    return}
+  let m=SPD*dt;
+  while(m>0&&c.i<c.path.length-1){const[nx,ny]=c.path[c.i+1],dx=nx-c.x,dy=ny-c.y,d=Math.hypot(dx,dy);
+    if(d<=m){c.x=nx;c.y=ny;c.i++;m-=d}else{c.x+=dx/d*m;c.y+=dy/d*m;m=0}}
+  if(c.i>=c.path.length-1){if(c.st==='shelf'){c.st='browse';c.t=2}else if(c.st==='counter'){const k=regAt(c);if(k<0){go(c,'counter',goalReg);return}c.rk=k;const cs=S.rg[k];c.t=(S.grid[k]===9?2.4:1/Math.max(.3,1+.35*(cs?cs.lv:0)+tsum('spd')))*(1-.1*S.up.pos);c.st='pay'}else c.dead=true}}
+function tick(dt){
+  if(!dt)return;
+  S.min+=dt*12;if(S.min>=1440){S.min-=1440;endDay()}
+  if(S.min>=540&&S.min<1260){S.spawn-=dt;if(S.spawn<=0){const hh=S.min/60,rush=(hh>=12&&hh<14)||(hh>=17&&hh<19)?1.5:1;S.spawn=2.4/(.5+S.rep/70)/(1+tsum('lure'))/(1+.12*S.up.sign)/(1+.07*S.up.adoor)/rush;spawn()}}
+  S.cust.forEach(c=>stepC(c,dt));S.cust=S.cust.filter(c=>!c.dead)}
+const night=()=>{const t=S.min/60;return t<6?.36:t<8?.36*(8-t)/2:t<17?0:t<20?.36*(t-17)/3:.36};
+function hud(){
+  const m=$('#money');m.textContent=yen(S.money);m.classList.toggle('neg',S.money<0);
+  $('#clock').textContent='第'+wkOf(S.day)+'週 '+DOW[(S.day-1)%7]+' '+fmt(S.min);$('#sun').textContent=night()>.15?'bedtime':'wb_sunny';
+  $('#rep').textContent=Math.round(S.rep);$('#repbar').style.width=S.rep+'%';$('#cn').textContent=S.cust.length;
+  $('#ts').textContent=yen(S.today.sales);$('#tv').textContent=S.today.visits;
+  $('#fx').textContent=yen(7*(RENT+S.staff.reduce((a,s)=>a+wage(s),0)));$('#sc').textContent=S.staff.length?' '+S.staff.length+'人':'';$('#sk').textContent=' '+stockSum();sideStaff()}
+
+/* ===== 描画 ===== */
+const cv=$('#cv'),ctx=cv.getContext('2d'),P={},DO=new Map();let dpr=1,fitted=false,hover=null;
+function pal(){const s=getComputedStyle(document.documentElement);['bg','bg2','grass','grass2','floor','floor2','wall','wallTop','door','shelf','counter','grid','accent'].forEach(k=>P[k]=s.getPropertyValue('--'+k).trim())}
+function fit(){const w=cv.clientWidth,h=cv.clientHeight,c=S.cam,dk=w>820,L=dk?290:56,R=dk?350:0,top=84,bot=dk?20:Math.min(h*.46,430)+20,aw=w-L-R,ah=h-top-bot;
+  c.z=Math.max(.5,Math.min(1,aw/(22*T),ah/(16*T)));c.x=32*T-(L+aw/2)/c.z;c.y=37*T-(top+ah/2)/c.z}
+new ResizeObserver(()=>{dpr=devicePixelRatio||1;cv.width=cv.clientWidth*dpr;cv.height=cv.clientHeight*dpr;if(!fitted&&cv.clientWidth){fit();fitted=true}}).observe(cv);
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function person(tx,ty,l,body,ring){const cx=(tx+.5)*T,cy=(ty+.5)*T,h=l.hs;
+  ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(cx,cy+5,9,5,0,0,7);ctx.fill();
+  ctx.fillStyle=body;ctx.beginPath();ctx.ellipse(cx,cy+1,10,7.5,0,0,7);ctx.fill();if(ring){ctx.lineWidth=2;ctx.strokeStyle=ring;ctx.stroke()}
+  ctx.fillStyle=l.hr;ctx.beginPath();if(h===1)ctx.ellipse(cx,cy-.5,7,8,0,0,7);else ctx.arc(cx,cy-1,6.2,0,7);ctx.fill();
+  if(h===2){ctx.beginPath();ctx.arc(cx,cy-7,3,0,7);ctx.fill()}
+  ctx.fillStyle=l.sk;ctx.beginPath();ctx.arc(cx,cy+(h===1?.5:.8),4.3,0,7);ctx.fill();
+  if(h===3){ctx.fillStyle=body;ctx.beginPath();ctx.arc(cx,cy-1,5.8,Math.PI,0);ctx.fill();ctx.fillRect(cx-5.8,cy-1.5,11.6,2.2)}}
+const sh=on=>{ctx.shadowColor=on?'rgba(0,0,0,.32)':'transparent';ctx.shadowBlur=on?5:0;ctx.shadowOffsetY=on?2:0};
+/* ===== 商品棚のイラスト (ジャンル×ランクで見た目が変わる) ===== */
+const GOODS=[
+ [(c,x,b)=>{c.fillStyle='#fff';c.beginPath();c.moveTo(x,b-8);c.lineTo(x+4.2,b);c.lineTo(x-4.2,b);c.closePath();c.fill();c.fillStyle='#1f2d2a';c.fillRect(x-2,b-3.2,4,3.2)},
+  (c,x,b,k)=>{c.fillStyle='#7a4a2a';rr(x-4.6,b-6.4,9.2,6.4,1.6);c.fill();c.fillStyle='#e85a4f';c.fillRect(x-3.6,b-5.4,3.2,4.4);c.fillStyle='#f3c64a';c.fillRect(x+.2,b-5.4,3.4,2.1);c.fillStyle='#6cbf5a';c.fillRect(x+.2,b-3,3.4,2)},
+  (c,x,b)=>{c.fillStyle='#fff';rr(x-5,b-5.6,10,5.6,1.2);c.fill();c.fillStyle='#c4343f';rr(x-4.1,b-4.8,8.2,4,1);c.fill();c.strokeStyle='#f6c6c9';c.lineWidth=.8;c.beginPath();c.moveTo(x-3,b-3.8);c.lineTo(x+1,b-2.2);c.moveTo(x-1,b-4.2);c.lineTo(x+3,b-2.8);c.stroke()}],
+ [(c,x,b,k)=>{c.fillStyle=['#e85a4f','#3b82c4','#f3c64a'][k];c.fillRect(x-1.4,b-8,2.8,6);c.fillStyle='#f3d9a8';c.beginPath();c.moveTo(x-1.4,b-2);c.lineTo(x+1.4,b-2);c.lineTo(x,b);c.closePath();c.fill();c.fillStyle='#ffb3c1';c.fillRect(x-1.4,b-8,2.8,1.6)},
+  (c,x,b,k)=>{if(k===1){c.fillStyle='#fff';c.beginPath();c.ellipse(x,b-1.8,5,2,0,0,7);c.fill();c.strokeStyle='#4a7fc1';c.lineWidth=.9;c.stroke()}else{c.fillStyle='#fff';rr(x-3.4,b-5.6,6.8,5.6,1.8);c.fill();c.fillStyle='#4a7fc1';c.fillRect(x-3.4,b-4,6.8,1.4);c.strokeStyle='#fff';c.lineWidth=1.2;c.beginPath();c.arc(x+3.6,b-3,1.7,-1.5,1.5);c.stroke()}},
+  (c,x,b,k)=>{if(k===1){c.fillStyle='#e0b44a';c.beginPath();c.arc(x,b-4.2,4.2,0,7);c.fill();c.fillStyle='#fff7df';c.beginPath();c.arc(x,b-4.2,3,0,7);c.fill();c.strokeStyle='#5a3b12';c.lineWidth=.8;c.beginPath();c.moveTo(x,b-4.2);c.lineTo(x,b-6.2);c.moveTo(x,b-4.2);c.lineTo(x+1.6,b-3.6);c.stroke()}else{c.fillStyle='#2a6f8f';c.beginPath();c.ellipse(x,b-3.4,3.8,3.4,0,0,7);c.fill();c.fillRect(x-1.3,b-8,2.6,3.4);c.fillStyle='#e0b44a';c.fillRect(x-2,b-8.4,4,1.4);c.fillRect(x-3.8,b-3.8,7.6,.9)}}],
+ [(c,x,b,k)=>{c.fillStyle=['#e85a4f','#3b82c4','#f4f4f4'][k];c.beginPath();c.moveTo(x-5,b-6.6);c.lineTo(x-2,b-8);c.lineTo(x+2,b-8);c.lineTo(x+5,b-6.6);c.lineTo(x+4,b-4.2);c.lineTo(x+2.6,b-5.2);c.lineTo(x+2.6,b);c.lineTo(x-2.6,b);c.lineTo(x-2.6,b-5.2);c.lineTo(x-4,b-4.2);c.closePath();c.fill()},
+  (c,x,b)=>{c.fillStyle='#51648c';c.beginPath();c.moveTo(x-5.4,b-6.4);c.lineTo(x-2,b-8);c.lineTo(x+2,b-8);c.lineTo(x+5.4,b-6.4);c.lineTo(x+5,b);c.lineTo(x-5,b);c.closePath();c.fill();c.strokeStyle='#fff';c.lineWidth=.9;c.beginPath();c.moveTo(x-2,b-8);c.lineTo(x,b-4);c.lineTo(x+2,b-8);c.moveTo(x,b-4);c.lineTo(x,b);c.stroke();c.fillStyle='#ffd24a';c.fillRect(x+.8,b-3,1.2,1.2)},
+  (c,x,b)=>{c.fillStyle='#ef5b93';c.beginPath();c.moveTo(x-1.8,b-8);c.lineTo(x+1.8,b-8);c.lineTo(x+2.2,b-5);c.lineTo(x+5.2,b);c.lineTo(x-5.2,b);c.lineTo(x-2.2,b-5);c.closePath();c.fill();c.fillStyle='#ffd24a';c.fillRect(x-2.2,b-5.4,4.4,1.2);c.beginPath();c.arc(x,b-2.2,1.1,0,7);c.fill()}]];
+function drawShelf(x,y,g,l){const c=ctx;
+  sh(1);c.fillStyle=GC[g]||'#888';rr(x+2,y+2,T-4,T-4,5);c.fill();sh(0);
+  c.fillStyle='rgba(18,14,10,.42)';rr(x+4,y+6.5,T-8,T-11,3);c.fill();
+  c.fillStyle='rgba(255,255,255,.88)';c.fillRect(x+4,y+15,T-8,1.8);c.fillRect(x+4,y+25,T-8,1.8);
+  const f=GOODS[g-1][l-1];for(let r=0;r<2;r++)for(let k=0;k<3;k++)f(c,x+8+k*8,y+(r?24.6:14.6),(k+r)%3);
+  c.fillStyle='#ffd24a';for(let k=0;k<l;k++){c.beginPath();c.arc(x+16+(k-(l-1)/2)*5,y+4.3,1.7,0,7);c.fill()}}
+function draw(){
+  const w=cv.clientWidth,h=cv.clientHeight,{x,y,z}=S.cam,MW=W*T,MH=H*T;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,P.bg);g.addColorStop(1,P.bg2);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  ctx.setTransform(dpr*z,0,0,dpr*z,-x*z*dpr,-y*z*dpr);
+  ctx.save();ctx.shadowColor='rgba(0,0,0,.3)';ctx.shadowBlur=40;ctx.shadowOffsetY=12;ctx.fillStyle=P.grass;rr(0,0,MW,MH,20);ctx.fill();ctx.restore();
+  ctx.save();rr(0,0,MW,MH,20);ctx.clip();
+  for(let j=0;j<H;j++)for(let i=0;i<W;i++){const t=S.grid[i+j*W],px=i*T,py=j*T,c=(i+j)&1;
+    ctx.fillStyle=t===6?(c?'#5c626c':'#555b64'):t===7||t===8?(c?'#cdbb98':'#c4b08a'):t===0?(c?P.grass2:P.grass):(c?P.floor2:P.floor);ctx.fillRect(px,py,T,T);
+    if(t===2){ctx.fillStyle=P.wall;ctx.fillRect(px,py,T,T);ctx.fillStyle=P.wallTop;rr(px+3,py+3,T-6,T-6,5);ctx.fill()}
+    else if(t===3){ctx.save();ctx.translate(px+T/2,py+T/2);if(S.dir[i+j*W]%2)ctx.rotate(Math.PI/2);
+    if(S.up.adoor>0){const kk=i+j*W,cn=q=>Math.hypot(q.x-i,q.y-j)<1.8,want=(S.cust.some(cn)||S.staff.some(s=>s.x!=null&&cn(s))||(S.mgr&&cn(S.mgr)))?1:0,o0=DO.get(kk)||0,o=o0+(want-o0)*.16;DO.set(kk,o);
+      const pw=(T/2-3)*(1-.88*o);ctx.fillStyle='rgba(120,200,230,.88)';rr(-T/2+2,-5,pw,10,3);ctx.fill();rr(T/2-2-pw,-5,pw,10,3);ctx.fill();
+      ctx.fillStyle=o>.3?'#5be37d':'#f3b94d';ctx.beginPath();ctx.arc(0,-T/2+5,2.4,0,7);ctx.fill()}
+    else{ctx.fillStyle=P.door;rr(-T/2+3,-5,T-6,10,4);ctx.fill()}ctx.restore()}
+    else if(t===4){drawShelf(px,py,S.gen[i+j*W]||1,S.lv[i+j*W]||1)}
+    else if(t===5){sh(1);ctx.fillStyle=P.counter;rr(px+3,py+4,T-6,T-8,6);ctx.fill();sh(0);ctx.fillStyle='rgba(255,255,255,.85)';rr(px+9,py+9,T-18,7,2);ctx.fill();
+    if(!(S.rg&&S.rg[i+j*W])){ctx.fillStyle='rgba(40,40,48,.6)';rr(px+3,py+4,T-6,T-8,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.fillText('休止',px+T/2,py+T/2+4);ctx.textAlign='start'}}
+  else if(t===9){sh(1);ctx.fillStyle='#2f7fb8';rr(px+4,py+3,T-8,T-6,6);ctx.fill();sh(0);ctx.fillStyle='#d9f0ff';rr(px+8,py+7,T-16,9,2);ctx.fill();ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(px+9,py+20,T-18,3);ctx.fillStyle='#5be37d';ctx.beginPath();ctx.arc(px+T-9,py+T-7,2.2,0,7);ctx.fill()}
+    else if(t===6){if(j===H-2&&i%2===0){ctx.fillStyle='#e8d36a';ctx.fillRect(px+6,py-1,T-12,3)}}
+    else if(t===8){sh(1);ctx.fillStyle='#8a6a43';rr(px+3,py+3,T-6,T-6,4);ctx.fill();sh(0);ctx.fillStyle='#c79a5e';ctx.fillRect(px+6,py+7,T-12,7);ctx.fillRect(px+6,py+18,T-12,7)}}
+  ctx.strokeStyle=P.grid;ctx.lineWidth=1/z;ctx.beginPath();
+  for(let i=0;i<=W;i++){ctx.moveTo(i*T,0);ctx.lineTo(i*T,MH)}for(let j=0;j<=H;j++){ctx.moveTo(0,j*T);ctx.lineTo(MW,j*T)}ctx.stroke();
+  for(let j=0;j<H;j++)for(let i=0;i<W;i++){const t=S.grid[i+j*W];if(t===4||t===5||t===9){ctx.save();ctx.translate(i*T+T/2,j*T+T/2);ctx.rotate(S.dir[i+j*W]*Math.PI/2);ctx.fillStyle='#ffd24a';ctx.strokeStyle='rgba(0,0,0,.55)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,-T/2-4);ctx.lineTo(-5,-T/2+3);ctx.lineTo(5,-T/2+3);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}}
+  ctx.globalAlpha=.3;ctx.fillStyle=P.accent;rr(2,EY*T+2,T-4,T-4,6);ctx.fill();ctx.globalAlpha=1;
+  ctx.beginPath();ctx.moveTo(11,EY*T+9);ctx.lineTo(22,EY*T+T/2);ctx.lineTo(11,EY*T+T-9);ctx.closePath();ctx.fillStyle=P.accent;ctx.fill();
+  if(S.mgr)person(S.mgr.x,S.mgr.y,S.mgr.lk,'#2f3b4a','#f3b94d');
+  for(const s of S.staff)if(s.x!=null)person(s.x,s.y,s.lk,s.r==='cashier'?P.accent:'#d9962a','rgba(255,255,255,.9)');
+  for(const c of S.cust){person(c.x,c.y,c.lk,'hsl('+c.lk.oh+',62%,54%)',null);ctx.fillStyle=GC[c.fav];ctx.beginPath();ctx.arc((c.x+.5)*T+8,(c.y+.5)*T-9,4,0,7);ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#fff';ctx.stroke()}
+  if(hover&&app.dataset.screen==='game'&&(S.tool!=='pan'||(sel&&sel.mv))){const hc=!(sel&&sel.mv)||validDest(sel.k,hover[0]+hover[1]*W)?P.accent:'#e5484d';ctx.globalAlpha=.25;ctx.fillStyle=hc;rr(hover[0]*T+1,hover[1]*T+1,T-2,T-2,6);ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=hc;ctx.lineWidth=2/z;ctx.stroke()}
+  if(sel){ctx.strokeStyle='#f3b94d';ctx.lineWidth=3/z;rr((sel.k%W)*T+1,(sel.k/W|0)*T+1,T-2,T-2,6);ctx.stroke()}
+  ctx.restore();
+  const a=night();if(a>0){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='rgba(8,16,48,'+a+')';ctx.fillRect(0,0,w,h)}}
+let last=0;
+function frame(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(app.dataset.screen==='game'){tick(dt*S.speed);hud()}draw();if(sel){if(app.dataset.screen!=='game')closeMenu();else placeMenu()}requestAnimationFrame(frame)}
+
+/* ===== 入力 ===== */
+const tileAt=e=>{const r=cv.getBoundingClientRect(),c=S.cam,i=Math.floor(((e.clientX-r.left)/c.z+c.x)/T),j=Math.floor(((e.clientY-r.top)/c.z+c.y)/T);return i>=0&&j>=0&&i<W&&j<H?[i,j]:null};
+function paint(e,first){const p=tileAt(e);if(!p)return;const d=TOOLS.find(t=>t[0]===S.tool),k=p[0]+p[1]*W;
+  if(p[1]>=H-RD||S.grid[k]===6)return;
+  if(d[0]==='upg'){if(!first||S.grid[k]!==4)return;const lv=S.lv[k]||1;if(lv>=3)return toast('これ以上強化できません');const c=lv*120;if(c>S.money)return log('資金が足りません');S.money-=c;S.lv[k]=lv+1;return log(shelfName(k)+'に強化しました')}
+  if(d[0]==='erase'){if(S.grid[k]===0)return;eraseAt(k);return}
+  if(d[3]===8){if(S.grid[k]!==7)return first&&toast(S.grid[k]===8?'先に撤去してください':'倉庫棚はバックヤードの上に置きます')}
+  else if(S.grid[k]!==0&&S.grid[k]!==1)return first&&toast('ほかのブロックの上には置けません。先に「撤去」してください(床の上には置けます)');
+  else if(d[3]===1&&S.grid[k]===1)return;
+  if((d[4]||0)>S.money)return log('資金が足りません');
+  S.money-=d[4]||0;if(d[3]!==8)S.base[k]=S.grid[k]===1?1:0;S.grid[k]=d[3];S.gen[k]=d[5]||0;S.lv[k]=d[3]===4?1:0;S.dir[k]=(d[3]===4||d[3]===5||d[3]===9)?2:0;rehome()}
+function eraseAt(k){const t=S.grid[k];if(t===0)return;if(t===8)S.grid[k]=7;else{S.grid[k]=t===1?0:(S.base[k]?1:0);S.base[k]=0}S.gen[k]=0;S.lv[k]=0;S.dir[k]=0;rehome()}
+/* ===== ブロックのインタラクトメニュー (向き・移動・撤去) ===== */
+const IDIR=[3,4,5,9],SELT=[2,3,4,5,7,8,9];
+const IMB=(a,ic,lb,on)=>'<button data-i="'+a+'" class="'+(on?'on':'')+'"><i class="ms">'+ic+'</i><span>'+lb+'</span></button>';
+function closeMenu(){sel=null;$('#imenu').classList.remove('on');hideTip()}
+function renderMenu(){const m=$('#imenu');if(!sel)return m.classList.remove('on');
+  const k=sel.k,t=S.grid[k];if(!SELT.includes(t))return closeMenu();
+  const rot=IDIR.includes(t),region=t===7||t===8,name=t===4?shelfName(k):INFO[t][0];
+  const hint={2:'通れない壁です。',3:'壁の向きに合わせて回転できます。',4:'▲の側(前)から客が商品を見ます。',5:'▲の側(前)で客が会計します。店員は前以外の隣の床に立ちます。',7:'1マスずつ移すか、バックヤード全体を動かせます。',8:'ほかのバックヤードのマスへ移せます。',9:'▲の側(前)で客が使います。'}[t]||'';
+  const lv=S.lv[k]||1;
+  m.innerHTML='<div class="ih"><b>'+name+(rot&&t!==3?' ・ 向き'+DIRN[S.dir[k]]:'')+'</b><button class="ib" data-i="close" aria-label="閉じる"><i class="ms">close</i></button></div>'
+   +'<p>'+(sel.mv?'<b>移動先のマスをタップ</b>(同じマスをタップで取消)':hint)+'</p>'
+   +'<div class="ig">'+(rot?IMB('rl','rotate_left','左回転')+IMB('rr','rotate_right','右回転'):'')+IMB('mv','open_with',sel.mv?'取消':'移動先を選ぶ',sel.mv)+(t===4?IMB('up','upgrade',lv>=3?'強化済み':'強化 '+yen(lv*120)):'')+IMB('del','delete','撤去')+'</div>'
+   +'<h4>'+(region?'バックヤード全体を1マス動かす':'1マス動かす')+'</h4><div class="ig ar">'+IMB('n0','arrow_upward','上')+IMB('n3','arrow_back','左')+IMB('n2','arrow_downward','下')+IMB('n1','arrow_forward','右')+'</div>';
+  m.classList.add('on')}
+function placeMenu(){const m=$('#imenu'),w=m.offsetWidth,h=m.offsetHeight,c=S.cam,x=((sel.k%W)*T+T/2-c.x)*c.z,y=((sel.k/W|0)*T-c.y)*c.z,aw=app.clientWidth,ah=app.clientHeight,bot=aw>820||app.classList.contains('closed')?8:Math.min(ah*.46,430)+8;
+  let t=y-h-10;if(t<76)t=y+T*c.z+10;t=Math.max(76,Math.min(ah-h-bot,t));m.style.left=Math.max(8,Math.min(aw-w-8,x-w/2))+'px';m.style.top=t+'px'}
+const validDest=(from,to)=>{if(to===from||to<0||to>=W*H||(to/W|0)>=H-RD)return false;const g=S.grid[to];return S.grid[from]===8?g===7:(g===0||g===1)};
+function moveBlock(from,to){const t=S.grid[from];
+  if(t===8){S.grid[from]=7;S.grid[to]=8}else{const nb=S.grid[to]===1?1:0,ob=S.base[from];S.grid[to]=t;S.base[to]=nb;S.grid[from]=ob?1:0;S.base[from]=0}
+  S.gen[to]=S.gen[from];S.lv[to]=S.lv[from];S.dir[to]=S.dir[from];S.gen[from]=0;S.lv[from]=0;S.dir[from]=0}
+function doMove(to){const from=sel.k;if(!validDest(from,to))return toast(S.grid[from]===8?'倉庫棚はバックヤードのマスに移せます':'空いている芝か床の上に移せます');
+  moveBlock(from,to);sel.k=to;sel.mv=false;rehome();renderMenu()}
+function nudge(d){const k=sel.k,x=k%W+DX[d],y=(k/W|0)+DY[d];if(x<0||y<0||x>=W||y>=H)return toast('これ以上動かせません');
+  const to=x+y*W;if(!validDest(k,to))return toast('動かせません(そこには別のブロックがあります)');moveBlock(k,to);sel.k=to;rehome();renderMenu()}
+function shiftRegion(d){const seen=new Set([sel.k]),q=[sel.k];
+  for(let i=0;i<q.length;i++){const k=q[i],x=k%W,y=k/W|0;for(const[dx,dy]of D){const a=x+dx,b=y+dy;if(a<0||b<0||a>=W||b>=H)continue;const n=a+b*W;if(!seen.has(n)&&(S.grid[n]===7||S.grid[n]===8)){seen.add(n);q.push(n)}}}
+  const nk=k=>{const x=k%W+DX[d],y=(k/W|0)+DY[d];return x<0||y<0||x>=W||y>=H?-1:x+y*W};
+  const cells=q.map(k=>({k,t:S.grid[k],gen:S.gen[k],lv:S.lv[k],dir:S.dir[k],base:S.base[k],n:nk(k)}));
+  for(const c of cells){if(c.n<0||(c.n/W|0)>=H-RD)return toast('これ以上動かせません');if(!seen.has(c.n)&&S.grid[c.n]!==0&&S.grid[c.n]!==1)return toast('動かせません(そこに別のブロックがあります)')}
+  const gr=cells.map(c=>seen.has(c.n)?S.base[c.n]:(S.grid[c.n]===1?1:0));
+  for(const c of cells){S.grid[c.k]=c.base?1:0;S.base[c.k]=0;S.gen[c.k]=0;S.lv[c.k]=0;S.dir[c.k]=0}
+  cells.forEach((c,i)=>{S.grid[c.n]=c.t;S.base[c.n]=gr[i];S.gen[c.n]=c.gen;S.lv[c.n]=c.lv;S.dir[c.n]=c.dir});
+  sel.k=nk(sel.k);rehome();renderMenu()}
+function tapTile(e){const p=tileAt(e);if(!p)return closeMenu();const k=p[0]+p[1]*W;
+  if(sel&&sel.mv){if(k===sel.k){sel.mv=false;return renderMenu()}return doMove(k)}
+  if(SELT.includes(S.grid[k])){sel={k,mv:false};renderMenu();hideTip()}else closeMenu()}
+$('#imenu').onclick=e=>{const b=e.target.closest('button');if(!b||!sel)return;const a=b.dataset.i,k=sel.k,t=S.grid[k];
+  if(a==='close')return closeMenu();
+  if(a==='rl'||a==='rr'){S.dir[k]=(S.dir[k]+(a==='rr'?1:3))%4;rehome();return renderMenu()}
+  if(a==='mv'){sel.mv=!sel.mv;return renderMenu()}
+  if(a==='del'){eraseAt(k);return closeMenu()}
+  if(a==='up'){const lv=S.lv[k]||1;if(lv>=3)return toast('これ以上強化できません');const c=lv*120;if(c>S.money)return toast('資金が足りません');S.money-=c;S.lv[k]=lv+1;log(shelfName(k)+'に強化しました');return renderMenu()}
+  if(a[0]==='n'){const d=+a[1];return t===7||t===8?shiftRegion(d):nudge(d)}};
+addEventListener('keydown',e=>{if(!sel||app.dataset.screen!=='game')return;if(e.key==='Escape')closeMenu();else if((e.key==='r'||e.key==='R')&&IDIR.includes(S.grid[sel.k])){S.dir[sel.k]=(S.dir[sel.k]+1)%4;rehome();renderMenu()}});
+let drag=null,painting=false;
+cv.oncontextmenu=e=>e.preventDefault();
+cv.onpointerdown=e=>{if(app.dataset.screen!=='game')return;cv.setPointerCapture(e.pointerId);
+  if(e.button===1||e.button===2||S.tool==='pan')drag={x:e.clientX,y:e.clientY,cx:S.cam.x,cy:S.cam.y,m:0};else{painting=true;paint(e,1)}if(e.pointerType!=='mouse'){hover=tileAt(e);mapTip(e,2200)}};
+cv.onpointermove=e=>{hover=tileAt(e);if(e.pointerType==='mouse'&&app.dataset.screen==='game'){drag||painting?hideTip():mapTip(e)}
+  if(drag){drag.m=Math.max(drag.m,Math.hypot(e.clientX-drag.x,e.clientY-drag.y));if(drag.m>=6){S.cam.x=drag.cx-(e.clientX-drag.x)/S.cam.z;S.cam.y=drag.cy-(e.clientY-drag.y)/S.cam.z}}else if(painting)paint(e)};
+cv.onpointerup=e=>{if(drag&&drag.m<6&&S.tool==='pan'&&e.button===0&&app.dataset.screen==='game')tapTile(e);drag=null;painting=false};
+cv.onpointercancel=()=>{drag=null;painting=false};
+cv.onpointerleave=()=>{hover=null;hideTip()};
+function zoom(f,cx,cy){const c=S.cam,z=Math.min(2.5,Math.max(.2,c.z*f)),wx=cx/c.z+c.x,wy=cy/c.z+c.y;c.z=z;c.x=wx-cx/z;c.y=wy-cy/z}
+cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoom(e.deltaY<0?1.12:1/1.12,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+$('#zi').onclick=()=>zoom(1.25,cv.clientWidth/2,cv.clientHeight/2);
+$('#zo').onclick=()=>zoom(.8,cv.clientWidth/2,cv.clientHeight/2);
+const speedUI=()=>$$('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.s===S.speed));
+$$('#speed button').forEach(b=>b.onclick=()=>{S.speed=+b.dataset.s;speedUI()});
+addEventListener('keydown',e=>{const i=+e.key;if(app.dataset.screen==='game'&&i>=1&&i<=TOOLS.length&&TOOLS[i-1][0]!=='back')pick(TOOLS[i-1][0])});
+
+/* ===== テーマ ===== */
+const root=document.documentElement,mq=matchMedia('(prefers-color-scheme: dark)');
+try{const v=localStorage.getItem('theme');if(v)root.dataset.theme=v}catch(e){}
+const isDark=()=>root.dataset.theme?root.dataset.theme==='dark':mq.matches;
+function themeUI(){pal();$$('.theme i').forEach(i=>i.textContent=isDark()?'light_mode':'dark_mode')}
+$$('.theme').forEach(b=>b.onclick=()=>{const v=isDark()?'light':'dark';root.dataset.theme=v;try{localStorage.setItem('theme',v)}catch(e){}themeUI()});
+mq.addEventListener('change',themeUI);
+
+reset();themeUI();speedUI();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
