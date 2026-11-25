@@ -478,12 +478,34 @@ canvas{border:0;border-radius:10px}
 .ribbon-title{border:0;border-radius:10px;background:linear-gradient(90deg,#2f7fd1,#4a97e6);box-shadow:none}
 .modal-header{background:linear-gradient(90deg,#ee7b30,#f59a4a);text-shadow:none}
 .bar-bg{border:0;background:#e3ddcc}
+canvas#view3d{background:#222;cursor:default}
+select.kairo-btn{max-width:110px}
+#tip{position:fixed;z-index:9999;max-width:270px;background:#1b2434;color:#fff;border:2px solid #ffd45c;border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.55;pointer-events:none;display:none;white-space:pre-line;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+input,textarea{user-select:text}
+html,body{height:100%;overflow:hidden}
+body{padding:0;display:block;min-height:0}
+.main-grid{display:block;max-width:none;width:auto}
+.stage-wrap{position:fixed;inset:0;flex:none;height:auto;padding:0;border:0;border-radius:0;box-shadow:none;background:#86efac;z-index:1}
+canvas#gameCanvas{position:absolute;inset:0;width:100%;height:100%;border-radius:0;touch-action:none;image-rendering:auto;cursor:grab}
+canvas#view3d{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:0;background:#222}
+.top-hud{position:fixed;top:8px;left:8px;right:8px;width:auto;max-width:none;margin:0;z-index:30;padding:6px 12px}
+.ticker-bar{position:fixed;left:8px;right:8px;top:80px;width:auto;max-width:none;margin:0;z-index:29}
+.side-dock{position:fixed;right:8px;bottom:8px;top:var(--ui-top,120px);width:min(400px,calc(100vw - 16px));height:auto;z-index:28;transition:transform .22s ease;background:rgba(251,250,246,.95)}
+.side-dock.hidden{transform:translateX(calc(100% + 24px));pointer-events:none}
+.cam-bar{position:fixed;left:12px;top:var(--ui-top,120px);display:flex;flex-direction:column;gap:6px;z-index:27}
+.build-banner{position:fixed;top:var(--ui-top,120px);z-index:27}
+@media (max-width:760px){
+.top-hud{padding:4px 8px;gap:4px}.store-title{display:none}.hud-stats,.hud-controls{gap:4px}
+.hud-pill{font-size:11px;padding:3px 8px}.pill-money{min-width:0}
+.side-dock{left:8px;right:8px;width:auto;top:auto;height:46vh}
+.side-dock.hidden{transform:translateY(calc(100% + 24px))}
+.inspector-popup{left:60px;right:8px;width:auto;bottom:auto;top:var(--ui-top,120px)}}
 </style>
 </head>
 <body>
 
   <!-- 上部HUD -->
-  <header class="top-hud kairo-box">
+  <header class="top-hud kairo-box" id="hud">
     <div class="store-badge">
       <span class="rank-tag" id="hud-rank">ランク F</span>
       <span class="store-title">開拓！マイコンビニDX</span>
@@ -504,12 +526,17 @@ canvas{border:0;border-radius:10px}
       <button class="kairo-btn btn-cream" id="btn-spd3" onclick="setSpeed(3)">3x</button>
       <button class="kairo-btn btn-cream" id="btn-sound" onclick="toggleSound()">🔊</button>
       <button class="kairo-btn btn-cream" id="btn-save" onclick="saveGame(true)" title="今すぐセーブ">💾</button>
+      <button class="kairo-btn btn-cream" onclick="openSignEditor()" title="店の看板を編集（マップ上の看板クリックでもOK）">🪧</button>
+      <button class="kairo-btn btn-cream" onclick="openImportModal()" title="セーブの書き出し／旧バージョンのデータ読み込み">📂</button>
       <button class="kairo-btn btn-cream" onclick="resetGame()" title="データを消して最初から">🗑</button>
+      <select id="store-sel" class="kairo-btn btn-cream" onchange="switchStore(+this.value)"></select>
+      <button class="kairo-btn btn-blue" id="btn-newstore" onclick="buildNewStore()">🏬新店</button>
+      <button class="kairo-btn btn-gold" id="btn-3d" onclick="toggle3D()" title="店長視点(Vキー)">👁3D</button>
     </div>
   </header>
 
   <!-- ニュースティッカー -->
-  <div class="ticker-bar">
+  <div class="ticker-bar" id="ticker-bar">
     <span class="ticker-label">街の声</span>
     <span id="ticker-text">新しいコンビニがオープンしました！棚を並べてお客さんを迎えよう！</span>
   </div>
@@ -523,14 +550,16 @@ canvas{border:0;border-radius:10px}
         <button class="kairo-btn btn-red" style="padding: 3px 10px; font-size: 11px;" onclick="cancelBuildMode()">✖ キャンセル</button>
       </div>
 
-      <canvas id="gameCanvas" width="840" height="520"></canvas>
+      <div class="cam-bar"><button class="kairo-btn btn-cream" onclick="zoomBtn(1.25)" title="拡大">＋</button><button class="kairo-btn btn-cream" onclick="zoomBtn(0.8)" title="縮小">－</button><button class="kairo-btn btn-cream" onclick="camHome()" title="自分の店へ">🏪</button><button class="kairo-btn btn-cream" onclick="toggleDock()" title="メニュー表示切替">📋</button></div>
+      <canvas id="gameCanvas" width="1320" height="520"></canvas>
+      <canvas id="view3d" width="420" height="260" style="display:none;image-rendering:pixelated"></canvas>
 
       <!-- マップ内アイテムクリック時のクイックカード -->
       <div class="inspector-popup kairo-box" id="inspector-popup"></div>
     </div>
 
     <!-- 右：カイロ風コマンドドック -->
-    <aside class="side-dock kairo-box">
+    <aside class="side-dock kairo-box" id="side-dock">
       <div class="dock-tabs">
         <button class="dock-tab active" onclick="switchDock('build', this)"><span>🏗️</span><span>建築・配置</span></button>
         <button class="dock-tab" onclick="switchDock('price', this)"><span>💰</span><span>商品・価格</span></button>
@@ -569,10 +598,149 @@ canvas{border:0;border-radius:10px}
 // マップ・タイル定数 (21列 x 13行, 1タイル=40px)
 // =========================================================
 const TILE = 40;
-const COLS = 21;
+let COLS = 120;                 // ステージ横幅（足りなくなると自動で広がる）
+const NB_W = 8, NB_H = 7, MAX_COLS = 600; // お隣の店 = コンビニ大(8x7マス)
 const ROWS = 13;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+// ---- カメラ（上下左右に無限スクロール＆ズーム）& レスポンシブ ----
+const cam = { x: 0, y: 0, zoom: 1, scale: 1, dpr: 1, needHome: true };
+function viewW() { return canvas.width / cam.scale; }
+function viewH() { return canvas.height / cam.scale; }
+function dockW() { const d = document.getElementById('side-dock'); return d && !d.classList.contains('hidden') && window.innerWidth > 760 ? d.offsetWidth : 0; }
+function camHome() { cam.needHome = true; }
+function resizeCanvas() {
+  const r = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(200, Math.round(r.width * dpr)), h = Math.max(150, Math.round(r.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  cam.dpr = dpr;
+  if (cam.needHome) {
+    cam.needHome = false;
+    const b = getStoreBounds(), visW = Math.max(240, r.width - dockW());
+    cam.zoom = Math.max(0.3, Math.min(1.4, visW / ((b.maxX + 4) * TILE), r.height * 0.78 / (13 * TILE)));
+    cam.x = ((b.maxX + 1) / 2) * TILE - (visW / 2) / cam.zoom;
+    cam.y = 6.5 * TILE - (r.height / 2) / cam.zoom;
+  }
+  cam.scale = cam.zoom * dpr;
+}
+function zoomAt(cx, cy, z) {
+  const r = canvas.getBoundingClientRect(), k = canvas.width / r.width;
+  const sx = (cx - r.left) * k, sy = (cy - r.top) * k;
+  const wx = sx / cam.scale + cam.x, wy = sy / cam.scale + cam.y;
+  cam.zoom = Math.max(0.2, Math.min(2.5, z)); cam.scale = cam.zoom * cam.dpr;
+  cam.x = wx - sx / cam.scale; cam.y = wy - sy / cam.scale;
+}
+function zoomBtn(f) { const r = canvas.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, cam.zoom * f); }
+function toggleDock() { document.getElementById('side-dock').classList.toggle('hidden'); }
+function layoutUI() {
+  const hud = document.getElementById('hud').getBoundingClientRect(), tk = document.getElementById('ticker-bar');
+  tk.style.top = (hud.bottom + 6) + 'px';
+  document.documentElement.style.setProperty('--ui-top', (tk.getBoundingClientRect().bottom + 8) + 'px');
+}
+layoutUI();
+window.addEventListener('resize', layoutUI);
+window.addEventListener('load', () => {
+  layoutUI();
+  if (window.innerWidth <= 760) document.getElementById('side-dock').classList.add('hidden');
+  if ('ResizeObserver' in window) new ResizeObserver(layoutUI).observe(document.getElementById('hud'));
+});
+function evTile(e) {
+  const r = canvas.getBoundingClientRect();
+  const wx = (e.clientX - r.left) * (canvas.width / r.width) / cam.scale + cam.x;
+  const wy = (e.clientY - r.top) * (canvas.height / r.height) / cam.scale + cam.y;
+  return [Math.floor(wx / TILE), Math.floor(wy / TILE)];
+}
+const ptrs = new Map(); let camDrag = null, pinch = null;
+canvas.addEventListener('pointerdown', e => {
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: cam.zoom }; camDrag = null; return; }
+  const mouse = e.pointerType === 'mouse';
+  if (mouse && !(e.button === 1 || (e.button === 0 && !state.buildMode))) return;
+  camDrag = { sx: e.clientX, sy: e.clientY, cx: cam.x, cy: cam.y, moved: false, id: e.pointerId };
+});
+window.addEventListener('pointermove', e => {
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d); return; }
+  if (!camDrag || e.pointerId !== camDrag.id) return;
+  const dx = e.clientX - camDrag.sx, dy = e.clientY - camDrag.sy;
+  if (!camDrag.moved && Math.hypot(dx, dy) < 6) return;
+  camDrag.moved = true;
+  const r = canvas.getBoundingClientRect(), k = canvas.width / r.width / cam.scale;
+  cam.x = camDrag.cx - dx * k; cam.y = camDrag.cy - dy * k;
+});
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; camDrag = null; };
+window.addEventListener('pointerup', endPtr); window.addEventListener('pointercancel', endPtr);
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) { const k = canvas.width / canvas.getBoundingClientRect().width / cam.scale; cam.x += (e.deltaX || e.deltaY) * k; return; }
+  zoomAt(e.clientX, e.clientY, cam.zoom * Math.exp(-e.deltaY * 0.0015));
+}, { passive: false });
+
+// ---- 店の看板（店舗ごとに保存） ----
+const SIGN_COLORS = ['auto', '#38bdf8', '#facc15', '#f87171', '#4ade80', '#fb923c', '#f9a8d4', '#c4b5fd', '#f8fafc'];
+let sign = { text: '🏪 MY MART', color: 'auto', rank: true }, _signColor = 'auto';
+const signBg = () => sign.color === 'auto' ? (state.rankIdx >= 3 ? '#facc15' : '#38bdf8') : sign.color;
+const signLabel = () => sign.text + (sign.rank ? ` [${RANKS[state.rankIdx].rank}]` : '');
+function signRect() {
+  const b = getStoreBounds(); ctx.save(); ctx.font = '900 13px sans-serif';
+  const w = Math.max(148, ctx.measureText(signLabel()).width + 34); ctx.restore();
+  return { cx: ((b.minX + b.maxX) / 2) * TILE, w };
+}
+function openSignEditor() {
+  _signColor = sign.color;
+  const sw = SIGN_COLORS.map((c, i) => `<button class="kairo-btn" id="swc-${i}" onclick="pickSignColor(${i})" style="width:34px;height:30px;background:${c === 'auto' ? '#e9e4d6' : c};color:#26303f;font-size:10px">${c === 'auto' ? '自動' : ''}</button>`).join('');
+  openModal('🪧 看板を編集', `
+    <div id="sign-prev" style="text-align:center;padding:12px 6px;background:#86efac;border-radius:10px"></div>
+    <input id="sign-text" maxlength="16" value="${sign.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')}" oninput="signPreview()" placeholder="店名（16文字まで・絵文字OK）" style="font-size:16px;padding:7px 10px;border:2px solid var(--border-dark);border-radius:8px;width:100%">
+    <div style="display:flex;gap:5px;flex-wrap:wrap">${sw}</div>
+    <label style="font-size:13px;font-weight:700"><input type="checkbox" id="sign-rank" ${sign.rank ? 'checked' : ''} onchange="signPreview()"> ランク表示 [${RANKS[state.rankIdx].rank}] をつける</label>
+    <button class="kairo-btn btn-orange" style="padding:9px" onclick="applySign()">✅ この看板にする</button>`);
+  signPreview();
+}
+function pickSignColor(i) { _signColor = SIGN_COLORS[i]; signPreview(); }
+function signPreview() {
+  const t = document.getElementById('sign-text'), r = document.getElementById('sign-rank'), p = document.getElementById('sign-prev'); if (!t || !p) return;
+  const bg = _signColor === 'auto' ? (state.rankIdx >= 3 ? '#facc15' : '#38bdf8') : _signColor;
+  p.innerHTML = '<span style="display:inline-block;background:#1e293b;padding:3px;border-radius:4px"><span id="sign-pv" style="display:block;background:' + bg + ';color:#1e293b;font-weight:900;font-size:15px;padding:3px 14px"></span></span>';
+  document.getElementById('sign-pv').textContent = (t.value.trim() || 'MY MART') + (r.checked ? ` [${RANKS[state.rankIdx].rank}]` : '');
+  SIGN_COLORS.forEach((c, i) => { const b = document.getElementById('swc-' + i); if (b) b.style.outline = c === _signColor ? '3px solid #26303f' : 'none'; });
+}
+function applySign() {
+  sign = { text: (document.getElementById('sign-text').value.trim() || 'MY MART').slice(0, 16), color: _signColor, rank: document.getElementById('sign-rank').checked };
+  SFX.place(); closeModal(); setTicker('🪧 看板を「' + sign.text + '」に変更しました！'); saveGame();
+}
+
+// ---- 内装（お隣の店の中に設備を置く） ----
+const FLOOR_THEMES = [['#fffbeb', '#fef3c7'], ['#f1f5f9', '#e2e8f0'], ['#334155', '#1e293b'], ['#fce7f3', '#fbcfe8'], ['#dbeafe', '#bfdbfe']];
+const FLOOR_NAMES = ['ベージュ', '白タイル', 'ブラック', 'ピンク', 'ブルー'];
+const floorOf = o => (o.floor ?? (o.type === 'tenant_game' ? 2 : 0)) % FLOOR_THEMES.length;
+function inInterior(h, gx, gy) { return gx >= h.x + 1 && gx <= h.x + NB_W - 2 && gy >= h.y + 1 && gy <= h.y + NB_H - 2; }
+function hostedBy(h, q) { return FACILITY_TYPES[q.type].cat === 'fixture' && inInterior(h, q.x, q.y); }
+function objAt(gx, gy) { return placedObjects.find(o => FACILITY_TYPES[o.type].cat !== 'neighbor' && covers(o, gx, gy)) || placedObjects.find(o => covers(o, gx, gy)); }
+const fxIncome = o => Math.round((FACILITY_TYPES[o.type].income || 0) * (0.6 + state.rating / 5));
+function cycleFloor(uid) { const o = placedObjects.find(q => q.uid === uid); if (!o) return; o.floor = (floorOf(o) + 1) % FLOOR_THEMES.length; SFX.place(); openInspector(o); }
+
+// ---- 占有判定（お隣の店は複数マス） ----
+function fpOf(type) { const d = FACILITY_TYPES[type]; return d && d.cat === 'neighbor' ? { w: NB_W, h: NB_H } : { w: 1, h: 1 }; }
+function covers(o, gx, gy) { const f = fpOf(o.type); return gx >= o.x && gx < o.x + f.w && gy >= o.y && gy < o.y + f.h; }
+function migrateNeighbors() {
+  const placed = []; let refund = 0; const b = getStoreBounds();
+  placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'neighbor').forEach(o => {
+    if (!o.v2) { o.y = 10 - NB_H; o.v2 = true; }
+    const hit = o.x <= b.maxX && o.x + NB_W > 0 && o.y <= 10 && o.y + NB_H > 0;
+    if (hit || placed.some(p => Math.abs(p.x - o.x) < NB_W && Math.abs(p.y - o.y) < NB_H)) { o.__rm = true; refund += FACILITY_TYPES[o.type].cost; } else placed.push(o);
+  });
+  placedObjects.forEach(q => {
+    const qc = FACILITY_TYPES[q.type].cat;
+    if (qc === 'fixture') { if (!placed.some(n => inInterior(n, q.x, q.y))) { q.__rm = true; refund += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); } return; }
+    if (!q.__rm && qc !== 'neighbor' && placed.some(n => covers(n, q.x, q.y))) { q.__rm = true; refund += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }
+  });
+  if (placedObjects.some(o => o.__rm)) { placedObjects = placedObjects.filter(o => !o.__rm); state.money += refund; }
+}
+function passSpan() { let m = Math.max(getStoreBounds().maxX + 8, 34); placedObjects.forEach(o => { m = Math.max(m, o.x + fpOf(o.type).w + 4); }); return m; }
+function passMin() { let m = -14; placedObjects.forEach(o => { m = Math.min(m, o.x - 4); }); return m; }
 
 // 店舗ランク定義
 const RANKS = [
@@ -616,7 +784,7 @@ const state = {
 
 function getStoreBounds() {
   // 拡張レベルに応じた右端X座標 (x=1 が左内壁、x=maxX が右内壁の1つ手前)
-  const maxInnerX = state.expansionLevel === 0 ? 11 : (state.expansionLevel === 1 ? 15 : 19);
+  const maxInnerX = Math.min(11 + 4 * state.expansionLevel, COLS - 6);
   return { minX: 1, maxX: maxInnerX, minY: 1, maxY: 9 };
 }
 
@@ -729,7 +897,8 @@ Object.assign(FACILITY_TYPES, {
   shelf_coffee:   { type:'shelf_coffee',   cat:'shelf', prod:'coffee',   name:'コーヒーマシン台', icon:'☕', cost:1500, maxCap:6, desc:'いれたての一杯' },
   shelf_oden:     { type:'shelf_oden',     cat:'shelf', prod:'oden',     name:'おでんケース',   icon:'🍢', cost:1600, maxCap:8, desc:'寒い日に大人気' },
   shelf_salad:    { type:'shelf_salad',    cat:'shelf', prod:'salad',    name:'サラダ冷蔵棚',   icon:'🥗', cost:1900, maxCap:6, desc:'ヘルシー志向のお客さんに' },
-  shelf_cake:     { type:'shelf_cake',     cat:'shelf', prod:'cake',     name:'ケーキ冷蔵棚',   icon:'🍰', cost:2200, maxCap:6, desc:'高単価スイーツ' }
+  shelf_cake:     { type:'shelf_cake',     cat:'shelf', prod:'cake',     name:'ケーキ冷蔵棚',   icon:'🍰', cost:2200, maxCap:6, desc:'高単価スイーツ' },
+  backyard: { type:'backyard', cat:'backyard', name:'バックヤード', icon:'📦', cost:0, desc:'商品の保管庫。店員が品出しに使います（移動OK・1つだけ）' }
 });
 
 const COMBO_DEFS = [
@@ -768,13 +937,13 @@ function equipDiscount(pid) {
     const lv = equipLv[e.id] || 0;
     if (lv > 0 && (e.prods === 'all' || e.prods.includes(pid))) d += equipRate(e, lv);
   });
-  return Math.min(0.7, d);
+  return Math.min(0.9, d);
 }
 function getUnitCost(p) { return Math.max(1, Math.round(p.cost * (1 - equipDiscount(p.id)))); }
-function equipUpCost(e) { return Math.round(e.cost * [1, 1.2, 1.8][equipLv[e.id] || 0] / 50) * 50; }
+function equipUpCost(e) { return Math.round(e.cost * (l0 => l0 === 0 ? 1 : l0 === 1 ? 1.2 : 1.8 * Math.pow(1.4, l0 - 2))(equipLv[e.id] || 0) / 50) * 50; }
 function buyEquip(id) {
   const e = BACK_EQUIP[id], lv = equipLv[id] || 0;
-  if (!e || lv >= 3 || state.rankIdx < e.rank) return;
+  if (!e || state.rankIdx < e.rank) return;
   const c = equipUpCost(e);
   if (state.money < c) { SFX.angry(); return setTicker('⚠️ 設備の購入費用が足りません！'); }
   state.money -= c;
@@ -792,14 +961,14 @@ function renderBackTab() {
     const lv = equipLv[e.id] || 0, locked = state.rankIdx < e.rank, up = equipUpCost(e);
     const pct = l => Math.round(equipRate(e, l) * 100);
     const tgt = e.prods === 'all' ? '全商品' : e.prods.map(id => products[id].icon + products[id].name).join('・');
-    const eff = lv === 0 ? `未導入（導入で原価 -${pct(1)}%）` : `原価 -${pct(lv)}%` + (lv < 3 ? ` → Lv.${lv + 1}で -${pct(lv + 1)}%` : '（最大）');
+    const eff = lv === 0 ? `未導入（導入で原価 -${pct(1)}%）` : `原価 -${pct(lv)}%` + ` → Lv.${lv + 1}で -${pct(lv + 1)}%`;
     h += `<div class="item-card ${lv > 0 ? 'eq-owned' : ''} ${locked ? 'locked' : ''}">
-      <div class="card-top"><span class="card-name">${e.icon} ${e.name} <span class="badge" style="background:#fef08a;">Lv.${lv}/3</span></span>
-      <span style="font-weight:900;color:#b45309;font-size:12px;">${lv >= 3 ? 'MAX' : '¥' + up.toLocaleString()}</span></div>
+      <div class="card-top"><span class="card-name">${e.icon} ${e.name} <span class="badge" style="background:#fef08a;">Lv.${lv}</span></span>
+      <span style="font-weight:900;color:#b45309;font-size:12px;">¥${up.toLocaleString()}</span></div>
       <div style="font-size:11px;color:var(--text-muted);">${e.desc}<br>対象: ${tgt}</div>
       <div style="font-size:12px;font-weight:800;color:#15803d;">${eff}</div>
       ${locked ? `<div style="font-size:11px;font-weight:800;color:#e5484d;">🔒 店舗ランク ${RANKS[e.rank].rank} で開放</div>`
-        : `<button class="kairo-btn btn-green" onclick="buyEquip('${e.id}')" ${lv >= 3 || state.money < up ? 'disabled' : ''}>${lv === 0 ? '🛠 導入する' : lv >= 3 ? '最大レベル' : '⬆ アップグレード'}</button>`}
+        : `<button class="kairo-btn btn-green" onclick="buyEquip('${e.id}')" ${state.money < up ? 'disabled' : ''}>${lv === 0 ? '🛠 導入する' : '⬆ アップグレード'}</button>`}
     </div>`;
   });
   pane.innerHTML = h;
@@ -819,7 +988,8 @@ function addPlacedObject(type, gx, gy, initStock = null) {
     stock: def.cat === 'shelf' ? (initStock !== null ? initStock : Math.ceil(def.maxCap * 0.7)) : 0,
     progress: 0,
     queue: [],
-    inCombo: false
+    inCombo: false,
+    v2: true
   };
   placedObjects.push(obj);
   return obj;
@@ -827,6 +997,7 @@ function addPlacedObject(type, gx, gy, initStock = null) {
 
 // 初期店内レイアウト
 function initDefaultStore() {
+  addPlacedObject('backyard', 1, 1);
   addPlacedObject('register', 9, 2);
   addPlacedObject('shelf_onigiri', 4, 5, 6);
   addPlacedObject('shelf_drink', 7, 5, 8);
@@ -851,16 +1022,15 @@ function recalcCombos(silent = false) {
       const manhattan = Math.abs(o1.x - o2.x) + Math.abs(o1.y - o2.y);
       if (manhattan !== 1) continue;
 
-      // 観葉植物ボーナス
-      if (o1.type === 'plant' && FACILITY_TYPES[o2.type].cat === 'shelf') {
-        const pid = FACILITY_TYPES[o2.type].prod;
-        state.comboBonusByProd[pid] = (state.comboBonusByProd[pid] || 0) + 0.15;
-        o1.inCombo = true; o2.inCombo = true;
-      } else if (o2.type === 'plant' && FACILITY_TYPES[o1.type].cat === 'shelf') {
-        const pid = FACILITY_TYPES[o1.type].prod;
-        state.comboBonusByProd[pid] = (state.comboBonusByProd[pid] || 0) + 0.15;
-        o1.inCombo = true; o2.inCombo = true;
-      }
+      // 装飾ボーナス(観葉植物・花壇・シンボルツリー・街灯)
+      [[o1, o2], [o2, o1]].forEach(([d, s2]) => {
+        const bn = DECOR_BONUS[d.type];
+        if (bn && FACILITY_TYPES[s2.type].cat === 'shelf') {
+          const pid = FACILITY_TYPES[s2.type].prod;
+          state.comboBonusByProd[pid] = (state.comboBonusByProd[pid] || 0) + bn;
+          d.inCombo = true; s2.inCombo = true;
+        }
+      });
 
       // 専門コーナー判定
       COMBO_DEFS.forEach(c => {
@@ -894,104 +1064,100 @@ function recalcCombos(silent = false) {
 // =========================================================
 function isTileBlocked(gx, gy, ignoreUid = null) {
   const b = getStoreBounds();
-  if (gx < b.minX || gx > b.maxX || gy < b.minY || gy > b.maxY) return true;
+  if (!inStore(gx, gy) && !inYard(gx, gy)) return true;
   // バックヤードゾーン (1..2, 1..2) は納品口なので配置不可
-  if (gx <= 2 && gy <= 2) return true;
+  
   // 自動ドア前 (5..6, 9) は開けておく
   if ((gx === 5 || gx === 6) && gy === 9) return true;
 
-  return placedObjects.some(o => o.uid !== ignoreUid && o.x === gx && o.y === gy);
+  return placedObjects.some(o => o.uid !== ignoreUid && covers(o, gx, gy));
 }
 
 function isWalkableForPath(gx, gy, extraBlock = null) {
   const b = getStoreBounds();
   // 店外歩道
-  if (gy === 11 || gy === 12) return gx >= 0 && gx < COLS;
+  if (gy === 11 || gy === 12) return true;
   // 自動ドアマス
   if ((gx === 5 || gx === 6) && gy === 10) return true;
+  // 屋外エリア(芝生)
+  if (inYard(gx, gy)) {
+    if (extraBlock && extraBlock.x === gx && extraBlock.y === gy) return false;
+    return !placedObjects.some(o => covers(o, gx, gy));
+  }
   // 店内
   if (gx < b.minX || gx > b.maxX || gy < b.minY || gy > b.maxY) return false;
   if (extraBlock && extraBlock.x === gx && extraBlock.y === gy) return false;
-  return !placedObjects.some(o => o.x === gx && o.y === gy);
+  return !placedObjects.some(o => covers(o, gx, gy));
 }
 
 // 設置テスト時に「入口からバックヤードや既存設備が塞がれないか」検証
 function canPlaceSafely(type, gx, gy, moveUid = null) {
-  if (isTileBlocked(gx, gy, moveUid)) return { ok: false, reason: 'ここには置けません' };
-  const def = FACILITY_TYPES[type];
+  if (FACILITY_TYPES[type].cat === 'fixture') {
+    const fd = FACILITY_TYPES[type], host = placedObjects.find(o => FACILITY_TYPES[o.type].cat === 'neighbor' && inInterior(o, gx, gy));
+    if (!host) return { ok: false, reason: 'お隣の店の中（床のマス）に置きます' };
+    if (fd.hosts && !fd.hosts.includes(host.type)) return { ok: false, reason: `${FACILITY_TYPES[host.type].name}には置けない設備です` };
+    if (placedObjects.some(o => o.uid !== moveUid && FACILITY_TYPES[o.type].cat !== 'neighbor' && covers(o, gx, gy))) return { ok: false, reason: 'そこには置けません' };
+    return { ok: true };
+  }
+  if (FACILITY_TYPES[type].cat === 'neighbor') {
+    const f = fpOf(type), mh = moveUid ? placedObjects.find(o => o.uid === moveUid) : null;
+    for (let yy = gy; yy < gy + f.h; yy++) for (let xx = gx; xx < gx + f.w; xx++) {
+      if (!inYard(xx, yy)) return { ok: false, reason: 'お隣の店は店の外（芝生）に建てます' };
+      if (placedObjects.some(o => o.uid !== moveUid && covers(o, xx, yy) && !(mh && hostedBy(mh, o)))) return { ok: false, reason: '他の設備と重なります' };
+    }
+  } else if (isTileBlocked(gx, gy, moveUid)) return { ok: false, reason: 'ここには置けません' };
+  const def = FACILITY_TYPES[type], yard = inYard(gx, gy);
+  if (def.cat === 'neighbor' && !yard) return { ok: false, reason: 'お隣の店は屋外（芝生エリア）にだけ建てられます' };
+  if (yard && (def.cat === 'register' || def.cat === 'backyard')) return { ok: false, reason: 'レジとバックヤードは店内専用です' };
+  const others = placedObjects.filter(o => o.uid !== moveUid);
+  if (def.cat === 'backyard' && others.some(o => o.type === 'backyard')) return { ok: false, reason: 'バックヤードは1つだけです' };
   if (def.cat === 'register') {
-    const regCount = placedObjects.filter(o => o.type === 'register' && o.uid !== moveUid).length;
-    if (regCount >= 3) return { ok: false, reason: 'レジは最大3台までです' };
+    if (others.filter(o => o.type === 'register').length >= 3) return { ok: false, reason: 'レジは最大3台までです' };
     if (gy <= 1) return { ok: false, reason: '店員が後ろに立てるよう1マス空けてください' };
   }
-
-  // BFSで入口(5,9)からバックヤード(2,2)および他の全設備の隣接タイルへ到達できるか確認
-  const extra = { x: gx, y: gy };
-  const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-  const q = [{x: 5, y: 9}];
-  visited[9][5] = true;
-  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
-
-  while (q.length > 0) {
-    const cur = q.shift();
-    for (const [dx, dy] of dirs) {
-      const nx = cur.x + dx, ny = cur.y + dy;
-      if (nx >= 1 && nx < COLS-1 && ny >= 1 && ny <= 9 && !visited[ny][nx]) {
-        const blocked = (nx === gx && ny === gy) || placedObjects.some(o => o.uid !== moveUid && o.x === nx && o.y === ny);
-        if (!blocked) {
-          visited[ny][nx] = true;
-          q.push({x: nx, y: ny});
-        }
-      }
-    }
-  }
-
-  if (!visited[2][2]) return { ok: false, reason: 'バックヤードへの通路が塞がります！' };
-
-  // 置く設備自身の周囲にアクセス可能な床があるか
-  const hasAdj = dirs.some(([dx, dy]) => {
-    const nx = gx + dx, ny = gy + dy;
-    return nx >= 1 && nx < COLS-1 && ny >= 1 && ny <= 9 && visited[ny][nx];
-  });
-  if (!hasAdj) return { ok: false, reason: 'お客さんが近づけません！' };
-
-  // レジの場合は上側(y-1)に店員が立てる必要あり
-  if (def.cat === 'register' && !visited[gy - 1][gx]) {
-    return { ok: false, reason: 'レジの後ろ(上側)に店員が立てません' };
-  }
-
+  // 入口(店内)と屋外の入口(歩道側)から、全ての設備に近づけるか BFS で検証
+  const _fp = fpOf(type);
+  const occ = (x, y) => (x >= gx && x < gx + _fp.w && y >= gy && y < gy + _fp.h) || others.some(o => covers(o, x, y));
+  const okT = (x, y) => inStore(x, y) || inYard(x, y) || isRoad(y);
+  let bx0 = Math.min(-3, gx - 2), bx1 = Math.max(getStoreBounds().maxX + 3, gx + _fp.w + 2), by0 = Math.min(-2, gy - 2), by1 = Math.max(14, gy + _fp.h + 2);
+  others.forEach(o => { const f = fpOf(o.type); bx0 = Math.min(bx0, o.x - 2); bx1 = Math.max(bx1, o.x + f.w + 2); by0 = Math.min(by0, o.y - 2); by1 = Math.max(by1, o.y + f.h + 2); });
+  const K = (x, y) => (x - bx0) * 4096 + (y - by0);
+  const visited = new Set(), q = [];
+  const seed = (x, y) => { if (x < bx0 || x > bx1 || y < by0 || y > by1) return; if (okT(x, y) && !occ(x, y) && !visited.has(K(x, y))) { visited.add(K(x, y)); q.push([x, y]); } };
+  seed(5, 9);
+  for (let x = bx0; x <= bx1; x++) { seed(x, 11); seed(x, 12); }
+  const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+  for (let qi = 0; qi < q.length; qi++) { const [cx, cy] = q[qi]; dirs.forEach(([dx, dy]) => seed(cx + dx, cy + dy)); }
+  const reach = o => dirs.some(([dx, dy]) => okT(o.x + dx, o.y + dy) && visited.has(K(o.x + dx, o.y + dy)));
+  const need = ['shelf', 'register', 'eatin', 'atm', 'backyard'];
+  if (need.includes(def.cat) && !reach({ x: gx, y: gy })) return { ok: false, reason: 'お客さんが近づけません！' };
+  const cut = others.find(o => need.includes(FACILITY_TYPES[o.type].cat) && !reach(o));
+  if (cut) return { ok: false, reason: `${FACILITY_TYPES[cut.type].name}に近づけなくなります！` };
+  if (def.cat === 'register' && !visited.has(K(gx, gy - 1))) return { ok: false, reason: 'レジの後ろ(上側)に店員が立てません' };
   return { ok: true };
 }
 
 function findPath(sx, sy, gx, gy) {
   if (sx === gx && sy === gy) return [];
-  const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-  const parent = Array.from({length: ROWS}, () => Array(COLS).fill(null));
-  const q = [{x: sx, y: sy}];
-  visited[sy][sx] = true;
-  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
-
+  const M = 24, bx0 = Math.min(sx, gx) - M, bx1 = Math.max(sx, gx) + M, by0 = Math.min(sy, gy) - M, by1 = Math.max(sy, gy) + M;
+  const K = (x, y) => (x - bx0) * 8192 + (y - by0);
+  const parent = new Map(); parent.set(K(sx, sy), null);
+  const q = [{ x: sx, y: sy }], dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
   let found = false;
-  while (q.length > 0) {
-    const c = q.shift();
+  for (let qi = 0; qi < q.length; qi++) {
+    const c = q[qi];
     if (c.x === gx && c.y === gy) { found = true; break; }
     for (const [dx, dy] of dirs) {
       const nx = c.x + dx, ny = c.y + dy;
-      if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && !visited[ny][nx]) {
-        if (isWalkableForPath(nx, ny) || (nx === gx && ny === gy)) {
-          visited[ny][nx] = true;
-          parent[ny][nx] = c;
-          q.push({x: nx, y: ny});
-        }
-      }
+      if (nx < bx0 || nx > bx1 || ny < by0 || ny > by1 || parent.has(K(nx, ny))) continue;
+      if (isWalkableForPath(nx, ny) || (nx === gx && ny === gy)) { parent.set(K(nx, ny), c); q.push({ x: nx, y: ny }); }
     }
   }
   if (!found) return [];
-  const path = [];
-  let cur = {x: gx, y: gy};
+  const path = []; let cur = { x: gx, y: gy };
   while (cur && !(cur.x === sx && cur.y === sy)) {
-    path.unshift({ x: cur.x * TILE + TILE/2, y: cur.y * TILE + TILE/2, tx: cur.x, ty: cur.y });
-    cur = parent[cur.y][cur.x];
+    path.unshift({ x: cur.x * TILE + TILE / 2, y: cur.y * TILE + TILE / 2, tx: cur.x, ty: cur.y });
+    cur = parent.get(K(cur.x, cur.y));
   }
   return path;
 }
@@ -1106,15 +1272,15 @@ function getStatRank(avg) {
 
 function trainStaff(staffId) {
   const st = hiredStaff.find(s => s.id === staffId);
-  if (!st || st.level >= 10) return;
+  if (!st) return;
   const ptCost = 10 + st.level * 5;
   if (state.points < ptCost) return setTicker(`⚠️ 経営Pが足りません (必要: ✨${ptCost}P)`);
 
   state.points -= ptCost;
   st.level++;
-  st.regStat = Math.min(99, st.regStat + 6);
-  st.spdStat = Math.min(99, st.spdStat + 6);
-  st.charmStat = Math.min(99, st.charmStat + 6);
+  st.regStat += 6;
+  st.spdStat += 6;
+  st.charmStat += 6;
   st.rank = getStatRank((st.regStat + st.spdStat + st.charmStat)/3);
   SFX.heart();
   addFloatText(st.x, st.y - 20, `Lv.${st.level} UP!`, '#eab308');
@@ -1158,7 +1324,7 @@ function spawnPasser() {
   const left = Math.random() < 0.5;
   const y = 11.4 * TILE + Math.random() * 20;
   passers.push({
-    x: left ? -15 : COLS * TILE + 15,
+    x: left ? passMin() * TILE : passSpan() * TILE + 15,
     y,
     dir: left ? 1 : -1,
     speed: 45 + Math.random() * 25,
@@ -1229,6 +1395,7 @@ function updateStaffAI(dt) {
   hiredStaff.forEach(st => {
     const spd = 72 + st.spdStat * 0.95;
     if (st.cooldown > 0) st.cooldown -= dt;
+    if (st.isManager) { if (manualMove(st, dt, spd)) return; if (view3D) return; }
 
     // 移動処理
     if (st.path.length > 0) {
@@ -1330,8 +1497,9 @@ function updateStaffAI(dt) {
         const tgt = emptyShelves[0];
         const def = FACILITY_TYPES[tgt.type];
         const prod = products[def.prod];
-        // バックヤード (2,2) 付近にいるならピックする
-        if (Math.abs(stx - 2) <= 1 && Math.abs(sty - 2) <= 1) {
+        const by = placedObjects.find(o => o.type === 'backyard');
+        if (!by) return;
+        if (Math.abs(stx - by.x) + Math.abs(sty - by.y) <= 1) {
           const take = Math.min(4, def.maxCap - tgt.stock, prod.stock);
           if (take > 0) {
             prod.stock -= take;
@@ -1340,7 +1508,7 @@ function updateStaffAI(dt) {
             st.cooldown = 0.25;
           }
         } else {
-          st.path = findPath(stx, sty, 2, 2);
+          { const ad = getAdjacentWalkable(by.x, by.y); if (ad.length) st.path = findPath(stx, sty, ad[0].x, ad[0].y); }
         }
         return;
       }
@@ -1430,7 +1598,7 @@ function sendCustomerHome(cust) {
   const cx = Math.floor(cust.x/TILE), cy = Math.floor(cust.y/TILE);
   const path = findPath(cx, cy, doorX, 9);
   path.push({ x: doorX * TILE + TILE/2, y: 11.5 * TILE });
-  const exitX = Math.random() < 0.5 ? -20 : COLS * TILE + 20;
+  const exitX = Math.random() < 0.5 ? passMin() * TILE : passSpan() * TILE + 20;
   path.push({ x: exitX, y: 11.5 * TILE });
   cust.path = path;
 }
@@ -1598,6 +1766,8 @@ function updateCalendarAndEconomy(dt) {
   if (state.weekTimer >= 20) {
     state.weekTimer -= 20;
     state.week++;
+    { const rent = placedObjects.reduce((a, o) => a + (FACILITY_TYPES[o.type].rent || 0) + (FACILITY_TYPES[o.type].income ? fxIncome(o) : 0), 0); if (rent) { state.money += rent; state.monthStats.extra += rent; } }
+    stores.forEach((sx, i) => { if (i === curStore || !sx.placedObjects) return; const n = sx.placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'shelf').length; const g = Math.round(n * 160 * (0.6 + state.rating / 5)); state.money += g; state.monthStats.extra += g; });
 
     // 週ごとの自動仕入れ（棚で減った分の補填としてバックヤードへ仕入れ）
     if (state.autoRestock) {
@@ -1628,7 +1798,7 @@ function updateCalendarAndEconomy(dt) {
   // 通行人スポーン
   passerTimer -= dt;
   if (passerTimer <= 0) {
-    passerTimer = (state.campaignTimer > 0 ? 1.1 : 2.1) * (0.7 + Math.random()*0.6);
+    passerTimer = (state.campaignTimer > 0 ? 1.1 : 2.1) * (0.7 + Math.random()*0.6) / (1 + tenantTraffic());
     if (passers.length < 14) spawnPasser();
   }
 
@@ -1644,7 +1814,7 @@ function updateCalendarAndEconomy(dt) {
         continue;
       }
     }
-    if (p.x < -30 || p.x > COLS * TILE + 30) passers.splice(i, 1);
+    if (p.x < passMin() * TILE - 30 || p.x > passSpan() * TILE + 30) passers.splice(i, 1);
   }
 
   // ゴミ発生
@@ -1672,7 +1842,7 @@ function updateCalendarAndEconomy(dt) {
 function onMonthEnd() {
   // 月給（週給×4ではなく月次人件費として日給×4を請求して分かりやすく）
   let wages = 0;
-  hiredStaff.forEach(s => { if (!s.isManager) wages += s.wage * 3; });
+  [hiredStaff, ...stores.filter((sx, i) => i !== curStore && sx.hiredStaff).map(sx => sx.hiredStaff)].forEach(a => a.forEach(s => { if (!s.isManager) wages += s.wage * 3; }));
   state.money -= wages;
   state.monthStats.wages = wages;
 
@@ -1722,53 +1892,38 @@ function onMonthEnd() {
 let hoverTile = null;
 
 function draw() {
+  if (!canvas.clientWidth) return;
+  resizeCanvas();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(cam.scale, 0, 0, cam.scale, -cam.x * cam.scale, -cam.y * cam.scale);
   const b = getStoreBounds();
+  const vx0 = Math.floor(cam.x / TILE) - 1, vx1 = Math.ceil((cam.x + viewW()) / TILE) + 1, vy0 = Math.floor(cam.y / TILE) - 1, vy1 = Math.ceil((cam.y + viewH()) / TILE) + 1;
 
-  // 1. 地面・店内床の描画
-  for (let y = 0; y < ROWS; y++) {
-    for (let x = 0; x < COLS; x++) {
+  // 1. 地面・道路・店内床（上下左右に無限）
+  const gx0 = vx0 * TILE, gw = (vx1 - vx0 + 1) * TILE;
+  ctx.fillStyle = '#86efac'; ctx.fillRect(gx0, vy0 * TILE, gw, (vy1 - vy0 + 1) * TILE);
+  if ((vx1 - vx0) * (vy1 - vy0) < 3000) {
+    for (let y = vy0; y <= vy1; y++) for (let x = vx0; x <= vx1; x++) {
+      if (isRoad(y) || inBuilding(x, y)) continue;
       const px = x * TILE, py = y * TILE;
-
-      if (y === 11 || y === 12) {
-        // 歩道とアスファルト
-        ctx.fillStyle = y === 11 ? '#d6d3d1' : '#64748b';
-        ctx.fillRect(px, py, TILE, TILE);
-        if (y === 11) {
-          ctx.fillStyle = '#a8a29e';
-          ctx.fillRect(px, py + TILE - 4, TILE, 4);
-        }
-        if (y === 12 && x % 2 === 0) {
-          ctx.fillStyle = '#e2e8f0';
-          ctx.fillRect(px + 8, py + 18, 22, 4);
-        }
-      } else if (x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY) {
-        // 店内床
-        if (x <= 2 && y <= 2) {
-          // バックヤード納品ゾーン
-          ctx.fillStyle = (x + y) % 2 === 0 ? '#cbd5e1' : '#94a3b8';
-          ctx.fillRect(px, py, TILE, TILE);
-        } else {
-          ctx.fillStyle = (x + y) % 2 === 0 ? '#fffbeb' : '#fef3c7';
-          ctx.fillRect(px, py, TILE, TILE);
-        }
-        ctx.strokeStyle = 'rgba(180, 140, 80, 0.12)';
-        ctx.strokeRect(px, py, TILE, TILE);
-      } else if (x > b.maxX && x < COLS - 1 && y >= 1 && y <= 9) {
-        // 未拡張の空き地（芝生＋木枠風）
-        ctx.fillStyle = (x + y) % 2 === 0 ? '#86efac' : '#4ade80';
-        ctx.fillRect(px, py, TILE, TILE);
-        if ((x + y) % 5 === 0) {
-          ctx.fillStyle = '#22c55e';
-          ctx.fillRect(px + 12, py + 14, 6, 6);
-        }
-      } else {
-        // 外壁・屋根境界
-        ctx.fillStyle = '#475569';
-        ctx.fillRect(px, py, TILE, TILE);
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(px, py + TILE - 6, TILE, 6);
-      }
+      if ((x + y) % 2 === 0) { ctx.fillStyle = '#4ade80'; ctx.fillRect(px, py, TILE, TILE); }
+      if ((x * 7 + y * 13) % 9 === 0) { ctx.fillStyle = '#22c55e'; ctx.fillRect(px + 12, py + 14, 6, 6); }
+    }
+  }
+  ctx.fillStyle = '#d6d3d1'; ctx.fillRect(gx0, 11 * TILE, gw, TILE);
+  ctx.fillStyle = '#a8a29e'; ctx.fillRect(gx0, 12 * TILE - 4, gw, 4);
+  ctx.fillStyle = '#64748b'; ctx.fillRect(gx0, 12 * TILE, gw, TILE);
+  ctx.fillStyle = '#e2e8f0';
+  for (let x = vx0; x <= vx1; x++) if (x % 2 === 0) ctx.fillRect(x * TILE + 8, 12 * TILE + 18, 22, 4);
+  for (let y = Math.max(0, vy0); y <= Math.min(10, vy1); y++) for (let x = Math.max(0, vx0); x <= Math.min(b.maxX, vx1); x++) {
+    const px = x * TILE, py = y * TILE;
+    if (inStore(x, y)) {
+      ctx.fillStyle = (x + y) % 2 === 0 ? '#fffbeb' : '#fef3c7'; ctx.fillRect(px, py, TILE, TILE);
+      ctx.strokeStyle = 'rgba(180, 140, 80, 0.12)'; ctx.strokeRect(px, py, TILE, TILE);
+    } else {
+      ctx.fillStyle = '#475569'; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#334155'; ctx.fillRect(px, py + TILE - 6, TILE, 6);
     }
   }
 
@@ -1779,26 +1934,22 @@ function draw() {
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(x * TILE, 16, TILE, 3);
   }
-  // 店舗看板「MY MART」
-  const signX = ((b.minX + b.maxX) / 2) * TILE;
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(signX - 74, 2, 148, 28);
-  ctx.fillStyle = state.rankIdx >= 3 ? '#facc15' : '#38bdf8';
-  ctx.fillRect(signX - 71, 5, 142, 22);
-  ctx.fillStyle = '#1e293b';
-  ctx.font = '900 13px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(`🏪 MY MART [${RANKS[state.rankIdx].rank}]`, signX, 16);
+  // 屋外エリア境界と案内
+  ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo((b.maxX + 1) * TILE, TILE); ctx.lineTo((b.maxX + 1) * TILE, 11 * TILE); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = 'rgba(20,83,45,.8)'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🌳 屋外エリア（棚・装飾・ブロック・お隣の店OK）', Math.max((b.maxX + 1) * TILE + 150, cam.x + viewW() / 2), 1.5 * TILE);
+  // 店舗看板（編集可）
+  const sr = signRect();
+  ctx.fillStyle = '#1e293b'; ctx.fillRect(sr.cx - sr.w / 2, 2, sr.w, 28);
+  ctx.fillStyle = signBg(); ctx.fillRect(sr.cx - sr.w / 2 + 3, 5, sr.w - 6, 22);
+  ctx.fillStyle = '#1e293b'; ctx.font = '900 13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(signLabel(), sr.cx, 16);
 
   // バックヤード表示
   ctx.fillStyle = '#334155';
   ctx.font = 'bold 10px sans-serif';
-  ctx.fillText('📦バックヤード', 2 * TILE, 1.4 * TILE);
-  let ei = 0; ctx.font = '16px sans-serif';
-  Object.values(BACK_EQUIP).forEach(e => {
-    if (equipLv[e.id] > 0) { ctx.fillText(e.icon, 56 + (ei % 3) * 24, 78 + Math.floor(ei / 3) * 19); ei++; }
-  });
+  
 
   // 自動ドア描画 (x=5,6, y=10)
   ctx.fillStyle = '#bae6fd';
@@ -1833,13 +1984,21 @@ function draw() {
       }
     }
 
+    if (FACILITY_TYPES[state.buildMode.type].cat === 'fixture') {
+      const hs = FACILITY_TYPES[state.buildMode.type].hosts;
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.85)'; ctx.lineWidth = 1;
+      placedObjects.forEach(o => {
+        if (FACILITY_TYPES[o.type].cat !== 'neighbor' || (hs && !hs.includes(o.type))) return;
+        for (let y = o.y + 1; y <= o.y + NB_H - 2; y++) for (let x = o.x + 1; x <= o.x + NB_W - 2; x++) ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+      });
+    }
     if (hoverTile) {
       const check = canPlaceSafely(state.buildMode.type, hoverTile.x, hoverTile.y, state.buildMode.moveUid);
       ctx.fillStyle = check.ok ? 'rgba(44, 182, 125, 0.45)' : 'rgba(229, 72, 77, 0.45)';
-      ctx.fillRect(hoverTile.x * TILE, hoverTile.y * TILE, TILE, TILE);
+      ctx.fillRect(hoverTile.x * TILE, hoverTile.y * TILE, TILE * fpOf(state.buildMode.type).w, TILE * fpOf(state.buildMode.type).h);
       ctx.strokeStyle = check.ok ? '#15803d' : '#991b1b';
       ctx.lineWidth = 3;
-      ctx.strokeRect(hoverTile.x * TILE + 1, hoverTile.y * TILE + 1, TILE - 2, TILE - 2);
+      ctx.strokeRect(hoverTile.x * TILE + 1, hoverTile.y * TILE + 1, TILE * fpOf(state.buildMode.type).w - 2, TILE * fpOf(state.buildMode.type).h - 2);
 
       // コーナー成立予報！
       if (check.ok) {
@@ -1870,9 +2029,8 @@ function draw() {
   });
 
   // 4. 配置設備（棚・レジ・イートイン・ATM・観葉植物）
-  placedObjects.forEach(obj => {
-    drawFacility(obj);
-  });
+  placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'neighbor').forEach(drawFacility);
+  placedObjects.filter(o => FACILITY_TYPES[o.type].cat !== 'neighbor').forEach(drawFacility);
 
   // 5. 通行人（店外）
   passers.forEach(p => {
@@ -1915,7 +2073,7 @@ function draw() {
     ctx.fillStyle = 'rgba(250, 204, 21, 0.9)';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`📣 宣伝キャンペーン中! 残り${Math.ceil(state.campaignTimer)}秒`, 12, canvas.height - 14);
+    ctx.fillText(`📣 宣伝キャンペーン中! 残り${Math.ceil(state.campaignTimer)}秒`, cam.x + 14, cam.y + viewH() - 14);
   }
 
   // 9. フローティングテキスト
@@ -2050,6 +2208,38 @@ function drawFacility(obj) {
     ctx.textBaseline = 'middle';
     ctx.fillText('ATM', px + TILE/2, py + 30);
 
+  } else if (def.cat === 'backyard') {
+    ctx.fillStyle = '#475569'; ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+    ctx.fillStyle = '#94a3b8'; ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#1e293b'; ctx.fillText('📦', px + TILE / 2, py + TILE / 2);
+    const n = Object.values(BACK_EQUIP).filter(e => equipLv[e.id] > 0).length;
+    if (n > 0) { ctx.font = 'bold 9px sans-serif'; ctx.fillText('🏭×' + n, px + TILE / 2, py + TILE - 3); }
+  } else if (def.cat === 'block') {
+    ctx.fillStyle = def.color; ctx.fillRect(px, py, TILE, TILE);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.strokeRect(px + 1, py + 1, TILE - 2, TILE - 2);
+    ctx.beginPath(); ctx.moveTo(px, py + TILE / 2); ctx.lineTo(px + TILE, py + TILE / 2);
+    ctx.moveTo(px + TILE / 2, py); ctx.lineTo(px + TILE / 2, py + TILE / 2);
+    ctx.moveTo(px + TILE / 4, py + TILE / 2); ctx.lineTo(px + TILE / 4, py + TILE); ctx.stroke();
+  } else if (def.cat === 'neighbor') {
+    const W = NB_W * TILE, H = NB_H * TILE, n2 = NB_W * 2, fl = FLOOR_THEMES[floorOf(obj)];
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(px + 4, py + 6, W, H);
+    ctx.fillStyle = '#475569'; ctx.fillRect(px, py, W, H);
+    for (let y = 1; y < NB_H - 1; y++) for (let x = 1; x < NB_W - 1; x++) { ctx.fillStyle = (x + y) % 2 ? fl[0] : fl[1]; ctx.fillRect(px + x * TILE, py + y * TILE, TILE, TILE); }
+    for (let i = 0; i < n2; i++) { ctx.fillStyle = i % 2 ? '#ffffff' : '#ef4444'; ctx.fillRect(px + i * W / n2, py, W / n2 + 0.5, 16); }
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(px + W / 2 - 80, py + 19, 160, 19);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fef9c3'; ctx.font = '900 12px sans-serif'; ctx.fillText(def.icon + ' ' + def.name, px + W / 2, py + 29);
+    ctx.fillStyle = '#0369a1'; ctx.fillRect(px + W / 2 - TILE + 4, py + H - TILE + 4, 2 * TILE - 8, TILE - 8);
+    ctx.strokeStyle = def.color; ctx.lineWidth = 3; ctx.strokeRect(px + 1.5, py + 1.5, W - 3, H - 3);
+  } else if (def.cat === 'fixture') {
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(px + 5, py + 6, TILE - 6, TILE - 8);
+    ctx.fillStyle = def.color; ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 8);
+    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.strokeRect(px + 3, py + 3, TILE - 6, TILE - 8);
+    ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(def.icon, px + TILE / 2, py + TILE / 2 - 1);
+    if (def.blink) { ctx.fillStyle = Math.floor(performance.now() / 300 + obj.uid) % 2 ? '#f43f5e' : '#facc15'; ctx.fillRect(px + TILE - 12, py + 5, 5, 5); }
+  } else if (def.cat === 'decor' && def.type !== 'plant') {
+    ctx.font = '24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000';
+    ctx.fillText(def.icon, px + TILE / 2, py + TILE / 2);
   } else if (def.cat === 'decor') {
     ctx.fillStyle = '#b45309';
     ctx.fillRect(px + 12, py + 24, 16, 12);
@@ -2130,8 +2320,7 @@ function drawEmoteBubble(x, y, emote) {
 // =========================================================
 canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect();
-  const gx = Math.floor(((e.clientX - rect.left) * (canvas.width / rect.width)) / TILE);
-  const gy = Math.floor(((e.clientY - rect.top) * (canvas.height / rect.height)) / TILE);
+  const [gx, gy] = evTile(e);
   hoverTile = { x: gx, y: gy };
 });
 
@@ -2146,9 +2335,12 @@ canvas.addEventListener('contextmenu', e => {
 canvas.addEventListener('mousedown', e => {
   if (e.button === 2) return;
   initAudio();
-  const rect = canvas.getBoundingClientRect();
-  const gx = Math.floor(((e.clientX - rect.left) * (canvas.width / rect.width)) / TILE);
-  const gy = Math.floor(((e.clientY - rect.top) * (canvas.height / rect.height)) / TILE);
+  const [gx, gy] = evTile(e);
+  if (!state.buildMode) {
+    const r = canvas.getBoundingClientRect(), sr = signRect();
+    const wx = (e.clientX - r.left) * (canvas.width / r.width) / cam.scale + cam.x, wy = (e.clientY - r.top) * (canvas.height / r.height) / cam.scale + cam.y;
+    if (wy >= 2 && wy <= 30 && Math.abs(wx - sr.cx) <= sr.w / 2) { openSignEditor(); return; }
+  }
 
   if (state.buildMode) {
     const check = canPlaceSafely(state.buildMode.type, gx, gy, state.buildMode.moveUid);
@@ -2162,6 +2354,7 @@ canvas.addEventListener('mousedown', e => {
       // 移動完了
       const obj = placedObjects.find(o => o.uid === state.buildMode.moveUid);
       if (obj) {
+        if (FACILITY_TYPES[obj.type].cat === 'neighbor') { const ddx = gx - obj.x, ddy = gy - obj.y; placedObjects.forEach(q => { if (hostedBy(obj, q)) { q.x += ddx; q.y += ddy; } }); }
         obj.x = gx;
         obj.y = gy;
         SFX.place();
@@ -2189,7 +2382,7 @@ canvas.addEventListener('mousedown', e => {
   }
 
   // 通常クリック：設備を選択してクイックメニュー表示
-  const clicked = placedObjects.find(o => o.x === gx && o.y === gy);
+  const clicked = objAt(gx, gy);
   if (clicked) {
     SFX.click();
     openInspector(clicked);
@@ -2236,9 +2429,16 @@ function openInspector(obj) {
     `;
   } else if (def.cat === 'register') {
     extra = `<div style="font-size:12px; margin:4px 0;">待機列: <b>${obj.queue.length}人</b></div>`;
+  } else if (def.cat === 'neighbor') {
+    const fx = placedObjects.filter(q => hostedBy(obj, q)), inc = fx.reduce((a, q) => a + fxIncome(q), 0);
+    extra = `<div style="font-size:12px; margin:4px 0;">🛠 内装 ${fx.length}/${(NB_W - 2) * (NB_H - 2)}マス ／ 内装収入 毎週 +¥${inc}<br>🎨 床: ${FLOOR_NAMES[floorOf(obj)]}</div>
+      <button class="kairo-btn btn-blue" style="width:100%; margin-bottom:5px;" onclick="cycleFloor(${obj.uid})">🎨 床の色を変える</button>
+      <button class="kairo-btn btn-green" style="width:100%; margin-bottom:5px;" onclick="switchDockById('build'); closeInspector();">🛠 内装を置く（建築タブの下の方）</button>`;
+  } else if (def.cat === 'fixture') {
+    extra = `<div style="font-size:12px; margin:4px 0;">内装収入 毎週 <b>+¥${fxIncome(obj)}</b>（評判で増減）</div>`;
   }
 
-  const canDelete = !(def.cat === 'register' && placedObjects.filter(o => o.type === 'register').length <= 1);
+  const canDelete = def.cat !== 'backyard' && !(def.cat === 'register' && placedObjects.filter(o => o.type === 'register').length <= 1);
 
   pop.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -2271,9 +2471,10 @@ function removeObject(uid) {
   if (def.cat === 'shelf' && obj.stock > 0) {
     products[def.prod].stock += obj.stock;
   }
-  const refund = Math.floor(def.cost * 0.5);
+  let refund = Math.floor(def.cost * 0.5);
+  if (def.cat === 'neighbor') { const fx = placedObjects.filter(q => hostedBy(obj, q)); fx.forEach(q => { refund += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }); placedObjects = placedObjects.filter(q => !fx.includes(q)); }
   state.money += refund;
-  placedObjects.splice(idx, 1);
+  placedObjects.splice(placedObjects.indexOf(obj), 1);
   closeInspector();
   recalcCombos();
   SFX.click();
@@ -2311,11 +2512,15 @@ function refreshAllTabs() {
 function renderBuildTab() {
   const pane = document.getElementById('pane-build');
   let html = `<div class="ribbon-title"><span>🏗️ 店内設備・商品棚の設置</span><span>移動もOK!</span></div>`;
-  Object.values(FACILITY_TYPES).forEach(def => {
+  let lastGrp = '';
+  Object.values(FACILITY_TYPES).sort((a, b) => BUILD_ORDER.indexOf(a.cat) - BUILD_ORDER.indexOf(b.cat)).forEach(def => {
+    if (def.cat === 'backyard') return;
+    const grp = BUILD_GROUP[def.cat];
+    if (grp !== lastGrp) { lastGrp = grp; html += `<div class="ribbon-title" style="font-size:12px;"><span>${grp}</span></div>`; }
     const locked = def.cat === 'shelf' && products[def.prod].unlockRank > state.rankIdx;
     const reqRank = def.cat === 'shelf' ? RANKS[products[def.prod].unlockRank].rank : '';
     html += `
-      <div class="item-card ${locked ? 'locked' : ''}">
+      <div class="item-card ${locked ? 'locked' : ''}" ${tipAttr(facilityTip(def))}>
         <div class="card-top">
           <span class="card-name">${def.icon} ${def.name}</span>
           <span style="font-weight:900; color:#b45309; font-size:12px;">¥${def.cost.toLocaleString()}</span>
@@ -2359,8 +2564,8 @@ function renderPriceTab() {
     const fb = getPriceFeedback(p);
     const eff = getEffectivePrice(p);
     const profit = eff - getUnitCost(p);
-    const minP = Math.round((p.basePrice * 0.5)/10)*10;
-    const maxP = Math.round((p.basePrice * (1.7 + p.quality * 0.15))/10)*10;
+    const minP = 10;
+    const maxP = Math.max(Math.round(p.basePrice * 4 / 10) * 10, Math.round(p.price * 1.5 / 10) * 10);
     const qualCost = 10 + p.quality * 10;
 
     html += `
@@ -2383,6 +2588,7 @@ function renderPriceTab() {
           <button class="kairo-btn btn-cream" style="padding:2px 7px;" onclick="adjustPrice('${p.id}', -10)">-</button>
           <input type="range" min="${minP}" max="${maxP}" step="10" value="${p.price}"
             oninput="setPrice('${p.id}', Number(this.value))">
+          <input type="number" id="pnum-${p.id}" min="10" step="10" value="${p.price}" style="width:72px;font-weight:800;" onchange="setPriceNum('${p.id}', this.value)">
           <button class="kairo-btn btn-cream" style="padding:2px 7px;" onclick="adjustPrice('${p.id}', 10)">+</button>
         </div>
 
@@ -2390,8 +2596,8 @@ function renderPriceTab() {
           <button class="kairo-btn ${p.onSale ? 'btn-red' : 'btn-cream'}" style="flex:1;" onclick="toggleSale('${p.id}')">
             🏷️ ${p.onSale ? '特売中(解除)' : '特売にする'}
           </button>
-          <button class="kairo-btn btn-blue" style="flex:1;" onclick="upgradeQuality('${p.id}')" ${p.quality >= 5 || state.points < qualCost ? 'disabled' : ''}>
-            ${p.quality >= 5 ? '品質MAX' : `✨品質UP (${qualCost}P)`}
+          <button class="kairo-btn btn-blue" style="flex:1;" onclick="upgradeQuality('${p.id}')" ${state.points < qualCost ? 'disabled' : ''}>
+            ✨品質UP (${qualCost}P)
           </button>
           <button class="kairo-btn btn-green" onclick="bulkBuy('${p.id}')" title="30個を10%OFFの卸値で仕入れます！">
             📦30個仕入
@@ -2425,15 +2631,15 @@ function updatePriceCardInline(pid) {
 }
 
 function setPrice(pid, val) {
-  products[pid].price = val;
+  products[pid].price = val; const ne = document.getElementById('pnum-' + pid); if (ne) ne.value = val;
   updatePriceCardInline(pid);
 }
 
 function adjustPrice(pid, delta) {
   const p = products[pid];
-  const minP = Math.round((p.basePrice * 0.5)/10)*10;
-  const maxP = Math.round((p.basePrice * (1.7 + p.quality * 0.15))/10)*10;
-  p.price = Math.max(minP, Math.min(maxP, p.price + delta));
+  const minP = 10;
+  const maxP = Math.max(Math.round(p.basePrice * 4 / 10) * 10, Math.round(p.price * 1.5 / 10) * 10);
+  p.price = Math.max(10, p.price + delta);
   SFX.click();
   renderPriceTab();
 }
@@ -2458,7 +2664,7 @@ function toggleSale(pid) {
 function upgradeQuality(pid) {
   const p = products[pid];
   const cost = 10 + p.quality * 10;
-  if (state.points < cost || p.quality >= 5) return;
+  if (state.points < cost) return;
   state.points -= cost;
   p.quality++;
   SFX.heart();
@@ -2524,8 +2730,8 @@ function renderStaffTab() {
             <button class="kairo-btn ${st.role==='stocker'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','stocker')">📦品出</button>
           </div>
           <div style="display:flex; gap:5px; margin-top:2px;">
-            <button class="kairo-btn btn-blue" style="flex:2;" onclick="trainStaff('${st.id}')" ${st.level>=10 || state.points<ptCost ? 'disabled' : ''}>
-              ${st.level>=10 ? 'Lv MAX' : `💪 研修して強化 (✨${ptCost}P)`}
+            <button class="kairo-btn btn-blue" style="flex:2;" onclick="trainStaff('${st.id}')" ${state.points<ptCost ? 'disabled' : ''}>
+              💪 研修して強化 (✨${ptCost}P)
             </button>
             ${!st.isManager ? `<button class="kairo-btn btn-red" onclick="fireStaff('${st.id}')">解雇</button>` : ''}
           </div>
@@ -2566,7 +2772,7 @@ function statBar(label, val, color) {
   return `
     <div class="stat-row">
       <span class="stat-label">${label} ${val}</span>
-      <div class="bar-bg"><div class="bar-fill" style="width:${val}%; background:${color};"></div></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100, val)}%; background:${color};"></div></div>
     </div>
   `;
 }
@@ -2574,8 +2780,8 @@ function statBar(label, val, color) {
 function renderManageTab() {
   const pane = document.getElementById('pane-manage');
   const nextRank = RANKS[state.rankIdx + 1];
-  const expCost = state.expansionLevel === 0 ? 6000 : 15000;
-  const expReqRank = state.expansionLevel === 0 ? 1 : 3;
+  const expCost = expCostOf(state.expansionLevel);
+  const expReqRank = expReqOf(state.expansionLevel);
 
   let html = `
     <div class="ribbon-title"><span>🏆 店舗成長＆キャンペーン</span></div>
@@ -2596,10 +2802,10 @@ function renderManageTab() {
 
     <div class="item-card">
       <div class="card-top">
-        <span class="card-name">🚧 店舗フロア拡張 (現在Lv.${state.expansionLevel}/2)</span>
+        <span class="card-name">🚧 店舗フロア拡張 (現在Lv.${state.expansionLevel}/${MAX_EXP})</span>
       </div>
       <div style="font-size:11px; color:var(--text-muted);">店舗を右側に広げて、より多くの棚やイートインを置けます！</div>
-      ${state.expansionLevel < 2
+      ${state.expansionLevel < MAX_EXP
         ? `<button class="kairo-btn btn-orange" onclick="expandStore()" ${(state.money < expCost || state.rankIdx < expReqRank) ? 'disabled' : ''}>
              ${state.rankIdx < expReqRank ? `🔒 ランク${RANKS[expReqRank].rank}で開放` : `🔨 拡張工事 (¥${expCost.toLocaleString()})`}
            </button>`
@@ -2638,10 +2844,14 @@ function renderManageTab() {
 }
 
 function expandStore() {
-  const cost = state.expansionLevel === 0 ? 6000 : 15000;
-  if (state.money < cost || state.expansionLevel >= 2) return;
+  const cost = expCostOf(state.expansionLevel);
+  if (state.money < cost || state.expansionLevel >= MAX_EXP || state.rankIdx < expReqOf(state.expansionLevel)) return;
   state.money -= cost;
   state.expansionLevel++;
+  const gone = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'neighbor' && o.x <= getStoreBounds().maxX);
+  gone.forEach(o => { state.money += FACILITY_TYPES[o.type].cost; });
+  if (gone.length) { const fx = placedObjects.filter(q => FACILITY_TYPES[q.type].cat === 'fixture' && gone.some(g => hostedBy(g, q))); fx.forEach(q => { state.money += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }); placedObjects = placedObjects.filter(o => !gone.includes(o) && !fx.includes(o)); }
+  recalcCombos(true);
   SFX.fanfare();
   setTicker('🎉 店舗の増築工事が完了！フロアが広くなりました！');
   updateHUD();
@@ -2747,7 +2957,7 @@ function gameLoop(now) {
     }
   }
 
-  draw();
+  view3D ? draw3D() : draw();
   requestAnimationFrame(gameLoop);
 }
 
@@ -2786,7 +2996,8 @@ function idbOp(mode, fn) {
 }
 function snapshot() {
   return JSON.parse(JSON.stringify({
-    v: 1, savedAt: Date.now(),
+    v: 2, savedAt: Date.now(), curStore,
+    stores: (packStore(), stores.map(sx => ({ name: sx.name, sign: sx.sign, expansionLevel: sx.expansionLevel, nextObjUid: sx.nextObjUid, nextStaffId: sx.nextStaffId, candidateList: sx.candidateList, placedObjects: sx.placedObjects.map(o => ({ ...o, queue: [] })), hiredStaff: sx.hiredStaff.map(x => ({ ...x, path: [], carry: null, targetObjId: null })) }))),
     state: { ...state, discoveredCombos: [...state.discoveredCombos], buildMode: null, selectedObjId: null },
     placedObjects: placedObjects.map(o => ({ ...o, queue: [] })),
     nextObjUid,
@@ -2811,17 +3022,27 @@ async function saveGame(manual = false) {
 }
 async function loadGame() {
   try {
-    const d = await idbOp('readonly', s => s.get(SAVE_KEY));
-    if (!d || d.v !== 1) return false;
+    let d = await idbOp('readonly', s => s.get(SAVE_KEY));
+    d = normalizeSave(d);
+    if (!d || d.v < 1) return false;
     Object.assign(state, d.state, { discoveredCombos: new Set(d.state.discoveredCombos || []), buildMode: null, selectedObjId: null, paused: false, activeDock: 'build' });
     placedObjects = d.placedObjects.filter(o => FACILITY_TYPES[o.type]).map(o => ({ ...o, queue: [] }));
     nextObjUid = d.nextObjUid;
     hiredStaff = d.hiredStaff.map(s => ({ ...s, x: (s.isManager ? 4.5 : 2.5) * TILE, y: (s.isManager ? 3.5 : 2.5) * TILE, path: [], carry: null, cooldown: 0, targetObjId: null }));
     if (d.candidateList && d.candidateList.length) candidateList = d.candidateList;
     nextStaffId = d.nextStaffId;
+    if (d.stores && d.stores.length) {
+      stores.length = 0;
+      d.stores.forEach(sx => stores.push({ ...sx, customers: [], passers: [], dirts: [],
+        placedObjects: sx.placedObjects.filter(o => FACILITY_TYPES[o.type]).map(o => ({ ...o, queue: [] })),
+        hiredStaff: sx.hiredStaff.map(x => ({ ...x, x: (x.isManager ? 4.5 : 2.5) * TILE, y: (x.isManager ? 3.5 : 2.5) * TILE, path: [], carry: null, cooldown: 0, targetObjId: null })) }));
+      curStore = Math.min(d.curStore || 0, stores.length - 1);
+      applyStore(stores[curStore]);
+    }
     Object.entries(d.products || {}).forEach(([id, v]) => { if (products[id]) Object.assign(products[id], v); });
     Object.assign(equipLv, d.equipLv || {});
     if (typeof d.soundOn === 'boolean') soundOn = d.soundOn;
+    ensureBackyard();
     recalcCombos(true);
     return true;
   } catch (e) { return false; }
@@ -2832,15 +3053,407 @@ async function resetGame() {
   try { await idbOp('readwrite', s => s.delete(SAVE_KEY)); } catch (e) {}
   location.reload();
 }
+// ---- 旧バージョン対応：形式ゆれを補完して読み込む ----
+function normalizeSave(d) {
+  if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { return null; } }
+  if (!d || typeof d !== 'object') return null;
+  for (const k of ['save', 'data', 'payload', 'gameData']) if (d[k] && typeof d[k] === 'object' && !d.state && !d.placedObjects) d = d[k];
+  if (!d.state && typeof d.money === 'number') d.state = { money: d.money, totalRevenue: d.totalRevenue, points: d.points, rating: d.rating, rankIdx: d.rankIdx, year: d.year, month: d.month, week: d.week, totalCustomers: d.totalCustomers, expansionLevel: d.expansionLevel };
+  if (!d.state || typeof d.state !== 'object') return null;
+  d = JSON.parse(JSON.stringify(d));
+  d.v = d.v || 1;
+  d.state.discoveredCombos = Array.isArray(d.state.discoveredCombos) ? d.state.discoveredCombos : [];
+  const objs = a => (Array.isArray(a) ? a : []).filter(o => o && FACILITY_TYPES[o.type]).map((o, i) => ({ stock: 0, progress: 0, ...o, uid: o.uid ?? (9000 + i), x: o.x | 0, y: o.y | 0 }));
+  const staff = a => { a = (Array.isArray(a) ? a : []).filter(Boolean); if (!a.some(s => s.isManager)) a.unshift(makeManager()); return a; };
+  const nextUid = a => a.reduce((m, o) => Math.max(m, +o.uid || 0), 0) + 1;
+  const nextSid = (a, v) => v || a.reduce((m, s) => Math.max(m, +s.id || 0), 0) + 1;
+  d.placedObjects = objs(d.placedObjects); d.hiredStaff = staff(d.hiredStaff);
+  d.nextObjUid = Math.max(d.nextObjUid || 1, nextUid(d.placedObjects)); d.nextStaffId = nextSid(d.hiredStaff, d.nextStaffId);
+  d.candidateList = Array.isArray(d.candidateList) ? d.candidateList : [];
+  d.products = d.products || {}; d.equipLv = d.equipLv || {};
+  if (Array.isArray(d.stores) && d.stores.length) {
+    d.stores = d.stores.map(sx => { const po = objs(sx.placedObjects), hs = staff(sx.hiredStaff);
+      return { name: '店', expansionLevel: 0, candidateList: [], ...sx, placedObjects: po, hiredStaff: hs, nextObjUid: Math.max(sx.nextObjUid || 1, nextUid(po)), nextStaffId: nextSid(hs, sx.nextStaffId) }; });
+    d.curStore = Math.min(d.curStore | 0, d.stores.length - 1);
+  } else d.stores = null;
+  return d;
+}
+function exportSave() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(snapshot())], { type: 'application/json' }));
+  a.download = `mycombini_dx_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+async function importData(raw) {
+  const d = normalizeSave(raw);
+  if (!d) { alert('セーブデータとして読み込めませんでした。'); return; }
+  if (!confirm(`いまのデータを上書きして読み込みます。\n（読み込むデータ: 所持金 ¥${(d.state.money || 0).toLocaleString()} / 設備 ${d.placedObjects.length}個）\nよろしいですか？`)) return;
+  ready = false;
+  try { d.savedAt = Date.now(); await idbOp('readwrite', s => s.put(d, SAVE_KEY)); location.reload(); }
+  catch (e) { ready = true; alert('保存に失敗しました。'); }
+}
+function importFromFile(inp) { const f = inp.files && inp.files[0]; if (f) f.text().then(importData); }
+function importFromText() { importData(document.getElementById('imp-text').value.trim()); }
+function openImportModal() {
+  openModal('📂 セーブの書き出し／読み込み', `
+    <div style="font-size:12px;line-height:1.6">旧バージョンのセーブデータも読み込めます（足りない項目は自動で補います）。読み込み前に、いまのデータを書き出しておくと安心です。</div>
+    <button class="kairo-btn btn-blue" style="padding:8px" onclick="exportSave()">📤 いまのデータを書き出す (.json)</button>
+    <div style="font-size:12px;font-weight:800">📥 ファイルから読み込む</div>
+    <input type="file" id="imp-file" accept=".json,.txt,application/json" onchange="importFromFile(this)" style="font-size:12px">
+    <div style="font-size:12px;font-weight:800">または、データを貼り付け</div>
+    <textarea id="imp-text" rows="4" placeholder="セーブデータ(JSON)を貼り付け" style="width:100%;font-size:11px;border:2px solid var(--border-dark);border-radius:8px;padding:6px"></textarea>
+    <button class="kairo-btn btn-orange" style="padding:8px" onclick="importFromText()">📥 貼り付けた内容を読み込む</button>
+    <button class="kairo-btn btn-green" style="padding:8px" onclick="scanLegacy()">🔍 このブラウザ内の旧セーブを探す</button>
+    <div id="imp-found" style="display:flex;flex-direction:column;gap:6px;font-size:12px"></div>`);
+}
+async function scanLegacy() {
+  const box = document.getElementById('imp-found'); box.textContent = '検索中…';
+  const found = [], esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const looks = v => { try { const d = typeof v === 'string' ? JSON.parse(v) : v; return d && typeof d === 'object' && (d.state || d.placedObjects || typeof d.money === 'number') ? d : null; } catch (e) { return null; } };
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i), d = looks(localStorage.getItem(k)); if (d) found.push({ src: 'localStorage: ' + k, d }); } } catch (e) {}
+  try {
+    const dbs = indexedDB.databases ? await indexedDB.databases() : [{ name: DB_NAME }];
+    for (const info of dbs) {
+      if (!info.name) continue;
+      const db = await new Promise((res, rej) => { const r = indexedDB.open(info.name); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+      for (const sn of [...db.objectStoreNames]) {
+        const items = await new Promise(res => { const out = [], rq = db.transaction(sn).objectStore(sn).openCursor(); rq.onsuccess = e => { const c = e.target.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); }; rq.onerror = () => res(out); });
+        items.forEach(([k, v]) => { const d = looks(v); if (d && !(info.name === DB_NAME && k === SAVE_KEY)) found.push({ src: `${info.name} / ${sn} / ${k}`, d }); });
+      }
+      db.close();
+    }
+  } catch (e) {}
+  window._legacyFound = found;
+  box.innerHTML = found.length ? found.map((f, i) => `<div class="item-card"><div>${esc(f.src)}</div><div>💰 ¥${((f.d.state && f.d.state.money) ?? f.d.money ?? 0).toLocaleString()}</div><button class="kairo-btn btn-orange" onclick="importData(window._legacyFound[${i}].d)">📥 これを読み込む</button></div>`).join('') : '見つかりませんでした。旧版で書き出したファイルがあれば、上から選んでください。';
+}
 setInterval(() => saveGame(), 8000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
 window.addEventListener('pagehide', () => saveGame());
+
+// =========================================================
+// 店長操作(矢印キー) / 店長視点3D(レイキャスト)
+// =========================================================
+const keys = {};
+let view3D = false, mgrAng = Math.PI / 2;
+window.addEventListener('keydown', e => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (e.key.startsWith('Arrow')) { keys[e.key] = true; e.preventDefault(); }
+  else if (e.key === 'v' || e.key === 'V') toggle3D();
+});
+window.addEventListener('keyup', e => { delete keys[e.key]; });
+window.addEventListener('blur', () => { for (const k in keys) delete keys[k]; });
+function mgrOK(px, py) { const tx = Math.floor(px / TILE), ty = Math.floor(py / TILE); return ty <= 10 && isWalkableForPath(tx, ty); }
+function manualMove(st, dt, spd) {
+  const L = keys.ArrowLeft, R = keys.ArrowRight, U = keys.ArrowUp, D = keys.ArrowDown;
+  if (!(L || R || U || D)) return false;
+  st.path = [];
+  let dx, dy;
+  if (view3D) {
+    mgrAng += ((L ? 1 : 0) - (R ? 1 : 0)) * 2.2 * dt * -1;
+    const f = (U ? 1 : 0) - (D ? 1 : 0);
+    dx = Math.cos(mgrAng) * f; dy = Math.sin(mgrAng) * f;
+  } else {
+    dx = (R ? 1 : 0) - (L ? 1 : 0); dy = (D ? 1 : 0) - (U ? 1 : 0);
+    const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
+    if (dx || dy) mgrAng = Math.atan2(dy, dx);
+  }
+  const nx = st.x + dx * spd * dt, ny = st.y + dy * spd * dt;
+  const stuck = !mgrOK(st.x, st.y);
+  if (stuck || mgrOK(nx, st.y)) st.x = nx;
+  if (stuck || mgrOK(st.x, ny)) st.y = ny;
+  st.bounce += dt * 12;
+  for (let i = dirts.length - 1; i >= 0; i--) {
+    if (Math.hypot(st.x - dirts[i].x, st.y - dirts[i].y) < 22) {
+      dirts.splice(i, 1); state.rating = Math.min(5.0, state.rating + 0.02); addFloatText(st.x, st.y - 18, '✨掃除!', '#2cb67d');
+    }
+  }
+  return true;
+}
+const c3 = document.getElementById('view3d'), x3 = c3.getContext('2d');
+function toggle3D() {
+  view3D = !view3D;
+  if (view3D) { cancelBuildMode(); closeInspector(); }
+  canvas.style.display = view3D ? 'none' : 'block';
+  c3.style.display = view3D ? 'block' : 'none';
+  document.getElementById('btn-3d').className = 'kairo-btn ' + (view3D ? 'btn-orange' : 'btn-gold');
+  setTicker(view3D ? '👁 店長視点：←→で向きを変え、↑↓で前後に移動（Vで戻る）' : '🗺 マップ視点に戻りました（矢印キーで店長を操作できます）');
+}
+function wall3(tx, ty) {
+  if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS || ty >= 11) return { c: '#3b4a63' };
+  const o = objAt(tx, ty);
+  if (o) {
+    const d = FACILITY_TYPES[o.type];
+    if (d.cat === 'shelf') { const p = products[d.prod]; return { c: p.dot, t: p.color }; }
+    return { c: d.color || ({ register: '#2f7fd1', backyard: '#64748b', eatin: '#92400e', atm: '#1e293b', decor: '#16a34a' })[d.cat] || '#777' };
+  }
+  return isWalkableForPath(tx, ty) ? null : { c: '#7a6a5c' };
+}
+function draw3D() {
+  const W = c3.width, H = c3.height, me = hiredStaff[0], FOV = 1.05;
+  const px = me.x / TILE, py = me.y / TILE;
+  x3.fillStyle = '#efe7cf'; x3.fillRect(0, 0, W, H / 2);
+  x3.fillStyle = '#cdb98a'; x3.fillRect(0, H / 2, W, H / 2);
+  const zb = new Array(W).fill(99);
+  for (let i = 0; i < W; i++) {
+    const a = mgrAng + (i / W - 0.5) * FOV, rx = Math.cos(a), ry = Math.sin(a);
+    let mx = Math.floor(px), my = Math.floor(py);
+    const ddx = Math.abs(1 / (rx || 1e-9)), ddy = Math.abs(1 / (ry || 1e-9));
+    const sx = rx < 0 ? -1 : 1, sy = ry < 0 ? -1 : 1;
+    let sdx = (rx < 0 ? px - mx : mx + 1 - px) * ddx, sdy = (ry < 0 ? py - my : my + 1 - py) * ddy;
+    let side = 0, hit = null, d = 0;
+    for (let n = 0; n < 40 && !hit; n++) {
+      if (sdx < sdy) { d = sdx; sdx += ddx; mx += sx; side = 0; } else { d = sdy; sdy += ddy; my += sy; side = 1; }
+      hit = wall3(mx, my);
+    }
+    d = Math.max(0.05, d * Math.cos(a - mgrAng)); zb[i] = d;
+    if (!hit) continue;
+    const h = Math.min(H * 1.5, H / d * 0.9), y0 = (H - h) / 2;
+    x3.fillStyle = hit.c; x3.fillRect(i, y0, 1, h);
+    if (hit.t) { x3.fillStyle = hit.t; x3.fillRect(i, y0 + h * 0.2, 1, h * 0.3); }
+    x3.fillStyle = 'rgba(0,0,0,' + (1 - Math.max(0.3, 1 - d / 12) * (side ? 0.8 : 1)).toFixed(2) + ')'; x3.fillRect(i, y0, 1, h);
+  }
+  const sp = [...customers.map(c => ({ x: c.x, y: c.y, c: c.shirt })), ...hiredStaff.slice(1).map(q => ({ x: q.x, y: q.y, c: q.color }))];
+  sp.map(q => { const dx = q.x / TILE - px, dy = q.y / TILE - py; return { ...q, dist: Math.hypot(dx, dy), ang: Math.atan2(dy, dx) }; })
+    .sort((a, b) => b.dist - a.dist).forEach(q => {
+      let da = q.ang - mgrAng;
+      while (da > Math.PI) da -= 2 * Math.PI;
+      while (da < -Math.PI) da += 2 * Math.PI;
+      const dd = q.dist * Math.cos(da);
+      if (Math.abs(da) > FOV / 2 + 0.3 || dd < 0.25) return;
+      const sxp = (0.5 + da / FOV) * W, h = H / dd * 0.6, w = h * 0.45, y0 = H / 2 + (H / dd * 0.9) / 2 - h;
+      for (let i = Math.floor(sxp - w / 2); i < sxp + w / 2; i++) {
+        if (i < 0 || i >= W || zb[i] < dd) continue;
+        x3.fillStyle = q.c; x3.fillRect(i, y0 + h * 0.3, 1, h * 0.7);
+        x3.fillStyle = '#fde68a'; x3.fillRect(i, y0, 1, h * 0.3);
+      }
+    });
+  x3.fillStyle = 'rgba(0,0,0,.55)'; x3.fillRect(0, H - 16, W, 16);
+  x3.fillStyle = '#fff'; x3.font = '10px sans-serif'; x3.textAlign = 'left'; x3.textBaseline = 'middle';
+  x3.fillText(`👁 店長視点 ｜ ←→回転 ↑↓移動 Vで戻る ｜ 💰¥${state.money.toLocaleString()} 客${customers.length}人`, 6, H - 8);
+  x3.fillStyle = '#fff'; x3.fillRect(W / 2 - 1, H / 2 - 1, 3, 3);
+}
+
+// =========================================================
+// 複数店舗
+// =========================================================
+const stores = [{ name: '1号店' }];
+let curStore = 0;
+function packStore() {
+  Object.assign(stores[curStore], { placedObjects, nextObjUid, hiredStaff, candidateList, nextStaffId, customers, passers, dirts, expansionLevel: state.expansionLevel, sign: { ...sign } });
+}
+function ensureBackyard() {
+  if (placedObjects.some(o => o.type === 'backyard')) return;
+  for (let y = 1; y <= 9; y++) for (let x = 1; x <= 3; x++) {
+    if (!placedObjects.some(o => o.x === x && o.y === y) && !((x === 5 || x === 6) && y === 9)) { addPlacedObject('backyard', x, y); return; }
+  }
+}
+function applyStore(sx) {
+  placedObjects = sx.placedObjects; nextObjUid = sx.nextObjUid; hiredStaff = sx.hiredStaff;
+  candidateList = sx.candidateList; nextStaffId = sx.nextStaffId;
+  customers = sx.customers || []; passers = sx.passers || []; dirts = sx.dirts || [];
+  state.expansionLevel = sx.expansionLevel || 0;
+  sign = sx.sign ? { ...sx.sign } : { text: '🏪 MY MART', color: 'auto', rank: true };
+  migrateNeighbors(); ensureBackyard(); recalcCombos(true); camHome();
+}
+function makeManager() {
+  return { id: 'manager', name: 'あなた (店長)', isManager: true, level: 1, rank: 'B', trait: { name: '店長魂', desc: '給料0円で年中無休！' },
+    regStat: 55, spdStat: 55, charmStat: 60, wage: 0, role: 'all', color: '#2596be', hair: '#1e293b',
+    x: 4.5 * TILE, y: 3.5 * TILE, path: [], carry: null, cooldown: 0, targetObjId: null, bounce: 0 };
+}
+function newStoreCost() { return 20000 * Math.pow(2, stores.length - 1); }
+function refreshStoreUI() {
+  document.getElementById('store-sel').innerHTML = stores.map((sx, i) => `<option value="${i}" ${i === curStore ? 'selected' : ''}>🏪 ${sx.name}</option>`).join('');
+  document.getElementById('btn-newstore').textContent = `🏬新店 ¥${newStoreCost().toLocaleString()}`;
+}
+function switchStore(i) {
+  if (i === curStore || !stores[i]) return;
+  packStore(); curStore = i; applyStore(stores[i]);
+  cancelBuildMode(); closeInspector(); lastSig = '';
+  SFX.door(); setTicker(`🏪 ${stores[i].name} に移動しました`);
+  updateHUD(); refreshAllTabs(); refreshStoreUI();
+}
+function buildNewStore() {
+  const c = newStoreCost();
+  if (state.money < c) { SFX.angry(); return setTicker(`⚠️ 新店舗の建設費 ¥${c.toLocaleString()} が足りません！`); }
+  state.money -= c;
+  packStore();
+  stores.push({ name: `${stores.length + 1}号店`, placedObjects: [], nextObjUid: 1, hiredStaff: [makeManager()], candidateList: [], nextStaffId: 1, customers: [], passers: [], dirts: [], expansionLevel: 0 });
+  curStore = stores.length - 1;
+  applyStore(stores[curStore]);
+  initDefaultStore(); refreshCandidates(true);
+  cancelBuildMode(); closeInspector(); lastSig = '';
+  SFX.fanfare(); setTicker(`🎉 ${stores[curStore].name} がオープン！表示中の店のみ接客し、他の店は週ごとに自動で収益が入ります。`);
+  updateHUD(); refreshAllTabs(); refreshStoreUI();
+}
+function setPriceNum(pid, v) {
+  products[pid].price = Math.max(10, Math.round(Number(v) / 10) * 10 || 10);
+  SFX.click(); renderPriceTab();
+}
+
+// =========================================================
+// 屋外エリア / お隣の店 / ブロック / 装飾 / コンボ追加
+// =========================================================
+const MAX_EXP = 4;
+function expCostOf(l) { return l === 0 ? 6000 : Math.round(15000 * Math.pow(1.7, l - 1) / 100) * 100; }
+function expReqOf(l) { return l === 0 ? 1 : Math.min(6, l + 2); }
+function inStore(gx, gy) { const b = getStoreBounds(); return gx >= b.minX && gx <= b.maxX && gy >= b.minY && gy <= b.maxY; }
+function isRoad(gy) { return gy === 11 || gy === 12; }
+function inBuilding(gx, gy) { const b = getStoreBounds(); return gx >= 0 && gx <= b.maxX && gy >= 0 && gy <= 10; }
+function inYard(gx, gy) { return !inBuilding(gx, gy) && !isRoad(gy); }
+function tenantTraffic() { return Math.min(1, placedObjects.reduce((a, o) => a + (FACILITY_TYPES[o.type].traffic || 0), 0)); }
+const DECOR_BONUS = { plant: 0.15, flower: 0.12, tree: 0.10, lamp: 0.08 };
+const BUILD_ORDER = ['shelf', 'register', 'eatin', 'atm', 'decor', 'block', 'neighbor', 'fixture'];
+const BUILD_GROUP = { shelf: '🛒 商品棚（屋外もOK）', register: '🏧 店内設備', eatin: '🏧 店内設備', atm: '🏧 店内設備', decor: '🌿 装飾（屋外もOK）', block: '🧱 ブロック（屋外もOK）', neighbor: '🏘️ お隣の店（コンビニ大・芝生に建設）', fixture: '🛠️ お隣の店の内装（店の中のマスに置く）' };
+Object.assign(FACILITY_TYPES, {
+  shelf_vending: { type: 'shelf_vending', cat: 'shelf', prod: 'drink', name: '自動販売機', icon: '🧃', cost: 900, maxCap: 6, desc: '屋外にも置ける飲料の自販機' },
+  flower: { type: 'flower', cat: 'decor', name: '花壇', icon: '🌷', cost: 350, desc: '隣の商品棚の魅力+12%' },
+  tree:   { type: 'tree',   cat: 'decor', name: 'シンボルツリー', icon: '🌳', cost: 800, desc: '隣の商品棚の魅力+10%' },
+  lamp:   { type: 'lamp',   cat: 'decor', name: '街灯', icon: '💡', cost: 500, desc: '隣の商品棚の魅力+8%' },
+  bench:  { type: 'bench',  cat: 'decor', name: 'ベンチ', icon: '🛋️', cost: 600, desc: 'イートインや自販機の隣で一休みコンボ' },
+  block_brick: { type: 'block_brick', cat: 'block', name: 'レンガブロック', icon: '🧱', cost: 80,  color: '#c2410c', desc: '通れない壁。通路の仕切りに' },
+  block_stone: { type: 'block_stone', cat: 'block', name: '石ブロック',     icon: '⬜', cost: 100, color: '#94a3b8', desc: '丈夫な石の壁・外構に' },
+  block_wood:  { type: 'block_wood',  cat: 'block', name: '木ブロック',     icon: '🟫', cost: 80,  color: '#a16207', desc: '木の柵・テラスの囲いに' },
+  block_glass: { type: 'block_glass', cat: 'block', name: 'ガラスブロック', icon: '🔷', cost: 120, color: '#7dd3fc', desc: 'おしゃれなガラスの仕切り' },
+  block_hedge: { type: 'block_hedge', cat: 'block', name: '生垣ブロック',   icon: '🟩', cost: 90,  color: '#16a34a', desc: '緑の生垣。屋外の目隠しに' },
+  tenant_bakery: { type: 'tenant_bakery', cat: 'neighbor', name: 'パン屋さん',   icon: '🥖', cost: 3500, rent: 120, traffic: 0.06, color: '#fcd34d', desc: '焼きたての香りで通行人UP' },
+  tenant_cafe:   { type: 'tenant_cafe',   cat: 'neighbor', name: 'カフェ',       icon: '🍵', cost: 4200, rent: 150, traffic: 0.07, color: '#fdba74', desc: 'おしゃれカフェで人が集まる' },
+  tenant_salon:  { type: 'tenant_salon',  cat: 'neighbor', name: '美容室',       icon: '💇', cost: 3000, rent: 100, traffic: 0.05, color: '#f9a8d4', desc: '常連さんが通りかかる' },
+  tenant_drug:   { type: 'tenant_drug',   cat: 'neighbor', name: 'ドラッグストア', icon: '💊', cost: 5200, rent: 170, traffic: 0.08, color: '#86efac', desc: '毎日の買い物客が増える' },
+  tenant_game:   { type: 'tenant_game',   cat: 'neighbor', name: 'ゲームセンター', icon: '🎮', cost: 6500, rent: 220, traffic: 0.10, color: '#a5b4fc', desc: '若者が集まる人気スポット' }
+});
+COMBO_DEFS.push(
+  { id: 'oden_set',  name: 'おでん定食コーナー',   a: 'shelf_onigiri', b: 'shelf_oden',    bonusProd: ['onigiri', 'oden'],   bonus: 0.20, desc: 'おにぎり×おでん：魅力+20%' },
+  { id: 'cooldrink', name: 'ひんやり冷却コーナー', a: 'shelf_ice',     b: 'shelf_drink',   bonusProd: ['ice', 'drink'],      bonus: 0.18, desc: 'アイス×ドリンク：魅力+18%' },
+  { id: 'sweet2',    name: 'デザートビュッフェ',   a: 'shelf_cake',    b: 'shelf_ice',     bonusProd: ['cake', 'ice'],       bonus: 0.20, desc: 'ケーキ×アイス：魅力+20%' },
+  { id: 'fried',     name: 'ホットスナックバー',   a: 'shelf_chicken', b: 'shelf_drink',   bonusProd: ['chicken', 'drink'],  bonus: 0.18, desc: 'チキン×ドリンク：魅力+18%' },
+  { id: 'news',      name: 'モーニング新聞コーナー', a: 'shelf_magazine', b: 'shelf_coffee', bonusProd: ['magazine', 'coffee'], bonus: 0.18, desc: '雑誌×コーヒー：魅力+18%' },
+  { id: 'nutri',     name: 'バランス食コーナー',   a: 'shelf_salad',   b: 'shelf_bento',   bonusProd: ['salad', 'bento'],    bonus: 0.20, desc: 'サラダ×お弁当：魅力+20%' },
+  { id: 'terrace',   name: 'テラスカフェ',         a: 'bench',         b: 'eatin',         bonusProd: ['coffee', 'sandwich'], bonus: 0.20, desc: 'ベンチ×イートイン：魅力+20%' },
+  { id: 'vend',      name: 'ベンチで一休み',       a: 'shelf_vending', b: 'bench',         bonusProd: ['drink'],             bonus: 0.20, desc: '自販機×ベンチ：魅力+20%' },
+  { id: 'vend2',     name: 'ドリンクステーション', a: 'shelf_vending', b: 'shelf_drink',   bonusProd: ['drink'],             bonus: 0.15, desc: '自販機×飲料クーラー：魅力+15%' },
+  { id: 'garden',    name: '癒やしのガーデン',     a: 'flower',        b: 'tree',          bonusProd: ['coffee', 'cake', 'salad'], bonus: 0.15, desc: '花壇×シンボルツリー：魅力+15%' },
+  { id: 'lampnight', name: '街灯の下の夜食',       a: 'lamp',          b: 'shelf_noodle',  bonusProd: ['noodle', 'oden'],    bonus: 0.15, desc: '街灯×カップ麺：魅力+15%' },
+  { id: 'bakery_c',  name: 'パン屋さんコラボ',     a: 'tenant_bakery', b: 'shelf_sandwich', bonusProd: ['sandwich'],         bonus: 0.25, desc: 'パン屋×サンド：魅力+25%' },
+  { id: 'cafe_c',    name: 'カフェ連携スイーツ',   a: 'tenant_cafe',   b: 'shelf_cake',    bonusProd: ['cake', 'coffee'],    bonus: 0.25, desc: 'カフェ×ケーキ：魅力+25%' },
+  { id: 'drug_c',    name: 'ドラッグ日用品フェア', a: 'tenant_drug',   b: 'shelf_daily',   bonusProd: ['daily'],             bonus: 0.25, desc: 'ドラッグ×日用品：魅力+25%' },
+  { id: 'game_c',    name: 'ゲーセンおやつ',       a: 'tenant_game',   b: 'shelf_snack',   bonusProd: ['snack', 'drink'],    bonus: 0.20, desc: 'ゲーセン×お菓子：魅力+20%' },
+  { id: 'salon_c',   name: '待ち時間の雑誌',       a: 'tenant_salon',  b: 'shelf_magazine', bonusProd: ['magazine'],         bonus: 0.18, desc: '美容室×雑誌：魅力+18%' }
+);
+
+// 内装設備（お隣の店の中に置く）
+(function () {
+  const H = { tenant_game: 'ゲーセン', tenant_cafe: 'カフェ', tenant_bakery: 'パン屋', tenant_salon: '美容室', tenant_drug: 'ドラッグ' };
+  const G = 'tenant_game', C = 'tenant_cafe', B = 'tenant_bakery', S = 'tenant_salon', D = 'tenant_drug';
+  [ // type, name, icon, cost, income/週, traffic, hosts, color, desc
+    ['fx_crane', 'クレーンゲーム', '🧸', 900, 70, 0.010, [G], '#fbcfe8', '景品を狙う定番マシン'],
+    ['fx_arcade', 'アーケード筐体', '🕹️', 700, 55, 0.008, [G], '#c7d2fe', '対戦ゲームで盛り上がる'],
+    ['fx_medal', 'メダルゲーム', '🪙', 1100, 85, 0.012, [G], '#fde68a', '家族連れに大人気'],
+    ['fx_rhythm', 'リズムゲーム', '🥁', 1500, 110, 0.015, [G], '#a5f3fc', '常連がつく人気機種'],
+    ['fx_photo', 'プリクラ機', '📸', 1800, 130, 0.018, [G], '#fbcfe8', '放課後は行列ができる！'],
+    ['fx_table', 'テーブル席', '🪑', 500, 35, 0.004, [C, B], '#fed7aa', 'くつろぎの席'],
+    ['fx_counter', 'カウンター席', '☕', 700, 50, 0.006, [C], '#fdba74', '一人客に人気'],
+    ['fx_showcase', 'ケーキショーケース', '🍰', 1200, 80, 0.010, [C, B], '#fce7f3', '甘い誘惑のショーケース'],
+    ['fx_piano', 'グランドピアノ', '🎹', 1800, 110, 0.014, [C], '#e2e8f0', '生演奏で評判UP'],
+    ['fx_breadrack', 'パン棚', '🥖', 600, 45, 0.006, [B], '#fcd34d', '焼きたてを並べる棚'],
+    ['fx_oven', '石窯オーブン', '🔥', 1300, 90, 0.012, [B], '#fca5a5', '香りで人を呼ぶ'],
+    ['fx_chair', 'カット台', '💺', 900, 65, 0.008, [S], '#f9a8d4', 'カットの主役'],
+    ['fx_wash', 'シャンプー台', '🚿', 800, 55, 0.006, [S], '#bae6fd', 'リラックスの時間'],
+    ['fx_sofa', '待合ソファ', '🛋️', 500, 30, 0.004, [S, C], '#fecaca', '待ち時間もゆったり'],
+    ['fx_medshelf', '医薬品棚', '💊', 800, 60, 0.008, [D], '#bbf7d0', '定番の医薬品'],
+    ['fx_cosme', 'コスメ棚', '💄', 1100, 80, 0.010, [D], '#fbcfe8', '美容好きが集まる'],
+    ['fx_regdrug', '専用レジ', '💳', 1000, 70, 0.008, [D], '#bfdbfe', '会計がスムーズに'],
+    ['fx_plant', '観葉植物', '🌿', 300, 12, 0.002, null, '#bbf7d0', '緑でおしゃれ'],
+    ['fx_poster', 'ポスター', '🖼️', 250, 10, 0.002, null, '#fef9c3', '壁を彩る']
+  ].forEach(([type, name, icon, cost, income, traffic, hosts, color, desc]) => {
+    FACILITY_TYPES[type] = { type, cat: 'fixture', name, icon, cost, income, traffic, hosts, color, blink: hosts && hosts[0] === G,
+      desc: `［${hosts ? hosts.map(h => H[h]).join('・') + '用' : 'どのお店でもOK'}］${desc}` };
+  });
+})();
+
+// =========================================================
+// わかりやすいツールチップ
+// =========================================================
+const tipEl = document.createElement('div');
+tipEl.id = 'tip';
+document.body.appendChild(tipEl);
+function tipAttr(t) { return 'data-tip="' + String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"'; }
+function showTip(txt, x, y) {
+  if (!txt) { tipEl.style.display = 'none'; return; }
+  tipEl.textContent = txt; tipEl.style.display = 'block';
+  const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  tipEl.style.left = Math.max(4, Math.min(x + 14, innerWidth - w - 6)) + 'px';
+  tipEl.style.top = (y + 18 + h > innerHeight ? Math.max(4, y - h - 12) : y + 18) + 'px';
+}
+function facilityTip(d) {
+  let t = `${d.icon} ${d.name}　¥${d.cost.toLocaleString()}\n${d.desc}`;
+  if (d.cat === 'shelf') t += `\n売る商品: ${products[d.prod].name}（最大${d.maxCap}個陳列）\n店内でも屋外でも置けます`;
+  else if (d.cat === 'register') t += '\n店内専用。上側に店員が立つ1マスが必要です';
+  else if (d.cat === 'fixture') t += `\n毎週の収入 +¥${d.income}（評判で増減）／通行人 +${(d.traffic * 100).toFixed(1)}%\nお隣の店の中の床マスに置けます（金色の枠が置ける場所）`;
+  else if (d.cat === 'neighbor') t += `\n中に内装設備を置けます（クリックで床色も変更可）`;
+  if (d.cat === 'neighbor') t += `\n屋外(芝生)専用／毎週の家賃 +¥${d.rent}／通行人 +${Math.round(d.traffic * 100)}%\n店を広げて店内に入ると、返金して撤去されます`;
+  else if (d.cat === 'block') t += '\n通れない壁。通路の仕切りや外構に。設備への道は塞げません';
+  else if (DECOR_BONUS[d.type]) t += `\n隣の商品棚の魅力 +${Math.round(DECOR_BONUS[d.type] * 100)}%（店内・屋外OK）`;
+  const cs = COMBO_DEFS.filter(c => c.a === d.type || c.b === d.type);
+  if (cs.length) t += '\n【隣に置くとコンボ】\n' + cs.map(c => { const o = FACILITY_TYPES[c.a === d.type ? c.b : c.a]; return `・${o.icon}${o.name} → ${c.name} (${c.desc.split('：')[1]})`; }).join('\n');
+  return t;
+}
+function objTip(o) {
+  const d = FACILITY_TYPES[o.type];
+  let t = `${d.icon} ${d.name}（${inYard(o.x, o.y) ? '屋外' : '店内'}）\n${d.desc}`;
+  if (d.cat === 'shelf') {
+    const p = products[d.prod];
+    t += `\n陳列 ${o.stock}/${d.maxCap}個／売値 ¥${getEffectivePrice(p)}（原価 ¥${getUnitCost(p)}）\n今の魅力ボーナス +${Math.round((state.comboBonusByProd[d.prod] || 0) * 100)}%`;
+  }
+  if (d.cat === 'fixture') t += `\n毎週 +¥${fxIncome(o)}`;
+  if (d.cat === 'neighbor') t += `\n家賃 毎週+¥${d.rent}／通行人 +${Math.round(d.traffic * 100)}%`;
+  const cs = COMBO_DEFS.filter(c => c.a === o.type || c.b === o.type);
+  if (cs.length) t += '\n隣に置くとコンボ: ' + cs.slice(0, 3).map(c => FACILITY_TYPES[c.a === o.type ? c.b : c.a].name).join('・') + (cs.length > 3 ? ' ほか' : '');
+  return t + (o.inCombo ? '\n✨ コンボ成立中！' : '') + '\n（クリックで移動・撤去）';
+}
+function setTips() {
+  const T = {
+    'hud-rank': 'ランク: 累計売上で上がります。上がると新商品・設備・店員枠・店舗拡張が開放されます',
+    'hud-date': '1か月=4週。月末に収支決算が出ます。毎週、家賃収入や仕入が発生します',
+    'hud-money': '所持金。仕入・設備・給料・拡張工事に使います',
+    'hud-pt': '経営P: 研修・品質UP・キャンペーンに使います。コーナー(コンボ)発見やイートインで増えます',
+    'hud-rating': '評判: 高いほど来客が増えます。品切れ・行列・ゴミで下がり、掃除や接客で上がります',
+    'hud-cust': '今、店にいるお客さんの数',
+    'btn-sound': 'サウンドのON/OFF',
+    'btn-save': '今すぐセーブ（8秒ごとに自動保存されています）',
+    'store-sel': '店舗の切り替え。表示中の店だけ接客し、他の店は週ごとに自動で収益が入ります',
+    'btn-newstore': '新しい店舗を建てます。費用は店が増えるごとに倍になります',
+    'btn-3d': '店長視点(3D)に切り替え。Vキーでも切り替えられます。←→で向き、↑↓で移動'
+  };
+  Object.entries(T).forEach(([id, t]) => { const e = document.getElementById(id); if (e) e.dataset.tip = t; });
+  const r = document.querySelector('[onclick="resetGame()"]'); if (r) r.dataset.tip = 'セーブデータを消して最初から始めます';
+  const tabs = ['🏗️ 棚・装飾・ブロック・お隣の店を置く／動かす。屋外の芝生にも置けます', '💰 売値・特売・品質UPを設定。価格は上限なし', '👥 雇う・研修で強化・役割(レジ/品出し/掃除)を決める', '🏆 ランク・店舗拡張・キャンペーン・発見したコーナー図鑑', '🏭 設備を導入すると商品の仕入原価が下がります'];
+  document.querySelectorAll('.dock-tab').forEach((b, i) => { if (tabs[i]) b.dataset.tip = tabs[i]; });
+}
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest ? e.target.closest('[data-tip]') : null;
+  if (t) return showTip(t.dataset.tip, e.clientX, e.clientY);
+  if (e.target === canvas && hoverTile) {
+    const { x, y } = hoverTile;
+    if (state.buildMode) {
+      const c = canPlaceSafely(state.buildMode.type, x, y, state.buildMode.moveUid);
+      return showTip(c.ok ? '✅ ここに置けます（クリックで設置）' : '⚠️ ' + c.reason, e.clientX, e.clientY);
+    }
+    const o = objAt(x, y);
+    if (o) return showTip(objTip(o), e.clientX, e.clientY);
+    if (inYard(x, y)) return showTip('🌳 屋外エリア\n棚・装飾・ブロック・お隣の店を置けます\n（レジとバックヤードは店内専用）', e.clientX, e.clientY);
+    if ((x === 5 || x === 6) && y === 10) return showTip('🚪 自動ドア\nお客さんの出入口。手前のマスは空けておきます', e.clientX, e.clientY);
+  }
+  showTip(null);
+});
+window.addEventListener('blur', () => showTip(null));
 
 // 初期化実行
 initDefaultStore();
 refreshCandidates(true);
 loadGame().then(loaded => {
   ready = true;
+  setTips();
+  refreshStoreUI();
   updateHUD();
   refreshAllTabs();
   if (loaded) setTicker('💾 前回のセーブデータから再開しました！');
