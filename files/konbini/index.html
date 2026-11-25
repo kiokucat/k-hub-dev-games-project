@@ -500,6 +500,191 @@ canvas#view3d{position:absolute;inset:0;width:100%;height:100%;object-fit:contai
 .side-dock{left:8px;right:8px;width:auto;top:auto;height:46vh}
 .side-dock.hidden{transform:translateY(calc(100% + 24px))}
 .inspector-popup{left:60px;right:8px;width:auto;bottom:auto;top:var(--ui-top,120px)}}
+
+/* ===== 決算レポート（ワードパッド風） ===== */
+body{--fab-b:12px}
+.menu-fab{position:fixed;left:12px;bottom:var(--fab-b);z-index:31;padding:8px 16px;font-size:14px;font-weight:900;color:#fff;border:2px solid #3b2d22;border-radius:999px;background:linear-gradient(#5fbf6a,#2f9a47);box-shadow:0 3px 0 #1f5f2e,0 6px 12px rgba(0,0,0,.3);cursor:pointer;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.menu-fab:active{transform:translateY(2px);box-shadow:0 1px 0 #1f5f2e}
+.wp-win{position:fixed;left:12px;bottom:calc(var(--fab-b) + 48px);width:min(340px,calc(100vw - 24px));z-index:30;display:none;flex-direction:column;background:#ece9d8;border:1px solid #0831d9;border-radius:8px 8px 0 0;box-shadow:3px 4px 12px rgba(0,0,0,.45);font-family:Tahoma,"MS UI Gothic","Meiryo UI",sans-serif;font-size:12px;color:#000}
+.wp-win.show{display:flex;animation:wpIn .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes wpIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.wp-win.max{width:min(560px,calc(100vw - 24px))}
+.wp-title{display:flex;align-items:center;gap:6px;padding:3px 4px 3px 6px;color:#fff;font-weight:700;border-radius:7px 7px 0 0;background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7);text-shadow:1px 1px 0 #0f1089}
+.wp-title-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wp-btns button{width:21px;height:21px;margin-left:2px;padding:0;border:1px solid #fff;border-radius:3px;background:linear-gradient(#3c8bff,#1b5bd9);color:#fff;font-weight:900;font-size:11px;cursor:pointer}
+.wp-btns button.x{background:linear-gradient(#e9876a,#c63d17)}
+.wp-menu{display:flex;gap:10px;padding:2px 8px;border-bottom:1px solid #aca899;white-space:nowrap;overflow:hidden}
+.wp-tool{display:flex;align-items:center;gap:6px;padding:3px 6px;border-bottom:1px solid #aca899}
+.wp-sel{background:#fff;border:1px solid #7f9db9;padding:1px 6px;font-size:11px}
+.wp-sel.s{padding:1px 4px}
+.wp-sep{width:1px;height:16px;background:#aca899;margin:0 2px}
+.wp-ruler{height:14px;margin:2px 6px 0;background:#fff;border:1px solid #7f9db9;border-bottom:0;background-image:repeating-linear-gradient(90deg,#888 0 1px,transparent 1px 12px);background-size:100% 5px;background-repeat:repeat-x;background-position:bottom}
+.wp-page{background:#fff;border:2px inset #7f9db9;margin:0 6px 4px;padding:10px 12px;max-height:calc(46vh - 130px);min-height:150px;overflow:auto;font-family:"MS Gothic","Osaka-Mono",monospace;font-size:12.5px;line-height:1.65}
+.wp-h{font-weight:900;font-size:14px;text-align:center;margin-bottom:4px}
+.wp-hr{border-top:1px solid #000;margin:4px 0 6px}
+.wp-row{display:flex;gap:4px;white-space:nowrap}
+.wp-row .dot{flex:1;border-bottom:1px dotted #888;margin-bottom:6px;min-width:8px}
+.wp-total{font-weight:900;margin-top:4px;border-top:1px solid #000;padding-top:4px}
+.wp-rankup{margin-top:8px;padding:4px 6px;border:1px solid #b45309;background:#fef3c7;font-weight:900;white-space:normal}
+.wp-note{margin-top:8px;color:#666;font-size:11px}
+.wp-status{padding:2px 8px;border-top:1px solid #fff;font-size:11px;background:#ece9d8}
+.wp-win.min .wp-menu,.wp-win.min .wp-tool,.wp-win.min .wp-ruler,.wp-win.min .wp-page,.wp-win.min .wp-status{display:none}
+.wp-win.min{border-radius:8px}
+
+/* ===== 巻物メニュー ===== */
+.scroll-overlay{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(20,16,28,.62);overflow:hidden}
+.scroll-overlay.show{display:flex}
+.scroll-overlay.opening{animation:scFade .5s both}
+.scroll-overlay.closing{animation:scFade .7s reverse both}
+@keyframes scFade{from{background-color:rgba(20,16,28,0)}to{background-color:rgba(20,16,28,.62)}}
+.scroll-win{--sw:min(780px,calc(100vw - 100px));display:flex;align-items:stretch;height:min(80vh,620px);filter:drop-shadow(0 14px 22px rgba(0,0,0,.5))}
+.scroll-overlay.opening .scroll-win{animation:scWin 1.25s cubic-bezier(.22,.9,.28,1) both}
+.scroll-overlay.opening .scroll-paper{animation:scPaper 1.25s cubic-bezier(.35,.7,.2,1) both}
+.scroll-overlay.closing .scroll-win{animation:scWin .8s cubic-bezier(.5,0,.8,.4) reverse both}
+.scroll-overlay.closing .scroll-paper{animation:scPaper .8s cubic-bezier(.5,0,.8,.4) reverse both}
+@keyframes scWin{0%{transform:translateX(75vw) scale(.3) rotate(10deg);opacity:0}30%{transform:translateX(0) scale(.5) rotate(0);opacity:1}100%{transform:translateX(0) scale(1) rotate(0);opacity:1}}
+@keyframes scPaper{0%,28%{width:0}100%{width:var(--sw)}}
+.scroll-roller{flex:none;width:30px;margin:-10px 0;border-radius:15px;position:relative;z-index:2;background:linear-gradient(90deg,#5a3410,#a8692d 30%,#d9a15a 50%,#a8692d 70%,#4a2a0c);border:2px solid #2d1a08}
+.scroll-roller::before,.scroll-roller::after{content:"";position:absolute;left:50%;width:38px;height:12px;margin-left:-19px;border-radius:6px;background:linear-gradient(#f2d08a,#b57a2a);border:2px solid #2d1a08}
+.scroll-roller::before{top:-7px}
+.scroll-roller::after{bottom:-7px}
+.scroll-paper{position:relative;flex:none;width:0;overflow:hidden;border-top:3px solid #8a5a22;border-bottom:3px solid #8a5a22;background:linear-gradient(90deg,rgba(90,52,16,.35),transparent 5%,transparent 95%,rgba(90,52,16,.35)),repeating-linear-gradient(0deg,rgba(150,110,50,.06) 0 2px,transparent 2px 5px),#f3e2b8}
+.scroll-inner{position:absolute;top:0;bottom:0;left:50%;width:var(--sw);transform:translateX(-50%);display:flex;flex-direction:column;padding:14px 26px 12px;box-sizing:border-box;color:#3b2512;font-family:"Hiragino Mincho ProN","Yu Mincho","MS PMincho",serif}
+.scroll-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.scroll-title{font-size:22px;font-weight:900;letter-spacing:.15em}
+.scroll-close{width:34px;height:34px;border-radius:50%;border:2px solid #7f1d1d;background:#b91c1c;color:#fff;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit}
+.scroll-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.scroll-tabs button{padding:6px 12px;border:2px solid #8a5a22;border-radius:999px;background:#ead29b;color:#5b3a12;font-weight:900;font-size:13px;cursor:pointer;font-family:inherit}
+.scroll-tabs button.on{background:#b45309;color:#fff;border-color:#7c3a06}
+.scroll-body{flex:1;overflow-y:auto;padding-right:4px}
+.sc-card{background:rgba(255,255,255,.38);border:1px solid #c9a566;border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.sc-h{font-weight:900;font-size:14px;margin-bottom:6px}
+.sc-empty{padding:26px 0;text-align:center;color:#8a6a3a;font-weight:700}
+.sc-hrow{display:grid;grid-template-columns:86px repeat(5,1fr);gap:4px;font-size:12px;padding:5px 2px;border-bottom:1px dashed #b98f4a;align-items:center}
+.sc-hrow.hd{font-weight:900;border-bottom:2px solid #8a5a22}
+.sc-hrow span:not(:first-child){text-align:right}
+.sc-graph{display:flex;align-items:flex-end;gap:5px;height:84px}
+.sc-graph div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:10px}
+.sc-graph i{display:block;width:100%;border-radius:3px 3px 0 0;min-height:2px}
+.sc-prod{display:grid;grid-template-columns:32px 1fr 70px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dashed #b98f4a}
+.sc-prod .nm{font-weight:900;font-size:14px;display:flex;justify-content:space-between}
+.sc-prod .nm small{font-weight:700;color:#7c5a2a}
+.sc-bar{height:10px;margin-top:3px;background:#e4cf9a;border-radius:5px;overflow:hidden}
+.sc-bar i{display:block;height:100%;background:linear-gradient(90deg,#e0662a,#f59a3a)}
+.sc-prod .qty{text-align:right;font-weight:900;font-size:15px}
+.sc-kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #b98f4a;font-size:14px}
+.sc-kv b{font-weight:900}
+@media (max-width:760px){
+body{--fab-b:calc(46vh + 12px)}
+body:has(#side-dock.hidden){--fab-b:12px}
+.scroll-win{--sw:calc(100vw - 80px)}
+.scroll-roller{width:22px}
+.scroll-inner{padding:12px 14px 10px}
+.scroll-title{font-size:18px}
+.sc-hrow{grid-template-columns:70px repeat(5,1fr);font-size:10px}
+.wp-page{max-height:calc(30vh - 60px)}}
+@media (min-width:761px){
+.inspector-popup{bottom:64px}
+body.has-report .inspector-popup{left:372px}}
+
+/* ===== 閉じるアニメーション ===== */
+@keyframes fadeOutK{to{opacity:0}}
+@keyframes popOut{0%{opacity:1;transform:scale(1)}30%{transform:scale(1.04)}100%{opacity:0;transform:scale(.7) translateY(30px) rotate(-3deg)}}
+.modal-backdrop.closing{animation:fadeOutK .26s ease-in both}
+.modal-backdrop.closing .modal-window{animation:popOut .26s ease-in both}
+@keyframes wpOut{0%{opacity:1;transform:none}100%{opacity:0;transform:translateY(60px) scale(.85)}}
+.wp-win.closing{animation:wpOut .36s cubic-bezier(.6,0,.9,.4) both}
+@keyframes inspIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes inspOut{to{opacity:0;transform:translateY(12px) scale(.9)}}
+.inspector-popup.show{animation:inspIn .18s ease-out}
+.inspector-popup.closing{animation:inspOut .17s ease-in both}
+@keyframes bnIn{from{opacity:0;transform:translate(-50%,-18px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes bnOut{to{opacity:0;transform:translate(-50%,-18px) scale(.9)}}
+.build-banner.show{animation:bnIn .22s ease-out}
+.build-banner.closing{animation:bnOut .2s ease-in both}
+
+/* ===== タイトル画面 ===== */
+.title-screen{position:fixed;inset:0;z-index:90;display:none;flex-direction:column;align-items:center;justify-content:center;gap:26px;overflow:hidden;padding:16px;background:linear-gradient(160deg,rgba(14,22,40,.9),rgba(24,60,84,.84) 60%,rgba(238,123,48,.4));backdrop-filter:blur(3px)}
+.title-screen.show{display:flex}
+.title-screen.entering{animation:tsIn .6s both}
+.title-screen.leaving{animation:tsOut .7s cubic-bezier(.6,0,.9,.4) both;pointer-events:none}
+@keyframes tsIn{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:none}}
+@keyframes tsOut{0%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.25);filter:blur(6px)}}
+.title-float{position:absolute;inset:0;pointer-events:none}
+.title-float span{position:absolute;bottom:-60px;font-size:34px;opacity:.85;animation:floatUp 9s linear infinite}
+@keyframes floatUp{to{transform:translateY(-125vh) rotate(360deg)}}
+.title-logo{position:relative;text-align:center;animation:titleBob 2.6s ease-in-out infinite}
+@keyframes titleBob{50%{transform:translateY(-8px)}}
+.title-sub{display:inline-block;padding:3px 14px;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:13px;letter-spacing:.12em;margin-bottom:10px}
+.title-logo h1{margin:0;font-size:min(10vw,64px);line-height:1.15;font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.25),0 10px 30px rgba(0,0,0,.45)}
+.title-logo h1 em{font-style:normal;color:#ffd45c}
+.title-menu{position:relative;display:flex;flex-direction:column;gap:12px;align-items:center}
+.title-btn{min-width:250px;padding:13px 22px;font-size:18px;font-weight:900;font-family:inherit;border:0;border-radius:14px;cursor:pointer;color:#fff;background:rgba(255,255,255,.16);box-shadow:0 4px 0 rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.3)}
+.title-btn.start{background:linear-gradient(#ff9a4d,#ee6a1f);animation:tsPulse 1.6s ease-in-out infinite}
+.title-btn:hover{filter:brightness(1.12)}
+.title-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+@keyframes tsPulse{50%{transform:scale(1.05)}}
+.title-info{position:relative;color:#e2e8f0;font-size:12px;font-weight:700}
+.title-hint{position:relative;color:#cbd5e1;font-size:11px}
+body.theme-retro .title-screen{background-color:rgba(44,38,56,.94);background-image:radial-gradient(#4a4160 1px,transparent 1px);background-size:16px 16px;backdrop-filter:none}
+body.theme-retro .title-sub{background:#f58220;border:2px solid #3b2d22;border-radius:6px;box-shadow:0 2px 0 #3b2d22}
+body.theme-retro .title-logo h1{color:#fde047;text-shadow:3px 3px 0 #3b2d22,-2px -2px 0 #3b2d22,2px -2px 0 #3b2d22,-2px 2px 0 #3b2d22,0 7px 0 #1a1410}
+body.theme-retro .title-logo h1 em{color:#fff}
+body.theme-retro .title-btn{border:3px solid #3b2d22;border-radius:8px;background:#2596be;text-shadow:1px 1px 0 rgba(0,0,0,.4);box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 4px 0 #3b2d22}
+body.theme-retro .title-btn.start{background:#f58220}
+
+/* ===== コインカウンター（右下） ===== */
+.coin-counter{position:fixed;right:12px;bottom:var(--fab-b);z-index:31;display:flex;align-items:center;gap:8px;padding:8px 18px 8px 12px;border-radius:999px;background:linear-gradient(#1b2434,#111a28);color:#ffd45c;box-shadow:0 6px 16px rgba(0,0,0,.4),inset 0 0 0 2px #ffd45c;pointer-events:none}
+@media (min-width:761px){body:has(#side-dock:not(.hidden)) .coin-counter{right:calc(min(400px,100vw - 16px) + 20px)}}
+.cc-coin{display:inline-block;font-size:24px;animation:ccSpin 3.2s linear infinite}
+@keyframes ccSpin{to{transform:rotateY(360deg)}}
+.cc-label{font-size:10px;font-weight:900;letter-spacing:.12em;color:#94a3b8}
+.cc-val{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;min-width:90px;text-align:right}
+.coin-counter.minus .cc-val{color:#ff7b7f}
+.cc-pops{position:absolute;right:18px;bottom:100%;width:0;height:0}
+.cc-pop{position:absolute;right:0;bottom:4px;white-space:nowrap;font-weight:900;font-size:15px;text-shadow:0 1px 0 #000,0 0 6px rgba(0,0,0,.6);animation:ccPop .9s ease-out forwards}
+.cc-pop.pos{color:#86efac}.cc-pop.neg{color:#fca5a5}
+@keyframes ccPop{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-36px)}}
+body.theme-retro .coin-counter{background:#fffdf5;color:#3b2d22;border:3px solid #3b2d22;border-radius:10px;box-shadow:inset 0 0 0 2px #fff,0 4px 0 #1a1410}
+body.theme-retro .cc-label{color:#7a6a5c}
+body.theme-retro .cc-val{color:#15803d}
+body.theme-retro .coin-counter.minus .cc-val{color:#e5484d}
+body.theme-retro .cc-pop{text-shadow:0 0 3px #fff,0 0 3px #fff}
+body.theme-retro .cc-pop.pos{color:#15803d}
+body.theme-retro .cc-pop.neg{color:#e5484d}
+
+/* ===== 設定 ===== */
+.set-h{font-weight:900;font-size:13px}
+.theme-row{display:flex;gap:8px}
+.theme-card{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;border:2px solid #d6d0c0;border-radius:12px;background:#fff;cursor:pointer;font-family:inherit;color:var(--text-main)}
+.theme-card.on{border-color:var(--accent-orange);background:#fff4e8;box-shadow:0 0 0 3px rgba(238,123,48,.25)}
+.theme-card .tc-icon{font-size:26px}
+.theme-card small{font-size:10px;color:var(--text-muted)}
+
+/* ===== レトロテーマ（元のカイロ風デザインに戻す） ===== */
+body.theme-retro{--bg-outer:#2c2638;--panel-bg:#fffdf5;--panel-inner:#f7f1e1;--border-dark:#3b2d22;--accent-blue:#2596be;--accent-orange:#f58220;--accent-green:#2cb67d;--accent-red:#e5484d;--text-main:#3b2d22;--text-muted:#7a6a5c;background-color:#2c2638;background-image:radial-gradient(#3f3750 1px,transparent 1px);background-size:16px 16px;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif}
+body.theme-retro .kairo-box{border:3px solid var(--border-dark);border-radius:10px;box-shadow:inset 0 0 0 2px #fff,0 4px 0 #1a1410}
+body.theme-retro .kairo-btn{border:2px solid var(--border-dark);border-radius:7px;padding:6px 10px;text-shadow:1px 1px 0 rgba(0,0,0,.4);box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 3px 0 var(--border-dark)}
+body.theme-retro .kairo-btn:hover:not(:disabled){filter:none}
+body.theme-retro .kairo-btn:active:not(:disabled){transform:translateY(2px);box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 1px 0 var(--border-dark)}
+body.theme-retro .btn-cream{background:#efe6d0;color:var(--text-main);text-shadow:none}
+body.theme-retro .btn-gold{text-shadow:none}
+body.theme-retro .btn-active{outline:3px solid var(--accent-gold);outline-offset:0}
+body.theme-retro .top-hud{background:linear-gradient(180deg,#fffdf5 0%,#f5ebd6 100%)}
+body.theme-retro .hud-pill{border:2px solid var(--border-dark);border-radius:8px;padding:4px 10px;box-shadow:inset 0 2px 0 #f1e8d3}
+body.theme-retro .rank-tag{border:2px solid var(--border-dark);border-radius:6px;background:var(--accent-orange);box-shadow:0 2px 0 var(--border-dark)}
+body.theme-retro .ticker-bar{border:3px solid var(--border-dark);border-radius:8px;background:#1e293b;box-shadow:0 3px 0 #1a1410}
+body.theme-retro .dock-tabs{background:#e2d5b7;border-bottom:3px solid var(--border-dark);gap:3px;padding:4px 4px 0}
+body.theme-retro .dock-tab{border:2px solid var(--border-dark);border-bottom:none;border-radius:7px 7px 0 0;background:#cbbba0}
+body.theme-retro .dock-tab.active{background:var(--panel-bg);color:#c96008}
+body.theme-retro .item-card{border-width:2px;border-color:var(--border-dark);border-radius:8px;box-shadow:0 2px 0 #cbbba0}
+body.theme-retro .item-card.eq-owned{border-color:#2cb67d;background:#f2fbf6}
+body.theme-retro .item-card.sale-active{border-color:#ef4444;background:#fff5f5}
+body.theme-retro .item-card.locked{background:#f1ece1;border-style:dashed}
+body.theme-retro .ribbon-title{border:2px solid var(--border-dark);border-radius:6px;background:var(--accent-blue);box-shadow:0 2px 0 var(--border-dark)}
+body.theme-retro .modal-header{background:var(--accent-orange);text-shadow:1px 1px 0 rgba(0,0,0,.4)}
+body.theme-retro .bar-bg{border:1px solid var(--border-dark);background:#e2d5b7}
+body.theme-retro .theme-card{border-color:#3b2d22;border-radius:8px}
 </style>
 </head>
 <body>
@@ -524,11 +709,9 @@ canvas#view3d{position:absolute;inset:0;width:100%;height:100%;object-fit:contai
       <button class="kairo-btn btn-blue" id="btn-spd1" onclick="setSpeed(1)">1x</button>
       <button class="kairo-btn btn-cream" id="btn-spd2" onclick="setSpeed(2)">2x</button>
       <button class="kairo-btn btn-cream" id="btn-spd3" onclick="setSpeed(3)">3x</button>
+      <button class="kairo-btn btn-cream" id="btn-spd5" onclick="setSpeed(5)">5x</button>
+      <button class="kairo-btn btn-cream" id="btn-spd10" onclick="setSpeed(10)">10x</button>
       <button class="kairo-btn btn-cream" id="btn-sound" onclick="toggleSound()">🔊</button>
-      <button class="kairo-btn btn-cream" id="btn-save" onclick="saveGame(true)" title="今すぐセーブ">💾</button>
-      <button class="kairo-btn btn-cream" onclick="openSignEditor()" title="店の看板を編集（マップ上の看板クリックでもOK）">🪧</button>
-      <button class="kairo-btn btn-cream" onclick="openImportModal()" title="セーブの書き出し／旧バージョンのデータ読み込み">📂</button>
-      <button class="kairo-btn btn-cream" onclick="resetGame()" title="データを消して最初から">🗑</button>
       <select id="store-sel" class="kairo-btn btn-cream" onchange="switchStore(+this.value)"></select>
       <button class="kairo-btn btn-blue" id="btn-newstore" onclick="buildNewStore()">🏬新店</button>
       <button class="kairo-btn btn-gold" id="btn-3d" onclick="toggle3D()" title="店長視点(Vキー)">👁3D</button>
@@ -552,7 +735,7 @@ canvas#view3d{position:absolute;inset:0;width:100%;height:100%;object-fit:contai
 
       <div class="cam-bar"><button class="kairo-btn btn-cream" onclick="zoomBtn(1.25)" title="拡大">＋</button><button class="kairo-btn btn-cream" onclick="zoomBtn(0.8)" title="縮小">－</button><button class="kairo-btn btn-cream" onclick="camHome()" title="自分の店へ">🏪</button><button class="kairo-btn btn-cream" onclick="toggleDock()" title="メニュー表示切替">📋</button></div>
       <canvas id="gameCanvas" width="1320" height="520"></canvas>
-      <canvas id="view3d" width="420" height="260" style="display:none;image-rendering:pixelated"></canvas>
+      <canvas id="view3d" width="640" height="400" style="display:none;image-rendering:pixelated"></canvas>
 
       <!-- マップ内アイテムクリック時のクイックカード -->
       <div class="inspector-popup kairo-box" id="inspector-popup"></div>
@@ -593,11 +776,79 @@ canvas#view3d{position:absolute;inset:0;width:100%;height:100%;object-fit:contai
     </div>
   </div>
 
+  <!-- 決算レポート（ワードパッド風・左下） -->
+  <div class="wp-win" id="wp-win">
+    <div class="wp-title">
+      <span>📄</span><span class="wp-title-text" id="wp-title-text">決算レポート - ワードパッド</span>
+      <span class="wp-btns"><button onclick="wpMin()" title="最小化">_</button><button onclick="wpMax()" title="大きさ切替">□</button><button class="x" onclick="wpClose()" title="閉じる">✕</button></span>
+    </div>
+    <div class="wp-menu"><span>ファイル(F)</span><span>編集(E)</span><span>表示(V)</span><span>挿入(I)</span><span>書式(O)</span><span>ヘルプ(H)</span></div>
+    <div class="wp-tool"><span class="wp-sel">MS ゴシック ▾</span><span class="wp-sel s">11 ▾</span><b>B</b><i>I</i><u>U</u><span class="wp-sep"></span><span>≡</span><span>☰</span></div>
+    <div class="wp-ruler"></div>
+    <div class="wp-page" id="wp-page"></div>
+    <div class="wp-status" id="wp-status">準備完了</div>
+  </div>
+
+  <!-- 右下のコインカウンター -->
+  <div class="coin-counter" id="coin-counter" title="所持金（コイン）">
+    <span class="cc-coin">🪙</span><span class="cc-label">COIN</span><span class="cc-val" id="cc-val">¥0</span>
+    <div class="cc-pops" id="cc-pops"></div>
+  </div>
+
+  <!-- タイトル画面 -->
+  <div class="title-screen show entering" id="title-screen">
+    <div class="title-float">
+      <span style="left:6%;animation-delay:0s">🍙</span><span style="left:16%;animation-delay:2.2s">🥤</span>
+      <span style="left:27%;animation-delay:4.5s">🍪</span><span style="left:38%;animation-delay:1.1s">🍱</span>
+      <span style="left:50%;animation-delay:6s">🍗</span><span style="left:61%;animation-delay:3.3s">🍦</span>
+      <span style="left:72%;animation-delay:5.2s">📚</span><span style="left:83%;animation-delay:.6s">☕</span>
+      <span style="left:92%;animation-delay:3.9s">🍰</span>
+    </div>
+    <div class="title-logo">
+      <div class="title-sub">カイロ風 経営シミュレーション</div>
+      <h1>開拓！<br><em>マイコンビニ</em>DX</h1>
+    </div>
+    <div class="title-menu">
+      <button class="title-btn start" onclick="startFromTitle()">▶ ゲームスタート</button>
+      <button class="title-btn" onclick="openSettings()">⚙ 設定</button>
+      <button class="title-btn" onclick="resetGame()">🗑 はじめから</button>
+    </div>
+    <div class="title-info" id="title-save"></div>
+    <div class="title-hint">Enterキーでもスタートできます</div>
+  </div>
+
+  <!-- メニューボタン（左下） -->
+  <button class="menu-fab" id="menu-fab" onclick="openScrollMenu()" title="履歴・商品の販売数・営業成績を見る">📜 メニュー</button>
+
+  <!-- 巻物メニュー -->
+  <div class="scroll-overlay" id="scroll-overlay" onclick="if(event.target===this)closeScrollMenu()">
+    <div class="scroll-win">
+      <div class="scroll-roller"></div>
+      <div class="scroll-paper">
+        <div class="scroll-inner">
+          <div class="scroll-head">
+            <span class="scroll-title">📜 お店の帳簿</span>
+            <button class="scroll-close" onclick="closeScrollMenu()" title="閉じる">閉</button>
+          </div>
+          <div class="scroll-tabs" id="scroll-tabs">
+            <button data-t="history" onclick="setScrollTab('history')">📅 決算履歴</button>
+            <button data-t="sales" onclick="setScrollTab('sales')">🛒 商品の販売数</button>
+            <button data-t="stats" onclick="setScrollTab('stats')">🏪 営業成績</button>
+            <button data-t="settings" onclick="setScrollTab('settings')">⚙ 設定・セーブ</button>
+          </div>
+          <div class="scroll-body" id="scroll-body"></div>
+        </div>
+      </div>
+      <div class="scroll-roller"></div>
+    </div>
+  </div>
+
 <script>
 // =========================================================
 // マップ・タイル定数 (21列 x 13行, 1タイル=40px)
 // =========================================================
 const TILE = 40;
+const DOOR = { open: 0, hold: 0 };
 let COLS = 120;                 // ステージ横幅（足りなくなると自動で広がる）
 const NB_W = 8, NB_H = 7, MAX_COLS = 600; // お隣の店 = コンビニ大(8x7マス)
 const ROWS = 13;
@@ -729,7 +980,7 @@ function migrateNeighbors() {
   const placed = []; let refund = 0; const b = getStoreBounds();
   placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'neighbor').forEach(o => {
     if (!o.v2) { o.y = 10 - NB_H; o.v2 = true; }
-    const hit = o.x <= b.maxX && o.x + NB_W > 0 && o.y <= 10 && o.y + NB_H > 0;
+    const hit = o.x <= b.maxX + 1 && o.x + NB_W > 0 && o.y <= 10 && o.y + NB_H > 0;
     if (hit || placed.some(p => Math.abs(p.x - o.x) < NB_W && Math.abs(p.y - o.y) < NB_H)) { o.__rm = true; refund += FACILITY_TYPES[o.type].cost; } else placed.push(o);
   });
   placedObjects.forEach(q => {
@@ -739,18 +990,27 @@ function migrateNeighbors() {
   });
   if (placedObjects.some(o => o.__rm)) { placedObjects = placedObjects.filter(o => !o.__rm); state.money += refund; }
 }
+// 右の壁のマスに残っていた屋外設備を片付ける（壁が建つため）
+function clearWallColumn() {
+  const wx = getStoreBounds().maxX + 1; let refund = 0;
+  placedObjects.forEach(q => {
+    const c = FACILITY_TYPES[q.type].cat;
+    if (c !== 'neighbor' && c !== 'fixture' && q.x === wx && q.y >= 0 && q.y <= 10) { q.__rm = true; refund += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }
+  });
+  if (refund || placedObjects.some(o => o.__rm)) { placedObjects = placedObjects.filter(o => !o.__rm); state.money += refund; }
+}
 function passSpan() { let m = Math.max(getStoreBounds().maxX + 8, 34); placedObjects.forEach(o => { m = Math.max(m, o.x + fpOf(o.type).w + 4); }); return m; }
 function passMin() { let m = -14; placedObjects.forEach(o => { m = Math.min(m, o.x - 4); }); return m; }
 
 // 店舗ランク定義
 const RANKS = [
-  { rank: 'F', name: 'できたて個人商店', needRev: 0, maxStaff: 2, bonus: 1.0 },
-  { rank: 'E', name: '街角のコンビニ', needRev: 6000, maxStaff: 3, bonus: 1.05 },
-  { rank: 'D', name: '駅前人気ショップ', needRev: 18000, maxStaff: 4, bonus: 1.12 },
-  { rank: 'C', name: '地域No.1ストア', needRev: 40000, maxStaff: 5, bonus: 1.2 },
-  { rank: 'B', name: '繁盛スーパーマート', needRev: 80000, maxStaff: 6, bonus: 1.3 },
-  { rank: 'A', name: '名物メガコンビニ', needRev: 150000, maxStaff: 7, bonus: 1.45 },
-  { rank: 'S', name: '伝説のカイロマート', needRev: 300000, maxStaff: 8, bonus: 1.65 }
+  { rank: 'F', name: 'できたて個人商店', needRev: 0, maxStaff: 3, bonus: 1.0 },
+  { rank: 'E', name: '街角のコンビニ', needRev: 6000, maxStaff: 4, bonus: 1.05 },
+  { rank: 'D', name: '駅前人気ショップ', needRev: 18000, maxStaff: 6, bonus: 1.12 },
+  { rank: 'C', name: '地域No.1ストア', needRev: 40000, maxStaff: 8, bonus: 1.2 },
+  { rank: 'B', name: '繁盛スーパーマート', needRev: 80000, maxStaff: 10, bonus: 1.3 },
+  { rank: 'A', name: '名物メガコンビニ', needRev: 150000, maxStaff: 13, bonus: 1.45 },
+  { rank: 'S', name: '伝説のカイロマート', needRev: 300000, maxStaff: 16, bonus: 1.65 }
 ];
 
 // =========================================================
@@ -769,6 +1029,8 @@ const state = {
   weekTimer: 0,      // 1週間 = 22秒
   totalCustomers: 0,
   monthStats: { rev: 0, cost: 0, wages: 0, extra: 0, served: 0 },
+  sales: {},   // 商品ごとの累計販売数 { prodId: { qty, rev } }
+  history: [], // 月次決算の履歴
   speed: 1,
   paused: false,
   autoRestock: true,
@@ -804,6 +1066,7 @@ function initAudio() {
 
 function tone(freq, dur, type = 'square', vol = 0.04, delay = 0) {
   if (!soundOn) return;
+  if (state.speed >= 5) { const n = performance.now(); if (n - (tone._t || 0) < 110) return; tone._t = n; }
   initAudio();
   if (!audioCtx) return;
   const t = audioCtx.currentTime + delay;
@@ -1129,7 +1392,7 @@ function canPlaceSafely(type, gx, gy, moveUid = null) {
   const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
   for (let qi = 0; qi < q.length; qi++) { const [cx, cy] = q[qi]; dirs.forEach(([dx, dy]) => seed(cx + dx, cy + dy)); }
   const reach = o => dirs.some(([dx, dy]) => okT(o.x + dx, o.y + dy) && visited.has(K(o.x + dx, o.y + dy)));
-  const need = ['shelf', 'register', 'eatin', 'atm', 'backyard'];
+  const need = ['shelf', 'register', 'eatin', 'atm', 'machine', 'backyard'];
   if (need.includes(def.cat) && !reach({ x: gx, y: gy })) return { ok: false, reason: 'お客さんが近づけません！' };
   const cut = others.find(o => need.includes(FACILITY_TYPES[o.type].cat) && !reach(o));
   if (cut) return { ok: false, reason: `${FACILITY_TYPES[cut.type].name}に近づけなくなります！` };
@@ -1233,8 +1496,30 @@ function refreshCandidates(free = false) {
   updateHUD();
 }
 
+const STAFF_ROLES = {
+  all:      { icon: '⚖️', name: '万能',     desc: 'レジも品出しも掃除も何でもこなす' },
+  cashier:  { icon: '💳', name: 'レジ',     desc: 'レジ専任。空いているレジの後ろで待機' },
+  chief:    { icon: '🎖️', name: '主任',     desc: '万能タイプ＋レジ会計が25%速い' },
+  stocker:  { icon: '📦', name: '品出し',   desc: '全商品の補充と掃除' },
+  fresh:    { icon: '🍱', name: '惣菜担当', desc: 'おにぎり・弁当・揚げ物・おでん・サンド・サラダ・ケーキを補充', prods: ['onigiri', 'bento', 'chicken', 'oden', 'sandwich', 'salad', 'cake'] },
+  drink:    { icon: '🥤', name: '飲料担当', desc: '飲料・コーヒー・アイスを補充', prods: ['drink', 'coffee', 'ice'] },
+  goods:    { icon: '🧴', name: '雑貨担当', desc: 'お菓子・カップ麺・雑誌・日用品を補充', prods: ['snack', 'noodle', 'magazine', 'daily'] },
+  cleaner:  { icon: '🧹', name: '清掃',     desc: 'ゴミ掃除専任。評判を守る' },
+  greeter:  { icon: '🙇', name: '接客係',   desc: '入口で出迎え。行列のイライラが減り、評判がじわじわUP' },
+  promoter: { icon: '📣', name: '販促係',   desc: '入口横で呼び込み。通行人が増える' }
+};
+const roleCash = r => r === 'all' || r === 'cashier' || r === 'chief';
+const roleStock = r => r !== 'cashier' && r !== 'greeter' && r !== 'promoter';
+function maxStaffNow() { return RANKS[state.rankIdx].maxStaff + state.expansionLevel * 2; }
+function patienceMul() { let g = 0; hiredStaff.forEach(s => { if (s.role === 'greeter') g += 0.12 + s.charmStat / 1000; }); return Math.max(0.4, 1 - g); }
+function updateRoleEffects(dt) {
+  let g = 0, pr = 0;
+  hiredStaff.forEach(s => { const k = 0.6 + s.charmStat / 100; if (s.role === 'greeter') g += k; else if (s.role === 'promoter') pr += k; });
+  if (g) state.rating = Math.min(5, state.rating + 0.0008 * g * dt);
+  if (pr) passerTimer -= dt * 0.2 * pr;
+}
 function hireCandidate(candId) {
-  const maxS = RANKS[state.rankIdx].maxStaff;
+  const maxS = maxStaffNow();
   if (hiredStaff.length - 1 >= maxS) {
     return setTicker(`⚠️ 現在のランクでは店員は${maxS}人までしか雇えません！`);
   }
@@ -1314,6 +1599,7 @@ function fireStaff(staffId) {
 // =========================================================
 let customers = [];
 let passers = []; // 店の外を歩く通行人
+let visitors = []; // お隣の店に入った通行人
 let dirts = [];
 let floatingTexts = [];
 let spawnTimer = 1.5;
@@ -1333,6 +1619,132 @@ function spawnPasser() {
     checkedStore: false,
     bounce: 0
   });
+}
+
+// =========================================================
+// お隣の店への入店（通行人がお隣の店にも入る）
+// =========================================================
+const NB_EMOTE = { tenant_bakery: '🥖', tenant_cafe: '☕', tenant_salon: '💇', tenant_drug: '💊', tenant_game: '🎮' };
+const nbToPx = t => ({ x: t.x * TILE + TILE / 2, y: t.y * TILE + TILE / 2 });
+
+// お隣の店まわりの歩行可否（道路・芝生・お隣の店の入口と床マス。設備やブロックは通れない）
+function nbWalkable(gx, gy) {
+  if (isRoad(gy)) return true;
+  const host = placedObjects.find(o => FACILITY_TYPES[o.type].cat === 'neighbor' && covers(o, gx, gy));
+  if (host) {
+    const isDoor = gy === host.y + NB_H - 1 && (gx === host.x + NB_W / 2 - 1 || gx === host.x + NB_W / 2);
+    if (!isDoor && !inInterior(host, gx, gy)) return false;
+    return !placedObjects.some(q => q !== host && covers(q, gx, gy));
+  }
+  if (!inYard(gx, gy)) return false;
+  return !placedObjects.some(q => covers(q, gx, gy));
+}
+
+// 幅優先探索で経路を作る（行けなければ null）
+function nbPath(sx, sy, tx, ty) {
+  if (sx === tx && sy === ty) return [{ x: sx, y: sy }];
+  const K = (x, y) => (x + 3000) * 8000 + (y + 3000);
+  const prev = new Map([[K(sx, sy), null]]);
+  const q = [[sx, sy]];
+  let head = 0, found = false;
+  while (head < q.length && q.length < 8000) {
+    const [x, y] = q[head++];
+    if (x === tx && y === ty) { found = true; break; }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy, k = K(nx, ny);
+      if (prev.has(k) || !nbWalkable(nx, ny)) continue;
+      prev.set(k, [x, y]);
+      q.push([nx, ny]);
+    }
+  }
+  if (!found) return null;
+  const out = [];
+  let cur = [tx, ty];
+  while (cur) { out.push({ x: cur[0], y: cur[1] }); cur = prev.get(K(cur[0], cur[1])); }
+  return out.reverse();
+}
+
+function tryEnterNeighbor(p, o) {
+  if (visitors.length >= 20 || visitors.filter(v => v.hostUid === o.uid).length >= 6) return false;
+  const fx = placedObjects.filter(q => hostedBy(o, q)).length; // 内装が多いほど入りやすい
+  const prob = 0.28 + Math.min(0.4, fx * 0.05) + (state.campaignTimer > 0 ? 0.08 : 0) + (state.rating - 2.5) * 0.03;
+  if (Math.random() > prob) return false;
+  const gx = o.x + NB_W / 2 - 1 + (Math.random() < 0.5 ? 0 : 1);
+  const inner = nbPath(gx, 11, gx, o.y + NB_H - 2);
+  if (!inner) return false;
+  visitors.push({
+    x: p.x, y: p.y, shirt: p.shirt, hair: p.hair, bounce: p.bounce || 0,
+    speed: 58 + Math.random() * 22,
+    path: [{ x: gx * TILE + TILE / 2, y: p.y }, ...inner.map(nbToPx)],
+    state: 'in', hostUid: o.uid, hx: o.x, hy: o.y, gx,
+    stay: 5 + Math.random() * 7, idle: 0.3,
+    emote: NB_EMOTE[o.type] || '🛍️', emoteTimer: 1.6,
+    dir: p.dir, checkedStore: p.checkedStore, visited: p.visited
+  });
+  return true;
+}
+
+function visitorToPasser(v) {
+  passers.push({
+    x: v.x, y: 11.4 * TILE + Math.random() * 20, dir: v.dir, speed: 45 + Math.random() * 25,
+    shirt: v.shirt, hair: v.hair, checkedStore: v.checkedStore, visited: v.visited, bounce: v.bounce
+  });
+}
+
+function updateVisitors(dt) {
+  for (let i = visitors.length - 1; i >= 0; i--) {
+    const v = visitors[i];
+    const host = placedObjects.find(o => o.uid === v.hostUid);
+    if (!host || host.x !== v.hx || host.y !== v.hy) { // お店が撤去・移動された
+      visitors.splice(i, 1);
+      visitorToPasser(v);
+      continue;
+    }
+    if (v.emoteTimer > 0) { v.emoteTimer -= dt; if (v.emoteTimer <= 0) v.emote = null; }
+
+    if (v.path.length > 0) {
+      const t = v.path[0];
+      const dx = t.x - v.x, dy = t.y - v.y, d = Math.hypot(dx, dy);
+      if (d < 3) v.path.shift();
+      else {
+        const step = Math.min(d, v.speed * dt);
+        v.x += (dx / d) * step; v.y += (dy / d) * step;
+        v.bounce += dt * 10;
+      }
+      continue;
+    }
+
+    if (v.state === 'in') { v.state = 'inside'; v.emote = NB_EMOTE[host.type] || '🛍️'; v.emoteTimer = 1.6; }
+
+    if (v.state === 'inside') {
+      v.stay -= dt;
+      if (v.stay > 0) {
+        v.idle -= dt;
+        if (v.idle > 0) continue;
+        // 店内をぶらぶら歩く（設備のそばを優先）
+        const cands = [], near = [];
+        for (let y = host.y + 1; y <= host.y + NB_H - 2; y++) for (let x = host.x + 1; x <= host.x + NB_W - 2; x++) {
+          if (!nbWalkable(x, y)) continue;
+          cands.push({ x, y });
+          if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => placedObjects.some(q => hostedBy(host, q) && q.x === x + a && q.y === y + b))) near.push({ x, y });
+        }
+        const pool = near.length && Math.random() < 0.7 ? near : cands;
+        v.idle = 0.8 + Math.random() * 1.8;
+        if (!pool.length) continue;
+        const tg = pool[Math.floor(Math.random() * pool.length)];
+        const pth = nbPath(Math.floor(v.x / TILE), Math.floor(v.y / TILE), tg.x, tg.y);
+        if (pth) { v.path = pth.map(nbToPx); if (near.includes(tg) && Math.random() < 0.35) { v.emote = ['✨', '♪', '😊', '👀'][Math.floor(Math.random() * 4)]; v.emoteTimer = 1.2; } }
+        continue;
+      }
+      // 満足したので退店
+      const pth = nbPath(Math.floor(v.x / TILE), Math.floor(v.y / TILE), v.gx, 11);
+      if (pth) { v.path = pth.map(nbToPx); v.state = 'out'; v.emote = '😊'; v.emoteTimer = 1.2; }
+      else { visitors.splice(i, 1); visitorToPasser(v); }
+      continue;
+    }
+
+    if (v.state === 'out') { visitors.splice(i, 1); visitorToPasser(v); }
+  }
 }
 
 function tryEnterCustomerFromPasser(p) {
@@ -1359,6 +1771,8 @@ function tryEnterCustomerFromPasser(p) {
   // たまにATMやイートインにも興味を持つ
   const atmObj = placedObjects.find(o => o.type === 'atm');
   const wantsAtm = atmObj && Math.random() < 0.25;
+  const macs = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'machine');
+  const machineUid = macs.length && Math.random() < Math.min(0.75, 0.3 + macs.length * 0.1) ? macs[Math.floor(Math.random() * macs.length)].uid : null;
 
   const doorX = Math.random() < 0.5 ? 5 : 6;
   const cust = {
@@ -1375,6 +1789,7 @@ function tryEnterCustomerFromPasser(p) {
     maxPatience: 24,
     regUid: null,
     wantsAtm,
+    machineUid,
     emote: null,
     emoteTimer: 0,
     bounce: 0,
@@ -1426,8 +1841,15 @@ function updateStaffAI(dt) {
     const stx = Math.floor(st.x / TILE);
     const sty = Math.floor(st.y / TILE);
 
-    // レジ対応チェック (role !== 'stocker')
-    if (st.role !== 'stocker') {
+    // 接客係・販促係は入口で持ち場につく
+    if (st.role === 'greeter' || st.role === 'promoter') {
+      const post = st.role === 'greeter' ? { x: 4, y: 9 } : { x: 7, y: 9 };
+      if (stx !== post.x || sty !== post.y) { const pp = findPath(stx, sty, post.x, post.y); if (pp.length) st.path = pp; }
+      return;
+    }
+
+    // レジ対応チェック
+    if (roleCash(st.role)) {
       const regs = placedObjects.filter(o => o.type === 'register');
       // 自分がすでにどこかのレジ後ろに立っていて客が並んでいるなら最優先
       const myReg = regs.find(r => stx === r.x && sty === r.y - 1);
@@ -1457,8 +1879,8 @@ function updateStaffAI(dt) {
       }
     }
 
-    // 品出し・清掃チェック (role !== 'cashier')
-    if (st.role !== 'cashier') {
+    // 品出し・清掃チェック
+    if (roleStock(st.role)) {
       // 1. 商品を手に持っているなら対象棚へ運ぶ
       if (st.carry) {
         const targetShelf = placedObjects.find(o => o.uid === st.targetObjId);
@@ -1487,7 +1909,9 @@ function updateStaffAI(dt) {
       const emptyShelves = placedObjects
         .filter(o => {
           const def = FACILITY_TYPES[o.type];
-          if (def.cat !== 'shelf') return false;
+          if (def.cat !== 'shelf' || st.role === 'cleaner') return false;
+          const rp = STAFF_ROLES[st.role] && STAFF_ROLES[st.role].prods;
+          if (rp && !rp.includes(def.prod)) return false;
           const prod = products[def.prod];
           return o.stock < def.maxCap * 0.75 && prod.stock > 0;
         })
@@ -1522,12 +1946,44 @@ function updateStaffAI(dt) {
   });
 }
 
+// レジ待ちの立ち位置：レジ正面を先頭に、近いマスから順に詰めて並ぶ
+function queueSpots(reg, n) {
+  let relaxed = false;
+  const door = (x, y) => y === 10 && (x === 5 || x === 6);
+  const ok = (x, y) => (relaxed || y >= reg.y) && !(x === reg.x && y === reg.y - 1) && (inStore(x, y) || door(x, y)) && isWalkableForPath(x, y);
+  let first = [[0, 1], [-1, 1], [1, 1], [-2, 1], [2, 1], [-1, 0], [1, 0]].map(([dx, dy]) => [reg.x + dx, reg.y + dy]).find(([x, y]) => ok(x, y));
+  if (!first) {   // 正面が塞がれていても、レジ近くの空きマスに並ばせる
+    relaxed = true; let bd = 99;
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const dd = Math.abs(dx) + Math.abs(dy); if (dd && dd < bd && ok(reg.x + dx, reg.y + dy)) { bd = dd; first = [reg.x + dx, reg.y + dy]; } }
+  }
+  if (!first) return [];
+  const out = [], seen = new Set([first[0] * 100 + first[1]]), q = [first];
+  for (let qi = 0; qi < q.length && out.length < n; qi++) {
+    const [x, y] = q[qi]; out.push({ x, y });
+    [[0, 1], [-1, 0], [1, 0], [0, -1]].forEach(([dx, dy]) => {
+      const nx = x + dx, ny = y + dy, k = nx * 100 + ny;
+      if (!seen.has(k) && ok(nx, ny)) { seen.add(k); q.push([nx, ny]); }
+    });
+  }
+  return out;
+}
+function layoutQueue(reg) {
+  const spots = queueSpots(reg, reg.queue.length);
+  reg.queue.forEach((c, i) => {
+    const s = spots[i] || spots[spots.length - 1]; if (!s) return;
+    c.spot = s;
+    const p = findPath(Math.floor(c.x / TILE), Math.floor(c.y / TILE), s.x, s.y);
+    c.path = p.length ? p : [{ x: s.x * TILE + TILE / 2, y: s.y * TILE + TILE / 2, tx: s.x, ty: s.y }];
+  });
+}
+
 function updateRegisters(dt) {
   const regs = placedObjects.filter(o => o.type === 'register');
   regs.forEach(reg => {
     if (reg.queue.length === 0) { reg.progress = 0; return; }
     const head = reg.queue[0];
-    const standPos = { x: reg.x * TILE + TILE/2, y: (reg.y + 1) * TILE + TILE/2 };
+    const sp0 = queueSpots(reg, 1)[0];
+    const standPos = sp0 ? { x: sp0.x * TILE + TILE / 2, y: sp0.y * TILE + TILE / 2 } : { x: reg.x * TILE + TILE / 2, y: (reg.y + 1) * TILE + TILE / 2 };
     if (Math.hypot(head.x - standPos.x, head.y - standPos.y) > 12) {
       reg.progress = 0;
       return;
@@ -1536,7 +1992,7 @@ function updateRegisters(dt) {
     // 後ろ(y-1)に店員が立っているか
     const worker = hiredStaff.find(st => Math.floor(st.x/TILE) === reg.x && Math.floor(st.y/TILE) === reg.y - 1);
     if (worker) {
-      const rate = 0.65 + (worker.regStat / 100) * 1.4; // 秒間進捗
+      const rate = (0.65 + (worker.regStat / 100) * 1.4) * (worker.role === 'chief' ? 1.25 : 1); // 秒間進捗
       reg.progress += rate * dt;
       if (reg.progress >= 1) {
         reg.progress = 0;
@@ -1549,16 +2005,16 @@ function updateRegisters(dt) {
 function finishCustomerCheckout(reg, cust, worker) {
   reg.queue.shift();
   // 列を前に詰める
-  reg.queue.forEach((c, idx) => {
-    const ty = Math.min(9, reg.y + 1 + idx);
-    c.path = findPath(Math.floor(c.x/TILE), Math.floor(c.y/TILE), reg.x, ty);
-  });
+  layoutQueue(reg);
 
   let sum = 0;
   let extraSat = 0;
   cust.basket.forEach(item => {
     sum += item.paidPrice;
     extraSat += item.sat;
+    const sl = (state.sales ||= {});
+    const se = (sl[item.prod] ||= { qty: 0, rev: 0 });
+    se.qty++; se.rev += item.paidPrice;
   });
 
   state.money += sum;
@@ -1618,6 +2074,21 @@ function assignCustomerNextTarget(cust) {
       }
     }
 
+    if (cust.machineUid) {
+      const mc = placedObjects.find(o => o.uid === cust.machineUid);
+      cust.machineUid = null;
+      if (mc) {
+        const adjs = getAdjacentWalkable(mc.x, mc.y);
+        if (adjs.length > 0) {
+          const a = adjs[Math.floor(Math.random() * adjs.length)];
+          cust.state = 'machine';
+          cust.currentObjId = mc.uid;
+          cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), a.x, a.y);
+          return;
+        }
+      }
+    }
+
     if (cust.basket.length > 0) {
       // レジへ
       const regs = placedObjects.filter(o => o.type === 'register');
@@ -1638,8 +2109,7 @@ function assignCustomerNextTarget(cust) {
       cust.state = 'queuing';
       cust.regUid = chosen.uid;
       chosen.queue.push(cust);
-      const ty = Math.min(9, chosen.y + chosen.queue.length);
-      cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), chosen.x, ty);
+      layoutQueue(chosen);
     } else {
       sendCustomerHome(cust);
     }
@@ -1657,6 +2127,10 @@ function assignCustomerNextTarget(cust) {
   cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), adj.x, adj.y);
 }
 
+// 近くに商品棚があるか（歩きながら眺める判定）
+function shelfNear(c) {
+  return placedObjects.some(o => FACILITY_TYPES[o.type].cat === 'shelf' && Math.hypot((o.x + 0.5) * TILE - c.x, (o.y + 0.5) * TILE - c.y) < 1.7 * TILE);
+}
 function updateCustomers(dt) {
   for (let i = customers.length - 1; i >= 0; i--) {
     const c = customers[i];
@@ -1665,28 +2139,61 @@ function updateCustomers(dt) {
       if (c.emoteTimer <= 0) c.emote = null;
     }
 
-    if (c.path && c.path.length > 0) {
+    if (c.pause > 0) {
+      c.pause -= dt; c.v = 0;
+    } else if (c.path && c.path.length > 0) {
       const t = c.path[0];
       const dx = t.x - c.x, dy = t.y - c.y;
       const d = Math.hypot(dx, dy);
-      if (d < 4) {
+      // 自動ドアが開ききるまで手前で待つ
+      const gate = Math.abs(c.x - 6 * TILE) < 1.2 * TILE && ((c.y >= 9.3 * TILE && c.y < 10 * TILE && t.y >= 10 * TILE) || (c.y > 11 * TILE && c.y <= 11.8 * TILE && t.y <= 11 * TILE));
+      if (gate && DOOR.open < 0.55) {
+        c.v = 0; c.fx = Math.sign(dx); c.fy = Math.sign(dy);
+      } else if (d < 4) {
         c.path.shift();
       } else {
-        const step = Math.min(d, c.speed * dt);
-        c.x += (dx / d) * step;
-        c.y += (dy / d) * step;
-        c.bounce += dt * 10;
+        let sp = c.speed;
+        if (c.state === 'shopping' && c.path.length <= 2) sp *= 0.65;   // 棚に近づくとゆっくり歩く
+        if (c.state === 'shopping' && c.path.length > 2 && Math.random() < dt * 0.22 && shelfNear(c)) {   // 歩きながら商品を眺めて立ち止まる
+          c.pause = 0.5 + Math.random() * 0.9;
+          if (Math.random() < 0.4) { c.emote = '👀'; c.emoteTimer = 0.8; }
+        }
+        c.v = (c.v || 0) + (sp - (c.v || 0)) * Math.min(1, dt * 5);     // 加速・減速
+        const step = Math.min(d, c.v * dt);
+        c.x += (dx / d) * step; c.y += (dy / d) * step;
+        c.fx = dx / d; c.fy = dy / d;
+        c.bounce += dt * (2 + c.v / 9);
+        for (const o of customers) {   // 他のお客さんとぶつからないように避ける
+          if (o === c) continue;
+          const ox = o.x - c.x, oy = o.y - c.y, od = Math.hypot(ox, oy);
+          if (od > 0.1 && od < 15) {
+            const k = (15 - od) * Math.min(1, dt * 4) * 0.5, nx = c.x - ox / od * k, ny = c.y - oy / od * k;
+            if (isWalkableForPath(Math.floor(nx / TILE), Math.floor(ny / TILE))) { c.x = nx; c.y = ny; }
+          }
+        }
       }
     } else {
+      c.v = 0;
       if (c.state === 'entering') {
-        SFX.door();
         assignCustomerNextTarget(c);
       } else if (c.state === 'shopping') {
         c.state = 'picking';
-        c.waitTimer = 0.55;
+        c.waitTimer = c.browse = 1.2 + Math.random() * 1.8; c.looked = false;   // 商品を手に取って品定め
+        if (Math.random() < 0.18 && c.targets.length < 3) {   // ふと目に留まって寄り道
+          const cur = placedObjects.find(o => o.uid === c.currentObjId);
+          const nb = cur ? placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'shelf' && o.stock > 0 && o.uid !== cur.uid && !c.targets.includes(o.uid) && Math.abs(o.x - cur.x) + Math.abs(o.y - cur.y) <= 3) : [];
+          if (nb.length) { c.targets.unshift(nb[Math.floor(Math.random() * nb.length)].uid); c.emote = '✨'; c.emoteTimer = 0.9; }
+        }
       } else if (c.state === 'picking') {
         c.waitTimer -= dt;
+        const o2 = placedObjects.find(o => o.uid === c.currentObjId);
+        if (o2) {   // 棚の方を向く
+          const ddx = (o2.x + 0.5) * TILE - c.x, ddy = (o2.y + 0.5) * TILE - c.y;
+          if (Math.abs(ddx) > Math.abs(ddy)) { c.fx = Math.sign(ddx); c.fy = 0; } else { c.fx = 0; c.fy = Math.sign(ddy); }
+        }
+        if (!c.looked && c.waitTimer < c.browse * 0.5) { c.looked = true; if (Math.random() < 0.5) { c.emote = '🤔'; c.emoteTimer = 0.9; } }
         if (c.waitTimer <= 0) {
+          c.looked = false;
           const obj = placedObjects.find(o => o.uid === c.currentObjId);
           if (obj && obj.stock > 0) {
             const p = products[FACILITY_TYPES[obj.type].prod];
@@ -1721,6 +2228,10 @@ function updateCustomers(dt) {
         SFX.cash();
         addFloatText(c.x, c.y - 20, '🏧+¥120', '#2596be');
         assignCustomerNextTarget(c);
+      } else if (c.state === 'machine') {
+        const mc = placedObjects.find(o => o.uid === c.currentObjId);
+        if (mc) useMachine(mc, c);
+        assignCustomerNextTarget(c);
       } else if (c.state === 'eatin') {
         if (c.waitTimer <= 0) c.waitTimer = 1.8;
         c.waitTimer -= dt;
@@ -1740,13 +2251,17 @@ function updateCustomers(dt) {
     // レジ待ち我慢ゲージ
     if (c.state === 'queuing') {
       const reg = placedObjects.find(o => o.uid === c.regUid);
+      if (reg && (!c.path || !c.path.length)) {   // 立ち止まっているのに定位置でなければ、レジ近くへ詰め直す
+        const qi = reg.queue.indexOf(c), sp = qi >= 0 ? (queueSpots(reg, qi + 1)[qi] || c.spot) : null;
+        if (sp && (Math.floor(c.x / TILE) !== sp.x || Math.floor(c.y / TILE) !== sp.y)) layoutQueue(reg);
+      }
       const isProcessing = reg && reg.queue[0] === c && reg.progress > 0;
       if (!isProcessing) {
-        c.patience -= dt;
+        c.patience -= dt * patienceMul();
         if (c.patience <= 0) {
           if (reg) {
             const idx = reg.queue.indexOf(c);
-            if (idx !== -1) reg.queue.splice(idx, 1);
+            if (idx !== -1) { reg.queue.splice(idx, 1); layoutQueue(reg); }
           }
           state.rating = Math.max(1.0, state.rating - 0.14);
           SFX.angry();
@@ -1814,6 +2329,17 @@ function updateCalendarAndEconomy(dt) {
         continue;
       }
     }
+    // お隣の店の入口の前を通ったら、入るかどうか判定
+    if (!p.visited) p.visited = new Set();
+    let enteredNb = false;
+    for (const o of placedObjects) {
+      if (FACILITY_TYPES[o.type].cat !== 'neighbor' || p.visited.has(o.uid)) continue;
+      if (Math.abs(p.x - (o.x + NB_W / 2) * TILE) < 35) {
+        p.visited.add(o.uid);
+        if (tryEnterNeighbor(p, o)) { passers.splice(i, 1); enteredNb = true; break; }
+      }
+    }
+    if (enteredNb) continue;
     if (p.x < passMin() * TILE - 30 || p.x > passSpan() * TILE + 30) passers.splice(i, 1);
   }
 
@@ -1859,27 +2385,21 @@ function onMonthEnd() {
     }
   }
 
-  // 月次決算モーダルを表示（ゲームは自動で一時停止）
-  state.paused = true;
+  // 決算レポートは左下に表示するだけ（ゲームは止めない）
   if (promoted) SFX.fanfare();
   else SFX.combo();
 
-  const body = `
-    <div class="ledger-row"><span>🛒 商品売上 (${state.monthStats.served}人会計)</span><span style="color:#15803d">+¥${state.monthStats.rev.toLocaleString()}</span></div>
-    <div class="ledger-row"><span>🏧 ATM等その他収入</span><span style="color:#2596be">+¥${state.monthStats.extra.toLocaleString()}</span></div>
-    <div class="ledger-row"><span>📦 商品仕入コスト</span><span style="color:#e5484d">-¥${state.monthStats.cost.toLocaleString()}</span></div>
-    <div class="ledger-row"><span>👥 スタッフ人件費</span><span style="color:#e5484d">-¥${wages.toLocaleString()}</span></div>
-    <div class="ledger-row ledger-total"><span>💰 今月の純利益</span><span style="color:${net>=0?'#15803d':'#e5484d'}">${net>=0?'+':''}¥${net.toLocaleString()}</span></div>
-    ${promoted ? `
-      <div style="background:#fef3c7; border:2px solid #f59e0b; border-radius:8px; padding:10px; text-align:center;">
-        <div style="font-size:15px; font-weight:900; color:#b45309;">🎉 店舗ランクアップ！！</div>
-        <div style="font-size:13px; font-weight:800; margin-top:4px;">ランク ${promoted.rank}【${promoted.name}】になりました！</div>
-        <div style="font-size:11px; color:#78350f; margin-top:3px;">雇用上限: ${promoted.maxStaff}人 / 新商品アンロック & ✨+30P!</div>
-      </div>
-    ` : ''}
-    <button class="kairo-btn btn-orange" style="padding:10px; font-size:14px;" onclick="closeModal()">👍 翌月へ進む！</button>
-  `;
-  openModal(`📊 ${state.month === 1 ? 12 : state.month - 1}月度 営業決算レポート`, body);
+  const repMonth = state.month === 1 ? 12 : state.month - 1;
+  const repYear = state.month === 1 ? state.year - 1 : state.year;
+  const entry = {
+    y: repYear, m: repMonth, rev: state.monthStats.rev, extra: state.monthStats.extra,
+    cost: state.monthStats.cost, wages, net, served: state.monthStats.served,
+    rank: promoted ? promoted.rank : null
+  };
+  (state.history ||= []).push(entry);
+  if (state.history.length > 60) state.history.shift();
+  if (promoted) setTicker(`🎉 店舗ランクアップ！ ランク ${promoted.rank}【${promoted.name}】になりました！`);
+  showReport(entry, promoted);
 
   state.monthStats = { rev: 0, cost: 0, wages: 0, extra: 0, served: 0 };
   updateHUD();
@@ -1916,7 +2436,7 @@ function draw() {
   ctx.fillStyle = '#64748b'; ctx.fillRect(gx0, 12 * TILE, gw, TILE);
   ctx.fillStyle = '#e2e8f0';
   for (let x = vx0; x <= vx1; x++) if (x % 2 === 0) ctx.fillRect(x * TILE + 8, 12 * TILE + 18, 22, 4);
-  for (let y = Math.max(0, vy0); y <= Math.min(10, vy1); y++) for (let x = Math.max(0, vx0); x <= Math.min(b.maxX, vx1); x++) {
+  for (let y = Math.max(0, vy0); y <= Math.min(10, vy1); y++) for (let x = Math.max(0, vx0); x <= Math.min(b.maxX + 1, vx1); x++) {
     const px = x * TILE, py = y * TILE;
     if (inStore(x, y)) {
       ctx.fillStyle = (x + y) % 2 === 0 ? '#fffbeb' : '#fef3c7'; ctx.fillRect(px, py, TILE, TILE);
@@ -1936,9 +2456,9 @@ function draw() {
   }
   // 屋外エリア境界と案内
   ctx.save(); ctx.setLineDash([6, 5]); ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo((b.maxX + 1) * TILE, TILE); ctx.lineTo((b.maxX + 1) * TILE, 11 * TILE); ctx.stroke(); ctx.restore();
+  ctx.beginPath(); ctx.moveTo((b.maxX + 2) * TILE, TILE); ctx.lineTo((b.maxX + 2) * TILE, 11 * TILE); ctx.stroke(); ctx.restore();
   ctx.fillStyle = 'rgba(20,83,45,.8)'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('🌳 屋外エリア（棚・装飾・ブロック・お隣の店OK）', Math.max((b.maxX + 1) * TILE + 150, cam.x + viewW() / 2), 1.5 * TILE);
+  ctx.fillText('🌳 屋外エリア（棚・装飾・ブロック・お隣の店OK）', Math.max((b.maxX + 2) * TILE + 150, cam.x + viewW() / 2), 1.5 * TILE);
   // 店舗看板（編集可）
   const sr = signRect();
   ctx.fillStyle = '#1e293b'; ctx.fillRect(sr.cx - sr.w / 2, 2, sr.w, 28);
@@ -1951,15 +2471,25 @@ function draw() {
   ctx.font = 'bold 10px sans-serif';
   
 
-  // 自動ドア描画 (x=5,6, y=10)
-  ctx.fillStyle = '#bae6fd';
-  ctx.fillRect(5 * TILE, 10 * TILE + 4, 2 * TILE, TILE - 8);
-  ctx.strokeStyle = '#0284c7';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(5 * TILE, 10 * TILE + 4, 2 * TILE, TILE - 8);
-  ctx.fillStyle = '#0369a1';
-  ctx.font = 'bold 10px sans-serif';
-  ctx.fillText('自動ドア IN/OUT', 6 * TILE, 10 * TILE + TILE/2);
+  // 自動ドア描画 (x=5,6, y=10)：センサーで左右にスライド
+  {
+    const e = DOOR.open * DOOR.open * (3 - 2 * DOOR.open), x0 = 5 * TILE, y0 = 10 * TILE + 4, w = 2 * TILE, h = TILE - 8;
+    ctx.fillStyle = '#334155'; ctx.fillRect(x0, y0, w, h);
+    ctx.fillStyle = '#64748b'; ctx.fillRect(x0 + 4, y0 + h / 2 - 3, w - 8, 6);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+    const off = e * (TILE - 4);
+    [[x0 - off, 1], [x0 + TILE + off, -1]].forEach(([qx, dir]) => {
+      ctx.fillStyle = 'rgba(186,230,253,.85)'; ctx.fillRect(qx, y0, TILE, h);
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath();
+      ctx.moveTo(qx + 6, y0 + h); ctx.lineTo(qx + 16, y0); ctx.lineTo(qx + 22, y0); ctx.lineTo(qx + 12, y0 + h); ctx.fill();
+      ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 2; ctx.strokeRect(qx + 1, y0 + 1, TILE - 2, h - 2);
+      ctx.fillStyle = '#0369a1'; ctx.fillRect(dir > 0 ? qx + TILE - 5 : qx + 1, y0 + h * 0.3, 4, h * 0.4);
+    });
+    ctx.restore();
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.strokeRect(x0, y0, w, h);
+    ctx.fillStyle = DOOR.open > 0.05 ? '#22c55e' : '#ef4444';
+    ctx.beginPath(); ctx.arc(6 * TILE, y0 - 2, 3, 0, Math.PI * 2); ctx.fill();
+  }
 
   // 特売中のぼり旗（店外入口横）
   const hasSale = Object.values(products).some(p => p.onSale);
@@ -2037,9 +2567,28 @@ function draw() {
     drawChibi(p.x, p.y, p.shirt, p.hair, p.bounce, false);
   });
 
+  // 5b. お隣の店に入った人
+  visitors.forEach(v => {
+    drawChibi(v.x, v.y, v.shirt, v.hair, v.bounce, false);
+    if (v.emote) drawEmoteBubble(v.x, v.y - 24, v.emote);
+  });
+
   // 6. 来店客
   customers.forEach(c => {
-    drawChibi(c.x, c.y, c.shirt, c.hair, c.bounce, false);
+    const lean = c.state === 'picking' ? 2.5 : 0;   // 商品を見るときは少し棚に寄る
+    drawChibi(c.x + (c.fx || 0) * lean, c.y + (c.fy || 0) * lean * 0.6, c.shirt, c.hair, c.bounce, false);
+    if (c.basket && c.basket.length) {   // 買い物かご
+      const bx = c.x + 9, by2 = c.y + 2;
+      ctx.fillStyle = '#d97706'; ctx.fillRect(bx, by2, 9, 7); ctx.strokeStyle = '#3b2d22'; ctx.lineWidth = 1; ctx.strokeRect(bx, by2, 9, 7);
+      c.basket.slice(-3).forEach((b, k) => { ctx.fillStyle = products[b.prod].dot; ctx.fillRect(bx + 1 + k * 3, by2 - 2, 3, 3); });
+    }
+    if (c.state === 'picking' && c.currentObjId != null) {   // 商品を手に取って眺める
+      const sh = placedObjects.find(o => o.uid === c.currentObjId);
+      if (sh && FACILITY_TYPES[sh.type].prod) {
+        ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(products[FACILITY_TYPES[sh.type].prod].icon, c.x + (c.fx || 0) * 13, c.y - 2 + Math.sin(performance.now() / 160 + c.id * 9) * 1.5);
+      }
+    }
     if (c.state === 'queuing') {
       const r = Math.max(0, c.patience / c.maxPatience);
       ctx.fillStyle = '#1e293b';
@@ -2134,6 +2683,23 @@ function drawFacility(obj) {
     ctx.fillStyle = '#78350f'; // 前面フチ
     ctx.fillRect(px + 5, py + TILE - 10, TILE - 10, 6);
 
+    // 同じ棚が隣り合うと連結して柄が変わる（つながった数で3段階）
+    {
+      const sm = [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([a, b]) => placedObjects.some(q => q.type === obj.type && q.x === obj.x + a && q.y === obj.y + b));
+      const ns = sm.filter(Boolean).length;
+      if (ns) {
+        const l = sm[0] ? 0 : 5, r = sm[1] ? 0 : 5;
+        ctx.fillStyle = '#3b2d22'; if (sm[0]) ctx.fillRect(px, py + 4, 5, TILE - 6); if (sm[1]) ctx.fillRect(px + TILE - 5, py + 4, 5, TILE - 6);
+        ctx.fillStyle = p.color; if (sm[0]) ctx.fillRect(px, py + 6, 5, TILE - 14); if (sm[1]) ctx.fillRect(px + TILE - 5, py + 6, 5, TILE - 14);
+        ctx.save(); ctx.beginPath(); ctx.rect(px + l, py + 6, TILE - l - r, TILE - 14); ctx.clip();
+        ctx.fillStyle = ns >= 3 ? 'rgba(250,204,21,.35)' : ns === 2 ? 'rgba(255,255,255,.32)' : 'rgba(0,0,0,.14)';
+        for (let wx = Math.floor(px / 8) * 8; wx < px + TILE; wx += 8) ctx.fillRect(wx, py + 6, 4, TILE - 14);
+        ctx.restore();
+        ctx.fillStyle = p.dot; ctx.fillRect(px + l, py + 6, TILE - l - r, 3);
+      }
+      ctx.fillStyle = '#78350f';
+    }
+
     // 商品ドット
     const cols = 4;
     for (let i = 0; i < obj.stock; i++) {
@@ -2215,6 +2781,13 @@ function drawFacility(obj) {
     ctx.fillStyle = '#1e293b'; ctx.fillText('📦', px + TILE / 2, py + TILE / 2);
     const n = Object.values(BACK_EQUIP).filter(e => equipLv[e.id] > 0).length;
     if (n > 0) { ctx.font = 'bold 9px sans-serif'; ctx.fillText('🏭×' + n, px + TILE / 2, py + TILE - 3); }
+  } else if (def.win) {
+    ctx.fillStyle = '#64748b'; ctx.fillRect(px, py, TILE, TILE);
+    ctx.fillStyle = 'rgba(186,230,253,.92)'; ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath();
+    ctx.moveTo(px + 7, py + TILE - 6); ctx.lineTo(px + 18, py + 4); ctx.lineTo(px + 25, py + 4); ctx.lineTo(px + 14, py + TILE - 6); ctx.fill();
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(px + TILE / 2, py + 3); ctx.lineTo(px + TILE / 2, py + TILE - 3); ctx.moveTo(px + 3, py + TILE / 2); ctx.lineTo(px + TILE - 3, py + TILE / 2); ctx.stroke();
   } else if (def.cat === 'block') {
     ctx.fillStyle = def.color; ctx.fillRect(px, py, TILE, TILE);
     ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.strokeRect(px + 1, py + 1, TILE - 2, TILE - 2);
@@ -2237,6 +2810,17 @@ function drawFacility(obj) {
     ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.strokeRect(px + 3, py + 3, TILE - 6, TILE - 8);
     ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(def.icon, px + TILE / 2, py + TILE / 2 - 1);
     if (def.blink) { ctx.fillStyle = Math.floor(performance.now() / 300 + obj.uid) % 2 ? '#f43f5e' : '#facc15'; ctx.fillRect(px + TILE - 12, py + 5, 5, 5); }
+  } else if (def.cat === 'machine') {
+    const fl = (machineFlash.get(obj.uid) || 0) > performance.now();
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(px + 5, py + 7, TILE - 8, TILE - 9);
+    ctx.fillStyle = def.color; ctx.fillRect(px + 3, py + 2, TILE - 6, TILE - 7);
+    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.strokeRect(px + 3, py + 2, TILE - 6, TILE - 7);
+    ctx.fillStyle = fl ? '#fef08a' : '#0f172a'; ctx.fillRect(px + 7, py + 6, TILE - 14, 14);
+    ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000';
+    ctx.fillText(def.icon, px + TILE / 2, py + 13);
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(px + 10, py + 25, TILE - 20, 6);
+    ctx.fillStyle = Math.floor(performance.now() / 400 + obj.uid) % 2 ? '#f43f5e' : '#facc15'; ctx.fillRect(px + TILE - 11, py + 24, 4, 4);
+    if (fl) ctx.fillText('🪙', px + TILE / 2, py - 4);
   } else if (def.cat === 'decor' && def.type !== 'plant') {
     ctx.font = '24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000';
     ctx.fillText(def.icon, px + TILE / 2, py + TILE / 2);
@@ -2399,7 +2983,7 @@ function startBuildMode(type, moveUid = null) {
     return setTicker(`⚠️ ${def.name} の建築費用(¥${def.cost.toLocaleString()})が足りません！`);
   }
   state.buildMode = { type, moveUid };
-  document.getElementById('build-banner').classList.add('show');
+  { const bn = document.getElementById('build-banner'); clearTimeout(bnTimer); bn.classList.remove('closing'); bn.classList.add('show'); }
   document.getElementById('build-banner-msg').textContent = moveUid
     ? `🚚「${def.name}」の新しい場所をクリック！(右クリックで中止)`
     : `🏗️「${def.name}」(¥${def.cost}) を置く場所をクリック！(連続設置可 / 右クリック終了)`;
@@ -2408,8 +2992,13 @@ function startBuildMode(type, moveUid = null) {
 
 function cancelBuildMode() {
   state.buildMode = null;
-  document.getElementById('build-banner').classList.remove('show');
+  const bn = document.getElementById('build-banner');
+  if (!bn.classList.contains('show') || bn.classList.contains('closing')) return;
+  bn.classList.add('closing');
+  clearTimeout(bnTimer);
+  bnTimer = setTimeout(() => bn.classList.remove('show', 'closing'), 200);
 }
+let bnTimer = null;
 
 function openInspector(obj) {
   state.selectedObjId = obj.uid;
@@ -2434,8 +3023,10 @@ function openInspector(obj) {
     extra = `<div style="font-size:12px; margin:4px 0;">🛠 内装 ${fx.length}/${(NB_W - 2) * (NB_H - 2)}マス ／ 内装収入 毎週 +¥${inc}<br>🎨 床: ${FLOOR_NAMES[floorOf(obj)]}</div>
       <button class="kairo-btn btn-blue" style="width:100%; margin-bottom:5px;" onclick="cycleFloor(${obj.uid})">🎨 床の色を変える</button>
       <button class="kairo-btn btn-green" style="width:100%; margin-bottom:5px;" onclick="switchDockById('build'); closeInspector();">🛠 内装を置く（建築タブの下の方）</button>`;
+  } else if (def.cat === 'machine') {
+    extra = `<div style="font-size:12px; margin:4px 0;">1回の利用 <b>¥${def.fee}</b>（評判で増減）<br>🪙 この機械の累計収入 <b>¥${(obj.earned || 0).toLocaleString()}</b></div>`;
   } else if (def.cat === 'fixture') {
-    extra = `<div style="font-size:12px; margin:4px 0;">内装収入 毎週 <b>+¥${fxIncome(obj)}</b>（評判で増減）</div>`;
+    extra =`<div style="font-size:12px; margin:4px 0;">内装収入 毎週 <b>+¥${fxIncome(obj)}</b>（評判で増減）</div>`;
   }
 
   const canDelete = def.cat !== 'backyard' && !(def.cat === 'register' && placedObjects.filter(o => o.type === 'register').length <= 1);
@@ -2455,12 +3046,18 @@ function openInspector(obj) {
       </button>
     </div>
   `;
+  clearTimeout(inspTimer); pop.classList.remove('closing');
   pop.classList.add('show');
 }
 
+let inspTimer = null;
 function closeInspector() {
   state.selectedObjId = null;
-  document.getElementById('inspector-popup').classList.remove('show');
+  const pop = document.getElementById('inspector-popup');
+  if (!pop.classList.contains('show') || pop.classList.contains('closing')) return;
+  pop.classList.add('closing');
+  clearTimeout(inspTimer);
+  inspTimer = setTimeout(() => pop.classList.remove('show', 'closing'), 170);
 }
 
 function removeObject(uid) {
@@ -2509,16 +3106,33 @@ function refreshAllTabs() {
   else if (state.activeDock === 'back') renderBackTab();
 }
 
+const BUILD_CHIPS = [['all', '🔎 すべて'], ['shelf', '🛒 商品棚'], ['register', '🏧 店内設備'], ['machine', '🎰 機械'], ['decor', '🌿 装飾'], ['block', '🧱 ブロック'], ['neighbor', '🏘️ お隣'], ['fixture', '🛠️ 内装']];
+let buildF = { cat: 'all', q: '', ok: false };
 function renderBuildTab() {
   const pane = document.getElementById('pane-build');
-  let html = `<div class="ribbon-title"><span>🏗️ 店内設備・商品棚の設置</span><span>移動もOK!</span></div>`;
-  let lastGrp = '';
+  if (!document.getElementById('build-list')) {   // 絞込バーは一度だけ作る（入力中に再描画されても消えない）
+    pane.innerHTML = `<div class="ribbon-title"><span>🏗️ 店内設備・商品棚の設置</span><span>移動もOK!</span></div>` +
+      `<input id="build-q" type="search" placeholder="🔍 名前・説明で絞り込み（例: 棚、冷蔵、植物）" value="${buildF.q.replace(/"/g, '&quot;')}" oninput="buildF.q=this.value;renderBuildTab()" style="width:100%;padding:7px 10px;border:2px solid var(--border-dark);border-radius:8px;font-size:12px;margin:2px 0 6px">` +
+      `<div id="build-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"></div>` +
+      `<label style="font-size:11px;display:flex;align-items:center;gap:4px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="build-ok" onchange="buildF.ok=this.checked;renderBuildTab()"> 今すぐ設置できるものだけ</label>` +
+      `<div id="build-list"></div>`;
+  }
+  document.getElementById('build-chips').innerHTML = BUILD_CHIPS.map(([k, n]) => `<button class="kairo-btn ${buildF.cat === k ? 'btn-orange' : 'btn-cream'}" style="padding:4px 8px;font-size:11px" onclick="buildF.cat='${k}';renderBuildTab()">${n}</button>`).join('');
+  document.getElementById('build-ok').checked = buildF.ok;
+  const qy = buildF.q.trim().toLowerCase();
+  let html = '', lastGrp = '', shown = 0;
   Object.values(FACILITY_TYPES).sort((a, b) => BUILD_ORDER.indexOf(a.cat) - BUILD_ORDER.indexOf(b.cat)).forEach(def => {
     if (def.cat === 'backyard') return;
+    const chip = ['register', 'eatin', 'atm'].includes(def.cat) ? 'register' : def.cat;
+    if (buildF.cat !== 'all' && chip !== buildF.cat) return;
+    if (qy && !(def.name + def.desc + (def.prod && products[def.prod] ? products[def.prod].name : '')).toLowerCase().includes(qy)) return;
+    const needR = def.cat === 'shelf' ? products[def.prod].unlockRank : (def.rank || 0);
+    const locked = needR > state.rankIdx;
+    if (buildF.ok && (locked || state.money < def.cost)) return;
+    shown++;
     const grp = BUILD_GROUP[def.cat];
     if (grp !== lastGrp) { lastGrp = grp; html += `<div class="ribbon-title" style="font-size:12px;"><span>${grp}</span></div>`; }
-    const locked = def.cat === 'shelf' && products[def.prod].unlockRank > state.rankIdx;
-    const reqRank = def.cat === 'shelf' ? RANKS[products[def.prod].unlockRank].rank : '';
+    const reqRank = RANKS[needR].rank;
     html += `
       <div class="item-card ${locked ? 'locked' : ''}" ${tipAttr(facilityTip(def))}>
         <div class="card-top">
@@ -2533,7 +3147,8 @@ function renderBuildTab() {
       </div>
     `;
   });
-  pane.innerHTML = html;
+  if (!shown) html = `<div style="padding:14px;text-align:center;font-size:12px;color:var(--text-muted)">該当する設備がありません。絞込をゆるめてみてください</div>`;
+  document.getElementById('build-list').innerHTML = html;
 }
 
 // 価格設定タブ（スライダーのドラッグを邪魔しないよう、構築時と数値更新を分離！）
@@ -2691,7 +3306,7 @@ function bulkBuy(pid) {
 
 function renderStaffTab() {
   const pane = document.getElementById('pane-staff');
-  const maxS = RANKS[state.rankIdx].maxStaff;
+  const maxS = maxStaffNow();
   const currentS = hiredStaff.length - 1;
 
   let html = `
@@ -2724,11 +3339,10 @@ function renderStaffTab() {
           ${statBar('品出し', st.spdStat, '#2cb67d')}
           ${statBar('接客', st.charmStat, '#f58220')}
 
-          <div style="display:flex; gap:4px; margin-top:3px;">
-            <button class="kairo-btn ${st.role==='all'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','all')">⚖️万能</button>
-            <button class="kairo-btn ${st.role==='cashier'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','cashier')">💳レジ</button>
-            <button class="kairo-btn ${st.role==='stocker'?'btn-active':'btn-cream'}" style="flex:1;padding:4px;" onclick="changeStaffRole('${st.id}','stocker')">📦品出</button>
+          <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:3px;">
+            ${Object.entries(STAFF_ROLES).map(([k, r]) => `<button class="kairo-btn ${st.role===k?'btn-active':'btn-cream'}" style="flex:1 0 30%;padding:4px;" title="${r.desc}" onclick="changeStaffRole('${st.id}','${k}')">${r.icon}${r.name}</button>`).join('')}
           </div>
+          <div style="font-size:10px; color:var(--text-muted);">役職: ${(STAFF_ROLES[st.role] || STAFF_ROLES.all).desc}</div>
           <div style="display:flex; gap:5px; margin-top:2px;">
             <button class="kairo-btn btn-blue" style="flex:2;" onclick="trainStaff('${st.id}')" ${state.points<ptCost ? 'disabled' : ''}>
               💪 研修して強化 (✨${ptCost}P)
@@ -2802,9 +3416,9 @@ function renderManageTab() {
 
     <div class="item-card">
       <div class="card-top">
-        <span class="card-name">🚧 店舗フロア拡張 (現在Lv.${state.expansionLevel}/${MAX_EXP})</span>
+        <span class="card-name">🚧 店舗フロア拡張 (現在Lv.${state.expansionLevel}/${MAX_EXP} ｜ ${STORE_SIZE[state.expansionLevel]})</span>
       </div>
-      <div style="font-size:11px; color:var(--text-muted);">店舗を右側に広げて、より多くの棚やイートインを置けます！</div>
+      <div style="font-size:11px; color:var(--text-muted);">店舗を右側に広げます。Lv3で大型店、Lv7でハイパーモールに！広げるほど棚やイートインをたくさん置けます</div>
       ${state.expansionLevel < MAX_EXP
         ? `<button class="kairo-btn btn-orange" onclick="expandStore()" ${(state.money < expCost || state.rankIdx < expReqRank) ? 'disabled' : ''}>
              ${state.rankIdx < expReqRank ? `🔒 ランク${RANKS[expReqRank].rank}で開放` : `🔨 拡張工事 (¥${expCost.toLocaleString()})`}
@@ -2848,9 +3462,10 @@ function expandStore() {
   if (state.money < cost || state.expansionLevel >= MAX_EXP || state.rankIdx < expReqOf(state.expansionLevel)) return;
   state.money -= cost;
   state.expansionLevel++;
-  const gone = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'neighbor' && o.x <= getStoreBounds().maxX);
+  const gone = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'neighbor' && o.x <= getStoreBounds().maxX + 1);
   gone.forEach(o => { state.money += FACILITY_TYPES[o.type].cost; });
   if (gone.length) { const fx = placedObjects.filter(q => FACILITY_TYPES[q.type].cat === 'fixture' && gone.some(g => hostedBy(g, q))); fx.forEach(q => { state.money += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }); placedObjects = placedObjects.filter(o => !gone.includes(o) && !fx.includes(o)); }
+  clearWallColumn();
   recalcCombos(true);
   SFX.fanfare();
   setTicker('🎉 店舗の増築工事が完了！フロアが広くなりました！');
@@ -2881,13 +3496,14 @@ function updateHUD() {
   mEl.textContent = `💰 ¥${state.money.toLocaleString()}`;
   mEl.className = 'hud-pill pill-money' + (state.money < 0 ? ' minus' : '');
 
+  coinTrack();
   document.getElementById('hud-pt').textContent = `✨ 経営P: ${state.points}`;
   document.getElementById('hud-rating').textContent = `♥ 評判 ${state.rating.toFixed(1)}`;
   document.getElementById('hud-cust').textContent = `👥 客 ${state.totalCustomers}`;
 
   document.getElementById('btn-pause').className = 'kairo-btn ' + (state.paused ? 'btn-orange' : 'btn-cream');
   document.getElementById('btn-pause').textContent = state.paused ? '▶' : '⏸';
-  [1, 2, 3].forEach(s => {
+  [1, 2, 3, 5, 10].forEach(s => {
     document.getElementById('btn-spd' + s).className = 'kairo-btn ' + (!state.paused && state.speed === s ? 'btn-blue' : 'btn-cream');
   });
   document.getElementById('btn-sound').textContent = soundOn ? '🔊' : '🔇';
@@ -2904,12 +3520,19 @@ function addFloatText(x, y, text, color = '#15803d') {
 function openModal(title, html) {
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal-backdrop').classList.add('show');
+  const bd = document.getElementById('modal-backdrop');
+  clearTimeout(modalTimer);
+  bd.classList.remove('closing');
+  bd.classList.add('show');
 }
 
+let modalTimer = null;
 function closeModal() {
-  document.getElementById('modal-backdrop').classList.remove('show');
-  state.paused = false;
+  const bd = document.getElementById('modal-backdrop');
+  if (!bd.classList.contains('show') || bd.classList.contains('closing')) return;
+  bd.classList.add('closing');
+  clearTimeout(modalTimer);
+  modalTimer = setTimeout(() => bd.classList.remove('show', 'closing'), 260);
   updateHUD();
 }
 
@@ -2927,16 +3550,23 @@ function gameLoop(now) {
   const rawDt = Math.min(0.05, (now - lastT) / 1000);
   lastT = now;
 
-  if (!state.paused) {
-    const dt = rawDt * state.speed;
-    updateStaffAI(dt);
-    updateCustomers(dt);
-    updateRegisters(dt);
-    updateCalendarAndEconomy(dt);
+  if (!state.paused && !titleOpen) {
+    // 高速時はサブステップに分割して、移動や判定が飛ばないようにする
+    const total = rawDt * state.speed;
+    const steps = Math.max(1, Math.ceil(total / 0.05));
+    const dt = total / steps;
+    for (let s = 0; s < steps; s++) {
+      updateStaffAI(dt);
+      updateCustomers(dt);
+      updateVisitors(dt);
+      updateRegisters(dt);
+      updateRoleEffects(dt);
+      updateCalendarAndEconomy(dt);
+    }
 
     for (let i = floatingTexts.length - 1; i >= 0; i--) {
-      floatingTexts[i].y -= 22 * dt;
-      floatingTexts[i].life -= dt;
+      floatingTexts[i].y -= 22 * rawDt;
+      floatingTexts[i].life -= rawDt;
       if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
     }
 
@@ -2957,6 +3587,8 @@ function gameLoop(now) {
     }
   }
 
+  updateDoor(rawDt);
+  coinAnim();
   view3D ? draw3D() : draw();
   requestAnimationFrame(gameLoop);
 }
@@ -3142,7 +3774,7 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { delete keys[e.key]; });
 window.addEventListener('blur', () => { for (const k in keys) delete keys[k]; });
-function mgrOK(px, py) { const tx = Math.floor(px / TILE), ty = Math.floor(py / TILE); return ty <= 10 && isWalkableForPath(tx, ty); }
+function mgrOK(px, py) { const tx = Math.floor(px / TILE), ty = Math.floor(py / TILE); return ty <= 10 && isWalkableForPath(tx, ty) && !(ty === 10 && DOOR.open < 0.6); }
 function manualMove(st, dt, spd) {
   const L = keys.ArrowLeft, R = keys.ArrowRight, U = keys.ArrowUp, D = keys.ArrowDown;
   if (!(L || R || U || D)) return false;
@@ -3178,59 +3810,159 @@ function toggle3D() {
   document.getElementById('btn-3d').className = 'kairo-btn ' + (view3D ? 'btn-orange' : 'btn-gold');
   setTicker(view3D ? '👁 店長視点：←→で向きを変え、↑↓で前後に移動（Vで戻る）' : '🗺 マップ視点に戻りました（矢印キーで店長を操作できます）');
 }
-function wall3(tx, ty) {
-  if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS || ty >= 11) return { c: '#3b4a63' };
+// ---- 自動ドア：人感センサー + スライド開閉 ----
+function updateDoor(dt) {
+  const near = o => o && Math.hypot(o.x - 6 * TILE, (o.y - 10.5 * TILE) * 0.9) < 2.0 * TILE;
+  if (customers.some(near) || near(hiredStaff[0])) DOOR.hold = 0.6; else DOOR.hold = Math.max(0, DOOR.hold - dt);
+  const was = DOOR.open;
+  DOOR.open = Math.max(0, Math.min(1, DOOR.open + (DOOR.hold > 0 ? dt / 0.35 : -dt / 0.5)));
+  if (was < 0.02 && DOOR.open >= 0.02) SFX.door();
+}
+let WC = new Map();
+function nbSame(o, dx, dy) { return placedObjects.some(q => q.type === o.type && q.x === o.x + dx && q.y === o.y + dy); }
+function wall3(tx, ty) { const k = tx * 1000 + ty; let r = WC.get(k); if (r === undefined) { r = wall3raw(tx, ty); WC.set(k, r); } return r; }
+function wall3raw(tx, ty) {
+  if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) return { c: '#7d8aa5', far: 1 };
+  if (ty === 10) return { glass: 1 };
   const o = objAt(tx, ty);
   if (o) {
     const d = FACILITY_TYPES[o.type];
-    if (d.cat === 'shelf') { const p = products[d.prod]; return { c: p.dot, t: p.color }; }
-    return { c: d.color || ({ register: '#2f7fd1', backyard: '#64748b', eatin: '#92400e', atm: '#1e293b', decor: '#16a34a' })[d.cat] || '#777' };
+    if (d.win) return { glass: 1, win: 1 };
+    if (d.cat === 'shelf') { const p = products[d.prod]; return { c: p.dot, t: p.color, shelf: 1, empty: !(o.stock > 0), link: [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([a, b]) => nbSame(o, a, b)).length }; }
+    return { c: d.color || ({ register: '#2f7fd1', backyard: '#64748b', eatin: '#92400e', atm: '#1e293b', decor: '#16a34a' })[d.cat] || '#777', deco: 1 };
   }
-  return isWalkableForPath(tx, ty) ? null : { c: '#7a6a5c' };
+  return isWalkableForPath(tx, ty) ? null : { c: '#7a6a5c', brick: 1 };
 }
+let img3 = null, u32 = null;
+const PK = (r, g, b) => (255 << 24) | (b << 16) | (g << 8) | r;
 function draw3D() {
-  const W = c3.width, H = c3.height, me = hiredStaff[0], FOV = 1.05;
+  const W = c3.width, H = c3.height, HH = H / 2, me = hiredStaff[0], FOV = 1.1;
   const px = me.x / TILE, py = me.y / TILE;
-  x3.fillStyle = '#efe7cf'; x3.fillRect(0, 0, W, H / 2);
-  x3.fillStyle = '#cdb98a'; x3.fillRect(0, H / 2, W, H / 2);
-  const zb = new Array(W).fill(99);
+  WC = new Map();
+  if (!img3 || img3.width !== W || img3.height !== H) { img3 = x3.createImageData(W, H); u32 = new Uint32Array(img3.data.buffer); }
+  const rxs = new Float32Array(W), rys = new Float32Array(W), ics = new Float32Array(W);
+  for (let i = 0; i < W; i++) { const o = (i / W - 0.5) * FOV; rxs[i] = Math.cos(mgrAng + o); rys[i] = Math.sin(mgrAng + o); ics[i] = 1 / Math.cos(o); }
+  // 床(タイル) と 天井(蛍光灯) のキャスト
+  for (let y = Math.floor(HH) + 1; y < H; y++) {
+    const pd = H * 0.45 / (y - HH), fog = Math.max(0.35, 1 - pd / 13), yc = H - 1 - y;
+    for (let x = 0; x < W; x++) {
+      const t = pd * ics[x], wx = px + rxs[x] * t, wy = py + rys[x] * t;
+      const fx = Math.floor(wx), fy = Math.floor(wy), u = wx - fx, v = wy - fy;
+      let fr, fg, fb, cr, cg, cb;
+      if (wy >= 10) {
+        const g = ((fx + fy) & 1) ? 168 : 156; fr = g * fog; fg = (g + 6) * fog; fb = (g + 12) * fog; cr = 150; cg = 205; cb = 245;
+        if (fy === 10 && (fx === 5 || fx === 6)) { fr = fg = fb = 80; }
+      } else {
+        const k = (((fx + fy) & 1) ? 1 : 0.9) * ((u < 0.04 || v < 0.04) ? 0.82 : 1) * fog;
+        fr = 236 * k; fg = 226 * k; fb = 198 * k;
+        if ((fx & 1) === 0 && (fy & 1) === 0 && u > 0.2 && u < 0.8 && v > 0.2 && v < 0.8) { cr = 255; cg = 252; cb = 224; }
+        else { cr = 240 * fog; cg = 236 * fog; cb = 224 * fog; }
+      }
+      u32[y * W + x] = PK(fr, fg, fb); u32[yc * W + x] = PK(cr, cg, cb);
+    }
+  }
+  for (let x = 0; x < W; x++) u32[Math.floor(HH) * W + x] = PK(200, 190, 170);
+  x3.putImageData(img3, 0, 0);
+  const zb = new Float32Array(W).fill(99), gl = new Array(W).fill(null);
+  const e = DOOR.open * DOOR.open * (3 - 2 * DOOR.open);
   for (let i = 0; i < W; i++) {
-    const a = mgrAng + (i / W - 0.5) * FOV, rx = Math.cos(a), ry = Math.sin(a);
+    const rx = rxs[i], ry = rys[i], ca = Math.cos((i / W - 0.5) * FOV);
     let mx = Math.floor(px), my = Math.floor(py);
     const ddx = Math.abs(1 / (rx || 1e-9)), ddy = Math.abs(1 / (ry || 1e-9));
     const sx = rx < 0 ? -1 : 1, sy = ry < 0 ? -1 : 1;
     let sdx = (rx < 0 ? px - mx : mx + 1 - px) * ddx, sdy = (ry < 0 ? py - my : my + 1 - py) * ddy;
-    let side = 0, hit = null, d = 0;
-    for (let n = 0; n < 40 && !hit; n++) {
+    let side = 0, hit = null, d = 0, g = null;
+    for (let n = 0; n < 48 && !hit; n++) {
       if (sdx < sdy) { d = sdx; sdx += ddx; mx += sx; side = 0; } else { d = sdy; sdy += ddy; my += sy; side = 1; }
-      hit = wall3(mx, my);
-    }
-    d = Math.max(0.05, d * Math.cos(a - mgrAng)); zb[i] = d;
-    if (!hit) continue;
-    const h = Math.min(H * 1.5, H / d * 0.9), y0 = (H - h) / 2;
-    x3.fillStyle = hit.c; x3.fillRect(i, y0, 1, h);
-    if (hit.t) { x3.fillStyle = hit.t; x3.fillRect(i, y0 + h * 0.2, 1, h * 0.3); }
-    x3.fillStyle = 'rgba(0,0,0,' + (1 - Math.max(0.3, 1 - d / 12) * (side ? 0.8 : 1)).toFixed(2) + ')'; x3.fillRect(i, y0, 1, h);
-  }
-  const sp = [...customers.map(c => ({ x: c.x, y: c.y, c: c.shirt })), ...hiredStaff.slice(1).map(q => ({ x: q.x, y: q.y, c: q.color }))];
-  sp.map(q => { const dx = q.x / TILE - px, dy = q.y / TILE - py; return { ...q, dist: Math.hypot(dx, dy), ang: Math.atan2(dy, dx) }; })
-    .sort((a, b) => b.dist - a.dist).forEach(q => {
-      let da = q.ang - mgrAng;
-      while (da > Math.PI) da -= 2 * Math.PI;
-      while (da < -Math.PI) da += 2 * Math.PI;
-      const dd = q.dist * Math.cos(da);
-      if (Math.abs(da) > FOV / 2 + 0.3 || dd < 0.25) return;
-      const sxp = (0.5 + da / FOV) * W, h = H / dd * 0.6, w = h * 0.45, y0 = H / 2 + (H / dd * 0.9) / 2 - h;
-      for (let i = Math.floor(sxp - w / 2); i < sxp + w / 2; i++) {
-        if (i < 0 || i >= W || zb[i] < dd) continue;
-        x3.fillStyle = q.c; x3.fillRect(i, y0 + h * 0.3, 1, h * 0.7);
-        x3.fillStyle = '#fde68a'; x3.fillRect(i, y0, 1, h * 0.3);
+      const t = wall3(mx, my);
+      if (!t) continue;
+      if (t.glass) {
+        if (g) continue;
+        if (side === 0 && !t.win) { hit = { c: '#26344d' }; break; }
+        const hx = px + rx * d, hy = py + ry * d;
+        if (my === 10 && (mx === 5 || mx === 6)) {
+          const inL = hx >= 5 && hx <= 6 - e, inR = hx >= 6 + e && hx <= 7;
+          if (!inL && !inR) continue;
+          g = { d: d * ca, door: 1, edge: inL ? Math.min(hx - 5, 6 - e - hx) : Math.min(hx - 6 - e, 7 - hx), seam: inL ? 6 - e - hx : hx - 6 - e };
+        } else g = { d: d * ca, u: t.win ? (side === 0 ? hy - my : hx - mx) : hx - mx, win: t.win };
+        continue;
       }
-    });
-  x3.fillStyle = 'rgba(0,0,0,.55)'; x3.fillRect(0, H - 16, W, 16);
-  x3.fillStyle = '#fff'; x3.font = '10px sans-serif'; x3.textAlign = 'left'; x3.textBaseline = 'middle';
-  x3.fillText(`👁 店長視点 ｜ ←→回転 ↑↓移動 Vで戻る ｜ 💰¥${state.money.toLocaleString()} 客${customers.length}人`, 6, H - 8);
-  x3.fillStyle = '#fff'; x3.fillRect(W / 2 - 1, H / 2 - 1, 3, 3);
+      hit = t;
+    }
+    gl[i] = g;
+    if (!hit) continue;
+    const dr = d; d = Math.max(0.05, d * ca); zb[i] = d;
+    const h = Math.min(H * 1.5, H / d * 0.9), y0 = (H - h) / 2;
+    const hx = px + rx * dr, hy = py + ry * dr, u = side === 0 ? hy - Math.floor(hy) : hx - Math.floor(hx);
+    const seg = (a, b, col) => { x3.fillStyle = col; x3.fillRect(i, y0 + h * a, 1, h * (b - a)); };
+    seg(0, 1, hit.c);
+    if (hit.shelf) {
+      for (let r = 0; r < 3; r++) {
+        const a = 0.08 + r * 0.29;
+        const L = hit.link, nc = L ? 8 : 5;
+        seg(a, a + 0.26, L >= 2 ? '#fde68a' : L ? '#fef3c7' : '#e5e7eb');
+        const cell = Math.floor(u * nc), j = (u * nc) % 1;
+        if (!hit.empty && j > 0.12 && j < 0.88) seg(a + 0.09, a + 0.26, (cell + r) % (L ? 3 : 2) ? hit.t : hit.c);
+        seg(a + 0.26, a + 0.29, '#8a6a43');
+      }
+    } else if (hit.brick) { if ((u * 4) % 1 < 0.04) seg(0, 1, 'rgba(0,0,0,.14)'); seg(0.85, 1, 'rgba(0,0,0,.12)'); }
+    else if (hit.deco) seg(0, 0.12, 'rgba(255,255,255,.22)');
+    else if (hit.far) for (let r = 0; r < 3; r++) if ((u * 4) % 1 > 0.2 && (u * 4) % 1 < 0.8) seg(0.15 + r * 0.28, 0.31 + r * 0.28, '#cfe3f7');
+    seg(0, 1, 'rgba(0,0,0,' + Math.min(0.7, d / 14 + (side ? 0.15 : 0)).toFixed(2) + ')');
+  }
+  const sp = [...customers.map(c => ({ x: c.x, y: c.y, c: c.shirt, hair: c.hair, bounce: c.bounce })), ...hiredStaff.slice(1).map(q => ({ x: q.x, y: q.y, c: q.color, hair: q.hair, bounce: q.bounce }))]
+    .map(q => { const dx = q.x / TILE - px, dy = q.y / TILE - py; return { ...q, dist: Math.hypot(dx, dy), ang: Math.atan2(dy, dx) }; })
+    .sort((a, b) => b.dist - a.dist);
+  const drawSp = q => {
+    let da = q.ang - mgrAng;
+    while (da > Math.PI) da -= 2 * Math.PI;
+    while (da < -Math.PI) da += 2 * Math.PI;
+    const dd = q.dist * Math.cos(da);
+    if (Math.abs(da) > FOV / 2 + 0.3 || dd < 0.25) return;
+    const sxp = (0.5 + da / FOV) * W, h = H / dd * 0.72, w = h * 0.5, fy = HH + H * 0.45 / dd, top = fy - h;
+    const bob = Math.abs(Math.sin(q.bounce || 0)) * h * 0.02, r = h * 0.14;
+    for (let i = Math.max(0, Math.floor(sxp - w / 2)); i < Math.min(W, sxp + w / 2); i++) {
+      if (zb[i] < dd) continue;
+      const u = (i - (sxp - w / 2)) / w, du = (u - 0.5) * w;
+      x3.fillStyle = 'rgba(0,0,0,.22)'; x3.fillRect(i, fy - h * 0.02, 1, h * 0.04);
+      if ((u > 0.22 && u < 0.46) || (u > 0.54 && u < 0.78)) { x3.fillStyle = '#334155'; x3.fillRect(i, top + h * 0.72 - bob, 1, h * 0.28); }
+      if (u > 0.08 && u < 0.92) {
+        const arm = u < 0.14 || u > 0.86;
+        x3.fillStyle = q.c; x3.fillRect(i, top + h * 0.32 - bob, 1, h * (arm ? 0.34 : 0.42));
+        if (arm) { x3.fillStyle = 'rgba(0,0,0,.2)'; x3.fillRect(i, top + h * 0.32 - bob, 1, h * 0.34); }
+      }
+      if (Math.abs(du) < r) {
+        const hf = Math.sqrt(r * r - du * du), cy = top + h * 0.17 - bob;
+        x3.fillStyle = '#fde0b8'; x3.fillRect(i, cy - hf, 1, hf * 2);
+        x3.fillStyle = q.hair || '#3b2a20'; x3.fillRect(i, cy - hf, 1, hf * 0.9);
+      }
+    }
+  };
+  sp.filter(q => q.y / TILE >= 10).forEach(drawSp);   // ガラスの向こう側
+  for (let i = 0; i < W; i++) {                       // ガラス面(窓・自動ドア)
+    const g = gl[i]; if (!g) continue;
+    const h = Math.min(H * 1.5, H / g.d * 0.9), y0 = (H - h) / 2;
+    const seg = (a, b, col) => { x3.fillStyle = col; x3.fillRect(i, y0 + h * a, 1, h * (b - a)); };
+    if (g.door) {
+      seg(0.12, 1, 'rgba(170,220,250,.25)');
+      if (g.edge < 0.05) seg(0.12, 1, '#0b4a6e');
+      else if (g.seam >= 0.08 && g.seam < 0.14) seg(0.4, 0.65, '#e2e8f0');
+      seg(0, 0.12, '#26344d');
+    } else if (g.win) {
+      seg(0.06, 0.94, 'rgba(170,215,245,.22)');
+      if (g.u < 0.06 || g.u > 0.94) seg(0.06, 0.94, '#475b7a');
+      seg(0, 0.06, '#475b7a'); seg(0.94, 1, '#475b7a'); seg(0.48, 0.52, '#475b7a');
+    } else {
+      seg(0.12, 0.72, 'rgba(170,215,245,.22)');
+      if (g.u < 0.05 || g.u > 0.95) seg(0.12, 0.72, '#26344d');
+      seg(0, 0.12, '#26344d'); seg(0.72, 1, '#4a5d7a');
+    }
+  }
+  sp.filter(q => q.y / TILE < 10).forEach(drawSp);    // 店内のお客さん・スタッフ
+  x3.fillStyle = 'rgba(0,0,0,.55)'; x3.fillRect(0, H - 22, W, 22);
+  x3.fillStyle = '#fff'; x3.font = '13px sans-serif'; x3.textAlign = 'left'; x3.textBaseline = 'middle';
+  x3.fillText(`👁 店長視点 ｜ ←→回転 ↑↓移動 Vで戻る ｜ 💰¥${state.money.toLocaleString()} 客${customers.length}人 ｜ 🚪${DOOR.open > 0.5 ? '開' : '閉'}`, 8, H - 11);
+  x3.fillStyle = '#fff'; x3.fillRect(W / 2 - 1, HH - 1, 3, 3);
 }
 
 // =========================================================
@@ -3250,10 +3982,10 @@ function ensureBackyard() {
 function applyStore(sx) {
   placedObjects = sx.placedObjects; nextObjUid = sx.nextObjUid; hiredStaff = sx.hiredStaff;
   candidateList = sx.candidateList; nextStaffId = sx.nextStaffId;
-  customers = sx.customers || []; passers = sx.passers || []; dirts = sx.dirts || [];
+  customers = sx.customers || []; passers = sx.passers || []; visitors = []; dirts = sx.dirts || [];
   state.expansionLevel = sx.expansionLevel || 0;
   sign = sx.sign ? { ...sx.sign } : { text: '🏪 MY MART', color: 'auto', rank: true };
-  migrateNeighbors(); ensureBackyard(); recalcCombos(true); camHome();
+  migrateNeighbors(); clearWallColumn(); ensureBackyard(); recalcCombos(true); camHome();
 }
 function makeManager() {
   return { id: 'manager', name: 'あなた (店長)', isManager: true, level: 1, rank: 'B', trait: { name: '店長魂', desc: '給料0円で年中無休！' },
@@ -3293,17 +4025,18 @@ function setPriceNum(pid, v) {
 // =========================================================
 // 屋外エリア / お隣の店 / ブロック / 装飾 / コンボ追加
 // =========================================================
-const MAX_EXP = 4;
+const MAX_EXP = 7;
+const STORE_SIZE = ['小型店', '標準店', '中型店', '大型店', '特大店', '超大型店', 'メガストア', 'ハイパーモール'];
 function expCostOf(l) { return l === 0 ? 6000 : Math.round(15000 * Math.pow(1.7, l - 1) / 100) * 100; }
 function expReqOf(l) { return l === 0 ? 1 : Math.min(6, l + 2); }
 function inStore(gx, gy) { const b = getStoreBounds(); return gx >= b.minX && gx <= b.maxX && gy >= b.minY && gy <= b.maxY; }
 function isRoad(gy) { return gy === 11 || gy === 12; }
-function inBuilding(gx, gy) { const b = getStoreBounds(); return gx >= 0 && gx <= b.maxX && gy >= 0 && gy <= 10; }
+function inBuilding(gx, gy) { const b = getStoreBounds(); return gx >= 0 && gx <= b.maxX + 1 && gy >= 0 && gy <= 10; }
 function inYard(gx, gy) { return !inBuilding(gx, gy) && !isRoad(gy); }
 function tenantTraffic() { return Math.min(1, placedObjects.reduce((a, o) => a + (FACILITY_TYPES[o.type].traffic || 0), 0)); }
 const DECOR_BONUS = { plant: 0.15, flower: 0.12, tree: 0.10, lamp: 0.08 };
-const BUILD_ORDER = ['shelf', 'register', 'eatin', 'atm', 'decor', 'block', 'neighbor', 'fixture'];
-const BUILD_GROUP = { shelf: '🛒 商品棚（屋外もOK）', register: '🏧 店内設備', eatin: '🏧 店内設備', atm: '🏧 店内設備', decor: '🌿 装飾（屋外もOK）', block: '🧱 ブロック（屋外もOK）', neighbor: '🏘️ お隣の店（コンビニ大・芝生に建設）', fixture: '🛠️ お隣の店の内装（店の中のマスに置く）' };
+const BUILD_ORDER = ['shelf', 'register', 'eatin', 'atm', 'machine', 'decor', 'block', 'neighbor', 'fixture'];
+const BUILD_GROUP = { machine: '🎰 コイン機械（お客さんが使うと収入！）', shelf: '🛒 商品棚（屋外もOK）', register: '🏧 店内設備', eatin: '🏧 店内設備', atm: '🏧 店内設備', decor: '🌿 装飾（屋外もOK）', block: '🧱 ブロック（屋外もOK）', neighbor: '🏘️ お隣の店（コンビニ大・芝生に建設）', fixture: '🛠️ お隣の店の内装（店の中のマスに置く）' };
 Object.assign(FACILITY_TYPES, {
   shelf_vending: { type: 'shelf_vending', cat: 'shelf', prod: 'drink', name: '自動販売機', icon: '🧃', cost: 900, maxCap: 6, desc: '屋外にも置ける飲料の自販機' },
   flower: { type: 'flower', cat: 'decor', name: '花壇', icon: '🌷', cost: 350, desc: '隣の商品棚の魅力+12%' },
@@ -3314,6 +4047,7 @@ Object.assign(FACILITY_TYPES, {
   block_stone: { type: 'block_stone', cat: 'block', name: '石ブロック',     icon: '⬜', cost: 100, color: '#94a3b8', desc: '丈夫な石の壁・外構に' },
   block_wood:  { type: 'block_wood',  cat: 'block', name: '木ブロック',     icon: '🟫', cost: 80,  color: '#a16207', desc: '木の柵・テラスの囲いに' },
   block_glass: { type: 'block_glass', cat: 'block', name: 'ガラスブロック', icon: '🔷', cost: 120, color: '#7dd3fc', desc: 'おしゃれなガラスの仕切り' },
+  block_window: { type: 'block_window', cat: 'block', win: 1, name: '仕切り窓', icon: '🪟', cost: 150, color: '#bae6fd', desc: '向こうが見える窓。通れない仕切りに（3D視点でもガラス越しに見えます）' },
   block_hedge: { type: 'block_hedge', cat: 'block', name: '生垣ブロック',   icon: '🟩', cost: 90,  color: '#16a34a', desc: '緑の生垣。屋外の目隠しに' },
   tenant_bakery: { type: 'tenant_bakery', cat: 'neighbor', name: 'パン屋さん',   icon: '🥖', cost: 3500, rent: 120, traffic: 0.06, color: '#fcd34d', desc: '焼きたての香りで通行人UP' },
   tenant_cafe:   { type: 'tenant_cafe',   cat: 'neighbor', name: 'カフェ',       icon: '🍵', cost: 4200, rent: 150, traffic: 0.07, color: '#fdba74', desc: 'おしゃれカフェで人が集まる' },
@@ -3388,8 +4122,9 @@ function facilityTip(d) {
   let t = `${d.icon} ${d.name}　¥${d.cost.toLocaleString()}\n${d.desc}`;
   if (d.cat === 'shelf') t += `\n売る商品: ${products[d.prod].name}（最大${d.maxCap}個陳列）\n店内でも屋外でも置けます`;
   else if (d.cat === 'register') t += '\n店内専用。上側に店員が立つ1マスが必要です';
+  else if (d.cat === 'machine') t += `\n1回の利用 ¥${d.fee}（評判で増減）／使われると✨Pも獲得\n店内でも屋外でも置けます`;
   else if (d.cat === 'fixture') t += `\n毎週の収入 +¥${d.income}（評判で増減）／通行人 +${(d.traffic * 100).toFixed(1)}%\nお隣の店の中の床マスに置けます（金色の枠が置ける場所）`;
-  else if (d.cat === 'neighbor') t += `\n中に内装設備を置けます（クリックで床色も変更可）`;
+  else if (d.cat === 'neighbor') t += `\n中に内装設備を置けます（クリックで床色も変更可）\n通行人が入口から入店します（内装が多いほど入りやすい）`;
   if (d.cat === 'neighbor') t += `\n屋外(芝生)専用／毎週の家賃 +¥${d.rent}／通行人 +${Math.round(d.traffic * 100)}%\n店を広げて店内に入ると、返金して撤去されます`;
   else if (d.cat === 'block') t += '\n通れない壁。通路の仕切りや外構に。設備への道は塞げません';
   else if (DECOR_BONUS[d.type]) t += `\n隣の商品棚の魅力 +${Math.round(DECOR_BONUS[d.type] * 100)}%（店内・屋外OK）`;
@@ -3447,6 +4182,230 @@ document.addEventListener('mousemove', e => {
 });
 window.addEventListener('blur', () => showTip(null));
 
+// =========================================================
+// 決算レポート（ワードパッド風・左下に表示するだけ）
+// =========================================================
+const yen = n => '¥' + Math.round(n).toLocaleString();
+const sgn = n => (n >= 0 ? '+' : '-') + yen(Math.abs(n));
+function wpRow(label, val, color) { return `<div class="wp-row"><span>${label}</span><span class="dot"></span><span style="color:${color || '#000'}">${val}</span></div>`; }
+function showReport(e, promoted) {
+  const w = document.getElementById('wp-win');
+  document.getElementById('wp-title-text').textContent = `${e.m}月度決算レポート - ワードパッド`;
+  document.getElementById('wp-page').innerHTML =
+    `<div class="wp-h">＊ ${e.y}年目 ${e.m}月度 営業決算レポート ＊</div><div class="wp-hr"></div>` +
+    wpRow(`商品売上 (${e.served}人会計)`, sgn(e.rev), '#15803d') +
+    wpRow('ATM等その他収入', sgn(e.extra), '#0369a1') +
+    wpRow('商品仕入コスト', sgn(-e.cost), '#b91c1c') +
+    wpRow('スタッフ人件費', sgn(-e.wages), '#b91c1c') +
+    `<div class="wp-row wp-total"><span>今月の純利益</span><span class="dot"></span><span style="color:${e.net >= 0 ? '#15803d' : '#b91c1c'}">${sgn(e.net)}</span></div>` +
+    (promoted ? `<div class="wp-rankup">★ 店舗ランクアップ！<br>ランク ${promoted.rank}【${promoted.name}】になりました<br>雇用上限 ${promoted.maxStaff}人 ／ 新商品解放 ／ ✨+30P</div>` : '') +
+    `<div class="wp-note">※ 過去の決算は 📜メニュー → 決算履歴 で見られます</div>`;
+  document.getElementById('wp-status').textContent = `${e.y}年目 ${e.m}月 ／ 純利益 ${sgn(e.net)}`;
+  clearTimeout(wpTimer); w.classList.remove('show', 'min', 'closing'); void w.offsetWidth; w.classList.add('show');
+  document.body.classList.add('has-report');
+}
+let wpTimer = null;
+function wpClose() {
+  const w = document.getElementById('wp-win');
+  if (!w.classList.contains('show') || w.classList.contains('closing')) return;
+  document.body.classList.remove('has-report');
+  w.classList.add('closing');
+  clearTimeout(wpTimer);
+  wpTimer = setTimeout(() => w.classList.remove('show', 'closing'), 360);
+}
+function wpMin() { document.getElementById('wp-win').classList.toggle('min'); }
+function wpMax() { document.getElementById('wp-win').classList.toggle('max'); }
+
+// =========================================================
+// 巻物メニュー（履歴・商品の販売数・営業成績）
+// =========================================================
+let scrollTab = 'history', scrollIsOpen = false, scrollTimer = null;
+function openScrollMenu() {
+  if (scrollIsOpen) return closeScrollMenu();
+  scrollIsOpen = true; SFX.click();
+  const ov = document.getElementById('scroll-overlay');
+  ov.classList.remove('show', 'opening', 'closing'); void ov.offsetWidth;
+  renderScroll(true);
+  ov.classList.add('show', 'opening');
+  clearInterval(scrollTimer); scrollTimer = setInterval(() => renderScroll(false), 1000);
+}
+function closeScrollMenu() {
+  if (!scrollIsOpen) return;
+  scrollIsOpen = false; clearInterval(scrollTimer); SFX.click();
+  const ov = document.getElementById('scroll-overlay');
+  ov.classList.remove('opening'); ov.classList.add('closing');
+  setTimeout(() => { if (!scrollIsOpen) ov.classList.remove('show', 'closing'); }, 800);
+}
+function setScrollTab(t) { scrollTab = t; SFX.click(); renderScroll(true); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && scrollIsOpen) closeScrollMenu(); });
+
+function renderScroll(resetScroll) {
+  document.querySelectorAll('#scroll-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === scrollTab));
+  const body = document.getElementById('scroll-body');
+  const top = resetScroll ? 0 : body.scrollTop;
+  if (!resetScroll && scrollTab === 'settings') return;
+  body.innerHTML = scrollTab === 'settings' ? scSettings() : scrollTab === 'history' ? scHistory() : scrollTab === 'sales' ? scSales() : scStats();
+  body.scrollTop = top;
+}
+function scSettings() {
+  const card = (id, icon, name, desc) => `<button class="theme-card ${settings.theme === id ? 'on' : ''}" onclick="setTheme('${id}')"><span class="tc-icon">${icon}</span><b>${name}</b><small>${desc}</small></button>`;
+  const btn = (cls, label, js) => `<button class="kairo-btn ${cls}" style="padding:8px;width:100%;margin-top:6px" onclick="${js}">${label}</button>`;
+  return `<div class="sc-card"><div class="sc-h">💾 セーブ</div><div style="font-size:12px;line-height:1.6">8秒ごとに自動保存されています。</div>` +
+    btn('btn-blue', '💾 今すぐセーブ', "saveGame(true);this.textContent='✅ セーブしました'") +
+    btn('btn-cream', '📂 セーブの書き出し／読み込み', 'closeScrollMenu();openImportModal()') +
+    btn('btn-red', '🗑 データを消して最初から', 'closeScrollMenu();resetGame()') + `</div>` +
+    `<div class="sc-card"><div class="sc-h">🎨 UIテーマ</div><div class="theme-row">${card('modern', '✨', 'モダン', 'すっきり丸みのあるデザイン')}${card('retro', '🕹️', 'レトロ', 'カイロ風の太枠・ドット調')}</div></div>` +
+    `<div class="sc-card"><div class="sc-h">🪧 店の看板</div>` + btn('btn-gold', '🪧 看板を編集', 'closeScrollMenu();openSignEditor()') + `</div>` +
+    `<div class="sc-card"><div class="sc-h">🔊 サウンド・その他</div>` + btn('btn-cream', soundOn ? '🔊 ON（クリックでOFF）' : '🔇 OFF（クリックでON）', 'toggleSound();renderScroll(true)') +
+    (titleOpen ? '' : btn('btn-orange', '🏠 タイトルに戻る', 'closeScrollMenu();backToTitle()')) + `</div>`;
+}
+function scHistory() {
+  const h = state.history || [], ms = state.monthStats;
+  let html = `<div class="sc-card"><div class="sc-h">📅 今月ここまで（${state.year}年目 ${state.month}月 第${state.week}週）</div>` +
+    `<div class="sc-kv"><span>🛒 商品売上</span><b>${yen(ms.rev)}（${ms.served}人会計）</b></div>` +
+    `<div class="sc-kv"><span>📦 仕入コスト</span><b>${yen(ms.cost)}</b></div></div>`;
+  if (!h.length) return html + `<div class="sc-empty">まだ決算の記録がありません。<br>月末（4週ごと）に自動で記録されます。</div>`;
+  const last = h.slice(-12), mx = Math.max(1, ...last.map(x => Math.abs(x.net)));
+  html += `<div class="sc-card"><div class="sc-h">📈 純利益のうつりかわり（直近${last.length}か月）</div><div class="sc-graph">` +
+    last.map(x => `<div title="${x.y}年目${x.m}月 ${sgn(x.net)}"><i style="height:${Math.max(3, Math.abs(x.net) / mx * 62)}px;background:${x.net >= 0 ? '#2f9a47' : '#c2410c'}"></i><span>${x.m}月</span></div>`).join('') +
+    `</div></div><div class="sc-card"><div class="sc-h">🗒 月ごとの決算</div>` +
+    `<div class="sc-hrow hd"><span>年月</span><span>売上</span><span>その他</span><span>仕入</span><span>人件費</span><span>純利益</span></div>` +
+    h.slice().reverse().map(x => `<div class="sc-hrow"><span>${x.y}年目 ${x.m}月${x.rank ? ' 🎉' : ''}</span><span>${yen(x.rev)}</span><span>${yen(x.extra)}</span><span>${yen(x.cost)}</span><span>${yen(x.wages)}</span><span style="color:${x.net >= 0 ? '#15803d' : '#b91c1c'};font-weight:900">${sgn(x.net)}</span></div>`).join('') +
+    `</div>`;
+  return html;
+}
+function scSales() {
+  const sl = state.sales || {};
+  const list = Object.values(products).filter(p => (sl[p.id] && sl[p.id].qty > 0) || p.unlockRank <= state.rankIdx)
+    .map(p => ({ p, qty: (sl[p.id] || {}).qty || 0, rev: (sl[p.id] || {}).rev || 0 }))
+    .sort((a, b) => b.qty - a.qty);
+  const mx = Math.max(1, ...list.map(x => x.qty));
+  const totQ = list.reduce((a, x) => a + x.qty, 0), totR = list.reduce((a, x) => a + x.rev, 0);
+  const medal = ['🥇', '🥈', '🥉'];
+  return `<div class="sc-card"><div class="sc-h">🛒 商品が買われた数（累計）</div>` +
+    (totQ === 0 ? `<div class="sc-empty">まだ売れた商品がありません。</div>` : '') +
+    list.map((x, i) => `<div class="sc-prod"><span style="font-size:26px;text-align:center">${x.p.icon}</span><div><div class="nm"><span>${x.qty > 0 && i < 3 ? medal[i] + ' ' : ''}${x.p.name}</span></div><div class="sc-bar"><i style="width:${x.qty / mx * 100}%"></i></div></div><div class="qty">${x.qty.toLocaleString()}個<br><small style="font-weight:700;color:#7c5a2a;font-size:11px">${yen(x.rev)}</small></div></div>`).join('') +
+    `</div><div class="sc-card"><div class="sc-kv"><span>合計販売数</span><b>${totQ.toLocaleString()}個</b></div><div class="sc-kv"><span>合計売上</span><b>${yen(totR)}</b></div></div>`;
+}
+function scStats() {
+  const r = RANKS[state.rankIdx], ms = state.monthStats;
+  const months = (state.year - 1) * 12 + (state.month - 4);
+  const kv = (k, v) => `<div class="sc-kv"><span>${k}</span><b>${v}</b></div>`;
+  return `<div class="sc-card"><div class="sc-h">🏪 お店の成績</div>` +
+    kv('🏆 店舗ランク', `${r.rank}【${r.name}】`) +
+    kv('📅 いまの日付', `${state.year}年目 ${state.month}月 第${state.week}週（開店から${months}か月）`) +
+    kv('💰 累計売上', yen(state.totalRevenue)) +
+    kv('👥 来店客数（累計）', `${(state.totalCustomers || 0).toLocaleString()}人`) +
+    kv('⭐ 現在の評判', state.rating.toFixed(1)) +
+    kv('🏬 店舗数', `${stores.length}店`) +
+    kv('🧑‍🍳 店員（この店）', `${hiredStaff.length}人`) +
+    kv('✨ 発見したコーナー', `${state.discoveredCombos.size}個`) +
+    kv('💴 所持金', yen(state.money)) + kv('🔆 経営ポイント', `${state.points}P`) + `</div>` +
+    `<div class="sc-card"><div class="sc-h">📅 今月ここまで</div>` +
+    kv('🛒 商品売上', `${yen(ms.rev)}（${ms.served}人会計）`) + kv('🏧 その他収入', yen(ms.extra)) + kv('📦 仕入コスト', yen(ms.cost)) + `</div>`;
+}
+
+// =========================================================
+// 設定（UIテーマ） / タイトル画面
+// =========================================================
+// ---- コイン機械（お客さんが使うと利用料が入る） ----
+const machineFlash = new Map();
+[ // type, name, icon, cost, fee, pts, rank, color
+  ['machine_gacha', 'ガチャガチャ', '🎰', 1600, 300, 1, 1, '#fbcfe8'],
+  ['machine_copy', 'コピー機', '🖨️', 1800, 120, 1, 1, '#e2e8f0'],
+  ['machine_claw', 'クレーンゲーム機', '🧸', 2600, 220, 2, 2, '#a5f3fc'],
+  ['machine_locker', '宅配ロッカー', '🗄️', 2400, 260, 1, 2, '#bfdbfe'],
+  ['machine_photo', '証明写真機', '📸', 3200, 700, 2, 3, '#fde68a']
+].forEach(([type, name, icon, cost, fee, pts, rank, color]) => {
+  FACILITY_TYPES[type] = { type, cat: 'machine', name, icon, cost, fee, pts, rank, color, desc: `お客さんがコインを入れて使う機械。1回¥${fee}` };
+});
+COMBO_DEFS.push(
+  { id: 'gacha_c', name: 'おやつガチャ通り', a: 'machine_gacha', b: 'shelf_snack', bonusProd: ['snack'], bonus: 0.18, desc: 'ガチャ×お菓子：魅力+18%' },
+  { id: 'claw_c', name: 'ゲームコーナー', a: 'machine_claw', b: 'shelf_drink', bonusProd: ['drink', 'snack'], bonus: 0.15, desc: 'クレーン×ドリンク：魅力+15%' }
+);
+function useMachine(mc, c) {
+  const d = FACILITY_TYPES[mc.type];
+  const fee = Math.round(d.fee * (0.8 + state.rating / 10));
+  state.money += fee; state.monthStats.extra += fee; state.points += d.pts || 1;
+  mc.earned = (mc.earned || 0) + fee;
+  machineFlash.set(mc.uid, performance.now() + 600);
+  SFX.cash();
+  addFloatText(c.x, c.y - 20, `${d.icon}+¥${fee}`, '#b45309');
+  c.emote = ['🎉', '😊', '✨'][Math.floor(Math.random() * 3)]; c.emoteTimer = 1.2;
+}
+
+// ---- 右下のコインカウンター ----
+let ccShown = null, ccLast = null;
+function coinPop(diff) {
+  const box = document.getElementById('cc-pops'); if (!box || !diff) return;
+  while (box.children.length >= 6) box.removeChild(box.firstChild);
+  const s = document.createElement('span');
+  s.className = 'cc-pop ' + (diff > 0 ? 'pos' : 'neg');
+  s.textContent = (diff > 0 ? '+' : '-') + '¥' + Math.abs(diff).toLocaleString();
+  box.appendChild(s); setTimeout(() => s.remove(), 900);
+}
+function coinAnim() {
+  const el = document.getElementById('cc-val'); if (!el) return;
+  const m = state.money;
+  if (ccShown === null) ccShown = m;
+  const diff = m - ccShown;
+  ccShown += Math.abs(diff) < 1 ? diff : diff * 0.18;
+  const txt = '¥' + Math.round(ccShown).toLocaleString();
+  if (el.textContent !== txt) el.textContent = txt;
+  el.parentElement.classList.toggle('minus', m < 0);
+}
+function coinTrack() {
+  if (ccLast !== null && state.money !== ccLast) coinPop(state.money - ccLast);
+  ccLast = state.money;
+}
+
+const SETTINGS_KEY = 'mycombini_settings';
+const settings = { theme: 'modern' };
+try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) {}
+function applyTheme() {
+  document.body.classList.toggle('theme-retro', settings.theme === 'retro');
+  document.body.classList.toggle('theme-modern', settings.theme !== 'retro');
+  setTimeout(layoutUI, 0);
+}
+function setTheme(t) {
+  settings.theme = t === 'retro' ? 'retro' : 'modern';
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+  applyTheme(); SFX.place(); if (scrollIsOpen && scrollTab === 'settings') renderScroll(true); else openSettings();
+}
+function openSettings() {
+  const card = (id, icon, name, desc) => `<button class="theme-card ${settings.theme === id ? 'on' : ''}" onclick="setTheme('${id}')"><span class="tc-icon">${icon}</span><b>${name}</b><small>${desc}</small></button>`;
+  openModal('⚙ 設定', `
+    <div class="set-h">🎨 UIテーマ</div>
+    <div class="theme-row">${card('modern', '✨', 'モダン', 'すっきり丸みのあるデザイン')}${card('retro', '🕹️', 'レトロ', 'カイロ風の太枠・ドット調')}</div>
+    <div class="set-h">🔊 サウンド</div>
+    <button class="kairo-btn btn-cream" style="padding:8px" onclick="toggleSound(); openSettings()">${soundOn ? '🔊 ON（クリックでOFF）' : '🔇 OFF（クリックでON）'}</button>
+    ${titleOpen ? '' : '<button class="kairo-btn btn-orange" style="padding:8px" onclick="closeModal(); backToTitle()">🏠 タイトルに戻る</button>'}
+    <button class="kairo-btn btn-blue" style="padding:8px" onclick="closeModal()">✔ 閉じる</button>`);
+}
+let titleOpen = true, titleBusy = false;
+function updateTitleInfo(loaded) {
+  const el = document.getElementById('title-save');
+  if (el) el.textContent = loaded ? `💾 セーブデータあり ／ ${state.year}年目 ${state.month}月 ／ 💰¥${state.money.toLocaleString()}` : '✨ 新しい経営がはじまります';
+}
+function startFromTitle() {
+  if (!titleOpen || titleBusy) return;
+  titleBusy = true; titleOpen = false; initAudio(); SFX.fanfare();
+  const t = document.getElementById('title-screen');
+  t.classList.remove('entering'); t.classList.add('leaving');
+  setTimeout(() => { t.classList.remove('show', 'leaving'); titleBusy = false; }, 700);
+}
+function backToTitle() {
+  if (titleOpen || titleBusy) return;
+  saveGame(); cancelBuildMode(); closeInspector();
+  titleOpen = true; updateTitleInfo(true); SFX.door();
+  const t = document.getElementById('title-screen');
+  t.classList.remove('leaving'); t.classList.add('show', 'entering');
+}
+document.addEventListener('keydown', e => {
+  if (titleOpen && e.key === 'Enter' && e.target.tagName !== 'BUTTON' && !document.getElementById('modal-backdrop').classList.contains('show')) { e.preventDefault(); startFromTitle(); }
+});
+applyTheme();
+
 // 初期化実行
 initDefaultStore();
 refreshCandidates(true);
@@ -3457,6 +4416,8 @@ loadGame().then(loaded => {
   updateHUD();
   refreshAllTabs();
   if (loaded) setTicker('💾 前回のセーブデータから再開しました！');
+  updateTitleInfo(loaded);
+  ccShown = null; ccLast = null;
   requestAnimationFrame(gameLoop);
 });
 </script>
