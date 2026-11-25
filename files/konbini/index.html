@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>開拓！マイコンビニDX - カイロ風経営シミュレーション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="ms-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap">
 <style>
   :root {
     --bg-outer: #2c2638;
@@ -790,6 +793,33 @@ body.theme-retro .coin-counter{padding:6px 16px 6px 8px}
 .scroll-overlay.closing{animation:scFadeC .7s ease-in both}
 .scroll-overlay.closing .scroll-win{animation:scWinC .8s cubic-bezier(.5,0,.8,.4) both}
 .scroll-overlay.closing .scroll-paper{animation:scPaperC .8s cubic-bezier(.5,0,.8,.4) both}
+/* ===== MOD v3 ===== */
+.ms{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;font-size:1.2em;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;vertical-align:-.22em;font-feature-settings:'liga';-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;user-select:none}
+.title-float .ms{font-size:1em}
+.blk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.item-card.blk{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 6px}
+.blk-thumb{width:56px;height:56px;border-radius:8px;box-shadow:0 0 0 2px var(--border-dark),0 3px 0 rgba(0,0,0,.3);background:#ddd}
+.blk-desc{font-size:10px;color:var(--text-muted);line-height:1.35;min-height:2.7em}
+.item-card.blk .kairo-btn{width:100%}
+.item-card.blk.locked .blk-thumb{filter:grayscale(.7) brightness(.8)}
+.gfx-set{display:flex;flex-direction:column;gap:6px}
+.gfx-row{display:flex;flex-wrap:wrap;gap:6px}
+.gfx-note{font-size:11px;color:var(--text-muted);line-height:1.5}
+.gfx-tg{display:grid;grid-template-columns:1fr auto;grid-template-areas:"a c" "b c";align-items:center;column-gap:8px;text-align:left;border:2px solid var(--border-dark);border-radius:10px;background:#efe6d0;padding:6px 10px;cursor:pointer;font-family:inherit;color:var(--text-main)}
+.gfx-tg b{grid-area:a;font-size:12px}
+.gfx-tg small{grid-area:b;font-size:10px;color:var(--text-muted);line-height:1.35}
+.gfx-tg i{grid-area:c;font-style:normal;font-weight:900;font-size:11px;padding:3px 10px;border-radius:999px;background:#9ca3af;color:#fff}
+.gfx-tg.on i{background:var(--accent-green)}
+/* スマホ専用: ブロックカードを大きく・押しやすく */
+@media (max-width:760px){
+  .blk-grid{gap:10px}
+  .blk-thumb{width:76px;height:76px;border-radius:10px;box-shadow:0 0 0 3px #0c0804,0 4px 0 rgba(0,0,0,.45)}
+  .item-card.blk{padding:10px 6px}
+  .item-card.blk .card-name{font-size:13px}
+  .item-card.blk .kairo-btn{min-height:42px;font-size:13px}
+  .blk-desc{font-size:10.5px}
+  .gfx-tg{padding:9px 10px}
+}
 </style>
 </head>
 <body>
@@ -972,7 +1002,7 @@ function dockW() { const d = document.getElementById('side-dock'); return d && !
 function camHome() { cam.needHome = true; }
 function resizeCanvas() {
   const r = canvas.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = PERF.dpr();
   const w = Math.max(200, Math.round(r.width * dpr)), h = Math.max(150, Math.round(r.height * dpr));
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   cam.dpr = dpr;
@@ -1897,7 +1927,7 @@ function tryEnterCustomerFromPasser(p) {
   const atmObj = placedObjects.find(o => o.type === 'atm');
   const wantsAtm = atmObj && Math.random() < 0.25;
   const macs = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'machine');
-  const machineUid = macs.length && Math.random() < Math.min(0.75, 0.3 + macs.length * 0.1) ? macs[Math.floor(Math.random() * macs.length)].uid : null;
+  const machineUid = macs.length && Math.random() < Math.min(0.75 + 0.03 * (machUpg.mu_ad || 0), 0.3 + macs.length * 0.1 + 0.06 * (machUpg.mu_ad || 0)) ? macs[Math.floor(Math.random() * macs.length)].uid : null;
 
   const doorX = Math.random() < 0.5 ? 5 : 6;
   const cust = {
@@ -2548,12 +2578,12 @@ function draw() {
   // 1. 地面・道路・店内床（上下左右に無限）
   const gx0 = vx0 * TILE, gw = (vx1 - vx0 + 1) * TILE;
   ctx.fillStyle = '#86efac'; ctx.fillRect(gx0, vy0 * TILE, gw, (vy1 - vy0 + 1) * TILE);
-  if ((vx1 - vx0) * (vy1 - vy0) < 3000) {
+  if (PERF.q() >= 1 && (vx1 - vx0) * (vy1 - vy0) < 3000) {
     for (let y = vy0; y <= vy1; y++) for (let x = vx0; x <= vx1; x++) {
       if (isRoad(y) || inBuilding(x, y)) continue;
       const px = x * TILE, py = y * TILE;
       if ((x + y) % 2 === 0) { ctx.fillStyle = '#4ade80'; ctx.fillRect(px, py, TILE, TILE); }
-      if ((x * 7 + y * 13) % 9 === 0) { ctx.fillStyle = '#22c55e'; ctx.fillRect(px + 12, py + 14, 6, 6); }
+      if (PERF.q() >= 2 && (x * 7 + y * 13) % 9 === 0) { ctx.fillStyle = '#22c55e'; ctx.fillRect(px + 12, py + 14, 6, 6); }
     }
   }
   ctx.fillStyle = '#d6d3d1'; ctx.fillRect(gx0, 11 * TILE, gw, TILE);
@@ -2565,7 +2595,7 @@ function draw() {
     const px = x * TILE, py = y * TILE;
     if (inStore(x, y)) {
       ctx.fillStyle = (x + y) % 2 === 0 ? '#fffbeb' : '#fef3c7'; ctx.fillRect(px, py, TILE, TILE);
-      ctx.strokeStyle = 'rgba(180, 140, 80, 0.12)'; ctx.strokeRect(px, py, TILE, TILE);
+      if (PERF.q() >= 2) { ctx.strokeStyle = 'rgba(180, 140, 80, 0.12)'; ctx.strokeRect(px, py, TILE, TILE); }
     } else {
       ctx.fillStyle = '#475569'; ctx.fillRect(px, py, TILE, TILE);
       ctx.fillStyle = '#334155'; ctx.fillRect(px, py + TILE - 6, TILE, 6);
@@ -2619,7 +2649,7 @@ function draw() {
   // 特売中のぼり旗（店外入口横）
   const hasSale = Object.values(products).some(p => p.onSale);
   if (hasSale) {
-    const wave = Math.sin(performance.now() / 180) * 3;
+    const wave = Math.sin(performance.now() / 180) * (settings.fxAmbient === false ? 0 : 3);
     ctx.fillStyle = '#78350f';
     ctx.fillRect(4 * TILE + 12, 10.1 * TILE, 3, 34);
     ctx.fillStyle = '#ef4444';
@@ -2914,11 +2944,15 @@ function drawFacility(obj) {
     ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath();
     ctx.moveTo(px + TILE / 2, py + 3); ctx.lineTo(px + TILE / 2, py + TILE - 3); ctx.moveTo(px + 3, py + TILE / 2); ctx.lineTo(px + TILE - 3, py + TILE / 2); ctx.stroke();
   } else if (def.cat === 'block') {
+    const bi = BLK.img(def.type.slice(6), BLK.mob(), BLK.hi());
+    if (bi) ctx.drawImage(bi, px, py, TILE, TILE);
+    else {
     ctx.fillStyle = def.color; ctx.fillRect(px, py, TILE, TILE);
     ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 2; ctx.strokeRect(px + 1, py + 1, TILE - 2, TILE - 2);
     ctx.beginPath(); ctx.moveTo(px, py + TILE / 2); ctx.lineTo(px + TILE, py + TILE / 2);
     ctx.moveTo(px + TILE / 2, py); ctx.lineTo(px + TILE / 2, py + TILE / 2);
     ctx.moveTo(px + TILE / 4, py + TILE / 2); ctx.lineTo(px + TILE / 4, py + TILE); ctx.stroke();
+    }
   } else if (def.cat === 'neighbor') {
     const W = NB_W * TILE, H = NB_H * TILE, n2 = NB_W * 2, fl = FLOOR_THEMES[floorOf(obj)];
     ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(px + 4, py + 6, W, H);
@@ -2936,16 +2970,7 @@ function drawFacility(obj) {
     ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(def.icon, px + TILE / 2, py + TILE / 2 - 1);
     if (def.blink) { ctx.fillStyle = Math.floor(performance.now() / 300 + obj.uid) % 2 ? '#f43f5e' : '#facc15'; ctx.fillRect(px + TILE - 12, py + 5, 5, 5); }
   } else if (def.cat === 'machine') {
-    const fl = (machineFlash.get(obj.uid) || 0) > performance.now();
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(px + 5, py + 7, TILE - 8, TILE - 9);
-    ctx.fillStyle = def.color; ctx.fillRect(px + 3, py + 2, TILE - 6, TILE - 7);
-    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.strokeRect(px + 3, py + 2, TILE - 6, TILE - 7);
-    ctx.fillStyle = fl ? '#fef08a' : '#0f172a'; ctx.fillRect(px + 7, py + 6, TILE - 14, 14);
-    ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000';
-    ctx.fillText(def.icon, px + TILE / 2, py + 13);
-    ctx.fillStyle = '#1e293b'; ctx.fillRect(px + 10, py + 25, TILE - 20, 6);
-    ctx.fillStyle = Math.floor(performance.now() / 400 + obj.uid) % 2 ? '#f43f5e' : '#facc15'; ctx.fillRect(px + TILE - 11, py + 24, 4, 4);
-    if (fl) ctx.fillText('🪙', px + TILE / 2, py - 4);
+    drawMachine(obj, def, px, py);
   } else if (def.cat === 'decor' && def.type !== 'plant') {
     ctx.font = '24px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000';
     ctx.fillText(def.icon, px + TILE / 2, py + TILE / 2);
@@ -3149,7 +3174,7 @@ function openInspector(obj) {
       <button class="kairo-btn btn-blue" style="width:100%; margin-bottom:5px;" onclick="cycleFloor(${obj.uid})">🎨 床の色を変える</button>
       <button class="kairo-btn btn-green" style="width:100%; margin-bottom:5px;" onclick="switchDockById('build'); closeInspector();">🛠 内装を置く（建築タブの下の方）</button>`;
   } else if (def.cat === 'machine') {
-    extra = `<div style="font-size:12px; margin:4px 0;">1回の利用 <b>¥${def.fee}</b>（評判で増減）<br>🪙 この機械の累計収入 <b>¥${(obj.earned || 0).toLocaleString()}</b></div>`;
+    extra = machInspectorHtml(obj);
   } else if (def.cat === 'fixture') {
     extra =`<div style="font-size:12px; margin:4px 0;">内装収入 毎週 <b>+¥${fxIncome(obj)}</b>（評判で増減）</div>`;
   }
@@ -3193,7 +3218,7 @@ function removeObject(uid) {
   if (def.cat === 'shelf' && obj.stock > 0) {
     products[def.prod].stock += obj.stock;
   }
-  let refund = Math.floor(def.cost * 0.5);
+  let refund = Math.floor(def.cost * 0.5) + (def.cat === 'machine' ? Math.floor((obj.invested || 0) * 0.5) : 0);
   if (def.cat === 'neighbor') { const fx = placedObjects.filter(q => hostedBy(obj, q)); fx.forEach(q => { refund += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }); placedObjects = placedObjects.filter(q => !fx.includes(q)); }
   state.money += refund;
   placedObjects.splice(placedObjects.indexOf(obj), 1);
@@ -3245,8 +3270,9 @@ function renderBuildTab() {
   document.getElementById('build-chips').innerHTML = BUILD_CHIPS.map(([k, n]) => `<button class="kairo-btn ${buildF.cat === k ? 'btn-orange' : 'btn-cream'}" style="padding:4px 8px;font-size:11px" onclick="buildF.cat='${k}';renderBuildTab()">${n}</button>`).join('');
   document.getElementById('build-ok').checked = buildF.ok;
   const qy = buildF.q.trim().toLowerCase();
-  let html = '', lastGrp = '', shown = 0;
-  Object.values(FACILITY_TYPES).sort((a, b) => BUILD_ORDER.indexOf(a.cat) - BUILD_ORDER.indexOf(b.cat)).forEach(def => {
+  let html = '', lastGrp = '', shown = 0, inGrid = false;
+  if (buildF.cat === 'machine' && !qy) html += machUpgHtml();
+  Object.values(FACILITY_TYPES).sort((a, b) => (BUILD_ORDER.indexOf(a.cat) - BUILD_ORDER.indexOf(b.cat)) || (a.cat === b.cat && (a.cat === 'machine' || a.cat === 'block') ? ((a.rank || 0) - (b.rank || 0) || a.cost - b.cost) : 0)).forEach(def => {
     if (def.cat === 'backyard') return;
     const chip = ['register', 'eatin', 'atm'].includes(def.cat) ? 'register' : def.cat;
     if (buildF.cat !== 'all' && chip !== buildF.cat) return;
@@ -3256,22 +3282,11 @@ function renderBuildTab() {
     if (buildF.ok && (locked || state.money < def.cost)) return;
     shown++;
     const grp = BUILD_GROUP[def.cat];
-    if (grp !== lastGrp) { lastGrp = grp; html += `<div class="ribbon-title" style="font-size:12px;"><span>${grp}</span></div>`; }
+    if (grp !== lastGrp) { lastGrp = grp; if (inGrid) { html += '</div>'; inGrid = false; } html += `<div class="ribbon-title" style="font-size:12px;"><span>${grp}</span></div>`; if (def.cat === 'block') { html += '<div class="blk-grid">'; inGrid = true; } }
     const reqRank = RANKS[needR].rank;
-    html += `
-      <div class="item-card ${locked ? 'locked' : ''}" ${tipAttr(facilityTip(def))}>
-        <div class="card-top">
-          <span class="card-name">${def.icon} ${def.name}</span>
-          <span style="font-weight:900; color:#b45309; font-size:12px;">¥${def.cost.toLocaleString()}</span>
-        </div>
-        <div style="font-size:11px; color:var(--text-muted);">${def.desc}</div>
-        ${locked
-          ? `<div style="font-size:11px; font-weight:800; color:#e5484d;">🔒 店舗ランク ${reqRank} で開放</div>`
-          : `<button class="kairo-btn btn-orange" onclick="startBuildMode('${def.type}')" ${state.money < def.cost ? 'disabled' : ''}>📍 設置場所を選ぶ</button>`
-        }
-      </div>
-    `;
+    html += buildCardHtml(def, locked, reqRank);
   });
+  if (inGrid) html += '</div>';
   if (!shown) html = `<div style="padding:14px;text-align:center;font-size:12px;color:var(--text-muted)">該当する設備がありません。絞込をゆるめてみてください</div>`;
   document.getElementById('build-list').innerHTML = html;
 }
@@ -3758,13 +3773,14 @@ let lastT = performance.now();
 let uiTimer = 0;
 
 function gameLoop(now) {
+  PERF.tick(now - lastT);
   const rawDt = Math.min(0.05, (now - lastT) / 1000);
   lastT = now;
 
   if (!state.paused && !titleOpen) {
     // 高速時はサブステップに分割して、移動や判定が飛ばないようにする
     const total = rawDt * state.speed;
-    const steps = Math.max(1, Math.ceil(total / 0.05));
+    const steps = Math.max(1, Math.min(8, Math.ceil(total / PERF.stepDt()))), _t0 = performance.now();
     const dt = total / steps;
     for (let s = 0; s < steps; s++) {
       updateStaffAI(dt);
@@ -3774,6 +3790,8 @@ function gameLoop(now) {
       updateRoleEffects(dt);
       updateCalendarAndEconomy(dt);
     }
+    PERF.simMs = PERF.simMs * 0.85 + (performance.now() - _t0) * 0.15;
+    if (PERF.simMs > 9) PERF.slow = true; else if (PERF.simMs < 5) PERF.slow = false;
 
     for (let i = floatingTexts.length - 1; i >= 0; i--) {
       floatingTexts[i].y -= 22 * rawDt;
@@ -3782,7 +3800,7 @@ function gameLoop(now) {
     }
 
     uiTimer += rawDt;
-    if (uiTimer >= 0.35) {
+    if (uiTimer >= PERF.uiInt()) {
       uiTimer = 0;
       updateHUD();
       // 価格タブはスライダー操作を阻害しないよう在庫数とラベルのみ更新、他タブも必要な時だけ更新
@@ -3800,14 +3818,14 @@ function gameLoop(now) {
 
   updateDoor(rawDt);
   coinAnim();
-  view3D ? draw3D() : draw();
+  if (PERF.shouldDraw()) { view3D ? draw3D() : draw(); }
   requestAnimationFrame(gameLoop);
 }
 
 let lastSig = '';
 function tabSig() {
   const a = state.activeDock, m = state.money, pt = state.points;
-  if (a === 'build') return [state.rankIdx, ...Object.values(FACILITY_TYPES).map(d => m >= d.cost ? 1 : 0)].join('');
+  if (a === 'build') return [state.rankIdx, ...Object.values(FACILITY_TYPES).map(d => m >= d.cost ? 1 : 0), ...Object.values(MACH_UPG).map(u => (machUpg[u.id] || 0) + (m >= machUpgCost(u) ? 'y' : 'n'))].join('');
   if (a === 'back') return [state.rankIdx, ...Object.values(BACK_EQUIP).map(e => (equipLv[e.id] || 0) + (m >= equipUpCost(e) ? 'y' : 'n'))].join('');
   if (a === 'staff') return [state.rankIdx, hiredStaff.length, candidateList.length, ...candidateList.map(c => m >= c.hireCost ? 1 : 0), ...hiredStaff.map(x => pt >= 10 + x.level * 5 ? 1 : 0)].join('');
   return [state.rankIdx, Math.floor(state.totalRevenue / 100), m >= 6000 ? 1 : 0, m >= 15000 ? 1 : 0, pt >= 25 ? 1 : 0, Math.ceil(state.campaignTimer), state.discoveredCombos.size, state.expansionLevel].join('|');
@@ -3839,7 +3857,7 @@ function idbOp(mode, fn) {
 }
 function snapshot() {
   return JSON.parse(JSON.stringify({
-    v: 2, savedAt: Date.now(), curStore,
+    v: 3, savedAt: Date.now(), curStore,
     stores: (packStore(), stores.map(sx => ({ name: sx.name, sign: sx.sign, expansionLevel: sx.expansionLevel, nextObjUid: sx.nextObjUid, nextStaffId: sx.nextStaffId, candidateList: sx.candidateList, placedObjects: sx.placedObjects.map(o => ({ ...o, queue: [] })), hiredStaff: sx.hiredStaff.map(x => ({ ...x, path: [], carry: null, targetObjId: null })) }))),
     state: { ...state, discoveredCombos: [...state.discoveredCombos], buildMode: null, selectedObjId: null },
     placedObjects: placedObjects.map(o => ({ ...o, queue: [] })),
@@ -3847,7 +3865,7 @@ function snapshot() {
     hiredStaff: hiredStaff.map(s => ({ ...s, path: [], carry: null, targetObjId: null })),
     candidateList, nextStaffId,
     products: Object.fromEntries(Object.values(products).map(p => [p.id, { price: p.price, quality: p.quality, stock: p.stock, onSale: p.onSale }])),
-    equipLv, soundOn
+    equipLv, machUpg, soundOn
   }));
 }
 async function saveGame(manual = false) {
@@ -3866,7 +3884,7 @@ async function saveGame(manual = false) {
 async function loadGame() {
   try {
     let d = await idbOp('readonly', s => s.get(SAVE_KEY));
-    d = normalizeSave(d);
+    const _raw = d; d = normalizeSave(d); await backupOld(_raw, d);
     if (!d || d.v < 1) return false;
     Object.assign(state, d.state, { discoveredCombos: new Set(d.state.discoveredCombos || []), buildMode: null, selectedObjId: null, paused: false, activeDock: 'build' });
     placedObjects = d.placedObjects.filter(o => FACILITY_TYPES[o.type]).map(o => ({ ...o, queue: [] }));
@@ -3884,6 +3902,7 @@ async function loadGame() {
     }
     Object.entries(d.products || {}).forEach(([id, v]) => { if (products[id]) Object.assign(products[id], v); });
     Object.assign(equipLv, d.equipLv || {});
+    Object.assign(machUpg, d.machUpg || {});
     if (typeof d.soundOn === 'boolean') soundOn = d.soundOn;
     ensureBackyard();
     recalcCombos(true);
@@ -3913,7 +3932,7 @@ function normalizeSave(d) {
   d.placedObjects = objs(d.placedObjects); d.hiredStaff = staff(d.hiredStaff);
   d.nextObjUid = Math.max(d.nextObjUid || 1, nextUid(d.placedObjects)); d.nextStaffId = nextSid(d.hiredStaff, d.nextStaffId);
   d.candidateList = Array.isArray(d.candidateList) ? d.candidateList : [];
-  d.products = d.products || {}; d.equipLv = d.equipLv || {};
+  d.products = d.products || {}; d.equipLv = d.equipLv || {}; d.machUpg = (d.machUpg && typeof d.machUpg === 'object') ? d.machUpg : {};
   if (Array.isArray(d.stores) && d.stores.length) {
     d.stores = d.stores.map(sx => { const po = objs(sx.placedObjects), hs = staff(sx.hiredStaff);
       return { name: '店', expansionLevel: 0, candidateList: [], ...sx, placedObjects: po, hiredStaff: hs, nextObjUid: Math.max(sx.nextObjUid || 1, nextUid(po)), nextStaffId: nextSid(hs, sx.nextStaffId) }; });
@@ -4631,6 +4650,544 @@ document.addEventListener('keydown', e => {
 });
 applyTheme();
 
+// =========================================================
+// MOD v3: 品質/エフェクト設定・10倍速最適化・ブロック質感・機械拡張・Material Symbols
+// =========================================================
+(function () {
+  const D = { quality: 'auto', fxFloat: true, fxMachine: true, fxAmbient: true, fxBlock: true, fastDraw: true, useSymbols: true, blockStyle: 'auto' };
+  for (const k in D) if (!(k in settings)) settings[k] = D[k];
+})();
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {} }
+
+// ---------- 描画品質・パフォーマンス ----------
+const PERF = {
+  ms: false, auto: 2, frameMs: 16.7, simMs: 0, slow: false, _n: 0, _t: 0, _good: 0, _mob: null,
+  isMobile() { if (this._mob === null) this._mob = matchMedia('(max-width:760px)').matches || matchMedia('(pointer:coarse)').matches; return this._mob; },
+  q() { const s = settings.quality; return s === 'high' ? 2 : s === 'mid' ? 1 : s === 'low' ? 0 : this.auto; },
+  dpr() { const r = window.devicePixelRatio || 1, q = this.q(); return q >= 2 ? Math.min(r, 2) : q === 1 ? Math.min(r, 1.5) : 1; },
+  stepDt() { return [0.1, 0.07, 0.05][this.q()] * (this.slow ? 1.8 : 1); },
+  uiInt() { return state.speed >= 5 ? 0.8 : 0.35; },
+  orbGap() { const q = this.q(); return (q === 0 ? 50 : q === 1 ? 33 : 0) + (settings.fxAmbient === false ? 33 : 0); },
+  tick(ms) {
+    if (ms > 250 || ms <= 0) return;
+    this.frameMs = this.frameMs * 0.92 + ms * 0.08; this._t += ms;
+    if (this._t < 2000) return;
+    this._t = 0;
+    if (settings.quality !== 'auto') return;
+    const max = this.isMobile() ? 1 : 2;
+    if (this.frameMs > 26 && this.auto > 0) { this.auto--; this._good = 0; BLK.clear(); }
+    else if (this.frameMs < 18.5 && this.auto < max) { if (++this._good >= 4) { this.auto++; this._good = 0; BLK.clear(); } }
+    else this._good = 0;
+  },
+  shouldDraw() {
+    if (!settings.fastDraw || state.paused || titleOpen) return true;
+    const sp = state.speed; let k = sp >= 10 ? 3 : sp >= 5 ? 2 : 1;
+    if (this.q() === 0 && sp >= 3) k = Math.max(k, 2);
+    this._n++; return k === 1 || this._n % k === 0;
+  }
+};
+PERF.auto = PERF.isMobile() ? 1 : 2;
+window.addEventListener('resize', () => { PERF._mob = null; BLK.clear(); });
+
+// 経路探索: 通行不可マスをキャッシュして高速化（旧実装は毎マス全設備を走査していた）
+const WK = (x, y) => (x + 4096) * 8192 + (y + 4096);
+let _wg = { arr: null, sig: 0, set: null };
+function walkSet() {
+  const arr = placedObjects; let s = arr.length;
+  for (let i = 0; i < arr.length; i++) { const o = arr[i]; s = (Math.imul(s, 31) + (o.uid | 0) * 7 + o.x * 131 + o.y * 17) | 0; }
+  if (_wg.set && _wg.arr === arr && _wg.sig === s) return _wg.set;
+  const set = new Set();
+  for (const o of arr) { const f = fpOf(o.type); for (let x = o.x; x < o.x + f.w; x++) for (let y = o.y; y < o.y + f.h; y++) set.add(WK(x, y)); }
+  _wg = { arr, sig: s, set }; return set;
+}
+function walkAt(gx, gy, b, set, ex) {
+  if (gy === 11 || gy === 12) return true;
+  if ((gx === 5 || gx === 6) && gy === 10) return true;
+  const blockedEx = ex && ex.x === gx && ex.y === gy;
+  if (!(gx >= 0 && gx <= b.maxX + 1 && gy >= 0 && gy <= 10)) return !blockedEx && !set.has(WK(gx, gy));
+  if (gx < b.minX || gx > b.maxX || gy < b.minY || gy > b.maxY) return false;
+  return !blockedEx && !set.has(WK(gx, gy));
+}
+isWalkableForPath = function (gx, gy, ex) { return walkAt(gx, gy, getStoreBounds(), walkSet(), ex); };
+const _bfs = { st: new Uint32Array(0), par: new Int32Array(0), q: new Int32Array(0), gen: 0 };
+findPath = function (sx, sy, gx, gy) {
+  if (sx === gx && sy === gy) return [];
+  const M = 24, bx0 = Math.min(sx, gx) - M, by0 = Math.min(sy, gy) - M;
+  const W = Math.max(sx, gx) + M - bx0 + 1, H = Math.max(sy, gy) + M - by0 + 1, N = W * H;
+  if (_bfs.st.length < N) { _bfs.st = new Uint32Array(N); _bfs.par = new Int32Array(N); _bfs.q = new Int32Array(N); _bfs.gen = 0; }
+  const gen = ++_bfs.gen, st = _bfs.st, par = _bfs.par, q = _bfs.q, set = walkSet(), b = getStoreBounds();
+  const s0 = (sx - bx0) * H + (sy - by0), g0 = (gx - bx0) * H + (gy - by0);
+  st[s0] = gen; par[s0] = -1; q[0] = s0;
+  let qh = 0, qt = 1, found = false;
+  while (qh < qt) {
+    const c = q[qh++];
+    if (c === g0) { found = true; break; }
+    const cx = (c / H) | 0, cy = c - cx * H;
+    for (let d = 0; d < 4; d++) {
+      const nx = cx + (d === 1 ? 1 : d === 3 ? -1 : 0), ny = cy + (d === 0 ? 1 : d === 2 ? -1 : 0);
+      if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+      const ni = nx * H + ny;
+      if (st[ni] === gen) continue;
+      if (ni === g0 || walkAt(nx + bx0, ny + by0, b, set, null)) { st[ni] = gen; par[ni] = c; q[qt++] = ni; }
+    }
+  }
+  if (!found) return [];
+  const path = []; let cur = g0;
+  while (cur !== s0) { const cx = (cur / H) | 0, cy = cur - cx * H, tx = cx + bx0, ty = cy + by0; path.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2, tx, ty }); cur = par[cur]; }
+  return path.reverse();
+};
+// 浮き文字は設定と負荷に応じて間引く
+const _addFloatText = addFloatText;
+addFloatText = function (...a) {
+  if (settings.fxFloat === false) return;
+  if (floatingTexts.length > (PERF.q() === 0 ? 8 : 28)) return;
+  if (state.speed >= 5 && Math.random() < 0.6) return;
+  _addFloatText.apply(this, a);
+};
+
+// ---------- ブロック: 1個ずつ専用の質感（スマホは太枠・高コントラストの専用スタイル） ----------
+function mkRng(s) { s = s >>> 0 || 1; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
+function blkFrame(g, S, o, hi, lo) {
+  const u = S / 40, t = (o.m ? 2.4 : 1.4) * u;
+  g.fillStyle = hi || 'rgba(255,255,255,.4)'; g.fillRect(0, 0, S, t); g.fillRect(0, 0, t, S);
+  g.fillStyle = lo || 'rgba(0,0,0,.35)'; g.fillRect(0, S - t, S, t); g.fillRect(S - t, 0, t, S);
+  const w = (o.m ? 2.6 : 1.5) * u;
+  g.lineWidth = w; g.strokeStyle = o.m ? 'rgba(12,8,4,.9)' : 'rgba(12,8,4,.55)';
+  g.strokeRect(w / 2, w / 2, S - w, S - w);
+}
+const BLK_PAINT = {
+  brick(g, S, o) {
+    const u = S / 40, R = mkRng(11), rows = 4, bh = S / rows, pal = ['#c2410c', '#b8400d', '#d2551b', '#a93a0c', '#c9501a'];
+    g.fillStyle = '#6b2a12'; g.fillRect(0, 0, S, S);
+    for (let r = 0; r < rows; r++) {
+      const off = r % 2 ? S / 4 : 0;
+      for (let c = -1; c < 2; c++) {
+        const x = c * S / 2 + off, y = r * bh, w = S / 2, m = 1.1 * u;
+        g.fillStyle = pal[(R() * 5) | 0]; g.fillRect(x + m, y + m, w - 2 * m, bh - 2 * m);
+        g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(x + m, y + m, w - 2 * m, 1.3 * u);
+        g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x + m, y + bh - m - 1.3 * u, w - 2 * m, 1.3 * u);
+        if (o.h && !o.m) for (let k = 0; k < 3; k++) { g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x + m + R() * (w - 4 * m), y + m + R() * (bh - 4 * m), 1.4 * u, 1.4 * u); }
+      }
+    }
+    blkFrame(g, S, o);
+  },
+  stone(g, S, o) {
+    const u = S / 40, R = mkRng(23), gr = g.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, '#b9c3d1'); gr.addColorStop(1, '#7a8697'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.strokeStyle = 'rgba(30,41,59,.6)'; g.lineWidth = (o.m ? 2.2 : 1.3) * u; g.lineCap = 'round'; g.beginPath();
+    g.moveTo(0, S * .46); g.lineTo(S * .5, S * .52); g.lineTo(S, S * .45); g.moveTo(S * .5, S * .52); g.lineTo(S * .46, S); g.moveTo(S * .3, 0); g.lineTo(S * .33, S * .46); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.3)';
+    [[.08, .08, .2, .14], [.6, .06, .3, .16], [.08, .58, .28, .2], [.55, .6, .34, .18]].forEach(([a, b, w, h]) => { g.beginPath(); g.ellipse((a + w / 2) * S, (b + h / 2) * S, w * S / 2, h * S / 2, 0, 0, 7); g.fill(); });
+    if (o.h && !o.m) { g.strokeStyle = 'rgba(30,41,59,.3)'; g.lineWidth = u * .8; for (let i = 0; i < 4; i++) { const x = R() * S, y = R() * S; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (R() - .5) * 10 * u, y + R() * 8 * u); g.stroke(); } }
+    blkFrame(g, S, o);
+  },
+  wood(g, S, o) {
+    const u = S / 40, R = mkRng(5), n = 5, ph = S / n;
+    for (let i = 0; i < n; i++) {
+      g.fillStyle = i % 2 ? '#b7791f' : '#a16207'; g.fillRect(0, i * ph, S, ph);
+      g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(0, i * ph, S, 1.2 * u);
+      g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(0, (i + 1) * ph - 1.4 * u, S, 1.4 * u);
+      if (o.h) { g.strokeStyle = 'rgba(60,30,0,.28)'; g.lineWidth = .8 * u; for (let k = 0; k < 2; k++) { const y = i * ph + ph * (.3 + .35 * k); g.beginPath(); g.moveTo(R() * 8 * u, y); g.bezierCurveTo(S * .3, y - 2 * u, S * .6, y + 2 * u, S - R() * 8 * u, y); g.stroke(); } }
+      g.fillStyle = '#3f2a0a'; [3.5 * u, S - 3.5 * u].forEach(x => { g.beginPath(); g.arc(x, i * ph + ph / 2, 1.1 * u, 0, 7); g.fill(); });
+    }
+    blkFrame(g, S, o, 'rgba(255,230,170,.35)');
+  },
+  glass(g, S, o) {
+    const u = S / 40, gr = g.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, '#e0f7ff'); gr.addColorStop(1, '#7dd3fc'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.moveTo(S * .12, S * .9); g.lineTo(S * .5, S * .1); g.lineTo(S * .64, S * .1); g.lineTo(S * .26, S * .9); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.3)'; g.beginPath(); g.moveTo(S * .7, S * .9); g.lineTo(S * .9, S * .5); g.lineTo(S * .95, S * .5); g.lineTo(S * .76, S * .9); g.fill();
+    g.strokeStyle = '#0ea5e9'; g.lineWidth = (o.m ? 4 : 2.6) * u; g.strokeRect(2 * u, 2 * u, S - 4 * u, S - 4 * u);
+    blkFrame(g, S, o, 'rgba(255,255,255,.5)', 'rgba(3,105,161,.4)');
+  },
+  hedge(g, S, o) {
+    const u = S / 40, R = mkRng(31), cols = ['#15803d', '#16a34a', '#22c55e', '#166534'];
+    g.fillStyle = '#14532d'; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < (o.h ? 46 : 22); i++) { g.fillStyle = cols[(R() * 4) | 0]; g.beginPath(); g.arc(R() * S, R() * S, (3 + R() * 4.5) * u, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(255,255,255,.14)'; for (let i = 0; i < 10; i++) { g.beginPath(); g.arc(R() * S, R() * S * .6, 1.6 * u, 0, 7); g.fill(); }
+    if (o.h) { g.fillStyle = '#fda4af'; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(R() * S, R() * S, 1.3 * u, 0, 7); g.fill(); } }
+    blkFrame(g, S, o, 'rgba(190,255,200,.25)', 'rgba(0,30,10,.4)');
+  },
+  window(g, S, o) {
+    const u = S / 40, gr = g.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, '#e0f2fe'); gr.addColorStop(1, '#93c5fd'); g.fillStyle = '#64748b'; g.fillRect(0, 0, S, S);
+    g.fillStyle = gr; g.fillRect(3 * u, 3 * u, S - 6 * u, S - 6 * u);
+    g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.moveTo(7 * u, S - 6 * u); g.lineTo(18 * u, 4 * u); g.lineTo(25 * u, 4 * u); g.lineTo(14 * u, S - 6 * u); g.fill();
+    g.strokeStyle = '#475569'; g.lineWidth = 2 * u; g.beginPath(); g.moveTo(S / 2, 3 * u); g.lineTo(S / 2, S - 3 * u); g.moveTo(3 * u, S / 2); g.lineTo(S - 3 * u, S / 2); g.stroke();
+    blkFrame(g, S, o);
+  },
+  concrete(g, S, o) {
+    const u = S / 40, R = mkRng(41);
+    g.fillStyle = '#a8aeb8'; g.fillRect(0, 0, S, S); g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(0, 0, S, S / 2);
+    if (o.h) for (let i = 0; i < 60; i++) { g.fillStyle = R() > .5 ? 'rgba(0,0,0,.12)' : 'rgba(255,255,255,.16)'; g.fillRect(R() * S, R() * S, 1.2 * u, 1.2 * u); }
+    g.strokeStyle = 'rgba(40,50,65,.45)'; g.lineWidth = 1.2 * u; g.beginPath(); g.moveTo(0, S / 2); g.lineTo(S, S / 2); g.moveTo(S / 2, 0); g.lineTo(S / 2, S); g.stroke();
+    g.fillStyle = '#4b5563'; [[6, 6], [34, 6], [6, 34], [34, 34]].forEach(([x, y]) => { g.beginPath(); g.arc(x * u, y * u, 1.6 * u, 0, 7); g.fill(); });
+    blkFrame(g, S, o);
+  },
+  marble(g, S, o) {
+    const u = S / 40, gr = g.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#cfd8e3'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.strokeStyle = 'rgba(100,116,139,.55)'; g.lineWidth = (o.m ? 1.8 : 1.1) * u; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(0, S * .3); g.bezierCurveTo(S * .3, S * .2, S * .5, S * .6, S, S * .5); g.stroke();
+    g.lineWidth = .7 * u; g.beginPath(); g.moveTo(S * .2, S); g.bezierCurveTo(S * .3, S * .7, S * .6, S * .8, S * .8, S * .45); g.stroke();
+    if (o.h) { g.beginPath(); g.moveTo(S * .5, 0); g.bezierCurveTo(S * .6, S * .2, S * .4, S * .3, S * .7, S * .4); g.stroke(); }
+    g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(S * .1, S * .08, S * .35, 1.6 * u);
+    g.strokeStyle = '#d4a017'; g.lineWidth = (o.m ? 3 : 2) * u; g.strokeRect(2.5 * u, 2.5 * u, S - 5 * u, S - 5 * u);
+    blkFrame(g, S, o);
+  },
+  iron(g, S, o) {
+    const u = S / 40, bw = (o.m ? 3.6 : 2.6) * u, n = 5;
+    g.fillStyle = 'rgba(15,23,42,.16)'; g.fillRect(0, 0, S, S); g.fillStyle = '#1f2937';
+    for (let i = 0; i < n; i++) { const x = (i + .5) * S / n - bw / 2; g.fillRect(x, 6 * u, bw, S - 6 * u); g.beginPath(); g.moveTo(x - .6 * u, 6 * u); g.lineTo(x + bw / 2, .5 * u); g.lineTo(x + bw + .6 * u, 6 * u); g.fill(); }
+    g.fillStyle = '#374151'; g.fillRect(0, S * .28, S, 3.4 * u); g.fillRect(0, S * .72, S, 3.4 * u);
+    g.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < n; i++) g.fillRect((i + .5) * S / n - bw / 2, 6 * u, .9 * u, S - 8 * u);
+    g.strokeStyle = 'rgba(12,8,4,.5)'; g.lineWidth = u; g.strokeRect(.5 * u, .5 * u, S - u, S - u);
+  },
+  bamboo(g, S, o) {
+    const u = S / 40, n = 4, w = S / n;
+    g.fillStyle = '#d9f99d'; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < n; i++) {
+      const x = i * w, gr = g.createLinearGradient(x, 0, x + w, 0);
+      gr.addColorStop(0, '#4d7c0f'); gr.addColorStop(.45, '#84cc16'); gr.addColorStop(1, '#3f6212'); g.fillStyle = gr; g.fillRect(x + u, 0, w - 2 * u, S);
+      g.fillStyle = 'rgba(20,40,0,.5)'; [.22, .55, .85].forEach(f => g.fillRect(x + .5 * u, S * ((f + i * .13) % 1), w - u, 1.6 * u));
+    }
+    g.fillStyle = '#92400e'; g.fillRect(0, S * .3, S, 3 * u); g.fillRect(0, S * .7, S, 3 * u);
+    g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(0, S * .3, S, u); g.fillRect(0, S * .7, S, u);
+    blkFrame(g, S, o, 'rgba(230,255,170,.3)', 'rgba(20,40,0,.4)');
+  },
+  ice(g, S, o) {
+    const u = S / 40, gr = g.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, '#f0f9ff'); gr.addColorStop(1, '#7dd3fc'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = (o.m ? 1.8 : 1.1) * u; g.beginPath();
+    g.moveTo(S * .1, S * .2); g.lineTo(S * .45, S * .5); g.lineTo(S * .4, S * .9); g.moveTo(S * .45, S * .5); g.lineTo(S * .9, S * .35); g.stroke();
+    g.fillStyle = '#fff'; [[.72, .7], [.2, .75], [.8, .15]].forEach(([x, y]) => { g.beginPath(); g.moveTo(x * S, (y - .07) * S); g.lineTo((x + .02) * S, y * S); g.lineTo(x * S, (y + .07) * S); g.lineTo((x - .02) * S, y * S); g.fill(); });
+    blkFrame(g, S, o, 'rgba(255,255,255,.7)', 'rgba(3,105,161,.35)');
+  },
+  mossy(g, S, o) {
+    BLK_PAINT.stone(g, S, o);
+    const u = S / 40, R = mkRng(7);
+    for (let i = 0; i < (o.h ? 14 : 7); i++) { g.fillStyle = i % 2 ? '#4d7c0f' : '#65a30d'; g.beginPath(); g.arc(R() * S, R() < .6 ? R() * S * .35 : R() * S, (2 + R() * 4) * u, 0, 7); g.fill(); }
+  },
+  neon(g, S, o) {
+    const u = S / 40;
+    g.fillStyle = '#0b1020'; g.fillRect(0, 0, S, S);
+    const line = (c, inset, w) => { g.strokeStyle = c; g.lineWidth = w * u; if (o.h) { g.shadowColor = c; g.shadowBlur = 6 * u; } g.strokeRect(inset * u, inset * u, S - 2 * inset * u, S - 2 * inset * u); g.shadowBlur = 0; };
+    line('#f0abfc', 4, o.m ? 3 : 2); line('#22d3ee', 10, o.m ? 2.4 : 1.4);
+    g.strokeStyle = 'rgba(125,211,252,.6)'; g.lineWidth = 1.2 * u; g.beginPath(); g.moveTo(10 * u, S - 10 * u); g.lineTo(S - 10 * u, 10 * u); g.stroke();
+    blkFrame(g, S, o, 'rgba(255,255,255,.12)', 'rgba(0,0,0,.5)');
+  },
+  gold(g, S, o) {
+    const u = S / 40, gr = g.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, '#fef08a'); gr.addColorStop(.5, '#eab308'); gr.addColorStop(1, '#a16207'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.strokeStyle = 'rgba(113,63,18,.45)'; g.lineWidth = (o.m ? 1.6 : 1) * u; g.beginPath();
+    for (let i = -4; i <= 8; i++) { g.moveTo(i * S / 4, 0); g.lineTo(i * S / 4 + S, S); g.moveTo(i * S / 4, S); g.lineTo(i * S / 4 + S, 0); } g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.moveTo(S * .05, S * .35); g.lineTo(S * .3, S * .05); g.lineTo(S * .45, S * .05); g.lineTo(S * .2, S * .35); g.fill();
+    g.strokeStyle = '#854d0e'; g.lineWidth = (o.m ? 3 : 2) * u; g.strokeRect(2 * u, 2 * u, S - 4 * u, S - 4 * u);
+    blkFrame(g, S, o, 'rgba(255,255,220,.55)', 'rgba(70,30,0,.45)');
+  }
+};
+const BLK = {
+  c: {}, u: {},
+  mob() { return settings.blockStyle === 'mobile' || (settings.blockStyle !== 'pc' && PERF.isMobile()); },
+  hi() { return settings.fxBlock !== false && PERF.q() >= 1; },
+  clear() { this.c = {}; this.u = {}; },
+  img(t, m, h) {
+    const k = t + (m ? 'm' : 'd') + (h ? 'h' : 'l');
+    if (this.c[k]) return this.c[k];
+    const p = BLK_PAINT[t]; if (!p) return null;
+    const S = h ? 80 : 40, c = document.createElement('canvas'); c.width = c.height = S;
+    p(c.getContext('2d'), S, { m, h });
+    return (this.c[k] = c);
+  },
+  url(t) {
+    const k = t + (this.mob() ? 'm' : 'd');
+    if (this.u[k]) return this.u[k];
+    const i = this.img(t, this.mob(), true); return i ? (this.u[k] = i.toDataURL()) : null;
+  }
+};
+// 新ブロック
+[ // type, name, icon, cost, rank, color, desc
+  ['block_concrete', 'コンクリブロック', '🧱', 60, 0, '#a8aeb8', 'ざっくり頑丈な壁。コスパ重視の仕切りに'],
+  ['block_mossy', '苔むした石', '🧱', 110, 0, '#6b8e4e', 'しっとり古びた石垣。庭や外構に'],
+  ['block_bamboo', '竹垣ブロック', '🧱', 100, 1, '#84cc16', '和風の竹垣。テラスや入口まわりに'],
+  ['block_iron', '鉄柵ブロック', '🧱', 160, 1, '#374151', '向こうが見える鉄の柵。通れない仕切りに'],
+  ['block_ice', '氷ブロック', '🧱', 140, 1, '#bae6fd', 'きらきら透き通る氷の壁'],
+  ['block_marble', '大理石ブロック', '🧱', 260, 2, '#e2e8f0', '高級感のある白い大理石'],
+  ['block_neon', 'ネオンブロック', '🧱', 320, 2, '#0b1020', '夜に映える光る壁。ゲーセン風の外構に'],
+  ['block_gold', '黄金ブロック', '🧱', 600, 3, '#eab308', 'ぴかぴかの黄金の壁。成功の証！']
+].forEach(([type, name, icon, cost, rank, color, desc]) => { FACILITY_TYPES[type] = { type, cat: 'block', name, icon, cost, rank, color, desc }; });
+
+// ---------- 機械: 大量追加・レベル強化・全体アップグレード ----------
+[ // type, name, icon, cost, fee, pts, rank, color, desc
+  ['machine_fortune', 'おみくじ機', '🔮', 1200, 140, 1, 0, '#e9d5ff', '100円で今日の運勢。つい引きたくなる'],
+  ['machine_ticket', '食券機', '🎫', 1500, 130, 1, 0, '#fecaca', 'ボタンを押すだけの手軽な収入源'],
+  ['machine_change', '両替機', '💴', 1300, 110, 1, 0, '#bbf7d0', '小銭が足りないお客さんの味方'],
+  ['machine_massage', 'マッサージチェア', '💺', 2200, 200, 1, 1, '#fed7aa', '買い物帰りにひと休み'],
+  ['machine_charge', '充電スタンド', '🔋', 1500, 110, 1, 1, '#d9f99d', 'スマホの充電待ちで滞在アップ'],
+  ['machine_scale', 'ヘルスメーター', '⚖', 1700, 120, 1, 1, '#e2e8f0', '体重と血圧をぱっとチェック'],
+  ['machine_coffeevm', 'カップコーヒー機', '☕', 2000, 170, 1, 1, '#fde68a', '挽きたての香りの一杯'],
+  ['machine_icecream', 'ソフトクリーム機', '🍦', 3000, 280, 2, 2, '#fbcfe8', 'くるくる巻ける夏の人気者'],
+  ['machine_sticker', 'シール印刷機', '🖼', 2800, 380, 2, 2, '#fce7f3', '写真をシールにできる'],
+  ['machine_lottery', 'くじ引き機', '🎟', 2600, 240, 2, 2, '#fecdd3', 'ガラガラ回して当たりを狙え'],
+  ['machine_laundry', 'コインランドリー', '🧺', 3600, 430, 2, 3, '#bae6fd', '待ち時間に商品も買ってくれる'],
+  ['machine_karaoke', 'ミニカラオケ', '🎤', 5800, 800, 3, 4, '#c7d2fe', '1曲200円。ストレス発散'],
+  ['machine_vr', 'VR体験機', '🥽', 7200, 1100, 3, 4, '#a5f3fc', '最新VRで大人気'],
+  ['machine_robot', 'ロボットバリスタ', '🤖', 9000, 1500, 4, 5, '#ddd6fe', '24時間ラテアートを描くロボ'],
+  ['machine_drone', 'ドローン配送ポート', '🚁', 12000, 2000, 4, 6, '#99f6e4', '未来の宅配。収入も未来級']
+].forEach(([type, name, icon, cost, fee, pts, rank, color, desc]) => {
+  FACILITY_TYPES[type] = { type, cat: 'machine', name, icon, cost, fee, pts, rank, color, desc: desc + `（1回¥${fee}）` };
+});
+COMBO_DEFS.push(
+  { id: 'ice_m', name: 'ソフトクリーム広場', a: 'machine_icecream', b: 'shelf_cake', bonusProd: ['cake', 'ice'], bonus: 0.18, desc: 'ソフト機×ケーキ：魅力+18%' },
+  { id: 'massage_c', name: 'くつろぎマッサージ', a: 'machine_massage', b: 'shelf_coffee', bonusProd: ['coffee'], bonus: 0.18, desc: 'マッサージ×コーヒー：魅力+18%' },
+  { id: 'laundry_c', name: 'ランドリー日用品', a: 'machine_laundry', b: 'shelf_daily', bonusProd: ['daily'], bonus: 0.2, desc: 'ランドリー×日用品：魅力+20%' },
+  { id: 'fortune_c', name: 'おみくじ縁日', a: 'machine_fortune', b: 'shelf_snack', bonusProd: ['snack'], bonus: 0.15, desc: 'おみくじ×お菓子：魅力+15%' },
+  { id: 'vr_c', name: 'VR体験ゾーン', a: 'machine_vr', b: 'shelf_drink', bonusProd: ['drink', 'snack'], bonus: 0.2, desc: 'VR×ドリンク：魅力+20%' },
+  { id: 'charge_c', name: '充電ラウンジ', a: 'machine_charge', b: 'shelf_coffee', bonusProd: ['coffee'], bonus: 0.15, desc: '充電×コーヒー：魅力+15%' }
+);
+const machUpg = {};
+const MACH_LV_MULT = [1, 1.35, 1.75, 2.25, 3];
+const MACH_UPG = {
+  mu_coin: { id: 'mu_coin', name: 'コイン投入口の改良', icon: '🪙', base: 1500, rank: 0, max: 10, desc: '全機械の利用料が上がる（+8% / Lv）', eff: l => `利用料 +${l * 8}%` },
+  mu_ad: { id: 'mu_ad', name: '筐体ラッピング広告', icon: '📣', base: 1800, rank: 1, max: 8, desc: '機械を使うお客さんが増える（+6% / Lv）', eff: l => `利用率 +${l * 6}%` },
+  mu_chain: { id: 'mu_chain', name: '連続プレイ割引券', icon: '🎫', base: 2400, rank: 1, max: 5, desc: '使った後にもう1台使う確率（+10% / Lv）', eff: l => `連続利用 ${l * 10}%` },
+  mu_point: { id: 'mu_point', name: 'ポイントカード連携', icon: '💳', base: 2600, rank: 2, max: 5, desc: '2Lvごとに利用時の経営Pが+1', eff: l => `経営P +${Math.floor(l / 2)}` },
+  mu_lucky: { id: 'mu_lucky', name: 'ジャックポット演出', icon: '🎰', base: 3600, rank: 2, max: 5, desc: '利用料が5倍になる大当たり（2% / Lv）', eff: l => `大当たり ${l * 2}%` },
+  mu_vip: { id: 'mu_vip', name: '高級筐体リニューアル', icon: '💎', base: 5200, rank: 3, max: 5, desc: '評判による料金補正を底上げ（+0.03 / Lv）', eff: l => `評判補正 +${(l * 0.03).toFixed(2)}` }
+};
+const machUpgCost = u => Math.round(u.base * Math.pow(1.55, machUpg[u.id] || 0) / 50) * 50;
+function buyMachUpg(id) {
+  const u = MACH_UPG[id], lv = machUpg[id] || 0;
+  if (!u || lv >= u.max || state.rankIdx < u.rank) return;
+  const c = machUpgCost(u);
+  if (state.money < c) { SFX.angry(); return setTicker('⚠️ アップグレード費用が足りません！'); }
+  state.money -= c; machUpg[id] = lv + 1; SFX.combo();
+  setTicker(`🔧 ${u.name} Lv.${lv + 1}！（${u.eff(lv + 1)}）`);
+  renderBuildTab(); updateHUD();
+}
+function machUpgHtml() {
+  let h = `<div class="ribbon-title" style="font-size:12px;"><span>🔧 機械アップグレード</span><span>全機械に効果</span></div>`;
+  Object.values(MACH_UPG).forEach(u => {
+    const lv = machUpg[u.id] || 0, locked = state.rankIdx < u.rank, mx = lv >= u.max, c = machUpgCost(u);
+    h += `<div class="item-card ${locked ? 'locked' : ''} ${lv > 0 ? 'eq-owned' : ''}">
+      <div class="card-top"><span class="card-name">${u.icon} ${u.name} <span class="badge" style="background:#fef08a;">Lv.${lv}/${u.max}</span></span>${mx ? '' : `<span style="font-weight:900;color:#b45309;font-size:12px;">¥${c.toLocaleString()}</span>`}</div>
+      <div style="font-size:11px;color:var(--text-muted);">${u.desc}</div>
+      <div style="font-size:12px;font-weight:800;color:#15803d;">現在: ${lv ? u.eff(lv) : 'なし'}${mx ? '（最大）' : ` → Lv.${lv + 1}: ${u.eff(lv + 1)}`}</div>
+      ${locked ? `<div style="font-size:11px;font-weight:800;color:#e5484d;">🔒 店舗ランク ${RANKS[u.rank].rank} で開放</div>`
+        : mx ? '' : `<button class="kairo-btn btn-green" onclick="buyMachUpg('${u.id}')" ${state.money < c ? 'disabled' : ''}>⬆ アップグレード</button>`}
+    </div>`;
+  });
+  return h;
+}
+const machLvCost = mc => Math.round(FACILITY_TYPES[mc.type].cost * 0.55 * Math.pow(1.7, (mc.lv || 1) - 1) / 10) * 10;
+function machFee(mc) {
+  const d = FACILITY_TYPES[mc.type], lv = Math.min(5, mc.lv || 1);
+  return Math.round(d.fee * (0.8 + state.rating / 10 + 0.03 * (machUpg.mu_vip || 0)) * MACH_LV_MULT[lv - 1] * (1 + 0.08 * (machUpg.mu_coin || 0)));
+}
+function upgradeMachine(uid) {
+  const mc = placedObjects.find(o => o.uid === uid); if (!mc) return;
+  const lv = mc.lv || 1; if (lv >= 5) return;
+  const c = machLvCost(mc);
+  if (state.money < c) { SFX.angry(); return setTicker('⚠️ 強化費用が足りません！'); }
+  state.money -= c; mc.lv = lv + 1; mc.invested = (mc.invested || 0) + c; SFX.combo();
+  setTicker(`⬆ ${FACILITY_TYPES[mc.type].name} が Lv.${mc.lv} になりました！利用料アップ！`);
+  machineFlash.set(mc.uid, performance.now() + 600);
+  openInspector(mc); updateHUD();
+}
+function machInspectorHtml(obj) {
+  const lv = obj.lv || 1;
+  let h = `<div style="font-size:12px; margin:4px 0;">Lv.<b>${lv}</b>/5 ｜ 1回の利用 <b>¥${machFee(obj).toLocaleString()}</b>（評判で増減）<br>🪙 この機械の累計収入 <b>¥${(obj.earned || 0).toLocaleString()}</b></div>`;
+  if (lv < 5) { const c = machLvCost(obj); h += `<button class="kairo-btn btn-green" style="width:100%; margin-bottom:5px;" onclick="upgradeMachine(${obj.uid})" ${state.money < c ? 'disabled' : ''}>⬆ 強化 Lv.${lv + 1}（¥${c.toLocaleString()}）利用料 ×${MACH_LV_MULT[lv]}</button>`; }
+  else h += `<div style="font-size:12px;font-weight:800;color:#b45309;margin-bottom:4px;">✨ 最大レベル！</div>`;
+  return h;
+}
+useMachine = function (mc, c) {
+  const d = FACILITY_TYPES[mc.type];
+  let fee = machFee(mc), jp = false;
+  if (Math.random() < 0.02 * (machUpg.mu_lucky || 0)) { fee *= 5; jp = true; }
+  const pts = (d.pts || 1) + ((mc.lv || 1) >= 3 ? 1 : 0) + Math.floor((machUpg.mu_point || 0) / 2);
+  state.money += fee; state.monthStats.extra += fee; state.points += pts;
+  mc.earned = (mc.earned || 0) + fee;
+  machineFlash.set(mc.uid, performance.now() + 600);
+  SFX.cash();
+  addFloatText(c.x, c.y - 20, `${jp ? '🎰大当たり!' : d.icon}+¥${fee}`, jp ? '#dc2626' : '#b45309');
+  c.emote = ['🎉', '😊', '✨'][Math.floor(Math.random() * 3)]; c.emoteTimer = 1.2;
+  if (Math.random() < 0.1 * (machUpg.mu_chain || 0)) {
+    const others = placedObjects.filter(o => o.uid !== mc.uid && FACILITY_TYPES[o.type].cat === 'machine');
+    if (others.length) c.machineUid = others[Math.floor(Math.random() * others.length)].uid;
+  }
+};
+function drawMachine(obj, def, px, py) {
+  const now = performance.now(), fe = machineFlash.get(obj.uid) || 0, fl = fe > now, lv = obj.lv || 1, q = PERF.q(), fx = settings.fxMachine !== false;
+  if (fx && q >= 1 && lv >= 3) { ctx.fillStyle = lv >= 5 ? 'rgba(250,204,21,.28)' : 'rgba(125,211,252,.22)'; ctx.fillRect(px - 2, py - 2, TILE + 4, TILE + 4); }
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(px + 5, py + 7, TILE - 8, TILE - 9);
+  if (q >= 2) { const g = ctx.createLinearGradient(px, py, px, py + TILE); g.addColorStop(0, '#ffffff'); g.addColorStop(0.18, def.color); g.addColorStop(1, def.color); ctx.fillStyle = g; } else ctx.fillStyle = def.color;
+  ctx.fillRect(px + 3, py + 2, TILE - 6, TILE - 7);
+  ctx.strokeStyle = lv >= 5 ? '#b45309' : '#1e293b'; ctx.lineWidth = lv >= 5 ? 2.5 : 2; ctx.strokeRect(px + 3, py + 2, TILE - 6, TILE - 7);
+  ctx.fillStyle = fl ? '#fef08a' : '#0f172a'; ctx.fillRect(px + 7, py + 6, TILE - 14, 14);
+  ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = fl ? '#78350f' : '#e2e8f0'; ctx.fillText(def.icon, px + TILE / 2, py + 13);
+  ctx.fillStyle = '#1e293b'; ctx.fillRect(px + 10, py + 25, TILE - 20, 6);
+  ctx.fillStyle = Math.floor(now / 400 + obj.uid) % 2 ? '#f43f5e' : '#facc15'; ctx.fillRect(px + TILE - 11, py + 24, 4, 4);
+  ctx.fillStyle = lv >= 5 ? '#facc15' : '#fbbf24'; for (let i = 0; i < lv; i++) ctx.fillRect(px + 6 + i * 6, py + TILE - 7, 4, 4);
+  if (fl) {
+    ctx.fillStyle = '#b45309'; ctx.fillText('🪙', px + TILE / 2, py - 4);
+    if (fx && q >= 1) { const t = (fe - now) / 600; for (let k = 0; k < 3; k++) { ctx.fillStyle = `rgba(250,204,21,${t.toFixed(2)})`; ctx.beginPath(); ctx.arc(px + 10 + k * 10, py + 8 - (1 - t) * 22 - k * 3, 2.5, 0, 7); ctx.fill(); } }
+  }
+}
+function buildCardHtml(def, locked, reqRank) {
+  const btn = locked ? `<div style="font-size:11px; font-weight:800; color:#e5484d;">🔒 店舗ランク ${reqRank} で開放</div>`
+    : `<button class="kairo-btn btn-orange" onclick="startBuildMode('${def.type}')" ${state.money < def.cost ? 'disabled' : ''}>📍 設置場所を選ぶ</button>`;
+  if (def.cat === 'block') {
+    const u = BLK.url(def.type.slice(6));
+    return `<div class="item-card blk ${locked ? 'locked' : ''}" ${tipAttr(facilityTip(def))}>${u ? `<img class="blk-thumb" alt="" src="${u}">` : `<span class="blk-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px">${def.icon}</span>`}<span class="card-name">${def.name}</span><span style="font-weight:900; color:#b45309; font-size:12px;">¥${def.cost.toLocaleString()}</span><div class="blk-desc">${def.desc}</div>${btn}</div>`;
+  }
+  return `<div class="item-card ${locked ? 'locked' : ''}" ${tipAttr(facilityTip(def))}>
+    <div class="card-top"><span class="card-name">${def.icon} ${def.name}</span><span style="font-weight:900; color:#b45309; font-size:12px;">¥${def.cost.toLocaleString()}</span></div>
+    <div style="font-size:11px; color:var(--text-muted);">${def.desc}</div>${btn}</div>`;
+}
+
+// ---------- 設定画面（品質・エフェクト） ----------
+function gfxSettingsHtml() {
+  const chip = (k, v, label) => `<button class="kairo-btn ${settings[k] === v ? 'btn-orange' : 'btn-cream'}" style="padding:6px 10px" onclick="setGfx('${k}','${v}')">${label}</button>`;
+  const tg = (k, label, desc) => `<button class="gfx-tg ${settings[k] !== false ? 'on' : ''}" onclick="toggleGfx('${k}')"><b>${label}</b><small>${desc}</small><i>${settings[k] !== false ? 'ON' : 'OFF'}</i></button>`;
+  const names = ['軽量', '標準', '高'];
+  return `<div class="gfx-set"><div class="set-h">🖥 描画品質</div>
+    <div class="gfx-row">${chip('quality', 'auto', '自動')}${chip('quality', 'high', '高')}${chip('quality', 'mid', '標準')}${chip('quality', 'low', '軽量')}</div>
+    <div class="gfx-note">現在: ${names[PERF.q()]}${settings.quality === 'auto' ? '（重くなると自動で下げます）' : ''}／重い端末は「軽量」がおすすめ</div>
+    <div class="set-h">✨ エフェクト</div>
+    ${tg('fastDraw', '高速時の描画間引き', '5倍速・10倍速で画面更新を減らして軽くする')}
+    ${tg('fxFloat', '収入の浮き文字', '+¥ などの表示。OFFで軽くなる')}
+    ${tg('fxMachine', '機械の光とコイン演出', 'レベルの輝きとコインが跳ねる演出')}
+    ${tg('fxAmbient', '背景のアニメ', 'ゲージの波・のぼり旗などの動き')}
+    ${tg('fxBlock', 'ブロックの質感', 'レンガの凹凸・木目などの細かい描き込み')}
+    ${tg('useSymbols', 'アイコンをGoogleフォントに', '絵文字を Material Symbols に置き換え（再読み込みで完全反映）')}
+    <div class="set-h">🧱 ブロックの見た目</div>
+    <div class="gfx-row">${chip('blockStyle', 'auto', '自動')}${chip('blockStyle', 'mobile', 'スマホ向け')}${chip('blockStyle', 'pc', 'PC向け')}</div>
+    <div class="gfx-note">スマホ向け: 太い枠とくっきりした色で小さい画面でも見分けやすく</div></div>`;
+}
+function gfxRefresh() { lastSig = ''; if (scrollIsOpen && scrollTab === 'settings') renderScroll(true); else openSettings(); }
+function setGfx(k, v) { settings[k] = v; saveSettings(); BLK.clear(); gfxRefresh(); }
+function toggleGfx(k) { settings[k] = settings[k] === false; saveSettings(); BLK.clear(); if (k === 'fxFloat' && !settings[k]) floatingTexts.length = 0; gfxRefresh(); }
+const _openSettings = openSettings;
+openSettings = function () {
+  _openSettings();
+  const body = document.getElementById('modal-body'); if (!body) return;
+  const w = document.createElement('div'); w.innerHTML = gfxSettingsHtml();
+  body.insertBefore(w, body.lastElementChild);
+};
+const _scSettings = scSettings;
+scSettings = function () { return _scSettings() + `<div class="sc-card">${gfxSettingsHtml()}</div>`; };
+
+// ---------- 旧バージョンの引き継ぎ ----------
+async function backupOld(raw, d) {
+  try {
+    if (!raw || !d) return;
+    const v = raw.v || 1; if (v >= 3) return;
+    window._migratedFrom = v;
+    const key = 'backup_v' + v, ex = await idbOp('readonly', s => s.get(key));
+    if (!ex) await idbOp('readwrite', s => s.put(raw, key));
+  } catch (e) {}
+}
+async function collectLegacy() {
+  const found = [], looks = v => { try { const d = typeof v === 'string' ? JSON.parse(v) : v; return d && typeof d === 'object' && (d.state || d.placedObjects || typeof d.money === 'number') ? d : null; } catch (e) { return null; } };
+  try { for (let i = 0; i < localStorage.length; i++) { const d = looks(localStorage.getItem(localStorage.key(i))); if (d) found.push({ d }); } } catch (e) {}
+  try {
+    const dbs = indexedDB.databases ? await indexedDB.databases() : [];
+    for (const info of dbs) {
+      if (!info.name) continue;
+      const db = await new Promise((res, rej) => { const r = indexedDB.open(info.name); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+      for (const sn of [...db.objectStoreNames]) {
+        const items = await new Promise(res => { const out = [], rq = db.transaction(sn).objectStore(sn).openCursor(); rq.onsuccess = e => { const c = e.target.result; if (c) { out.push(c.value); c.continue(); } else res(out); }; rq.onerror = () => res(out); });
+        items.forEach(v => { const d = looks(v); if (d) found.push({ d }); });
+      }
+      db.close();
+    }
+  } catch (e) {}
+  return found;
+}
+async function legacyOffer() {
+  try {
+    const f = await collectLegacy(); if (!f.length) return;
+    const mny = d => (d.state && d.state.money) ?? d.money ?? 0;
+    f.sort((a, b) => ((b.d.savedAt || 0) - (a.d.savedAt || 0)) || (mny(b.d) - mny(a.d)));
+    window._legacyAuto = f[0].d;
+    const el = document.getElementById('title-save'); if (!el) return;
+    el.innerHTML = `<button class="title-btn" style="margin-top:6px" onclick="importData(window._legacyAuto)">🔄 旧バージョンのデータを引き継ぐ（所持金 ¥${mny(f[0].d).toLocaleString()}）</button>`;
+  } catch (e) {}
+}
+
+// ---------- 絵文字 → Google Material Symbols ----------
+const EMO_MAP = {
+  '✨': 'auto_awesome', '⚠': 'warning', '💰': 'savings', '🎉': 'celebration', '🏪': 'storefront', '🏭': 'factory', '☕': 'coffee', '🏧': 'local_atm', '🔊': 'volume_up', '🏗': 'construction',
+  '🛒': 'shopping_cart', '📦': 'inventory_2', '📣': 'campaign', '💾': 'save', '👥': 'group', '🗑': 'delete', '🛠': 'build', '📢': 'campaign', '🏆': 'emoji_events', '🪙': 'paid',
+  '🥤': 'local_drink', '🍱': 'bento', '🍰': 'cake', '📅': 'calendar_month', '🪧': 'signpost', '✅': 'check_circle', '🌿': 'eco', '💢': 'mood_bad', '🎨': 'palette', '🏬': 'store',
+  '👁': 'visibility', '✖': 'close', '🍙': 'rice_bowl', '🍪': 'cookie', '🍗': 'kebab_dining', '🍦': 'icecream', '📚': 'menu_book', '⚙': 'settings', '📜': 'receipt_long', '🧴': 'sanitizer',
+  '🔥': 'local_fire_department', '💳': 'credit_card', '🔒': 'lock', '🥖': 'bakery_dining', '💊': 'medication', '😊': 'sentiment_satisfied', '🌳': 'park', '🚚': 'local_shipping', '🎰': 'casino', '🧱': 'grid_view',
+  '⭐': 'star', '🔇': 'volume_off', '📥': 'download', '🕹': 'sports_esports', '☀': 'wb_sunny', '⏸': 'pause', '📋': 'assignment', '📊': 'bar_chart', '▶': 'play_arrow', '🍜': 'ramen_dining',
+  '🥪': 'lunch_dining', '🍢': 'dinner_dining', '🥗': 'nutrition', '🪑': 'chair', '🍳': 'egg_alt', '🎖': 'military_tech', '💪': 'fitness_center', '💇': 'content_cut', '🎮': 'sports_esports', '🛍': 'shopping_bag',
+  '👀': 'visibility', '❤': 'favorite', '🏘': 'holiday_village', '🔍': 'search', '📂': 'folder_open', '🚪': 'door_front', '🛋': 'weekend', '🧸': 'toys', '📸': 'photo_camera', '🏠': 'home',
+  '📄': 'description', '✕': 'close', '☰': 'menu', '👍': 'thumb_up', '😱': 'sentiment_very_dissatisfied', '🍚': 'rice_bowl', '🧊': 'ac_unit', '🥐': 'bakery_dining', '🍲': 'soup_kitchen', '⬆': 'arrow_upward',
+  '⚖': 'monitor_weight', '🧹': 'cleaning_services', '👋': 'waving_hand', '🎵': 'music_note', '🤔': 'help', '💦': 'water_drop', '🔎': 'search', '📍': 'location_on', '🏷': 'sell', '🔄': 'sync',
+  '👤': 'person', '🤝': 'handshake', '🚧': 'construction', '🔨': 'hardware', '🌟': 'star', '❓': 'help', '🌸': 'local_florist', '💎': 'diamond', '🌅': 'wb_twilight', '⚡': 'bolt',
+  '🪐': 'public', '🌆': 'location_city', '🌙': 'bedtime', '🗣': 'record_voice_over', '📤': 'upload', '🗺': 'map', '🧃': 'local_drink', '🌷': 'local_florist', '💡': 'lightbulb', '⬜': 'crop_square',
+  '🟫': 'square', '🔷': 'diamond', '🪟': 'window', '🟩': 'square', '🍵': 'emoji_food_beverage', '🎹': 'piano', '💺': 'airline_seat_recline_normal', '🚿': 'shower', '🖼': 'image', '🗒': 'sticky_note_2',
+  '🧑': 'person', '💴': 'currency_yen', '🔆': 'brightness_high', '🖨': 'print', '🗄': 'lock', '✔': 'check', '🔮': 'auto_fix_high', '🎫': 'confirmation_number', '🔋': 'battery_charging_full',
+  '🎟': 'local_activity', '🧺': 'local_laundry_service', '🎤': 'mic', '🥽': 'view_in_ar', '🤖': 'smart_toy', '🚁': 'flight'
+};
+const EMO_ALT = Object.keys(EMO_MAP).sort((a, b) => b.length - a.length).join('|');
+const EMO_TAGRX = new RegExp('(<[^>]*>)|(' + EMO_ALT + ')\\uFE0F?', 'g');
+const EMO_TXTRX = new RegExp('(' + EMO_ALT + ')\\uFE0F?', 'g');
+const EMO_TEST = new RegExp('(?:' + EMO_ALT + ')');
+const emoSpan = e => `<span class="ms">${EMO_MAP[e]}</span>`;
+function emoStr(s) {
+  if (!PERF.ms || settings.useSymbols === false || s.indexOf('<option') >= 0 || s.indexOf('<textarea') >= 0) return s;
+  return s.replace(EMO_TAGRX, (m, tag, e) => tag ? tag : emoSpan(e));
+}
+(function () {
+  const d = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(Element.prototype, 'innerHTML', { get: d.get, set(v) { d.set.call(this, typeof v === 'string' ? emoStr(v) : v); }, configurable: true });
+  const ft = CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText = function (t, x, y, mw) {
+    if (PERF.ms && settings.useSymbols !== false && typeof t === 'string' && t.length < 5) {
+      const nm = EMO_MAP[t.replace(/\uFE0F/g, '')];
+      if (nm) {
+        const prev = this.font, px = parseFloat((/(\d+(?:\.\d+)?)px/.exec(prev) || [0, 16])[1]);
+        this.font = `${Math.round(px * 1.15)}px "Material Symbols Outlined"`; ft.call(this, nm, x, y); this.font = prev; return;
+      }
+    }
+    return ft.apply(this, arguments);
+  };
+})();
+function emoConvert(root) {
+  if (!PERF.ms || settings.useSymbols === false || !root) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      const p = n.parentNode; if (!p || p.nodeType !== 1) return NodeFilter.FILTER_REJECT;
+      const t = p.tagName; if (t === 'OPTION' || t === 'TEXTAREA' || t === 'SCRIPT' || t === 'STYLE' || t === 'TITLE' || p.classList.contains('ms')) return NodeFilter.FILTER_REJECT;
+      return EMO_TEST.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const list = []; while (w.nextNode()) list.push(w.currentNode);
+  list.forEach(n => {
+    const html = n.nodeValue.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(EMO_TXTRX, (m, e) => emoSpan(e));
+    const tpl = document.createElement('template'); tpl.innerHTML = html; n.replaceWith(tpl.content);
+  });
+}
+(function msInit() {
+  const lk = document.getElementById('ms-link'); if (!lk) return;
+  const go = () => document.fonts.load('24px "Material Symbols Outlined"', 'storefront').then(r => {
+    if (!r || !r.length) return;
+    PERF.ms = true; emoConvert(document.body);
+    const roots = ['hud', 'hud-ctrl', 'ticker-bar', 'coin-counter'].map(id => document.getElementById(id)).filter(Boolean); let sch = false;
+    const mo = new MutationObserver(() => { if (sch) return; sch = true; requestAnimationFrame(() => { sch = false; roots.forEach(emoConvert); }); });
+    roots.forEach(r2 => mo.observe(r2, { childList: true, subtree: true, characterData: true }));
+    lastSig = ''; try { refreshAllTabs(); } catch (e) {}
+  }).catch(() => {});
+  if (lk.sheet) go(); else lk.addEventListener('load', go);
+})();
+
+
 // ---- 液体ゲージ（経営・評判・コイン） ----
 var ORBS = {};
 var ORB_RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -4689,7 +5246,7 @@ function titleWave(t) {
   });
 }
 orbInit('orb-biz', 36, 62, 10); orbInit('orb-rep', 36, 62, 10); orbInit('orb-coin', 200, 48, 24, true); orbUpdate();
-(function orbLoop(n) { const dt = Math.min(0.05, (n - (orbLoop.t || n)) / 1000); orbLoop.t = n; for (const id in ORBS) if (ORBS[id].c) orbDraw(ORBS[id], n / 1000, dt); if (titleOpen) titleWave(n / 1000); requestAnimationFrame(orbLoop); })(performance.now());
+(function orbLoop(n) { if (n - (orbLoop.last || 0) < PERF.orbGap()) { requestAnimationFrame(orbLoop); return; } orbLoop.last = n; const dt = Math.min(0.05, (n - (orbLoop.t || n)) / 1000); orbLoop.t = n; for (const id in ORBS) if (ORBS[id].c) orbDraw(ORBS[id], n / 1000, dt); if (titleOpen) titleWave(n / 1000); requestAnimationFrame(orbLoop); })(performance.now());
 
 // 初期化実行
 initDefaultStore();
@@ -4700,8 +5257,9 @@ loadGame().then(loaded => {
   refreshStoreUI();
   updateHUD();
   refreshAllTabs();
-  if (loaded) setTicker('💾 前回のセーブデータから再開しました！');
+  if (loaded) setTicker(window._migratedFrom ? '🔄 旧バージョンのセーブを引き継ぎました！（元データはバックアップ済み）' : '💾 前回のセーブデータから再開しました！');
   updateTitleInfo(loaded);
+  if (!loaded) legacyOffer();
   ccShown = null; ccLast = null;
   requestAnimationFrame(gameLoop);
 });
