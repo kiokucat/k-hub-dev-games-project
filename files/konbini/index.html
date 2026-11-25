@@ -756,13 +756,47 @@ body.theme-retro .coin-counter{padding:6px 16px 6px 8px}
 @keyframes bcGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 .bc i.live{opacity:.6;outline:1.5px dashed rgba(0,0,0,.4)}
 .wp-page .bc{margin-top:8px}
+
+/* ===== ランクバッジ ===== */
+.rb{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.rb>span{min-width:0}.rb svg{flex:none;display:block}
+.rb b{display:block;font-size:13px;font-weight:900;line-height:1.15}
+.rb small{display:block;font-size:10px;font-weight:800;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rbsvg{overflow:visible}
+.rb-glow{animation:rbGlow 2.4s ease-in-out infinite}
+@keyframes rbGlow{0%,100%{filter:drop-shadow(0 0 2px var(--g))}50%{filter:drop-shadow(0 0 7px var(--g))}}
+.rb-pop{animation:calPop .6s cubic-bezier(.2,1.5,.4,1)}
+.bk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px 4px;text-align:center}
+.bk{display:flex;flex-direction:column;align-items:center}.bk small{font-size:10px;font-weight:900;margin-top:1px}
+.bk.lock svg{filter:grayscale(1) brightness(.6);opacity:.5}
+.bk.now svg{filter:drop-shadow(0 0 5px #f5b700)}
+
+/* ===== 数字の増減エフェクト／月ごとのカレンダー色／街の声 ===== */
+.nf-up{color:#22e06b!important;text-shadow:0 0 8px rgba(34,224,107,.75)!important}
+.nf-dn{color:#ff4d4f!important;text-shadow:0 0 8px rgba(255,77,79,.75)!important}
+.hc-money,.hc-row,.orb b,.cc-val{transition:color .2s,text-shadow .2s}
+.cal-top{background:linear-gradient(var(--c1,#f0585d),var(--c2,#d93a40));text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.cal-dots u.on{background:var(--c2,#d93a40)}
+.ticker-label.notice{background:#ef4444}.ticker-label.voice{background:#0ea5e9}
+.ticker-bar.voice{color:#bae6fd}
+#ticker-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tk-in{animation:tkIn .5s ease-out}
+@keyframes tkIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ===== 巻物メニューの閉じるアニメーション（開く時と別名のkeyframesにして確実に再生） ===== */
+@keyframes scFadeC{from{background-color:rgba(20,16,28,.62)}to{background-color:rgba(20,16,28,0)}}
+@keyframes scWinC{0%{transform:none;opacity:1}70%{transform:translateX(0) scale(.5) rotate(0);opacity:1}100%{transform:translateX(75vw) scale(.3) rotate(10deg);opacity:0}}
+@keyframes scPaperC{0%{width:var(--sw)}72%,100%{width:0}}
+.scroll-overlay.closing{animation:scFadeC .7s ease-in both}
+.scroll-overlay.closing .scroll-win{animation:scWinC .8s cubic-bezier(.5,0,.8,.4) both}
+.scroll-overlay.closing .scroll-paper{animation:scPaperC .8s cubic-bezier(.5,0,.8,.4) both}
 </style>
 </head>
 <body>
 
   <!-- 上部HUD -->
   <header class="top-hud kairo-box" id="hud">
-    <div class="hc-head"><span class="rank-tag" id="hud-rank">ランク F</span><span class="store-title">開拓！マイコンビニDX</span><i class="rk-bar" title="次のランクまでの進み具合"><u id="rk-fill"></u></i></div>
+    <div class="hc-head"><span class="rb" id="hud-rank"></span><i class="rk-bar" title="次のランクまでの進み具合"><u id="rk-fill"></u></i></div>
     <div class="hc-body">
       <div class="cal" id="hud-date" title="日付">
         <div class="cal-top"><span id="cal-mo">4月</span><i id="cal-ti">☀️</i></div>
@@ -794,7 +828,7 @@ body.theme-retro .coin-counter{padding:6px 16px 6px 8px}
 
   <!-- ニュースティッカー -->
   <div class="ticker-bar" id="ticker-bar">
-    <span class="ticker-label">街の声</span>
+    <span class="ticker-label notice" id="ticker-label">📢 お知らせ</span>
     <span id="ticker-text">新しいコンビニがオープンしました！棚を並べてお客さんを迎えよう！</span>
   </div>
 
@@ -1088,7 +1122,20 @@ const RANKS = [
   { rank: 'C', name: '地域No.1ストア', needRev: 40000, maxStaff: 8, bonus: 1.2 },
   { rank: 'B', name: '繁盛スーパーマート', needRev: 80000, maxStaff: 10, bonus: 1.3 },
   { rank: 'A', name: '名物メガコンビニ', needRev: 150000, maxStaff: 13, bonus: 1.45 },
-  { rank: 'S', name: '伝説のカイロマート', needRev: 300000, maxStaff: 16, bonus: 1.65 }
+  { rank: 'S', name: '伝説のカイロマート', needRev: 300000, maxStaff: 16, bonus: 1.65 },
+  { rank: 'S+', name: '全国展開チェーン', needRev: 500000, maxStaff: 17, bonus: 1.75 },
+  { rank: 'SS', name: '業界トップランナー', needRev: 800000, maxStaff: 17, bonus: 1.85 },
+  { rank: 'SS+', name: '駅ナカ・駅ソトの王者', needRev: 1250000, maxStaff: 18, bonus: 1.95 },
+  { rank: 'SSS', name: '日本一のコンビニ', needRev: 2000000, maxStaff: 18, bonus: 2.05 },
+  { rank: 'X', name: 'アジア進出マート', needRev: 3000000, maxStaff: 19, bonus: 2.15 },
+  { rank: 'X+', name: '世界展開グローバルストア', needRev: 4500000, maxStaff: 19, bonus: 2.3 },
+  { rank: 'XX', name: '国際ブランド', needRev: 6500000, maxStaff: 20, bonus: 2.45 },
+  { rank: 'Z', name: '未来型スマートストア', needRev: 9000000, maxStaff: 20, bonus: 2.6 },
+  { rank: 'Z+', name: '宇宙ステーション店', needRev: 12500000, maxStaff: 21, bonus: 2.8 },
+  { rank: 'ZZ', name: '銀河コンビニ連合', needRev: 17000000, maxStaff: 21, bonus: 3.0 },
+  { rank: 'ZZZ', name: '宇宙の覇者', needRev: 23000000, maxStaff: 22, bonus: 3.25 },
+  { rank: '∞', name: '神話のカイロマート', needRev: 32000000, maxStaff: 22, bonus: 3.5 },
+  { rank: 'ULT', name: '究極のカイロマート', needRev: 50000000, maxStaff: 24, bonus: 4.0 }
 ];
 
 // =========================================================
@@ -3479,7 +3526,7 @@ function renderManageTab() {
     <div class="ribbon-title"><span>🏆 店舗成長＆キャンペーン</span></div>
     <div class="item-card">
       <div class="card-top">
-        <span class="card-name">👑 現在ランク: ${RANKS[state.rankIdx].rank} (${RANKS[state.rankIdx].name})</span>
+        <span class="card-name">${rankBadge(state.rankIdx, 30)} 現在ランク: ${RANKS[state.rankIdx].rank} (${RANKS[state.rankIdx].name})</span>
       </div>
       <div style="font-size:11px; color:var(--text-muted);">
         累計売上: <b>¥${state.totalRevenue.toLocaleString()}</b>
@@ -3564,18 +3611,49 @@ function startCampaign() {
 // =========================================================
 // HUD・ティッカー・モーダル・制御
 // =========================================================
+var RB = [ // [形, 上の色, 下の色, ふち, かざり]
+  ['c','#d9c7a0','#8d7650','#4e3f27',''],['c','#f6b985','#b0672b','#6b3a14',''],['c','#f8fafc','#9aa8bb','#56657a',''],
+  ['s','#ffe680','#e0a100','#8a5a00','⭐'],['s','#8ef0b0','#15803d','#0b4a24',''],['h','#ffa8a8','#b91c1c','#6b0f0f',''],
+  ['h','#9ec9ff','#1d4ed8','#10286e','⭐'],['d','#e8f7ff','#6ec8f5','#2b6f94','✨'],['d','#e0bbff','#7e22ce','#43116f',''],
+  ['d','#ffd0e6','#db2777','#7a1245','🌸'],['b','#f2ffff','#22d3ee','#0e6f84','💎'],['b','#5eead4','#8b5cf6','#3b2a85','🌈'],
+  ['b','#fdba74','#e11d48','#7a1230','🌅'],['b','#6b7a90','#0f172a','#facc15','🔥'],['h','#c4f542','#0891b2','#064e5f','⚡'],
+  ['d','#8f9bff','#1e1b4b','#a5b4fc','🪐'],['b','#f5b8ff','#4c1d95','#e9d5ff','🌌'],['s','#fff07a','#ea580c','#7c2d12','☄️'],
+  ['c','#a7f3d0','#7c3aed','#fde047',''],['b','#fff3a3','#b45309','#3b1d00','👑']];
+var RB_BURST = Array.from({ length: 20 }, (_, k) => { const a = k * Math.PI / 10 - Math.PI / 2, r = k % 2 ? 18 : 23; return (24 + Math.cos(a) * r).toFixed(1) + ',' + (25 + Math.sin(a) * r).toFixed(1); }).join(' ');
+var _rbN = 0, _rbIdx = -1;
+function rankBadge(i, size, glow) {
+  const [sh, c1, c2, rg, dc] = RB[Math.min(i, RB.length - 1)], r = RANKS[i], id = 'rbg' + (_rbN++), n = r.rank.length;
+  const P = { c: '<circle cx="24" cy="25" r="19"', s: '<path d="M24 4L41 10V25C41 35 33 42 24 46C15 42 7 35 7 25V10Z"', h: '<polygon points="24,3 42,13.5 42,36 24,46 6,36 6,13.5"', d: '<polygon points="24,2 45,25 24,48 3,25"', b: `<polygon points="${RB_BURST}"` }[sh];
+  return `<svg class="rbsvg${glow && i >= 10 ? ' rb-glow' : ''}" viewBox="0 0 48 48" width="${size}" height="${size}" style="--g:${c1}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>` +
+    `${P} fill="url(#${id})" stroke="${rg}" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="18" cy="14" rx="9" ry="3.5" fill="#fff" opacity=".35" transform="rotate(-25 18 14)"/>` +
+    `<text x="24" y="26" text-anchor="middle" dominant-baseline="central" font-size="${n > 2 ? 13 : n > 1 ? 17 : 22}" font-weight="900" fill="#fff" stroke="${rg}" stroke-width="3" paint-order="stroke" font-family="sans-serif">${r.rank}</text>` +
+    (dc ? `<text x="40" y="44" text-anchor="middle" font-size="11">${dc}</text>` : '') + `</svg>`;
+}
+function rankHud() {
+  if (_rbIdx === state.rankIdx) return;
+  const el = document.getElementById('hud-rank'), r = RANKS[state.rankIdx], first = _rbIdx < 0; _rbIdx = state.rankIdx;
+  el.innerHTML = rankBadge(state.rankIdx, 40, true) + `<span><b>ランク ${r.rank}</b><small>${r.name}</small></span>`;
+  if (!first) { el.classList.remove('rb-pop'); void el.offsetWidth; el.classList.add('rb-pop'); }
+}
+function badgeBook() {
+  const cells = RANKS.map((r, i) => `<div class="bk ${i > state.rankIdx ? 'lock' : i === state.rankIdx ? 'now' : ''}" title="${i > state.rankIdx ? '？？？（累計売上 ¥' + r.needRev.toLocaleString() + '）' : r.name}">${rankBadge(i, 44)}<small>${i > state.rankIdx ? '？' : r.rank}</small></div>`).join('');
+  return `<div class="sc-card"><div class="sc-h">🎖 ランクバッジ図鑑（${state.rankIdx + 1}/${RANKS.length}）</div><div class="bk-grid">${cells}</div></div>`;
+}
+var CAL_COL = { 1: ['#7dd3fc', '#2563eb'], 2: ['#c4b5fd', '#7c3aed'], 3: ['#bef264', '#65a30d'], 4: ['#f9a8d4', '#ec4899'], 5: ['#4ade80', '#15803d'], 6: ['#5eead4', '#0e7490'],
+  7: ['#fcd34d', '#f59e0b'], 8: ['#f87171', '#dc2626'], 9: ['#e879f9', '#a21caf'], 10: ['#fb923c', '#c2410c'], 11: ['#d6a272', '#92400e'], 12: ['#818cf8', '#3730a3'] };
 var _calKey = '';
 function calSet(y, m, w, ti) {
   const $ = id => document.getElementById(id), key = y + '/' + m + '/' + w;
   $('cal-mo').textContent = m + '月'; $('cal-ti').textContent = ti; $('cal-y').textContent = y + '年目'; $('cal-w').textContent = '第' + w + '週';
   [...$('cal-d').children].forEach((u, i) => u.classList.toggle('on', i < w));
   $('hud-date').title = `${y}年目 ${m}月 第${w}週`;
+  const cc = CAL_COL[m] || CAL_COL[4]; $('hud-date').style.setProperty('--c1', cc[0]); $('hud-date').style.setProperty('--c2', cc[1]);
   if (_calKey && key !== _calKey) { const b = $('cal-bd'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
   _calKey = key;
 }
 function updateHUD() {
   const r = RANKS[state.rankIdx];
-  document.getElementById('hud-rank').textContent = `ランク ${r.rank}`;
+  rankHud();
   const timeIcon = state.weekTimer < 10 ? '☀️' : (state.weekTimer < 16 ? '🌆' : '🌙');
   calSet(state.year, state.month, state.week, timeIcon);
 
@@ -3595,9 +3673,56 @@ function updateHUD() {
   document.getElementById('btn-sound').textContent = soundOn ? '🔊' : '🔇';
 }
 
-function setTicker(msg) {
-  document.getElementById('ticker-text').textContent = msg;
+var _tkNoticeUntil = Date.now() + 7000, _tkNext = 0, _tkRecent = [];
+function tkShow(msg, notice) {
+  const bar = document.getElementById('ticker-bar'), lb = document.getElementById('ticker-label'), tx = document.getElementById('ticker-text');
+  lb.textContent = notice ? '📢 お知らせ' : '🗣 街の声'; lb.className = 'ticker-label ' + (notice ? 'notice' : 'voice'); bar.classList.toggle('voice', !notice);
+  tx.textContent = msg; tx.classList.remove('tk-in'); void tx.offsetWidth; tx.classList.add('tk-in');
+  if (notice) { _tkNoticeUntil = Date.now() + 6000; _tkNext = _tkNoticeUntil + 2000; }
 }
+function setTicker(msg) { tkShow(msg, true); }
+var TOWN_SEASON = { 1: ['初詣の帰りに寄ったよ。あったかい飲み物がありがたいね', '参拝客'], 2: ['バレンタインのチョコ、ここで買っちゃった', '女子高生'], 3: ['春休みだ〜！アイス買って帰ろっと', '小学生'],
+  4: ['桜がきれい！お花見の飲み物を買っていこう', 'お花見客'], 5: ['連休は遠出しなくても、この店で十分たのしめるよ', '近所のお父さん'], 6: ['雨の日はお店に入るとほっとするね', '傘をさした会社員'],
+  7: ['暑い…冷たい飲み物が命の恩人だよ', '汗だくの会社員'], 8: ['夏祭りの帰りに寄ったよ。冷たいデザート、なにかない？', '浴衣のお客さん'], 9: ['涼しくなって、肉まんが恋しい季節になったね', '散歩中のおじいさん'],
+  10: ['ハロウィンのお菓子、ここでそろうかな？', '仮装した子ども'], 11: ['急に寒くなったね。あったかい食べ物につられて来ちゃった', '帰り道の会社員'], 12: ['年末は忙しいから、遅くまで開いてて助かるよ', '残業帰りの人'] };
+function townVoice() {
+  const S = state, r = S.rating, ri = S.rankIdx, P = [];
+  const add = (a, n) => { for (let i = 0; i < (n || 1); i++) P.push(...a); };
+  add([TOWN_SEASON[S.month] || TOWN_SEASON[4]], 3);
+  add(r >= 4 ? [['店員さんの笑顔がいいよね、また来たくなる', '常連の主婦'], ['このお店の評判、うちの会社でもよく聞くよ', '会社員'], ['友だちにもすすめたんだ！', '大学生']]
+    : r >= 2.5 ? [['品ぞろえはいい感じ。もう少し増えたらうれしいな', '通りすがりの人'], ['悪くないお店だね、これからに期待してるよ', '近所のおじさん']]
+    : [['レジが混んでるなぁ…もう少し早いと助かるんだけど', '急ぐ会社員'], ['棚がスカスカで、探してたものがなかったよ', '困り顔のお客さん'], ['接客がもうひと息かな…がんばってほしいな', '常連さん']], 2);
+  add(ri <= 1 ? [['新しいコンビニができたって聞いて来てみたよ', '近所の人'], ['まだ小さいけど、がんばってるお店だね', '通りすがりの人']]
+    : ri <= 3 ? [['駅前でも人気って聞いたよ！', '駅の利用客'], ['このへんで一番をめざしてるらしいね', '商店街のおじさん']]
+    : ri <= 6 ? [['テレビで取りあげられてたよ、有名店になったね', '近所の主婦'], ['うちの町の自慢のコンビニだよ', '町内会の人']]
+    : ri <= 10 ? [['全国チェーンになったんだって！すごいなぁ', '昔からの常連'], ['ニュースで見たよ、日本一をねらってるって', '会社員']]
+    : ri <= 13 ? [['海外からの観光客が、この店めがけて来てるよ', '観光ガイド'], ['世界のお店になっちゃったね', '地元のおじいさん']]
+    : [['未来のお店みたい…ロボットが働いてるの？', '子ども'], ['宇宙からも注文が来るらしいよ', '町のうわさ好き'], ['この店はきっと伝説になるよ', '古くからの常連']], 2);
+  add(S.weekTimer < 10 ? [['朝ごはんを買いに寄ったよ', '出勤前の人']] : S.weekTimer < 16 ? [['夕飯のおかずを探しに来たよ', '帰り道の人']] : [['夜中でも開いてるのが本当に助かるよ', '夜ふかしさん']]);
+  if (S.campaignTimer > 0) add([['駅前でチラシをもらって来たよ！', 'チラシを持った人']], 3);
+  if (S.money < 1500) add([['お店、だいじょうぶかな…応援してるよ！', '心配する常連']], 2);
+  if (S.money > 100000) add([['最近すごくもうかってるらしいね', '町のうわさ']]);
+  add([['お菓子コーナーに、つい寄り道しちゃうんだよね', '小学生'], ['ATMがあるから助かるわ', 'おばあさん'], ['お弁当をあたためてもらえてありがたいよ', '一人暮らしの人'], ['新商品が出るたびに気になっちゃう', '常連さん'],
+    ['コンビニって、見てるだけでも楽しいよね', '買い物客'], ['ポイントを貯めたら、なにかもらえるのかな？', '子ども']]);
+  const fresh = P.filter(v => !_tkRecent.includes(v[0])), v = (fresh.length ? fresh : P)[Math.floor(Math.random() * (fresh.length || P.length))];
+  _tkRecent.push(v[0]); if (_tkRecent.length > 10) _tkRecent.shift();
+  return `「${v[0]}」（${v[1]}）`;
+}
+setInterval(() => {
+  const now = Date.now(); if (titleOpen || state.paused || now < _tkNoticeUntil || now < _tkNext) return;
+  tkShow(townVoice(), false); _tkNext = now + 8000 + Math.random() * 4000;
+}, 1000);
+function nfWatch(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const num = () => { const m = el.textContent.replace(/,/g, '').match(/[-−]?\s*\d+(\.\d+)?/); return m ? parseFloat(m[0].replace('−', '-').replace(/\s/g, '')) : NaN; };
+  let prev = num(), tm = null;
+  new MutationObserver(() => {
+    const v = num();
+    if (!isNaN(v) && !isNaN(prev) && v !== prev) { el.classList.remove('nf-up', 'nf-dn'); void el.offsetWidth; el.classList.add(v > prev ? 'nf-up' : 'nf-dn'); clearTimeout(tm); tm = setTimeout(() => el.classList.remove('nf-up', 'nf-dn'), 300); }
+    prev = v;
+  }).observe(el, { childList: true, characterData: true, subtree: true });
+}
+['hud-money', 'hud-cust', 'orb-biz-t', 'orb-rep-t', 'cc-val'].forEach(nfWatch);
 
 function addFloatText(x, y, text, color = '#15803d') {
   floatingTexts.push({ x, y, text, color, life: 1.25 });
@@ -4284,8 +4409,8 @@ function showReport(e, promoted) {
     wpRow('商品仕入コスト', sgn(-e.cost), '#b91c1c') +
     wpRow('スタッフ人件費', sgn(-e.wages), '#b91c1c') +
     `<div class="wp-row wp-total"><span>今月の純利益</span><span class="dot"></span><span style="color:${e.net >= 0 ? '#15803d' : '#b91c1c'}">${sgn(e.net)}</span></div>` +
-    '<div class="wp-hr"></div><div style="font-weight:900;margin:4px 0 2px">▼ 今月の収支グラフ</div>' + barsHTML([{ l: '売上', v: e.rev }, { l: 'その他', v: e.extra }, { l: '仕入', v: -e.cost }, { l: '人件費', v: -e.wages }, { l: '純利益', v: e.net }], 100) +
-    (promoted ? `<div class="wp-rankup">★ 店舗ランクアップ！<br>ランク ${promoted.rank}【${promoted.name}】になりました<br>雇用上限 ${promoted.maxStaff}人 ／ 新商品解放 ／ ✨+30P</div>` : '') +
+    '<div class="wp-hr"></div><div style="font-weight:900;margin:4px 0 2px">▼ 今月の収支グラフ</div>' + (window._bcAnim = true, '') + barsHTML([{ l: '売上', v: e.rev }, { l: 'その他', v: e.extra }, { l: '仕入', v: -e.cost }, { l: '人件費', v: -e.wages }, { l: '純利益', v: e.net }], 100) +
+    (promoted ? `<div class="wp-rankup">${rankBadge(state.rankIdx, 44)}<br>★ 店舗ランクアップ！<br>ランク ${promoted.rank}【${promoted.name}】になりました<br>雇用上限 ${promoted.maxStaff}人 ／ 新商品解放 ／ ✨+30P</div>` : '') +
     `<div class="wp-note">※ 過去の決算は 📜メニュー → 決算履歴 で見られます</div>`;
   document.getElementById('wp-status').textContent = `${e.y}年目 ${e.m}月 ／ 純利益 ${sgn(e.net)}`;
   clearTimeout(wpTimer); w.classList.remove('show', 'min', 'closing'); void w.offsetWidth; w.classList.add('show');
@@ -4327,6 +4452,7 @@ function setScrollTab(t) { scrollTab = t; SFX.click(); renderScroll(true); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && scrollIsOpen) closeScrollMenu(); });
 
 function renderScroll(resetScroll) {
+  window._bcAnim = !!resetScroll;
   document.querySelectorAll('#scroll-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === scrollTab));
   const body = document.getElementById('scroll-body');
   const top = resetScroll ? 0 : body.scrollTop;
@@ -4364,7 +4490,7 @@ function barsHTML(items, H) {
   const k = (H - T * 2) / (up + dn), z = T + up * k, fmt = n => (n >= 0 ? '+' : '-') + (Math.abs(n) >= 1000 ? (Math.round(Math.abs(n) / 100) / 10) + 'k' : Math.abs(n));
   const cols = items.map((x, i) => {
     const h = Math.max(3, Math.abs(x.v) * k), pos = x.v >= 0, top = pos ? z - h : z;
-    return `<div title="${x.t || sgn(x.v)}"><i class="${pos ? 'p' : 'n'}${x.live ? ' live' : ''}" style="top:${top}px;height:${h}px;animation-delay:${i * 40}ms"></i><b style="top:${pos ? top - 11 : top + h + 1}px;color:${pos ? '#15803d' : '#b91c1c'}">${fmt(x.v)}</b></div>`;
+    return `<div title="${x.t || sgn(x.v)}"><i class="${pos ? 'p' : 'n'}${x.live ? ' live' : ''}" style="top:${top}px;height:${h}px;${window._bcAnim ? 'animation-delay:' + i * 40 + 'ms' : 'animation:none'}"></i><b style="top:${pos ? top - 11 : top + h + 1}px;color:${pos ? '#15803d' : '#b91c1c'}">${fmt(x.v)}</b></div>`;
   }).join('');
   return `<div class="bc" style="height:${H}px"><span class="bc-z" style="top:${z}px"></span>${cols}</div><div class="bc-m">${items.map(x => `<span>${x.l}</span>`).join('')}</div>`;
 }
@@ -4401,7 +4527,7 @@ function scStats() {
     kv('✨ 発見したコーナー', `${state.discoveredCombos.size}個`) +
     kv('💴 所持金', yen(state.money)) + kv('🔆 経営ポイント', `${state.points}P`) + `</div>` +
     `<div class="sc-card"><div class="sc-h">📅 今月ここまで</div>` +
-    kv('🛒 商品売上', `${yen(ms.rev)}（${ms.served}人会計）`) + kv('🏧 その他収入', yen(ms.extra)) + kv('📦 仕入コスト', yen(ms.cost)) + `</div>`;
+    kv('🛒 商品売上', `${yen(ms.rev)}（${ms.served}人会計）`) + kv('🏧 その他収入', yen(ms.extra)) + kv('📦 仕入コスト', yen(ms.cost)) + `</div>` + badgeBook();
 }
 
 // =========================================================
