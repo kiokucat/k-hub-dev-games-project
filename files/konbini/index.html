@@ -1548,11 +1548,12 @@ function canPlaceSafely(type, gx, gy, moveUid = null) {
   for (let qi = 0; qi < q.length; qi++) { const [cx, cy] = q[qi]; dirs.forEach(([dx, dy]) => seed(cx + dx, cy + dy)); }
   const reach = o => dirs.some(([dx, dy]) => okT(o.x + dx, o.y + dy) && visited.has(K(o.x + dx, o.y + dy)));
   const need = ['shelf', 'register', 'eatin', 'atm', 'machine', 'backyard'];
-  if (need.includes(def.cat) && !reach({ x: gx, y: gy })) return { ok: false, reason: 'お客さんが近づけません！' };
-  const cut = others.find(o => need.includes(FACILITY_TYPES[o.type].cat) && !reach(o));
-  if (cut) return { ok: false, reason: `${FACILITY_TYPES[cut.type].name}に近づけなくなります！` };
+  // 「近づけません」系は表示のみ(設置は許可)
+  let warn = null;
+  if (need.includes(def.cat) && !reach({ x: gx, y: gy })) warn = 'お客さんが近づけません！';
+  else { const cut = others.find(o => need.includes(FACILITY_TYPES[o.type].cat) && !reach(o)); if (cut) warn = `${FACILITY_TYPES[cut.type].name}に近づけなくなります！`; }
   if (def.cat === 'register' && !visited.has(K(gx, gy - 1))) return { ok: false, reason: 'レジの後ろ(上側)に店員が立てません' };
-  return { ok: true };
+  return warn ? { ok: true, warn } : { ok: true };
 }
 
 function findPath(sx, sy, gx, gy) {
@@ -2686,7 +2687,13 @@ function draw() {
       ctx.strokeRect(hoverTile.x * TILE + 1, hoverTile.y * TILE + 1, TILE * fpOf(state.buildMode.type).w - 2, TILE * fpOf(state.buildMode.type).h - 2);
 
       // コーナー成立予報！
-      if (check.ok) {
+      if (check.ok && check.warn) {
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(hoverTile.x * TILE - 50, hoverTile.y * TILE - 22, 160, 18);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('⚠️ ' + check.warn, hoverTile.x * TILE + 20, hoverTile.y * TILE - 13);
+      } else if (check.ok) {
         const previewCombos = getPreviewCombos(state.buildMode.type, hoverTile.x, hoverTile.y, state.buildMode.moveUid);
         if (previewCombos.length > 0) {
           ctx.fillStyle = '#1e293b';
@@ -3093,6 +3100,7 @@ canvas.addEventListener('mousedown', e => {
         obj.y = gy;
         SFX.place();
         recalcCombos();
+        if (check.warn) setTicker(`⚠️ ${check.warn}`);
       }
       cancelBuildMode();
     } else {
@@ -3107,7 +3115,7 @@ canvas.addEventListener('mousedown', e => {
       addPlacedObject(state.buildMode.type, gx, gy);
       SFX.place();
       recalcCombos();
-      setTicker(`🏗️ ${def.name} を設置しました！`);
+      setTicker(`🏗️ ${def.name} を設置しました！` + (check.warn ? `（⚠️ ${check.warn}）` : ''));
       updateHUD();
       // 連続配置できるように建築モード維持（資金不足なら解除）
       if (state.money < def.cost) cancelBuildMode();
@@ -4401,7 +4409,7 @@ document.addEventListener('mousemove', e => {
     const { x, y } = hoverTile;
     if (state.buildMode) {
       const c = canPlaceSafely(state.buildMode.type, x, y, state.buildMode.moveUid);
-      return showTip(c.ok ? '✅ ここに置けます（クリックで設置）' : '⚠️ ' + c.reason, e.clientX, e.clientY);
+      return showTip(c.ok ? (c.warn ? '⚠️ ' + c.warn + '\n（置くことはできます）' : '✅ ここに置けます（クリックで設置）') : '⚠️ ' + c.reason, e.clientX, e.clientY);
     }
     const o = objAt(x, y);
     if (o) return showTip(objTip(o), e.clientX, e.clientY);
