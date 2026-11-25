@@ -685,26 +685,101 @@ body.theme-retro .ribbon-title{border:2px solid var(--border-dark);border-radius
 body.theme-retro .modal-header{background:var(--accent-orange);text-shadow:1px 1px 0 rgba(0,0,0,.4)}
 body.theme-retro .bar-bg{border:1px solid var(--border-dark);background:#e2d5b7}
 body.theme-retro .theme-card{border-color:#3b2d22;border-radius:8px}
+
+/* ===== 左上HUDカード + 液体ゲージ ===== */
+.top-hud{display:block;position:fixed;top:8px;left:8px;right:auto;width:min(304px,calc(100vw - 16px));padding:8px 10px}
+.hc-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hc-head .store-title{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc-body{display:flex;align-items:center;gap:8px}
+.hc-stats{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.hc-row{font-size:12px;font-weight:800;color:var(--text-muted);white-space:nowrap}
+.hc-money{font-size:20px;font-weight:900;line-height:1.2;color:#15803d;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hc-money.minus{color:var(--accent-red)}
+.hc-orbs{display:flex;gap:6px}
+.orb{position:relative;width:62px;text-align:center}
+.orb canvas{width:62px;height:62px;display:block;border:0;border-radius:50%;background:transparent;image-rendering:auto;cursor:default}
+.orb b{position:absolute;left:0;right:0;top:21px;font-size:14px;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);pointer-events:none}
+.orb span{display:block;margin-top:1px;font-size:11px;font-weight:900}
+.hud-controls{position:fixed;top:8px;left:320px;right:8px;z-index:30;flex-wrap:wrap;justify-content:flex-end;padding:5px 8px;background:linear-gradient(180deg,#fff,#efebe0)}
+body.theme-retro .hud-controls{background:linear-gradient(180deg,#fffdf5,#f5ebd6)}
+.ticker-bar{left:320px}
+.cam-bar{top:var(--ui-left,120px)}
+@media (max-width:760px){.hud-controls,.ticker-bar{left:8px}.hud-controls{justify-content:flex-start}.store-title{display:inline}}
+
+/* ===== 経営ポイント縦タンク／コイン／タイトル ===== */
+.hc-head .store-title{flex:1}
+.rk-bar{flex:0 0 52px;height:8px;border-radius:99px;background:#d8d2c2;overflow:hidden}
+.rk-bar u{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#6dd5ff,#2f7fd1);transition:width .7s cubic-bezier(.3,1.4,.5,1)}
+.orb{width:auto}.orb canvas{width:auto;height:auto}
+.cc-orb canvas{display:block;border:0;background:transparent;image-rendering:auto;cursor:default}
+.coin-counter{padding:6px 16px 6px 8px;gap:8px;border-radius:18px;background:linear-gradient(180deg,#fff,#efebe0);color:var(--text-main);border:2px solid var(--border-dark);box-shadow:0 10px 24px rgba(8,12,22,.35),inset 0 0 0 1px rgba(255,255,255,.7)}
+.cc-label{color:var(--text-muted)}
+.cc-val{color:#15803d;font-size:24px}
+.coin-counter.minus .cc-val{color:var(--accent-red)}
+#title-wave{position:absolute;left:0;bottom:0;width:100%;height:140px;border:0;border-radius:0;background:none;image-rendering:auto;pointer-events:none}
+.title-menu{width:min(330px,90vw);padding:16px;gap:10px;border-radius:20px;background:rgba(251,250,246,.95);border:2px solid #26303f;box-shadow:0 14px 34px rgba(8,12,22,.45),inset 0 0 0 1px rgba(255,255,255,.7)}
+.title-menu .title-btn{width:100%;min-width:0;padding:11px 16px;font-size:15px;color:var(--text-main);background:#efebe0;box-shadow:inset 0 0 0 1px #d8d2c2}
+.title-menu .title-btn.start{padding:14px 16px;font-size:18px;color:#fff;background:linear-gradient(#ff9a4d,#ee6a1f);box-shadow:0 3px 0 #b84e12}
+.title-info{padding:4px 14px;border-radius:999px;background:rgba(255,255,255,.14)}
+body.theme-retro .title-menu{border:3px solid #3b2d22;border-radius:10px;background:#fffdf5;box-shadow:inset 0 0 0 2px #fff,0 4px 0 #1a1410}
+body.theme-retro .title-menu .title-btn{color:#fff}
+body.theme-retro .coin-counter{padding:6px 16px 6px 8px}
+
+/* ===== コインカウンター：背景が右から左へたまる液体 ===== */
+.coin-counter,body.theme-retro .coin-counter{width:200px;height:48px;padding:0 16px 0 14px;gap:8px;background:none;border:0;box-shadow:none;color:#fff;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4))}
+.coin-counter canvas{position:absolute;left:0;top:0;z-index:0;border:0;border-radius:0;background:transparent;image-rendering:auto;pointer-events:none}
+.coin-counter .cc-coin,.coin-counter .cc-label,.coin-counter .cc-val{position:relative;z-index:1}
+.coin-counter .cc-label,body.theme-retro .cc-label{color:rgba(255,255,255,.8);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.coin-counter .cc-val,body.theme-retro .cc-val{flex:1;min-width:0;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.coin-counter.minus .cc-val,body.theme-retro .coin-counter.minus .cc-val{color:#ffd0d0}
+
+/* ===== カレンダー風の日付 ===== */
+.cal{position:relative;flex:0 0 58px;height:62px;border:2px solid var(--border-dark);border-radius:9px;background:#fff;overflow:hidden;text-align:center;box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.cal-top{display:flex;justify-content:space-between;align-items:center;height:19px;padding:0 6px;background:linear-gradient(#f0585d,#d93a40);color:#fff;font-size:12px;font-weight:900}
+.cal-top i{font-style:normal;font-size:11px}
+.cal-body{display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:3px;line-height:1}
+.cal-body small{font-size:9px;font-weight:800;color:var(--text-muted)}
+.cal-body b{font-size:15px;font-weight:900;color:var(--text-main)}
+.cal-dots{display:flex;gap:3px}.cal-dots u{width:6px;height:6px;border-radius:50%;background:#d8d2c2;transition:background .3s}.cal-dots u.on{background:#d93a40}
+.cal-body.pop{animation:calPop .5s cubic-bezier(.2,1.5,.4,1)}
+@keyframes calPop{0%{transform:translateY(-14px) scale(.8);opacity:0}100%{transform:none;opacity:1}}
+.hc-money{font-size:18px}
+/* ===== 棒グラフ ===== */
+.bc{position:relative;display:flex;gap:4px;margin-top:4px}
+.bc>div{position:relative;flex:1}
+.bc i{position:absolute;left:14%;right:14%;transform-origin:bottom;animation:bcGrow .6s cubic-bezier(.2,1.2,.4,1) both}
+.bc i.p{background:linear-gradient(#4cc46a,#2f9a47);border-radius:4px 4px 0 0}
+.bc i.n{background:linear-gradient(#e2562a,#c2410c);border-radius:0 0 4px 4px;transform-origin:top}
+.bc b{position:absolute;left:-4px;right:-4px;text-align:center;font-size:8px;font-weight:900;white-space:nowrap}
+.bc-z{position:absolute;left:0;right:0;border-top:1px dashed #8a6a3a}
+.bc-m{display:flex;gap:4px;margin-top:3px}.bc-m span{flex:1;text-align:center;font-size:9px;font-weight:800}
+@keyframes bcGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.bc i.live{opacity:.6;outline:1.5px dashed rgba(0,0,0,.4)}
+.wp-page .bc{margin-top:8px}
 </style>
 </head>
 <body>
 
   <!-- 上部HUD -->
   <header class="top-hud kairo-box" id="hud">
-    <div class="store-badge">
-      <span class="rank-tag" id="hud-rank">ランク F</span>
-      <span class="store-title">開拓！マイコンビニDX</span>
+    <div class="hc-head"><span class="rank-tag" id="hud-rank">ランク F</span><span class="store-title">開拓！マイコンビニDX</span><i class="rk-bar" title="次のランクまでの進み具合"><u id="rk-fill"></u></i></div>
+    <div class="hc-body">
+      <div class="cal" id="hud-date" title="日付">
+        <div class="cal-top"><span id="cal-mo">4月</span><i id="cal-ti">☀️</i></div>
+        <div class="cal-body" id="cal-bd"><small id="cal-y">1年目</small><b id="cal-w">第1週</b><div class="cal-dots" id="cal-d"><u class="on"></u><u></u><u></u><u></u></div></div>
+      </div>
+      <div class="hc-stats">
+        
+        <div class="hc-money" id="hud-money">💰 ¥15,000</div>
+        <div class="hc-row" id="hud-cust">👥 客 0</div>
+      </div>
+      <div class="hc-orbs">
+        <div class="orb" title="経営ポイント（100Pでいっぱい）"><canvas id="orb-biz"></canvas><b id="orb-biz-t">0P</b><span>経営</span></div>
+        <div class="orb" title="評判：お客さんの満足度（1.0〜5.0）"><canvas id="orb-rep"></canvas><b id="orb-rep-t">0</b><span>評判</span></div>
+      </div>
     </div>
-
-    <div class="hud-stats">
-      <div class="hud-pill" id="hud-date">📅 1年目 4月 第1週 ☀️</div>
-      <div class="hud-pill pill-money" id="hud-money">💰 ¥15,000</div>
-      <div class="hud-pill pill-pt" id="hud-pt">✨ 経営P: 30</div>
-      <div class="hud-pill pill-rating" id="hud-rating">♥ 評判 3.2</div>
-      <div class="hud-pill" id="hud-cust">👥 客 0</div>
-    </div>
-
-    <div class="hud-controls">
+  </header>
+  <div class="hud-controls kairo-box" id="hud-ctrl">
       <button class="kairo-btn btn-cream" id="btn-pause" onclick="togglePause()">⏸</button>
       <button class="kairo-btn btn-blue" id="btn-spd1" onclick="setSpeed(1)">1x</button>
       <button class="kairo-btn btn-cream" id="btn-spd2" onclick="setSpeed(2)">2x</button>
@@ -716,7 +791,6 @@ body.theme-retro .theme-card{border-color:#3b2d22;border-radius:8px}
       <button class="kairo-btn btn-blue" id="btn-newstore" onclick="buildNewStore()">🏬新店</button>
       <button class="kairo-btn btn-gold" id="btn-3d" onclick="toggle3D()" title="店長視点(Vキー)">👁3D</button>
     </div>
-  </header>
 
   <!-- ニュースティッカー -->
   <div class="ticker-bar" id="ticker-bar">
@@ -791,12 +865,13 @@ body.theme-retro .theme-card{border-color:#3b2d22;border-radius:8px}
 
   <!-- 右下のコインカウンター -->
   <div class="coin-counter" id="coin-counter" title="所持金（コイン）">
-    <span class="cc-coin">🪙</span><span class="cc-label">COIN</span><span class="cc-val" id="cc-val">¥0</span>
+    <canvas id="orb-coin"></canvas><span class="cc-coin">🪙</span><span class="cc-label">COIN</span><span class="cc-val" id="cc-val">¥0</span>
     <div class="cc-pops" id="cc-pops"></div>
   </div>
 
   <!-- タイトル画面 -->
   <div class="title-screen show entering" id="title-screen">
+    <canvas id="title-wave" width="960" height="140"></canvas>
     <div class="title-float">
       <span style="left:6%;animation-delay:0s">🍙</span><span style="left:16%;animation-delay:2.2s">🥤</span>
       <span style="left:27%;animation-delay:4.5s">🍪</span><span style="left:38%;animation-delay:1.1s">🍱</span>
@@ -886,16 +961,19 @@ function zoomAt(cx, cy, z) {
 function zoomBtn(f) { const r = canvas.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, cam.zoom * f); }
 function toggleDock() { document.getElementById('side-dock').classList.toggle('hidden'); }
 function layoutUI() {
-  const hud = document.getElementById('hud').getBoundingClientRect(), tk = document.getElementById('ticker-bar');
-  tk.style.top = (hud.bottom + 6) + 'px';
-  document.documentElement.style.setProperty('--ui-top', (tk.getBoundingClientRect().bottom + 8) + 'px');
+  const $ = id => document.getElementById(id), hud = $('hud').getBoundingClientRect(), ct = $('hud-ctrl'), tk = $('ticker-bar'), mob = innerWidth <= 760;
+  ct.style.top = (mob ? hud.bottom + 6 : 8) + 'px';
+  tk.style.top = (ct.getBoundingClientRect().bottom + 6) + 'px';
+  const ui = tk.getBoundingClientRect().bottom + 8, st = document.documentElement.style;
+  st.setProperty('--ui-top', ui + 'px');
+  st.setProperty('--ui-left', (mob ? ui : hud.bottom + 8) + 'px');
 }
 layoutUI();
 window.addEventListener('resize', layoutUI);
 window.addEventListener('load', () => {
   layoutUI();
   if (window.innerWidth <= 760) document.getElementById('side-dock').classList.add('hidden');
-  if ('ResizeObserver' in window) new ResizeObserver(layoutUI).observe(document.getElementById('hud'));
+  if ('ResizeObserver' in window) { const ro = new ResizeObserver(layoutUI); ro.observe(document.getElementById('hud')); ro.observe(document.getElementById('hud-ctrl')); }
 });
 function evTile(e) {
   const r = canvas.getBoundingClientRect();
@@ -3486,19 +3564,27 @@ function startCampaign() {
 // =========================================================
 // HUD・ティッカー・モーダル・制御
 // =========================================================
+var _calKey = '';
+function calSet(y, m, w, ti) {
+  const $ = id => document.getElementById(id), key = y + '/' + m + '/' + w;
+  $('cal-mo').textContent = m + '月'; $('cal-ti').textContent = ti; $('cal-y').textContent = y + '年目'; $('cal-w').textContent = '第' + w + '週';
+  [...$('cal-d').children].forEach((u, i) => u.classList.toggle('on', i < w));
+  $('hud-date').title = `${y}年目 ${m}月 第${w}週`;
+  if (_calKey && key !== _calKey) { const b = $('cal-bd'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  _calKey = key;
+}
 function updateHUD() {
   const r = RANKS[state.rankIdx];
   document.getElementById('hud-rank').textContent = `ランク ${r.rank}`;
   const timeIcon = state.weekTimer < 10 ? '☀️' : (state.weekTimer < 16 ? '🌆' : '🌙');
-  document.getElementById('hud-date').textContent = `📅 ${state.year}年目 ${state.month}月 第${state.week}週 ${timeIcon}`;
+  calSet(state.year, state.month, state.week, timeIcon);
 
   const mEl = document.getElementById('hud-money');
   mEl.textContent = `💰 ¥${state.money.toLocaleString()}`;
-  mEl.className = 'hud-pill pill-money' + (state.money < 0 ? ' minus' : '');
+  mEl.className = 'hc-money' + (state.money < 0 ? ' minus' : '');
 
   coinTrack();
-  document.getElementById('hud-pt').textContent = `✨ 経営P: ${state.points}`;
-  document.getElementById('hud-rating').textContent = `♥ 評判 ${state.rating.toFixed(1)}`;
+  orbUpdate();
   document.getElementById('hud-cust').textContent = `👥 客 ${state.totalCustomers}`;
 
   document.getElementById('btn-pause').className = 'kairo-btn ' + (state.paused ? 'btn-orange' : 'btn-cream');
@@ -4198,6 +4284,7 @@ function showReport(e, promoted) {
     wpRow('商品仕入コスト', sgn(-e.cost), '#b91c1c') +
     wpRow('スタッフ人件費', sgn(-e.wages), '#b91c1c') +
     `<div class="wp-row wp-total"><span>今月の純利益</span><span class="dot"></span><span style="color:${e.net >= 0 ? '#15803d' : '#b91c1c'}">${sgn(e.net)}</span></div>` +
+    '<div class="wp-hr"></div><div style="font-weight:900;margin:4px 0 2px">▼ 今月の収支グラフ</div>' + barsHTML([{ l: '売上', v: e.rev }, { l: 'その他', v: e.extra }, { l: '仕入', v: -e.cost }, { l: '人件費', v: -e.wages }, { l: '純利益', v: e.net }], 100) +
     (promoted ? `<div class="wp-rankup">★ 店舗ランクアップ！<br>ランク ${promoted.rank}【${promoted.name}】になりました<br>雇用上限 ${promoted.maxStaff}人 ／ 新商品解放 ／ ✨+30P</div>` : '') +
     `<div class="wp-note">※ 過去の決算は 📜メニュー → 決算履歴 で見られます</div>`;
   document.getElementById('wp-status').textContent = `${e.y}年目 ${e.m}月 ／ 純利益 ${sgn(e.net)}`;
@@ -4264,15 +4351,27 @@ function scHistory() {
   let html = `<div class="sc-card"><div class="sc-h">📅 今月ここまで（${state.year}年目 ${state.month}月 第${state.week}週）</div>` +
     `<div class="sc-kv"><span>🛒 商品売上</span><b>${yen(ms.rev)}（${ms.served}人会計）</b></div>` +
     `<div class="sc-kv"><span>📦 仕入コスト</span><b>${yen(ms.cost)}</b></div></div>`;
+  html += barChart(h.slice(-11));
   if (!h.length) return html + `<div class="sc-empty">まだ決算の記録がありません。<br>月末（4週ごと）に自動で記録されます。</div>`;
-  const last = h.slice(-12), mx = Math.max(1, ...last.map(x => Math.abs(x.net)));
-  html += `<div class="sc-card"><div class="sc-h">📈 純利益のうつりかわり（直近${last.length}か月）</div><div class="sc-graph">` +
-    last.map(x => `<div title="${x.y}年目${x.m}月 ${sgn(x.net)}"><i style="height:${Math.max(3, Math.abs(x.net) / mx * 62)}px;background:${x.net >= 0 ? '#2f9a47' : '#c2410c'}"></i><span>${x.m}月</span></div>`).join('') +
-    `</div></div><div class="sc-card"><div class="sc-h">🗒 月ごとの決算</div>` +
+  html += `<div class="sc-card"><div class="sc-h">🗒 月ごとの決算</div>` +
     `<div class="sc-hrow hd"><span>年月</span><span>売上</span><span>その他</span><span>仕入</span><span>人件費</span><span>純利益</span></div>` +
     h.slice().reverse().map(x => `<div class="sc-hrow"><span>${x.y}年目 ${x.m}月${x.rank ? ' 🎉' : ''}</span><span>${yen(x.rev)}</span><span>${yen(x.extra)}</span><span>${yen(x.cost)}</span><span>${yen(x.wages)}</span><span style="color:${x.net >= 0 ? '#15803d' : '#b91c1c'};font-weight:900">${sgn(x.net)}</span></div>`).join('') +
     `</div>`;
   return html;
+}
+function barsHTML(items, H) {
+  const T = 14, up = Math.max(1, ...items.map(x => x.v)), dn = Math.max(0, ...items.map(x => -x.v));
+  const k = (H - T * 2) / (up + dn), z = T + up * k, fmt = n => (n >= 0 ? '+' : '-') + (Math.abs(n) >= 1000 ? (Math.round(Math.abs(n) / 100) / 10) + 'k' : Math.abs(n));
+  const cols = items.map((x, i) => {
+    const h = Math.max(3, Math.abs(x.v) * k), pos = x.v >= 0, top = pos ? z - h : z;
+    return `<div title="${x.t || sgn(x.v)}"><i class="${pos ? 'p' : 'n'}${x.live ? ' live' : ''}" style="top:${top}px;height:${h}px;animation-delay:${i * 40}ms"></i><b style="top:${pos ? top - 11 : top + h + 1}px;color:${pos ? '#15803d' : '#b91c1c'}">${fmt(x.v)}</b></div>`;
+  }).join('');
+  return `<div class="bc" style="height:${H}px"><span class="bc-z" style="top:${z}px"></span>${cols}</div><div class="bc-m">${items.map(x => `<span>${x.l}</span>`).join('')}</div>`;
+}
+function barChart(last) {
+  const ms = state.monthStats, items = last.map(x => ({ l: x.m + '月', v: x.net, t: `${x.y}年目${x.m}月 ${sgn(x.net)}` }));
+  items.push({ l: '今月', v: ms.rev + ms.extra - ms.cost, live: 1, t: '今月（人件費を引く前の途中経過）' });
+  return `<div class="sc-card"><div class="sc-h">📊 純利益のグラフ（月ごと）</div>${barsHTML(items, 112)}<div style="font-size:10px;margin-top:4px;color:#7c5a2a">※「今月」は人件費を引く前の途中経過（うす色の棒）です</div></div>`;
 }
 function scSales() {
   const sl = state.sales || {};
@@ -4405,6 +4504,66 @@ document.addEventListener('keydown', e => {
   if (titleOpen && e.key === 'Enter' && e.target.tagName !== 'BUTTON' && !document.getElementById('modal-backdrop').classList.contains('show')) { e.preventDefault(); startFromTitle(); }
 });
 applyTheme();
+
+// ---- 液体ゲージ（経営・評判・コイン） ----
+var ORBS = {};
+var ORB_RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function orbInit(id, w, h, r, tr) {
+  const cv = document.getElementById(id), d = Math.min(2, devicePixelRatio || 1);
+  cv.width = w * d; cv.height = h * d; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  const nx = cv.nextElementSibling; if (nx && nx.tagName === 'B') nx.style.top = (h / 2 - 9) + 'px';
+  if (cv.parentElement.className === 'orb') cv.parentElement.style.width = w + 'px';
+  ORBS[id] = { x: cv.getContext('2d'), d, W: tr ? h : w, H: tr ? w : h, T: tr, R: r, lv: 0, tg: 0, vel: 0, amp: 0, ph: Math.random() * 6, first: true, c: null, tc: null,
+    bub: Array.from({ length: 5 }, () => ({ x: 5 + Math.random() * ((tr ? h : w) - 10), y: (tr ? w : h) * Math.random(), r: 1 + Math.random() * 2, v: 6 + Math.random() * 8 })) };
+}
+function orbTarget(id, v, cols) {
+  const o = ORBS[id]; v = Math.max(0, Math.min(1, v)); const tc = cols.flat();
+  if (o.first) { o.lv = v; o.c = tc.slice(); o.first = false; }
+  else if (Math.abs(v - o.tg) > 0.002) o.amp = Math.min(1, o.amp + Math.abs(v - o.tg) * 14 + 0.3);
+  o.tg = v; o.tc = tc;
+}
+function orbUpdate() {
+  if (!ORBS['orb-biz']) return;
+  const cur = RANKS[state.rankIdx], nx = RANKS[state.rankIdx + 1];
+  document.getElementById('rk-fill').style.width = (nx ? Math.max(0, Math.min(1, (state.totalRevenue - cur.needRev) / (nx.needRev - cur.needRev))) * 100 : 100) + '%';
+  orbTarget('orb-biz', state.points / 100, [[205, 160, 255], [126, 34, 206]]);
+  document.getElementById('orb-biz-t').textContent = state.points + 'P';
+  const r = state.rating;
+  orbTarget('orb-rep', 0.08 + 0.92 * (r - 1) / 4,
+    r < 2.5 ? [[255, 150, 150], [220, 75, 82]] : r < 3.5 ? [[255, 210, 120], [238, 123, 48]] : r < 4.3 ? [[140, 232, 175], [47, 167, 122]] : [[255, 160, 205], [236, 72, 153]]);
+  document.getElementById('orb-rep-t').textContent = r.toFixed(1);
+  orbTarget('orb-coin', state.money < 0 ? 0.1 : Math.max(0.12, state.money / 30000), state.money < 0 ? [[255, 150, 150], [220, 75, 82]] : [[255, 214, 90], [224, 140, 20]]);
+}
+function orbDraw(o, t, dt) {
+  o.vel += (o.tg - o.lv) * 60 * dt; o.vel *= Math.exp(-9 * dt); o.lv += o.vel * dt; o.amp *= Math.exp(-1.4 * dt);
+  if (o.c) o.c = o.c.map((v, i) => v + (o.tc[i] - v) * Math.min(1, 4 * dt));
+  const { x, W, H, R, d } = o, k = ORB_RM ? 0.25 : 1, y0 = H - 4 - Math.max(0, Math.min(1.04, o.lv)) * (H - 8), a = (1.3 + o.amp * 3.6) * k;
+  const rgb = (i, al) => `rgba(${o.c[i] | 0},${o.c[i + 1] | 0},${o.c[i + 2] | 0},${al})`;
+  const shape = () => { x.beginPath(); x.roundRect(2, 2, W - 4, H - 4, R); };
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, x.canvas.width, x.canvas.height); o.T ? x.setTransform(0, d, d, 0, 0, 0) : x.setTransform(d, 0, 0, d, 0, 0); x.save(); shape(); x.clip();
+  let g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#2b3850'); g.addColorStop(1, '#182131'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  for (let L = 0; L < 2; L++) {
+    x.beginPath(); x.moveTo(0, H);
+    for (let px = 0; px <= W; px += 2) x.lineTo(px, y0 + Math.sin(px * 0.12 + t * (L ? -2.1 : 2.7) + o.ph + L * 1.9) * a * (L ? 0.75 : 1));
+    x.lineTo(W, H); x.closePath();
+    g = x.createLinearGradient(0, y0 - 4, 0, H); g.addColorStop(0, rgb(0, L ? 0.55 : 0.95)); g.addColorStop(1, rgb(3, L ? 0.55 : 0.95)); x.fillStyle = g; x.fill();
+  }
+  x.fillStyle = 'rgba(255,255,255,.4)';
+  o.bub.forEach(b => { b.y -= b.v * dt * k; if (b.y < y0 + 3) { b.y = H - 6; b.x = 5 + Math.random() * (W - 10); } x.beginPath(); x.arc(b.x + Math.sin(t * 2 + b.r * 9) * 1.5, b.y, b.r, 0, 6.2832); x.fill(); });
+  x.restore(); shape(); x.lineWidth = 2.5; x.strokeStyle = 'rgba(255,255,255,.85)'; x.stroke();
+  if (!o.T) { x.fillStyle = 'rgba(255,255,255,.28)'; x.beginPath(); x.ellipse(W * 0.3, 10, W * 0.15, 3.5, -0.5, 0, 6.2832); x.fill(); }
+}
+function titleWave(t) {
+  const cv = document.getElementById('title-wave'), x = cv.getContext('2d'), W = cv.width, H = cv.height;
+  x.clearRect(0, 0, W, H);
+  [['rgba(37,150,190,.40)', 2.0, 58, 0], ['rgba(238,123,48,.38)', -1.5, 44, 2], ['rgba(255,255,255,.22)', 1.1, 30, 4]].forEach(([c, sp, base, ph]) => {
+    x.beginPath(); x.moveTo(0, H);
+    for (let px = 0; px <= W; px += 8) x.lineTo(px, H - base + Math.sin(px * 0.011 + t * sp + ph) * 12 + Math.sin(px * 0.027 - t * sp * 0.7) * 5);
+    x.lineTo(W, H); x.closePath(); x.fillStyle = c; x.fill();
+  });
+}
+orbInit('orb-biz', 36, 62, 10); orbInit('orb-rep', 36, 62, 10); orbInit('orb-coin', 200, 48, 24, true); orbUpdate();
+(function orbLoop(n) { const dt = Math.min(0.05, (n - (orbLoop.t || n)) / 1000); orbLoop.t = n; for (const id in ORBS) if (ORBS[id].c) orbDraw(ORBS[id], n / 1000, dt); if (titleOpen) titleWave(n / 1000); requestAnimationFrame(orbLoop); })(performance.now());
 
 // 初期化実行
 initDefaultStore();
