@@ -1839,12 +1839,11 @@ function canPlaceSafely(type, gx, gy, moveUid = null) {
   for (let qi = 0; qi < q.length; qi++) { const [cx, cy] = q[qi]; dirs.forEach(([dx, dy]) => seed(cx + dx, cy + dy)); }
   const reach = o => dirs.some(([dx, dy]) => okT(o.x + dx, o.y + dy) && visited.has(K(o.x + dx, o.y + dy)));
   const need = ['shelf', 'register', 'eatin', 'atm', 'machine', 'backyard'];
-  // 「近づけません」系は表示のみ(設置は許可)
-  let warn = null;
-  if (need.includes(def.cat) && !reach({ x: gx, y: gy })) warn = 'お客さんが近づけません！';
-  else { const cut = others.find(o => need.includes(FACILITY_TYPES[o.type].cat) && !reach(o)); if (cut) warn = `${FACILITY_TYPES[cut.type].name}に近づけなくなります！`; }
+  if (need.includes(def.cat) && !reach({ x: gx, y: gy })) return { ok: false, reason: 'お客さんが近づけません！' };
+  const cut = others.find(o => need.includes(FACILITY_TYPES[o.type].cat) && !reach(o));
+  if (cut) return { ok: false, reason: `${FACILITY_TYPES[cut.type].name}に近づけなくなります！` };
   if (def.cat === 'register' && !visited.has(K(gx, gy - 1))) return { ok: false, reason: 'レジの後ろ(上側)に店員が立てません' };
-  return warn ? { ok: true, warn } : { ok: true };
+  return { ok: true };
 }
 
 function findPath(sx, sy, gx, gy) {
@@ -2960,13 +2959,7 @@ function draw() {
       ctx.strokeRect(hoverTile.x * TILE + 1, hoverTile.y * TILE + 1, TILE * fpOf(state.buildMode.type).w - 2, TILE * fpOf(state.buildMode.type).h - 2);
 
       // コーナー成立予報！
-      if (check.ok && check.warn) {
-        ctx.fillStyle = '#b45309';
-        ctx.fillRect(hoverTile.x * TILE - 50, hoverTile.y * TILE - 22, 160, 18);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('⚠️ ' + check.warn, hoverTile.x * TILE + 20, hoverTile.y * TILE - 13);
-      } else if (check.ok) {
+      if (check.ok) {
         const previewCombos = getPreviewCombos(state.buildMode.type, hoverTile.x, hoverTile.y, state.buildMode.moveUid);
         if (previewCombos.length > 0) {
           ctx.fillStyle = '#1e293b';
@@ -3375,7 +3368,6 @@ canvas.addEventListener('mousedown', e => {
         obj.y = gy;
         SFX.place();
         recalcCombos();
-        if (check.warn) setTicker(`⚠️ ${check.warn}`);
       }
       cancelBuildMode();
     } else {
@@ -3390,7 +3382,7 @@ canvas.addEventListener('mousedown', e => {
       addPlacedObject(state.buildMode.type, gx, gy);
       SFX.place();
       recalcCombos();
-      setTicker(`🏗️ ${def.name} を設置しました！` + (check.warn ? `（⚠️ ${check.warn}）` : ''));
+      setTicker(`🏗️ ${def.name} を設置しました！`);
       updateHUD();
       // 連続配置できるように建築モード維持（資金不足なら解除）
       if (state.money < def.cost) cancelBuildMode();
@@ -4376,7 +4368,7 @@ function draw3D() {
       const fx = Math.floor(wx), fy = Math.floor(wy), u = wx - fx, v = wy - fy;
       let fr, fg, fb, cr, cg, cb;
       if (fy === 10 && fx >= 0 && fx <= BX3) {
-        const g = ((fx + fy) & 1) ? 168 : 156; fr = g * fog; fg = (g + 6) * fog; fb = (g + 12) * fog; cr = 150; cg = 205; cb = 245;
+        const g = ((fx + fy) & 1) ? 168 : 156; fr = g * fog; fg = (g + 6) * fog; fb = (g + 12) * fog; skyAt(wx, wy, y); cr = _sr; cg = _sg; cb = _sb;
         if (fx === 5 || fx === 6) { fr = fg = fb = 80; }
       } else if (!(fx >= 0 && fx <= BX3 && fy >= 0 && fy <= 9)) {
         const f2 = Math.max(0.45, fog);
@@ -4385,10 +4377,11 @@ function draw3D() {
           if (fy === 12 && (fx & 1) === 0 && v > 0.42 && v < 0.58 && u > 0.2 && u < 0.8) { fr = 226 * f2; fg = 232 * f2; fb = 240 * f2; }
           else { fr = 98 * f2; fg = 108 * f2; fb = 128 * f2; }
         } else { const a = ((fx + fy) & 1) ? 1 : 0.92; fr = 104 * a * f2; fg = 196 * a * f2; fb = 108 * a * f2; }
-        cr = 150; cg = 205; cb = 245;
+        skyAt(wx, wy, y); cr = _sr; cg = _sg; cb = _sb;
       } else {
         const k = (((fx + fy) & 1) ? 1 : 0.9) * ((u < 0.04 || v < 0.04) ? 0.82 : 1) * fog;
         fr = 236 * k; fg = 226 * k; fb = 198 * k;
+        { const ax = (fx & ~1) + 0.5 - wx, ay = (fy & ~1) + 0.5 - wy, bo = 1 + 0.5 / (1 + 2.5 * (ax * ax + ay * ay)); fr = Math.min(255, fr * bo); fg = Math.min(255, fg * bo); fb = Math.min(255, fb * bo); }
         if ((fx & 1) === 0 && (fy & 1) === 0 && u > 0.2 && u < 0.8 && v > 0.2 && v < 0.8) { cr = 255; cg = 252; cb = 224; }
         else { cr = 240 * fog; cg = 236 * fog; cb = 224 * fog; }
       }
@@ -4439,9 +4432,10 @@ function draw3D() {
         if (!hit.empty && j > 0.12 && j < 0.88) seg(a + 0.09, a + 0.26, (cell + r) % (L ? 3 : 2) ? hit.t : hit.c);
         seg(a + 0.26, a + 0.29, '#8a6a43');
       }
-    } else if (hit.brick) { if ((u * 4) % 1 < 0.04) seg(0, 1, 'rgba(0,0,0,.14)'); seg(0.85, 1, 'rgba(0,0,0,.12)'); }
+    } else if (hit.brick) { for (let r = 0; r < 6; r++) { seg(r / 6, r / 6 + 0.025, 'rgba(0,0,0,.22)'); if (((u * 3 + (r & 1) * 0.5) % 1) < 0.06) seg(r / 6, (r + 1) / 6, 'rgba(0,0,0,.2)'); } }
     else if (hit.deco) seg(0, 0.12, 'rgba(255,255,255,.22)');
     else if (hit.far) for (let r = 0; r < 3; r++) if ((u * 4) % 1 > 0.2 && (u * 4) % 1 < 0.8) seg(0.15 + r * 0.28, 0.31 + r * 0.28, '#cfe3f7');
+    seg(0, 0.07, 'rgba(0,0,0,.28)'); seg(0.9, 1, 'rgba(0,0,0,.3)');
     seg(0, 1, 'rgba(0,0,0,' + Math.min(0.7, d / 14 + (side ? 0.15 : 0)).toFixed(2) + ')');
   }
   const sp = [...customers.map(c => ({ x: c.x, y: c.y, c: c.shirt, hair: c.hair, bounce: c.bounce })), ...hiredStaff.slice(1).map(q => ({ x: q.x, y: q.y, c: q.color, hair: q.hair, bounce: q.bounce })), ...passers.map(q => ({ x: q.x, y: q.y, c: q.shirt, hair: q.hair, bounce: q.bounce })), ...visitors.map(q => ({ x: q.x, y: q.y, c: q.shirt, hair: q.hair, bounce: q.bounce }))]
@@ -4707,7 +4701,7 @@ document.addEventListener('mousemove', e => {
     const { x, y } = hoverTile;
     if (state.buildMode) {
       const c = canPlaceSafely(state.buildMode.type, x, y, state.buildMode.moveUid);
-      return showTip(c.ok ? (c.warn ? '⚠️ ' + c.warn + '\n（置くことはできます）' : '✅ ここに置けます（クリックで設置）') : '⚠️ ' + c.reason, e.clientX, e.clientY);
+      return showTip(c.ok ? '✅ ここに置けます（クリックで設置）' : '⚠️ ' + c.reason, e.clientX, e.clientY);
     }
     const o = objAt(x, y);
     if (o) return showTip(objTip(o), e.clientX, e.clientY);
@@ -6720,6 +6714,157 @@ slImportFile = async function (inp) {
   const c = closeSlotWindow;
   closeSlotWindow = function () { c.apply(this, arguments); const w = document.getElementById('slot-win'); if (w) { w.style.translate = ''; w.dataset.tx = w.dataset.ty = 0; } };
 })();
+
+// =========================================================
+// MOD v4: 3D描画強化（空・雲・星 / 照明の光だまり / 壁のAO・レンガ / ブルーム・時間帯の色味・ビネット・埃・歩きの揺れ）
+// =========================================================
+let _sr = 150, _sg = 205, _sb = 245;
+function skyAt(wx, wy, y) {
+  const t = performance.now() / 1000, wt = state.weekTimer || 0, hz = Math.min(1, (y - c3.height / 2) / (c3.height / 2));
+  let r = 190 - 90 * hz, g = 225 - 60 * hz, b = 252 - 20 * hz;                 // 地平線は明るく、真上は深い青
+  const ev = wt >= 16 ? 1 : wt >= 10 ? (wt - 10) / 6 : 0;                      // 昼→夕→夜
+  if (ev > 0) { const nt = wt >= 16 ? 1 : 0, er = 250 - 215 * nt, eg = 140 - 105 * nt + hz * 20, eb = 120 - 60 * nt + hz * 60; r += (er - r) * Math.min(1, ev * 1.1); g += (eg - g) * Math.min(1, ev * 1.1); b += (eb - b) * Math.min(1, ev * 1.1); }
+  const n = Math.sin(wx * .33 + t * .05) * Math.sin(wy * .29 - t * .04) + .4 * Math.sin(wx * .9 + wy * .7 + t * .03);
+  if (n > .5) { const a = Math.min(.8, (n - .5) * 1.6) * (1 - ev * .65); r += (255 - r) * a; g += (255 - g) * a; b += (255 - b) * a; }
+  if (wt >= 14) { const h = (Math.floor(wx * 4) * 73856093 ^ Math.floor(wy * 4) * 19349663) & 255; if (h < 6) { const tw = (.5 + .5 * Math.sin(t * 3 + h)) * Math.min(1, (wt - 14) / 3); r += (255 - r) * tw; g += (255 - g) * tw; b += (240 - b) * tw; } }
+  _sr = r; _sg = g; _sb = b;
+}
+(function () {
+  const _d3 = draw3D, bl = document.createElement('canvas'), bx = bl.getContext('2d'), dust = Array.from({ length: 40 }, (_, k) => [k * 97 % 800, k * 53 % 500, 1 + k % 3, .5 + k % 5 * .2]);
+  let lx = 0, ly = 0, bob = 0;
+  c3.width = 800; c3.height = 500; c3.style.imageRendering = 'auto';
+  draw3D = function () {
+    _d3.apply(this, arguments);
+    const W = c3.width, H = c3.height, t = performance.now() / 1000, wt = state.weekTimer || 0, me = hiredStaff[0];
+    const ev = wt >= 16 ? 2 : wt >= 10 ? (wt - 10) / 6 : 0;
+    if (bl.width !== W >> 2) { bl.width = W >> 2; bl.height = H >> 2; }
+    bx.filter = 'brightness(1.2) contrast(1.6) blur(2px)'; bx.drawImage(c3, 0, 0, bl.width, bl.height); bx.filter = 'none';   // ブルーム
+    x3.save(); x3.globalCompositeOperation = 'screen'; x3.globalAlpha = .3 + .15 * ev; x3.imageSmoothingEnabled = true; x3.drawImage(bl, 0, 0, W, H);
+    const c1 = ev >= 2 ? [140, 155, 225] : ev > 0 ? [255 - 115 * 0, 255 - 50 * ev, 255 - 95 * ev] : null;   // 時間帯の色味
+    if (c1) { x3.globalCompositeOperation = 'multiply'; x3.globalAlpha = 1; x3.fillStyle = `rgb(${c1.join(',')})`; x3.fillRect(0, 0, W, H); }
+    x3.globalCompositeOperation = 'screen'; x3.fillStyle = 'rgba(255,248,220,.5)';                          // 舞う埃
+    dust.forEach(([a, b, s, v]) => { x3.globalAlpha = .25 + .2 * Math.sin(t * 2 + a); x3.beginPath(); x3.arc((a + t * 6 * v) % W, (b + Math.sin(t * .7 + a) * 18 + t * 3 * v) % H, s * .8, 0, 7); x3.fill(); });
+    x3.restore();
+    const vg = x3.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * .95);   // ビネット
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)'); x3.fillStyle = vg; x3.fillRect(0, 0, W, H);
+    if (me) { const mv = Math.hypot(me.x - lx, me.y - ly); lx = me.x; ly = me.y; bob += Math.min(mv, 12) * .045; c3.style.transform = mv > .2 ? `translateY(${(Math.sin(bob) * 2.5).toFixed(1)}px) scale(1.012)` : 'scale(1.012)'; }
+  };
+})();
+
+// ---- スマホ：決算レポートは左上に小さく / 純利益グラフを線グラフに ----
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `
+html[data-ui="port"] .wp-win,html[data-ui="land"] .wp-win{top:calc(var(--ui-top,100px) + 4px);bottom:auto;left:6px;right:auto;width:min(300px,calc(100vw - 12px))}
+html[data-ui="port"] .wp-win.max,html[data-ui="land"] .wp-win.max{width:min(340px,calc(100vw - 12px))}
+html[data-ui="port"] .wp-ruler,html[data-ui="port"] .wp-tool,html[data-ui="land"] .wp-ruler,html[data-ui="land"] .wp-tool{display:none}
+html[data-ui="port"] .wp-page,html[data-ui="land"] .wp-page{max-height:min(24vh,190px);min-height:60px;font-size:11px;line-height:1.45;padding:6px 8px}
+html[data-ui="port"] .wp-win.max .wp-page,html[data-ui="land"] .wp-win.max .wp-page{max-height:min(44vh,360px)}
+@keyframes lcDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.lc{position:relative;margin:4px 0 0}.lc svg{display:block;width:100%;overflow:visible}
+.lc i{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.lc b{position:absolute;transform:translateX(-50%);font-size:10px;white-space:nowrap}`;
+  document.head.appendChild(st);
+  lineChartHTML = function (items, H) {
+    const n = items.length, vs = items.map(x => x.v), mx = Math.max(1, ...vs), mn = Math.min(0, ...vs), P = 16, k = (H - P * 2) / (mx - mn), Y = v => P + (mx - v) * k, X = i => (i + .5) / n * 100;
+    const fmt = v => (v >= 0 ? '+' : '-') + (Math.abs(v) >= 1000 ? (Math.round(Math.abs(v) / 100) / 10) + 'k' : Math.abs(v));
+    const pts = items.map((x, i) => [X(i), Y(x.v)]), d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+    const base = Y(0).toFixed(2), area = d + ` L${pts[n - 1][0].toFixed(2)} ${base} L${pts[0][0].toFixed(2)} ${base}Z`;
+    const live = n > 1 && items[n - 1].live, dPast = pts.slice(0, live ? n - 1 : n).map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+    const anim = window._bcAnim ? 'animation:lcDraw 1s ease-out both;' : '';
+    return `<div class="lc" style="height:${H}px"><svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" style="height:${H}px">
+      <line x1="0" x2="100" y1="${base}" y2="${base}" stroke="#7c5a2a" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" stroke-width="1"/>
+      <path d="${area}" fill="rgba(245,158,11,.16)"/>
+      <path d="${dPast}" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1" style="${anim}"/>
+      ${live ? `<path d="M${pts[n - 2][0].toFixed(2)} ${pts[n - 2][1].toFixed(2)} L${pts[n - 1][0].toFixed(2)} ${pts[n - 1][1].toFixed(2)}" fill="none" stroke="#d97706" stroke-width="2.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke" opacity=".7"/>` : ''}</svg>` +
+      items.map((x, i) => `<i title="${x.t || ''}" style="left:${pts[i][0]}%;top:${pts[i][1]}px;background:${x.v >= 0 ? '#16a34a' : '#dc2626'};${x.live ? 'opacity:.6' : ''}"></i><b style="left:${pts[i][0]}%;top:${x.v >= 0 ? pts[i][1] - 17 : pts[i][1] + 7}px;color:${x.v >= 0 ? '#15803d' : '#b91c1c'}">${fmt(x.v)}</b>`).join('') +
+      `</div><div class="bc-m">${items.map(x => `<span>${x.l}</span>`).join('')}</div>`;
+  };
+  barChart = function (last) {
+    const ms = state.monthStats, items = last.map(x => ({ l: x.m + '月', v: x.net, t: `${x.y}年目${x.m}月 ${sgn(x.net)}` }));
+    items.push({ l: '今月', v: ms.rev + ms.extra - ms.cost, live: 1, t: '今月（人件費を引く前の途中経過）' });
+    return `<div class="sc-card"><div class="sc-h">📈 純利益のグラフ（月ごと）</div>${lineChartHTML(items, 120)}<div style="font-size:10px;margin-top:4px;color:#7c5a2a">※「今月」は人件費を引く前の途中経過（点線）です</div></div>`;
+  };
+})();
+function lineChartHTML() {}
+
+// =========================================================
+// MOD v4: スキン（./skin/image/ に画像を入れるとアイコンを差し替え）
+//   設備・ブロック・機械・お隣の店… → <type>.png 例: shelf_onigiri.png / block_brick.png / machine_vr.png
+//   商品アイコン(一覧・カード) → <商品ID>.png 例: onigiri.png   （png / webp / gif に対応）
+// =========================================================
+const SKIN = {}, SKIN_DIR = './skin/image/', SKIN_EXT = ['png', 'webp', 'gif'];
+function skinKeys() { return [...Object.keys(FACILITY_TYPES), ...Object.keys(products)]; }
+function skinLoad() {
+  let n = 0, pending = 0;
+  const done = () => { if (--pending === 0 && n) { setTicker(`🎨 スキン画像を ${n} 個読み込みました（./skin/image/）`); skinDomSoon(); if (typeof refreshAllTabs === 'function') refreshAllTabs(); } };
+  skinKeys().forEach(k => {
+    pending++;
+    const tryExt = i => {
+      if (i >= SKIN_EXT.length) return done();
+      const im = new Image(); im.onload = () => { SKIN[k] = im; n++; done(); }; im.onerror = () => tryExt(i + 1); im.src = SKIN_DIR + k + '.' + SKIN_EXT[i];
+    };
+    tryExt(0);
+  });
+}
+(function () {
+  const f = drawFacility;
+  drawFacility = function (obj) {
+    const im = SKIN[obj.type]; if (!im) return f.apply(this, arguments);
+    const def = FACILITY_TYPES[obj.type], px = obj.x * TILE, py = obj.y * TILE, fp = fpOf(obj);
+    let w = fp.w * TILE, h = fp.h * TILE, x = px, y = py;
+    if (def.sz) { w = TILE * def.sz[0]; h = TILE * def.sz[1]; x = px + (TILE - w) / 2; y = py + TILE - h; }
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    if (def.cat !== 'neighbor' && def.cat !== 'block') { ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(px + 5, py + TILE - 6, TILE - 8, 5); }
+    ctx.drawImage(im, x, y, w, h);
+    if (def.cat === 'shelf' && def.maxCap) { const r = Math.min(1, (obj.stock || 0) / def.maxCap); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(px + 3, py + TILE - 5, TILE - 6, 3); ctx.fillStyle = r > .3 ? '#4ade80' : '#f87171'; ctx.fillRect(px + 3, py + TILE - 5, (TILE - 6) * r, 3); }
+    if (obj.inCombo) { ctx.strokeStyle = (Math.floor(performance.now() / 350) % 2 === 0) ? '#f5b700' : '#fef08a'; ctx.lineWidth = 3; ctx.strokeRect(px + 1, py + 1, w - 2, h - 2); }
+    if (state.selectedObjId === obj.uid) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.strokeRect(px + 1, py + 1, fp.w * TILE - 2, fp.h * TILE - 2); }
+    ctx.restore();
+  };
+  // HTML側（カード・ツールチップ以外の表示）の絵文字をスキン画像に置き換える
+  const st = document.createElement('style');
+  st.textContent = 'img.skin-ic{height:1.25em;width:1.25em;vertical-align:-.22em;image-rendering:pixelated;object-fit:contain}img.blk-thumb.skin{image-rendering:pixelated;object-fit:contain}';
+  document.head.appendChild(st);
+  let tm = 0, busy = false;
+  window.skinDomSoon = () => { clearTimeout(tm); tm = setTimeout(skinDom, 60); };
+  function skinDom() {
+    if (busy || !Object.keys(SKIN).length) return; busy = true; mo.disconnect();
+    try {
+      const ents = skinKeys().filter(k => SKIN[k]).map(k => { const d = FACILITY_TYPES[k] || products[k], nm = d.name; return { k, nm, pat: d.icon + ' ' + nm, url: SKIN[k].src, blk: d.cat === 'block' }; });
+      document.querySelectorAll('#side-dock,#inspector-popup,#scroll-body,#modal-body').forEach(r => {
+        const w = document.createTreeWalker(r, NodeFilter.SHOW_TEXT), list = []; while (w.nextNode()) list.push(w.currentNode);
+        list.forEach(n => {
+          const v = n.nodeValue; if (!v || v.length > 80) return;
+          for (const e of ents) {
+            const i = v.indexOf(e.pat); if (i < 0) continue;
+            const img = document.createElement('img'); img.className = 'skin-ic'; img.src = e.url; img.alt = '';
+            const p = n.parentNode; p.insertBefore(document.createTextNode(v.slice(0, i)), n); p.insertBefore(img, n); n.nodeValue = ' ' + v.slice(i + e.pat.length - e.nm.length); break;
+          }
+        });
+        r.querySelectorAll('.blk').forEach(c => {
+          const nm = c.querySelector('.card-name'), e = nm && ents.find(q => q.blk && q.nm === nm.textContent.trim()); if (!e) return;
+          const t = c.querySelector('.blk-thumb'); if (!t || t.dataset.skin) return;
+          const img = document.createElement('img'); img.className = 'blk-thumb skin'; img.src = e.url; img.alt = ''; img.dataset.skin = 1; t.replaceWith(img);
+        });
+      });
+    } finally { busy = false; mo.observe(document.body, { childList: true, subtree: true }); }
+  }
+  const mo = new MutationObserver(() => skinDomSoon());
+  mo.observe(document.body, { childList: true, subtree: true });
+  // 設定画面に「スキン一覧」ボタン
+  const g = gfxSettingsHtml;
+  gfxSettingsHtml = function () { return g.apply(this, arguments) + `<div class="set-h">🎨 スキン（ドット絵など）</div><div class="gfx-note">./skin/image/ に画像を入れて再読み込みすると、アイコンが差し替わります</div><button class="kairo-btn btn-cream" style="padding:6px 10px" onclick="skinListModal()">📋 ファイル名の一覧を見る</button>`; };
+})();
+function skinListModal() {
+  const grp = { shelf: '🛒 商品棚', register: '🏧 レジ', eatin: '🏧 設備', atm: '🏧 設備', machine: '🎰 機械', decor: '🌿 装飾', block: '🧱 ブロック', neighbor: '🏘️ お隣の店', fixture: '🛠️ 内装', backyard: '設備' };
+  const by = {}; Object.values(FACILITY_TYPES).forEach(d => { (by[grp[d.cat] || 'その他'] = by[grp[d.cat] || 'その他'] || []).push(d); });
+  let h = `<div style="font-size:12px;margin-bottom:6px">フォルダ <b>${SKIN_DIR}</b> に「ファイル名.png」で入れます（webp / gif も可）。ドット絵はくっきり表示されます。<br>お隣の店は 8×7 マス分の画像、ほかは正方形がおすすめです。✅=読み込み済み</div>`;
+  Object.entries(by).forEach(([g, a]) => { h += `<div style="font-weight:900;margin:6px 0 2px">${g}</div><div style="font-size:11px;line-height:1.7;word-break:break-all">` + a.map(d => `${SKIN[d.type] ? '✅' : '▫️'}${d.type}.png`).join(' ／ ') + '</div>'; });
+  h += `<div style="font-weight:900;margin:6px 0 2px">🍙 商品アイコン（一覧・カード用）</div><div style="font-size:11px;line-height:1.7">` + Object.keys(products).map(k => `${SKIN[k] ? '✅' : '▫️'}${k}.png`).join(' ／ ') + '</div>';
+  openModal('🎨 スキン画像ファイル名一覧', h);
+}
+setTimeout(skinLoad, 0);
 
 // ---- お隣の店の拡張（選択中に拡張ボタン。右へ+2マス、空いていれば奥へ+1マス） ----
 const NB_EXP_MAX = 3;
