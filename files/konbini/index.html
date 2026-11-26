@@ -13,7 +13,7 @@ function uiMode(){var w=innerWidth,h=innerHeight;
 document.documentElement.dataset.ui=uiMode();
 document.documentElement.dataset.dock='open';
 </script>
-<title>開拓！マイコンビニDX - カイロ風経営シミュレーション</title>
+<title>開拓！ショップシミュレーター - カイロ風経営シミュレーション</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="ms-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap">
@@ -943,7 +943,7 @@ body.theme-xp .kairo-box.hud-controls{background:linear-gradient(#fff,#ece9d8);b
 html[data-ui="desk"] body.theme-xp .kairo-box.top-hud,html[data-ui="desk"] body.theme-xp .kairo-box.side-dock{border-top-width:0;border-radius:8px 8px 0 0}
 html[data-ui="desk"] body.theme-xp .top-hud{padding:0 10px 8px}
 html[data-ui="desk"] body.theme-xp .top-hud::before,html[data-ui="desk"] body.theme-xp .side-dock::before{display:block;flex:none;height:22px;line-height:16px;padding:3px 8px;color:#fff;font-weight:700;font-size:12px;text-shadow:1px 1px 0 #0f1089;border-radius:6px 6px 0 0;background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7)}
-html[data-ui="desk"] body.theme-xp .top-hud::before{content:"🏪 マイコンビニDX - 店舗ステータス";margin:0 -10px 7px}
+html[data-ui="desk"] body.theme-xp .top-hud::before{content:"🏪 ショップシミュレーター - 店舗ステータス";margin:0 -10px 7px}
 html[data-ui="desk"] body.theme-xp .side-dock::before{content:"🧰 コマンドセンター";margin:0}
 body.theme-xp .kairo-btn{color:#000;text-shadow:none;border:1px solid #003c74;border-radius:3px;background:linear-gradient(#fff,#ecebe5 86%,#d8d0c4);box-shadow:none;font-weight:700}
 body.theme-xp .kairo-btn:hover:not(:disabled){filter:none;box-shadow:inset 0 0 0 2px #fcd77c}
@@ -981,7 +981,7 @@ body.theme-xp .menu-fab{background:linear-gradient(#5fbf6a,#2f9a47);border:1px s
 body.theme-xp .scroll-win{filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
 /* タイトルのメニュー */
 body.theme-xp .title-menu{padding:0 14px 14px;border:3px solid #0a4fe0;border-top:0;border-radius:8px 8px 0 0;background:#ece9d8;box-shadow:3px 5px 18px rgba(0,0,0,.55);gap:8px;overflow:hidden}
-body.theme-xp .title-menu::before{content:"🏪 開拓！マイコンビニDX";display:block;margin:0 -14px 4px;padding:4px 10px;color:#fff;font-weight:700;font-size:13px;text-shadow:1px 1px 0 #0f1089;background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7)}
+body.theme-xp .title-menu::before{content:"🏪 開拓！ショップシミュレーター";display:block;margin:0 -14px 4px;padding:4px 10px;color:#fff;font-weight:700;font-size:13px;text-shadow:1px 1px 0 #0f1089;background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7)}
 body.theme-xp .title-menu .title-btn{color:#000;border:1px solid #003c74;border-radius:3px;background:linear-gradient(#fff,#ecebe5 86%,#d8d0c4);box-shadow:none;font-size:14px;padding:9px 12px;text-shadow:none}
 body.theme-xp .title-menu .title-btn:hover{box-shadow:inset 0 0 0 2px #fcd77c;filter:none}
 body.theme-xp .title-menu .title-btn.start{background:linear-gradient(#fff3dc,#ffc36b);box-shadow:inset 0 0 0 2px #98b8f3;font-size:16px;padding:12px;color:#000;animation:none}
@@ -1083,7 +1083,7 @@ html[data-ui="desk"] #road-bar{bottom:68px}
   <!-- ニュースティッカー -->
   <div class="ticker-bar" id="ticker-bar">
     <span class="ticker-label notice" id="ticker-label">📢 お知らせ</span>
-    <span id="ticker-text">新しいコンビニがオープンしました！棚を並べてお客さんを迎えよう！</span>
+    <span id="ticker-text">新しいお店がオープンしました！棚を並べてお客さんを迎えよう！（📜メニューで店タイプを変えられます）</span>
   </div>
 
   <!-- メインエリア -->
@@ -1161,15 +1161,15 @@ html[data-ui="desk"] #road-bar{bottom:68px}
   <div class="title-screen show entering" id="title-screen">
     <canvas id="title-wave" width="960" height="140"></canvas>
     <div class="title-float">
-      <span style="left:6%;animation-delay:0s">🍙</span><span style="left:16%;animation-delay:2.2s">🥤</span>
-      <span style="left:27%;animation-delay:4.5s">🍪</span><span style="left:38%;animation-delay:1.1s">🍱</span>
-      <span style="left:50%;animation-delay:6s">🍗</span><span style="left:61%;animation-delay:3.3s">🍦</span>
-      <span style="left:72%;animation-delay:5.2s">📚</span><span style="left:83%;animation-delay:.6s">☕</span>
+      <span style="left:6%;animation-delay:0s">🥐</span><span style="left:16%;animation-delay:2.2s">💐</span>
+      <span style="left:27%;animation-delay:4.5s">🍜</span><span style="left:38%;animation-delay:1.1s">🧸</span>
+      <span style="left:50%;animation-delay:6s">💊</span><span style="left:61%;animation-delay:3.3s">👗</span>
+      <span style="left:72%;animation-delay:5.2s">📚</span><span style="left:83%;animation-delay:.6s">🐶</span>
       <span style="left:92%;animation-delay:3.9s">🍰</span>
     </div>
     <div class="title-logo">
       <div class="title-sub">カイロ風 経営シミュレーション</div>
-      <h1>開拓！<br><em>マイコンビニ</em>DX</h1>
+      <h1>開拓！<br><em>ショップ</em>シミュレーター</h1>
     </div>
     <div class="title-menu">
       <button class="title-btn start" id="btn-continue" onclick="titleContinue()">▶ ゲームスタート</button>
@@ -1200,6 +1200,7 @@ html[data-ui="desk"] #road-bar{bottom:68px}
             <button data-t="sales" onclick="setScrollTab('sales')">🛒 商品の販売数</button>
             <button data-t="reviews" onclick="setScrollTab('reviews')">⭐ お客様の声</button>
             <button data-t="stats" onclick="setScrollTab('stats')">🏪 営業成績</button>
+            <button data-t="type" onclick="setScrollTab('type')">🏷 店タイプ</button>
             <button data-t="settings" onclick="setScrollTab('settings')">⚙ 設定・セーブ</button>
           </div>
           <div class="scroll-body" id="scroll-body"></div>
@@ -1566,7 +1567,7 @@ const products = {
 function getFairPrice(p) {
   const qualMult = 1 + (p.quality - 1) * 0.16;
   const comboMult = 1 + (state.comboBonusByProd[p.id] || 0);
-  return Math.round((p.basePrice * qualMult * comboMult) / 10) * 10;
+  return Math.round((p.basePrice * qualMult * comboMult * typeSigMul(p)) / 10) * 10;
 }
 
 function getEffectivePrice(p) {
@@ -1666,7 +1667,7 @@ function renderBackTab() {
   const pane = document.getElementById('pane-back');
   let h = `<div class="ribbon-title"><span>🏭 バックヤード設備</span><span>自家製で原価ダウン！</span></div>
     <div style="font-size:11px;color:var(--text-muted);">設備を導入すると対象商品の仕入原価が下がります。レベルを上げるほどお得（最大Lv.3）。</div>`;
-  Object.values(BACK_EQUIP).forEach(e => {
+  Object.values(BACK_EQUIP).filter(equipRelevant).forEach(e => {
     const lv = equipLv[e.id] || 0, locked = state.rankIdx < e.rank, up = equipUpCost(e);
     const pct = l => Math.round(equipRate(e, l) * 100);
     const tgt = e.prods === 'all' ? '全商品' : e.prods.map(id => products[id].icon + products[id].name).join('・');
@@ -1729,7 +1730,7 @@ function recalcCombos(silent = false) {
       const o1 = placedObjects[i];
       const o2 = placedObjects[j];
       const manhattan = Math.abs(o1.x - o2.x) + Math.abs(o1.y - o2.y);
-      if (manhattan !== 1) continue;
+      if (!comboAdj(o1, o2, manhattan)) continue;
 
       // 装飾ボーナス(観葉植物・花壇・シンボルツリー・街灯)
       [[o1, o2], [o2, o1]].forEach(([d, s2]) => {
@@ -2202,6 +2203,7 @@ function tryEnterCustomerFromPasser(p) {
   const saleShelves = shelves.filter(o => products[FACILITY_TYPES[o.type].prod].onSale);
   let enterProb = 0.35 + (state.rating - 2.5) * 0.14 + (saleShelves.length * 0.14);
   if (state.campaignTimer > 0) enterProb += 0.28;
+  enterProb += arcInfo().enter;   // 機械を並べたゲームコーナーの集客力
 
   if (Math.random() > enterProb || customers.length >= 18) return false;
 
@@ -2216,10 +2218,9 @@ function tryEnterCustomerFromPasser(p) {
   }
 
   // たまにATMやイートインにも興味を持つ
-  const atmObj = placedObjects.find(o => o.type === 'atm');
-  const wantsAtm = atmObj && Math.random() < 0.25;
-  const macs = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'machine');
-  const machineUid = macs.length && Math.random() < Math.min(0.75 + 0.03 * (machUpg.mu_ad || 0), 0.3 + macs.length * 0.1 + 0.06 * (machUpg.mu_ad || 0)) ? macs[Math.floor(Math.random() * macs.length)].uid : null;
+  const atmObj = pickAtmFor();
+  const wantsAtm = !!atmObj && Math.random() < 0.25;
+  const machineUid = pickMachineFor();
 
   const doorX = Math.random() < 0.5 ? 5 : 6;
   const cust = {
@@ -2335,15 +2336,15 @@ function updateStaffAI(dt) {
         const targetShelf = placedObjects.find(o => o.uid === st.targetObjId);
         if (!targetShelf) { st.carry = null; return; }
         const def = FACILITY_TYPES[targetShelf.type];
-        const near = Math.abs(stx - targetShelf.x) + Math.abs(sty - targetShelf.y) <= 1;
+        const near = adjToObj(stx, sty, targetShelf);
         if (near) {
-          const space = def.maxCap - targetShelf.stock;
+          const space = capOf(targetShelf) - targetShelf.stock;
           const put = Math.min(space, st.carry.count);
           targetShelf.stock += put;
           if (st.carry.count > put) products[st.carry.prod].stock += (st.carry.count - put);
           st.carry = null;
           st.cooldown = 0.25;
-          addFloatText(targetShelf.x*TILE + 20, targetShelf.y*TILE, `+${put}${products[def.prod].icon}`, '#2596be');
+          addFloatText(objCenter(targetShelf).x, targetShelf.y*TILE, `+${put}${products[def.prod].icon}`, '#2596be');
         } else {
           const adjs = getAdjacentWalkable(targetShelf.x, targetShelf.y);
           if (adjs.length > 0) {
@@ -2360,6 +2361,9 @@ function updateStaffAI(dt) {
         if (_dp.length) { st.path = _dp; return; }
       }
 
+      // 1.5 空っぽの機械は最優先で補充
+      if (staffMachineRefill(st, stx, sty, true)) return;
+
       // 2. 補充が必要な棚を探す
       const emptyShelves = placedObjects
         .filter(o => {
@@ -2368,9 +2372,9 @@ function updateStaffAI(dt) {
           const rp = STAFF_ROLES[st.role] && STAFF_ROLES[st.role].prods;
           if (rp && !rp.includes(def.prod)) return false;
           const prod = products[def.prod];
-          return o.stock < def.maxCap * 0.75 && prod.stock > 0;
+          return o.stock < capOf(o) * 0.75 && prod.stock > 0;
         })
-        .sort((a, b) => (a.stock / FACILITY_TYPES[a.type].maxCap) - (b.stock / FACILITY_TYPES[b.type].maxCap));
+        .sort((a, b) => (a.stock / capOf(a)) - (b.stock / capOf(b)));
 
       if (emptyShelves.length > 0) {
         const tgt = emptyShelves[0];
@@ -2379,7 +2383,7 @@ function updateStaffAI(dt) {
         const by = placedObjects.find(o => o.type === 'backyard');
         if (!by) return;
         if (Math.abs(stx - by.x) + Math.abs(sty - by.y) <= 1) {
-          const take = Math.min(4, def.maxCap - tgt.stock, prod.stock);
+          const take = Math.min(restockLoad(tgt), capOf(tgt) - tgt.stock, prod.stock);
           if (take > 0) {
             prod.stock -= take;
             st.carry = { prod: def.prod, count: take };
@@ -2391,6 +2395,9 @@ function updateStaffAI(dt) {
         }
         return;
       }
+
+      // 2.5 残りが3割以下の機械を補充
+      if (staffMachineRefill(st, stx, sty, false)) return;
 
       // 3. ゴミ掃除
       if (dirts.length > 0) {
@@ -2491,13 +2498,15 @@ function finishCustomerCheckout(reg, cust, worker) {
   if (ptGain >= 2) addFloatText(worker.x, worker.y - 24, `✨+${ptGain}P`, '#9333ea');
 
   // イートイン席が空いていれば少し寄ってから帰ることも
-  const eatin = placedObjects.find(o => o.type === 'eatin');
+  const eatin = pickEatinFor();
   if (eatin && Math.random() < 0.35) {
     const adjs = getAdjacentWalkable(eatin.x, eatin.y);
     if (adjs.length > 0) {
+      const _e = adjs[Math.floor(Math.random() * adjs.length)];
       cust.state = 'eatin';
       cust.currentObjId = eatin.uid;
-      cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), adjs[0].x, adjs[0].y);
+      cust.eatDur = 0;
+      cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), _e.x, _e.y);
       return;
     }
   }
@@ -2522,12 +2531,14 @@ function assignCustomerNextTarget(cust) {
   if (cust.targets.length === 0) {
     if (cust.wantsAtm) {
       cust.wantsAtm = false;
-      const atm = placedObjects.find(o => o.type === 'atm');
+      const atm = pickAtmFor();
       if (atm) {
         const adjs = getAdjacentWalkable(atm.x, atm.y);
         if (adjs.length > 0) {
+          const _a = adjs[Math.floor(Math.random() * adjs.length)];
           cust.state = 'atm';
-          cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), adjs[0].x, adjs[0].y);
+          cust.currentObjId = atm.uid;
+          cust.path = findPath(Math.floor(cust.x/TILE), Math.floor(cust.y/TILE), _a.x, _a.y);
           return;
         }
       }
@@ -2588,7 +2599,7 @@ function assignCustomerNextTarget(cust) {
 
 // 近くに商品棚があるか（歩きながら眺める判定）
 function shelfNear(c) {
-  return placedObjects.some(o => FACILITY_TYPES[o.type].cat === 'shelf' && Math.hypot((o.x + 0.5) * TILE - c.x, (o.y + 0.5) * TILE - c.y) < 1.7 * TILE);
+  return placedObjects.some(o => FACILITY_TYPES[o.type].cat === 'shelf' && (() => { const p = objCenter(o), f = fpOf(o); return Math.hypot(p.x - c.x, p.y - c.y) < (0.7 + Math.max(f.w, f.h) * 0.5 + 0.5) * TILE; })());
 }
 function updateCustomers(dt) {
   for (let i = customers.length - 1; i >= 0; i--) {
@@ -2646,10 +2657,7 @@ function updateCustomers(dt) {
       } else if (c.state === 'picking') {
         c.waitTimer -= dt;
         const o2 = placedObjects.find(o => o.uid === c.currentObjId);
-        if (o2) {   // 棚の方を向く
-          const ddx = (o2.x + 0.5) * TILE - c.x, ddy = (o2.y + 0.5) * TILE - c.y;
-          if (Math.abs(ddx) > Math.abs(ddy)) { c.fx = Math.sign(ddx); c.fy = 0; } else { c.fx = 0; c.fy = Math.sign(ddy); }
-        }
+        if (o2) faceObj(c, o2);   // 棚の方を向く
         if (!c.looked && c.waitTimer < c.browse * 0.5) { c.looked = true; if (Math.random() < 0.5) { c.emote = '🤔'; c.emoteTimer = 0.9; } }
         if (c.waitTimer <= 0) {
           c.looked = false;
@@ -2684,25 +2692,19 @@ function updateCustomers(dt) {
           }
           assignCustomerNextTarget(c);
         }
-      } else if (c.state === 'atm') {
-        state.money += 120;
-        state.monthStats.extra += 120;
-        state.points += 1;
-        SFX.cash();
-        addFloatText(c.x, c.y - 20, '🏧+¥120', '#2596be');
-        assignCustomerNextTarget(c);
-      } else if (c.state === 'machine') {
-        const mc = placedObjects.find(o => o.uid === c.currentObjId);
-        if (mc) useMachine(mc, c);
-        assignCustomerNextTarget(c);
+      } else if (c.state === 'atm' || c.state === 'machine') {
+        stepUse(c, dt);   // 実際に操作する時間がかかる（枠が埋まっていれば順番待ち）
       } else if (c.state === 'eatin') {
-        if (c.waitTimer <= 0) c.waitTimer = 1.8;
+        { const eo = placedObjects.find(o => o.uid === c.currentObjId); if (eo) faceObj(c, eo); }
+        if (!c.eatDur) c.eatDur = c.waitTimer = 3.8 + Math.random() * 1.8;
         c.waitTimer -= dt;
         if (c.waitTimer <= 0) {
-          state.points += 2;
+          const _pt = eatPts(c);
+          state.points += _pt;
           SFX.heart();
-          addFloatText(c.x, c.y - 20, '✨+2P 満腹!', '#f59e0b');
+          addFloatText(c.x, c.y - 20, `✨+${_pt}P 満腹!`, '#f59e0b');
           c.emote = '❤️'; c.emoteTimer = 1.2;
+          c.eatDur = 0;
           sendCustomerHome(c);
         }
       } else if (c.state === 'leaving') {
@@ -3005,19 +3007,15 @@ function draw() {
   // 6. 来店客
   customers.forEach(c => {
     const lean = c.state === 'picking' ? 2.5 : 0;   // 商品を見るときは少し棚に寄る
-    drawChibi(c.x + (c.fx || 0) * lean, c.y + (c.fy || 0) * lean * 0.6, c.shirt, c.hair, c.bounce, false);
-    if (c.basket && c.basket.length) {   // 買い物かご
-      const bx = c.x + 9, by2 = c.y + 2;
-      ctx.fillStyle = '#d97706'; ctx.fillRect(bx, by2, 9, 7); ctx.strokeStyle = '#3b2d22'; ctx.lineWidth = 1; ctx.strokeRect(bx, by2, 9, 7);
-      c.basket.slice(-3).forEach((b, k) => { ctx.fillStyle = products[b.prod].dot; ctx.fillRect(bx + 1 + k * 3, by2 - 2, 3, 3); });
+    drawCustomerBody(c, lean);
+    if (!c.hidden && c.basket && c.basket.length) {   // 買い物かご
+      const bx = c.x + 8, by2 = c.y + 2, bsk = c.basket.slice(-3);
+      bsk.forEach((b, k) => { const pp = products[b.prod]; if (pp) mxProd(b.prod, bx + k * 3.6 - 1, by2 - 7 - (k % 2) * 1.2, 9, pp, k); });   // 入れた商品の絵がかごからのぞく
+      ctx.fillStyle = '#d97706'; ctx.fillRect(bx, by2, 11, 8); ctx.strokeStyle = '#3b2d22'; ctx.lineWidth = 1; ctx.strokeRect(bx, by2, 11, 8);
+      ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(bx + 1, by2 + 1, 9, 1.5);
+      if (c.basket.length > 3) { ctx.fillStyle = '#1e293b'; ctx.font = '900 7px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('×' + c.basket.length, bx + 5.5, by2 + 4.8); ctx.fillStyle = '#fff'; }
     }
-    if (c.state === 'picking' && c.currentObjId != null) {   // 商品を手に取って眺める
-      const sh = placedObjects.find(o => o.uid === c.currentObjId);
-      if (sh && FACILITY_TYPES[sh.type].prod) {
-        ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(products[FACILITY_TYPES[sh.type].prod].icon, c.x + (c.fx || 0) * 13, c.y - 2 + Math.sin(performance.now() / 160 + c.id * 9) * 1.5);
-      }
-    }
+    // （商品を手に取る絵は drawCustomerBody 内で商品ごとの絵を描く）
     if (c.state === 'queuing') {
       const r = Math.max(0, c.patience / c.maxPatience);
       ctx.fillStyle = '#1e293b';
@@ -3034,11 +3032,15 @@ function draw() {
     drawChibi(st.x, st.y, st.color, st.hair, st.bounce, true, st.isManager);
     if (st.carry) {
       // 商品箱を持っている描画
+      const cp = products[st.carry.prod];
+      if (cp) { mxProd(st.carry.prod, st.x + 6.5, st.y - 14, 10, cp, 0); mxProd(st.carry.prod, st.x + 11, st.y - 12, 8, cp, 1); }   // 箱からのぞく商品
       ctx.fillStyle = '#f59e0b';
       ctx.strokeStyle = '#3b2d22';
       ctx.lineWidth = 1.5;
-      ctx.fillRect(st.x + 6, st.y - 4, 11, 10);
-      ctx.strokeRect(st.x + 6, st.y - 4, 11, 10);
+      ctx.fillRect(st.x + 6, st.y - 4, 12, 10);
+      ctx.strokeRect(st.x + 6, st.y - 4, 12, 10);
+      ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(st.x + 7, st.y - 3, 10, 2);
+      ctx.fillStyle = '#1e293b'; ctx.font = '900 7px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('×' + st.carry.count, st.x + 12, st.y + 2);
     }
     ctx.fillStyle = '#1e293b';
     ctx.font = 'bold 9px sans-serif';
@@ -3072,7 +3074,7 @@ function getPreviewCombos(type, gx, gy, ignoreUid) {
   const hits = [];
   placedObjects.forEach(o => {
     if (o.uid === ignoreUid) return;
-    if (Math.abs(o.x - gx) + Math.abs(o.y - gy) !== 1) return;
+    if (!comboAdjPrev(o, type, gx, gy)) return;
     if (type === 'plant' && FACILITY_TYPES[o.type].cat === 'shelf') hits.push('魅力+15%');
     if (o.type === 'plant' && FACILITY_TYPES[type].cat === 'shelf') hits.push('魅力+15%');
     COMBO_DEFS.forEach(c => {
@@ -3366,26 +3368,29 @@ canvas.addEventListener('mousedown', e => {
         if (FACILITY_TYPES[obj.type].cat === 'neighbor') { const ddx = gx - obj.x, ddy = gy - obj.y; placedObjects.forEach(q => { if (hostedBy(obj, q)) { q.x += ddx; q.y += ddy; } }); }
         obj.x = gx;
         obj.y = gy;
+        if (state.buildMode.sw) applyObjSize(obj, state.buildMode.sw, state.buildMode.sh);
         SFX.place();
         recalcCombos();
       }
       cancelBuildMode();
     } else {
       // 新規設置
-      const def = FACILITY_TYPES[state.buildMode.type];
-      if (state.money < def.cost) {
+      const def = FACILITY_TYPES[state.buildMode.type], bm = state.buildMode;
+      const cost = bm.sw ? szCostOf(def, bm.sw, bm.sh) : def.cost;
+      if (state.money < cost) {
         SFX.angry();
         setTicker('⚠️ 資金が足りません！');
         return;
       }
-      state.money -= def.cost;
-      addPlacedObject(state.buildMode.type, gx, gy);
+      state.money -= cost;
+      const _no = addPlacedObject(bm.type, gx, gy);
+      if (bm.sw) { applyObjSize(_no, bm.sw, bm.sh); if (def.cat === 'shelf') _no.stock = Math.ceil(capOf(_no) * 0.7); }
       SFX.place();
       recalcCombos();
       setTicker(`🏗️ ${def.name} を設置しました！`);
       updateHUD();
       // 連続配置できるように建築モード維持（資金不足なら解除）
-      if (state.money < def.cost) cancelBuildMode();
+      if (state.money < cost) cancelBuildMode();
     }
     return;
   }
@@ -3403,6 +3408,7 @@ canvas.addEventListener('mousedown', e => {
 function startBuildMode(type, moveUid = null) {
   closeInspector();
   const def = FACILITY_TYPES[type];
+  if (!moveUid && !typeAllowsDef(def)) { SFX.angry(); return setTicker(`⚠️ ${def.name} は ${curType().name} タイプでは扱えません`); }
   if (!moveUid && state.money < def.cost) {
     SFX.angry();
     return setTicker(`⚠️ ${def.name} の建築費用(¥${def.cost.toLocaleString()})が足りません！`);
@@ -3436,7 +3442,7 @@ function openInspector(obj) {
     const p = products[def.prod];
     extra = `
       <div style="font-size:12px; margin:4px 0;">
-        陳列数: <b>${obj.stock}/${def.maxCap}</b> | 販売価格: <b>¥${getEffectivePrice(p)}</b>
+        陳列数: <b>${obj.stock}/${capOf(obj)}</b> | 販売価格: <b>¥${getEffectivePrice(p)}</b>
       </div>
       <button class="kairo-btn btn-blue" style="width:100%; margin-bottom:5px;" onclick="switchDockById('price'); closeInspector();">
         💰 価格・特売を設定する
@@ -3468,7 +3474,7 @@ function openInspector(obj) {
     <div style="display:flex; gap:6px; margin-top:6px;">
       <button class="kairo-btn btn-orange" style="flex:1;" onclick="startBuildMode('${obj.type}', ${obj.uid})">🚚 移動</button>
       <button class="kairo-btn btn-red" style="flex:1;" onclick="removeObject(${obj.uid})" ${!canDelete ? 'disabled title="最後のレジは撤去できません"' : ''}>
-        🗑 撤去(+¥${Math.floor(def.cost*0.5)})
+        🗑 撤去(+¥${Math.floor(szCostOf(def, obj.sw || 1, obj.sh || 1)*0.5)})
       </button>
     </div>
   `;
@@ -3494,7 +3500,7 @@ function removeObject(uid) {
   if (def.cat === 'shelf' && obj.stock > 0) {
     products[def.prod].stock += obj.stock;
   }
-  let refund = Math.floor(def.cost * 0.5) + (def.cat === 'machine' ? Math.floor((obj.invested || 0) * 0.5) : 0);
+  let refund = Math.floor(szCostOf(def, obj.sw || 1, obj.sh || 1) * 0.5) + (def.cat === 'machine' ? Math.floor((obj.invested || 0) * 0.5) : 0);
   if (def.cat === 'neighbor') { const fx = placedObjects.filter(q => hostedBy(obj, q)); fx.forEach(q => { refund += Math.floor(FACILITY_TYPES[q.type].cost * 0.5); }); placedObjects = placedObjects.filter(q => !fx.includes(q)); }
   state.money += refund;
   placedObjects.splice(placedObjects.indexOf(obj), 1);
@@ -3548,15 +3554,17 @@ function renderBuildTab() {
       `<input id="build-q" type="search" placeholder="🔍 名前・説明で絞り込み（例: 棚、冷蔵、植物）" value="${buildF.q.replace(/"/g, '&quot;')}" oninput="buildF.q=this.value;renderBuildTab()" style="width:100%;padding:7px 10px;border:2px solid var(--border-dark);border-radius:8px;font-size:12px;margin:2px 0 6px">` +
       `<div id="build-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"></div>` +
       `<label style="font-size:11px;display:flex;align-items:center;gap:4px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="build-ok" onchange="buildF.ok=this.checked;renderBuildTab()"> 今すぐ設置できるものだけ</label>` +
-      `<div id="build-list"></div>`;
+      `<div id="build-type-note" style="font-size:11px;font-weight:800;margin:0 0 6px;line-height:1.5"></div><div id="build-list"></div>`;
   }
   document.getElementById('build-chips').innerHTML = BUILD_CHIPS.map(([k, n]) => `<button class="kairo-btn ${buildF.cat === k ? 'btn-orange' : 'btn-cream'}" style="padding:4px 8px;font-size:11px" onclick="buildF.cat='${k}';renderBuildTab()">${n}</button>`).join('');
   document.getElementById('build-ok').checked = buildF.ok;
+  { const _t = curType(), _n = document.getElementById('build-type-note'); if (_n) _n.innerHTML = `🏷 この店は <b>${_t.icon} ${_t.name}</b> タイプ／扱えない商品棚・ブロックは表示されません（📜メニュー →「店タイプ」で変更）`; }
   const qy = buildF.q.trim().toLowerCase();
   let html = '', lastGrp = '', shown = 0, inGrid = false;
   if (buildF.cat === 'machine' && !qy) html += machUpgHtml();
-  Object.values(FACILITY_TYPES).sort((a, b) => (BUILD_ORDER.indexOf(a.cat) - BUILD_ORDER.indexOf(b.cat)) || (a.cat === b.cat && (a.cat === 'machine' || a.cat === 'block') ? ((a.rank || 0) - (b.rank || 0) || a.cost - b.cost) : 0)).forEach(def => {
+  Object.values(FACILITY_TYPES).sort((a, b) => (BUILD_ORDER.indexOf(a.cat) - BUILD_ORDER.indexOf(b.cat)) || (a.cat === b.cat && (a.cat === 'machine' || a.cat === 'block') ? ((a.rank || 0) - (b.rank || 0) || a.cost - b.cost) : 0) || (a.cat === 'shelf' && b.cat === 'shelf' ? shelfKey(a) - shelfKey(b) : 0)).forEach(def => {
     if (def.cat === 'backyard') return;
+    if (!typeAllowsDef(def)) return;
     const chip = ['register', 'eatin', 'atm'].includes(def.cat) ? 'register' : def.cat;
     if (buildF.cat !== 'all' && chip !== buildF.cat) return;
     if (qy && !(def.name + def.desc + (def.prod && products[def.prod] ? products[def.prod].name : '')).toLowerCase().includes(qy)) return;
@@ -3586,7 +3594,8 @@ function renderPriceTab() {
     </div>
   `;
 
-  Object.values(products).forEach(p => {
+  html += `<div style="font-size:11px;color:var(--text-muted);line-height:1.5">🏷 ${curType().icon}${curType().name} タイプで扱う商品だけ表示しています。${curType().sig.size ? '⭐マークの得意商品は、適正価格が+15%高めです。' : ''}</div>`;
+  typeProducts().forEach(p => {
     if (p.unlockRank > state.rankIdx) {
       html += `
         <div class="item-card locked">
@@ -3609,7 +3618,7 @@ function renderPriceTab() {
     html += `
       <div class="item-card ${p.onSale ? 'sale-active' : ''}" id="pcard-${p.id}">
         <div class="card-top">
-          <span class="card-name">${p.icon} ${p.name} <span style="font-size:11px; color:#7e22ce;">★質Lv.${p.quality}</span></span>
+          <span class="card-name">${p.icon} ${p.name}${curType().sig.has(p.id) ? ' ⭐' : ''} <span style="font-size:11px; color:#7e22ce;">★質Lv.${p.quality}</span></span>
           <div style="display:flex; gap:4px; align-items:center;">
             ${p.onSale ? '<span class="badge badge-sale">特売20%OFF</span>' : ''}
             <span class="badge ${fb.cls}" id="pbadge-${p.id}">${fb.label}</span>
@@ -3861,10 +3870,10 @@ function renderManageTab() {
       </button>
     </div>
 
-    <div class="ribbon-title"><span>✨ 専門コーナー図鑑 (${state.discoveredCombos.size}/${COMBO_DEFS.length})</span></div>
+    <div class="ribbon-title"><span>✨ 専門コーナー図鑑 (${typeCombos().filter(c => state.discoveredCombos.has(c.id)).length}/${typeCombos().length})</span></div>
   `;
 
-  COMBO_DEFS.forEach(c => {
+  typeCombos().forEach(c => {
     const found = state.discoveredCombos.has(c.id);
     html += `
       <div class="item-card ${found ? '' : 'locked'}" style="padding:6px 10px;">
@@ -4002,11 +4011,11 @@ function townVoice() {
   if (S.campaignTimer > 0) add([['駅前でチラシをもらって来たよ！', 'チラシを持った人']], 3);
   if (S.money < 1500) add([['お店、だいじょうぶかな…応援してるよ！', '心配する常連']], 2);
   if (S.money > 100000) add([['最近すごくもうかってるらしいね', '町のうわさ']]);
-  add([['お菓子コーナーに、つい寄り道しちゃうんだよね', '小学生'], ['ATMがあるから助かるわ', 'おばあさん'], ['お弁当をあたためてもらえてありがたいよ', '一人暮らしの人'], ['新商品が出るたびに気になっちゃう', '常連さん'],
+  add(curType().id !== 'conbini' ? curType().voices.map(t => [t, 'お客さん']) : [['お菓子コーナーに、つい寄り道しちゃうんだよね', '小学生'], ['ATMがあるから助かるわ', 'おばあさん'], ['お弁当をあたためてもらえてありがたいよ', '一人暮らしの人'], ['新商品が出るたびに気になっちゃう', '常連さん'],
     ['コンビニって、見てるだけでも楽しいよね', '買い物客'], ['ポイントを貯めたら、なにかもらえるのかな？', '子ども']]);
   const fresh = P.filter(v => !_tkRecent.includes(v[0])), v = (fresh.length ? fresh : P)[Math.floor(Math.random() * (fresh.length || P.length))];
   _tkRecent.push(v[0]); if (_tkRecent.length > 10) _tkRecent.shift();
-  return `「${v[0]}」（${v[1]}）`;
+  return `「${v[0].replace(/コンビニ/g, curType().noun)}」（${v[1]}）`;
 }
 setInterval(() => {
   const now = Date.now(); if (titleOpen || state.paused || now < _tkNoticeUntil || now < _tkNext) return;
@@ -4060,6 +4069,7 @@ let uiTimer = 0;
 function gameLoop(now) {
   PERF.tick(now - lastT);
   const rawDt = Math.min(0.05, (now - lastT) / 1000);
+  if (!titleOpen && !state.paused) state.playTime = (state.playTime || 0) + Math.min(1, (now - lastT) / 1000);   // 実時間のプレイ時間（ポーズ中は数えない）
   lastT = now;
   updateFollowCam(rawDt);
 
@@ -4111,8 +4121,8 @@ function gameLoop(now) {
 let lastSig = '';
 function tabSig() {
   const a = state.activeDock, m = state.money, pt = state.points;
-  if (a === 'build') return [state.rankIdx, ...Object.values(FACILITY_TYPES).map(d => m >= d.cost ? 1 : 0), ...Object.values(MACH_UPG).map(u => (machUpg[u.id] || 0) + (m >= machUpgCost(u) ? 'y' : 'n'))].join('');
-  if (a === 'back') return [state.rankIdx, ...Object.values(BACK_EQUIP).map(e => (equipLv[e.id] || 0) + (m >= equipUpCost(e) ? 'y' : 'n'))].join('');
+  if (a === 'build') return [state.rankIdx, curType().id, ...Object.values(FACILITY_TYPES).map(d => m >= d.cost ? 1 : 0), ...Object.values(MACH_UPG).map(u => (machUpg[u.id] || 0) + (m >= machUpgCost(u) ? 'y' : 'n'))].join('');
+  if (a === 'back') return [state.rankIdx, curType().id, ...Object.values(BACK_EQUIP).map(e => (equipLv[e.id] || 0) + (m >= equipUpCost(e) ? 'y' : 'n'))].join('');
   if (a === 'staff') return [state.rankIdx, hiredStaff.length, candidateList.length, ...candidateList.map(c => m >= c.hireCost ? 1 : 0), ...hiredStaff.map(x => pt >= 10 + x.level * 5 ? 1 : 0)].join('');
   return [state.rankIdx, Math.floor(state.totalRevenue / 100), m >= 6000 ? 1 : 0, m >= 15000 ? 1 : 0, pt >= 25 ? 1 : 0, Math.ceil(state.campaignTimer), state.discoveredCombos.size, state.expansionLevel].join('|');
 }
@@ -4144,7 +4154,7 @@ function idbOp(mode, fn) {
 function snapshot() {
   return JSON.parse(JSON.stringify({
     v: 3, savedAt: Date.now(), curStore,
-    stores: (packStore(), stores.map(sx => ({ name: sx.name, sign: sx.sign, expansionLevel: sx.expansionLevel, nextObjUid: sx.nextObjUid, nextStaffId: sx.nextStaffId, roads: sx.roads, candidateList: sx.candidateList, placedObjects: sx.placedObjects.map(o => ({ ...o, queue: [] })), hiredStaff: sx.hiredStaff.map(x => ({ ...x, path: [], carry: null, targetObjId: null })) }))),
+    stores: (packStore(), stores.map(sx => ({ name: sx.name, type: sx.type, sign: sx.sign, expansionLevel: sx.expansionLevel, nextObjUid: sx.nextObjUid, nextStaffId: sx.nextStaffId, roads: sx.roads, candidateList: sx.candidateList, placedObjects: sx.placedObjects.map(o => ({ ...o, queue: [] })), hiredStaff: sx.hiredStaff.map(x => ({ ...x, path: [], carry: null, targetObjId: null })) }))),
     state: { ...state, discoveredCombos: [...state.discoveredCombos], buildMode: null, selectedObjId: null },
     placedObjects: placedObjects.map(o => ({ ...o, queue: [] })),
     nextObjUid,
@@ -4513,7 +4523,7 @@ function applyStore(sx) {
   customers = sx.customers || []; passers = sx.passers || []; visitors = []; dirts = sx.dirts || [];
   state.expansionLevel = sx.expansionLevel || 0;
   sign = sx.sign ? { ...sx.sign } : { text: '🏪 MY MART', color: 'auto', rank: true };
-  roadsFromArr(sx.roads); migrateNeighbors(); clearWallColumn(); ensureBackyard(); recalcCombos(true); camHome();
+  roadsFromArr(sx.roads); migrateNeighbors(); clearWallColumn(); ensureBackyard(); recalcCombos(true); camHome(); typeApplyCosmetic();
 }
 function makeManager() {
   return { id: 'manager', name: 'あなた (店長)', isManager: true, level: 1, rank: 'B', trait: { name: '店長魂', desc: '給料0円で年中無休！' },
@@ -4522,7 +4532,7 @@ function makeManager() {
 }
 function newStoreCost() { return 20000 * Math.pow(2, stores.length - 1); }
 function refreshStoreUI() {
-  document.getElementById('store-sel').innerHTML = stores.map((sx, i) => `<option value="${i}" ${i === curStore ? 'selected' : ''}>🏪 ${sx.name}</option>`).join('');
+  document.getElementById('store-sel').innerHTML = stores.map((sx, i) => `<option value="${i}" ${i === curStore ? 'selected' : ''}>${shopTypeOf(sx).icon} ${sx.name}</option>`).join('');
   document.getElementById('btn-newstore').textContent = `🏬新店 ¥${newStoreCost().toLocaleString()}`;
 }
 function switchStore(i) {
@@ -4656,7 +4666,7 @@ function facilityTip(d) {
   if (d.cat === 'neighbor') t += `\n屋外(芝生)専用／毎週の家賃 +¥${d.rent}／通行人 +${Math.round(d.traffic * 100)}%\n店を広げて店内に入ると、返金して撤去されます`;
   else if (d.cat === 'block') t += '\n通れない壁。通路の仕切りや外構に。設備への道は塞げません';
   else if (DECOR_BONUS[d.type]) t += `\n隣の商品棚の魅力 +${Math.round(DECOR_BONUS[d.type] * 100)}%（店内・屋外OK）`;
-  const cs = COMBO_DEFS.filter(c => c.a === d.type || c.b === d.type);
+  const cs = typeCombos().filter(c => c.a === d.type || c.b === d.type);
   if (cs.length) t += '\n【隣に置くとコンボ】\n' + cs.map(c => { const o = FACILITY_TYPES[c.a === d.type ? c.b : c.a]; return `・${o.icon}${o.name} → ${c.name} (${c.desc.split('：')[1]})`; }).join('\n');
   return t;
 }
@@ -4665,11 +4675,11 @@ function objTip(o) {
   let t = `${d.icon} ${d.name}（${inYard(o.x, o.y) ? '屋外' : '店内'}）\n${d.desc}`;
   if (d.cat === 'shelf') {
     const p = products[d.prod];
-    t += `\n陳列 ${o.stock}/${d.maxCap}個／売値 ¥${getEffectivePrice(p)}（原価 ¥${getUnitCost(p)}）\n今の魅力ボーナス +${Math.round((state.comboBonusByProd[d.prod] || 0) * 100)}%`;
+    t += `\n陳列 ${o.stock}/${capOf(o)}個／売値 ¥${getEffectivePrice(p)}（原価 ¥${getUnitCost(p)}）\n今の魅力ボーナス +${Math.round((state.comboBonusByProd[d.prod] || 0) * 100)}%`;
   }
   if (d.cat === 'fixture') t += `\n毎週 +¥${fxIncome(o)}`;
   if (d.cat === 'neighbor') t += `\n家賃 毎週+¥${d.rent}／通行人 +${Math.round(d.traffic * 100)}%`;
-  const cs = COMBO_DEFS.filter(c => c.a === o.type || c.b === o.type);
+  const cs = typeCombos().filter(c => c.a === o.type || c.b === o.type);
   if (cs.length) t += '\n隣に置くとコンボ: ' + cs.slice(0, 3).map(c => FACILITY_TYPES[c.a === o.type ? c.b : c.a].name).join('・') + (cs.length > 3 ? ' ほか' : '');
   return t + (o.inCombo ? '\n✨ コンボ成立中！' : '') + '\n（クリックで移動・撤去）';
 }
@@ -4775,8 +4785,8 @@ function renderScroll(resetScroll) {
   document.querySelectorAll('#scroll-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === scrollTab));
   const body = document.getElementById('scroll-body');
   const top = resetScroll ? 0 : body.scrollTop;
-  if (!resetScroll && scrollTab === 'settings') return;
-  body.innerHTML = scrollTab === 'settings' ? scSettings() : scrollTab === 'history' ? scHistory() : scrollTab === 'sales' ? scSales() : scrollTab === 'reviews' ? scReviews() : scStats();
+  if (!resetScroll && (scrollTab === 'settings' || scrollTab === 'type')) return;
+  body.innerHTML = scrollTab === 'type' ? scType() : scrollTab === 'settings' ? scSettings() : scrollTab === 'history' ? scHistory() : scrollTab === 'sales' ? scSales() : scrollTab === 'reviews' ? scReviews() : scStats();
   body.scrollTop = top;
 }
 function scSettings() {
@@ -4820,7 +4830,7 @@ function barChart(last) {
 }
 function scSales() {
   const sl = state.sales || {};
-  const list = Object.values(products).filter(p => (sl[p.id] && sl[p.id].qty > 0) || p.unlockRank <= state.rankIdx)
+  const list = Object.values(products).filter(p => (sl[p.id] && sl[p.id].qty > 0) || (p.unlockRank <= state.rankIdx && typeHasProd(curType(), p.id)))
     .map(p => ({ p, qty: (sl[p.id] || {}).qty || 0, rev: (sl[p.id] || {}).rev || 0 }))
     .sort((a, b) => b.qty - a.qty);
   const mx = Math.max(1, ...list.map(x => x.qty));
@@ -4831,6 +4841,11 @@ function scSales() {
     list.map((x, i) => `<div class="sc-prod"><span style="font-size:26px;text-align:center">${x.p.icon}</span><div><div class="nm"><span>${x.qty > 0 && i < 3 ? medal[i] + ' ' : ''}${x.p.name}</span></div><div class="sc-bar"><i style="width:${x.qty / mx * 100}%"></i></div></div><div class="qty">${x.qty.toLocaleString()}個<br><small style="font-weight:700;color:#7c5a2a;font-size:11px">${yen(x.rev)}</small></div></div>`).join('') +
     `</div><div class="sc-card"><div class="sc-kv"><span>合計販売数</span><b>${totQ.toLocaleString()}個</b></div><div class="sc-kv"><span>合計売上</span><b>${yen(totR)}</b></div></div>`;
 }
+function fmtPlay(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  const hh = Math.floor(sec / 3600), mm = Math.floor(sec % 3600 / 60), ss = sec % 60;
+  return hh > 0 ? `${hh}時間${mm}分${ss}秒` : mm > 0 ? `${mm}分${ss}秒` : `${ss}秒`;
+}
 function scStats() {
   const r = RANKS[state.rankIdx], ms = state.monthStats;
   const months = (state.year - 1) * 12 + (state.month - 4);
@@ -4838,10 +4853,11 @@ function scStats() {
   return `<div class="sc-card"><div class="sc-h">🏪 お店の成績</div>` +
     kv('🏆 店舗ランク', `${r.rank}【${r.name}】`) +
     kv('📅 いまの日付', `${state.year}年目 ${state.month}月 第${state.week}週（開店から${months}か月）`) +
+    kv('⏱ プレイ時間', fmtPlay(state.playTime)) +
     kv('💰 累計売上', yen(state.totalRevenue)) +
     kv('👥 来店客数（累計）', `${(state.totalCustomers || 0).toLocaleString()}人`) +
     kv('⭐ 現在の評判', state.rating.toFixed(1)) +
-    kv('🏬 店舗数', `${stores.length}店`) +
+    kv('🏷 店タイプ', `${curType().icon} ${curType().name}`) + kv('🏬 店舗数', `${stores.length}店`) +
     kv('🧑‍🍳 店員（この店）', `${hiredStaff.length}人`) +
     kv('✨ 発見したコーナー', `${state.discoveredCombos.size}個`) +
     kv('💴 所持金', yen(state.money)) + kv('🔆 経営ポイント', `${state.points}P`) + `</div>` +
@@ -4995,7 +5011,7 @@ const WK = (x, y) => (x + 4096) * 8192 + (y + 4096);
 let _wg = { arr: null, sig: 0, set: null };
 function walkSet() {
   const arr = placedObjects; let s = arr.length;
-  for (let i = 0; i < arr.length; i++) { const o = arr[i]; s = (Math.imul(s, 31) + (o.uid | 0) * 7 + o.x * 131 + o.y * 17) | 0; }
+  for (let i = 0; i < arr.length; i++) { const o = arr[i]; s = (Math.imul(s, 31) + (o.uid | 0) * 7 + o.x * 131 + o.y * 17 + (o.sw | 0) * 977 + (o.sh | 0) * 3571) | 0; }
   if (_wg.set && _wg.arr === arr && _wg.sig === s) return _wg.set;
   const set = new Set();
   for (const o of arr) { const f = fpOf(o); for (let x = o.x; x < o.x + f.w; x++) for (let y = o.y; y < o.y + f.h; y++) set.add(WK(x, y)); }
@@ -5971,10 +5987,11 @@ function repEmit(key, d, cnt, info) {
 
 // ---- 自動仕入の強化（以前は週1回15個だけで、店が賑わうと品切れが続いて評判が下がった） ----
 function shelfCapOf(pid) {
-  return placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'shelf' && FACILITY_TYPES[o.type].prod === pid).reduce((a, o) => a + FACILITY_TYPES[o.type].maxCap, 0);
+  return placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'shelf' && FACILITY_TYPES[o.type].prod === pid).reduce((a, o) => a + capOf(o), 0);
 }
 function autoOrder(p, emergency) {
   if (!state.autoRestock || p.unlockRank > state.rankIdx) return 0;
+  if (shelfCapOf(p.id) <= 0) return 0;
   const cap = shelfCapOf(p.id), target = Math.max(24, cap * 2 + 8);
   if (emergency ? !(cap > 0 && p.stock <= 2) : p.stock >= Math.ceil(target * 0.7)) return 0;
   const unit = getUnitCost(p), afford = Math.floor(Math.max(0, state.money - 300) / unit);
@@ -6224,7 +6241,7 @@ async function migrateMain() {
 function xpDialog(o) {
   return new Promise(res => {
     const ov = document.createElement('div'); ov.id = 'xp-dlg';
-    ov.innerHTML = `<div class="xpw"><div class="xpw-t"><span>${o.cancel ? '❓' : '⚠️'}</span><span class="xpw-tt">マイコンビニDX</span></div><div class="dlg-msg">${slEsc(o.msg)}</div>` +
+    ov.innerHTML = `<div class="xpw"><div class="xpw-t"><span>${o.cancel ? '❓' : '⚠️'}</span><span class="xpw-tt">ショップシミュレーター</span></div><div class="dlg-msg">${slEsc(o.msg)}</div>` +
       (o.input !== undefined ? `<input class="xpi dlg-in" maxlength="20" value="${slEsc(o.input)}">` : '') +
       `<div class="sl-foot"><button class="xpb def" data-r="1">${o.ok || 'OK'}</button>${o.cancel ? '<button class="xpb" data-r="0">キャンセル</button>' : ''}</div></div>`;
     document.body.appendChild(ov);
@@ -6656,7 +6673,7 @@ slImportFile = async function (inp) {
       ['📂 スロット管理モード', () => { SP.mode = 'manage'; slotPaint(); }, 0]],
     'ヘルプ': () => [
       ['❓ このウィンドウの使い方', () => xpAlert(SL_HELP[SP.mode] || ''), 0],
-      ['ℹ バージョン情報', () => xpAlert('開拓！マイコンビニDX\nスロットマネージャー（全 ' + SLOT_PAGES * SLOT_PER + ' スロット）'), 0]]
+      ['ℹ バージョン情報', () => xpAlert('開拓！ショップシミュレーター\nスロットマネージャー（全 ' + SLOT_PAGES * SLOT_PER + ' スロット）'), 0]]
   };
   function openMenu(span) {
     const was = span.classList.contains('open'); closeMenu(); if (was) return;
@@ -6817,7 +6834,7 @@ function skinLoad() {
     ctx.save(); ctx.imageSmoothingEnabled = false;
     if (def.cat !== 'neighbor' && def.cat !== 'block') { ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(px + 5, py + TILE - 6, TILE - 8, 5); }
     ctx.drawImage(im, x, y, w, h);
-    if (def.cat === 'shelf' && def.maxCap) { const r = Math.min(1, (obj.stock || 0) / def.maxCap); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(px + 3, py + TILE - 5, TILE - 6, 3); ctx.fillStyle = r > .3 ? '#4ade80' : '#f87171'; ctx.fillRect(px + 3, py + TILE - 5, (TILE - 6) * r, 3); }
+    if (def.cat === 'shelf' && def.maxCap) { const r = Math.min(1, (obj.stock || 0) / capOf(obj)); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(px + 3, py + TILE - 5, TILE - 6, 3); ctx.fillStyle = r > .3 ? '#4ade80' : '#f87171'; ctx.fillRect(px + 3, py + TILE - 5, (TILE - 6) * r, 3); }
     if (obj.inCombo) { ctx.strokeStyle = (Math.floor(performance.now() / 350) % 2 === 0) ? '#f5b700' : '#fef08a'; ctx.lineWidth = 3; ctx.strokeRect(px + 1, py + 1, w - 2, h - 2); }
     if (state.selectedObjId === obj.uid) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.strokeRect(px + 1, py + 1, fp.w * TILE - 2, fp.h * TILE - 2); }
     ctx.restore();
@@ -6898,6 +6915,324 @@ function expandNeighbor(uid) {
 })();
 
 // =========================================================
+// 🏷 店タイプ（ショップシミュレーター）
+//  店ごとにタイプを設定でき、タイプによって「扱える商品棚」「使えるブロック」が変わります
+// =========================================================
+var BLOCK_FAM = {
+  base:       ['brick', 'stone', 'wood', 'glass', 'window', 'hedge', 'concrete', 'lowwall', 'lowhedge', 'stud'],
+  industrial: ['hazard', 'crate', 'barrel', 'iron', 'gear', 'conveyor', 'bigconc', 'clock', 'led'],
+  neon_city:  ['neon', 'neonpink', 'led', 'tv', 'glitch', 'neontower', 'thunder'],
+  luxury:     ['marble', 'gold', 'marblepillar', 'pillar', 'goldtower', 'crystal', 'emerald', 'rainbow'],
+  nature:     ['mossy', 'bamboo', 'sakura', 'snow', 'aqua', 'cloud', 'slime'],
+  sweet:      ['candy', 'bubble', 'neonpink', 'slime', 'cloud', 'star', 'rainbow'],
+  cold:       ['ice', 'icepillar', 'snow', 'aqua', 'bubble', 'crystal'],
+  fire:       ['lava', 'firetower', 'magmatower', 'thunder', 'gear'],
+  space:      ['galaxy', 'aurora', 'star', 'glitch', 'neontower', 'crystal', 'tv'],
+  wa:         ['bamboo', 'lantern', 'sakura', 'wood', 'mossy', 'pillar', 'stud']
+};
+var FAM_NAME = { base: '🧱基本', industrial: '⚙工業', neon_city: '🌆ネオン', luxury: '👑高級', nature: '🌿自然', sweet: '🍬ポップ', cold: '❄氷と水', fire: '🔥炎', space: '🪐宇宙', wa: '🏮和風' };
+
+function _hsl2hex(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const x = v => Math.round(255 * v).toString(16).padStart(2, '0');
+  return '#' + x(f(0)) + x(f(8)) + x(f(4));
+}
+
+// items: [id, 名前, 絵文字, 売値, 原価, 開放ランク]
+// eq: [設備名, 絵文字, 導入費, 原価ダウン率, 説明]
+var SHOP_DEF = [
+  { id: 'bakery', name: 'ベーカリー', noun: 'ベーカリー', icon: '🥐', suffix: 'ケース', hue: 28, signText: '🥐 BAKERY',
+    desc: '焼きたてパンの香りで朝のお客さんをつかむ。炎と自然のブロックが得意。',
+    fams: ['nature', 'fire'], ex: ['coffee', 'sandwich', 'cake', 'drink'],
+    items: [['bread', '食パン', '🍞', 250, 110, 0], ['croissant', 'クロワッサン', '🥐', 220, 95, 0], ['melonpan', 'メロンパン', '🍈', 200, 85, 0], ['donut', 'ドーナツ', '🍩', 180, 75, 0], ['baguette', 'フランスパン', '🥖', 380, 165, 2], ['pretzel', 'プレッツェル', '🥨', 320, 140, 3]],
+    eq: ['パン窯＆発酵室', '🥐', 3500, 0.30, '生地から自家製。パン類の仕入原価がぐっと下がる。'],
+    combos: [['bk_morning', '焼きたてモーニング', 'bread', 'coffee', 0.22, 'shelf_bread', 'shelf_coffee'], ['bk_paris', 'パリの朝ごはん', 'croissant', 'sandwich', 0.20, 'shelf_croissant', 'shelf_sandwich'], ['bk_sweet', '甘いパンタイム', 'donut', 'melonpan', 0.18, 'shelf_donut', 'shelf_melonpan']],
+    voices: ['焼きたてのいい香りにつられて入っちゃった', 'クロワッサンがサクサクでおいしいよ', '朝はここのパンって決めてるんだ'] },
+  { id: 'cafe', name: 'カフェ', noun: 'カフェ', icon: '☕', suffix: '台', hue: 25, signText: '☕ CAFE',
+    desc: 'ドリンクとスイーツでくつろぎの時間を売る。自然と和風のブロックが得意。',
+    fams: ['nature', 'wa'], ex: ['drink', 'coffee', 'cake', 'sandwich', 'salad', 'ice'],
+    items: [['latte', 'カフェラテ', '🥛', 450, 170, 0], ['tea', 'ハーブティー', '🍵', 380, 140, 0], ['pancake', 'パンケーキ', '🥞', 650, 280, 0], ['parfait', 'フルーツパフェ', '🍨', 720, 310, 1], ['lunchplate', 'ランチプレート', '🍽️', 950, 420, 2]],
+    eq: ['焙煎＆ドリンクバー', '🥛', 2800, 0.28, '豆もミルクも自前で。ドリンクと軽食の原価ダウン。'],
+    combos: [['cf_break', 'ラテとケーキの休憩', 'latte', 'cake', 0.24, 'shelf_latte', 'shelf_cake'], ['cf_tea', 'おやつティータイム', 'tea', 'pancake', 0.22, 'shelf_tea', 'shelf_pancake'], ['cf_parfait', 'ごほうびカフェ', 'parfait', 'coffee', 0.20, 'shelf_parfait', 'shelf_coffee']],
+    voices: ['ここのラテアート、かわいくて写真撮っちゃった', '静かで居心地がいいから、ついつい長居しちゃう', 'パンケーキがふわふわで感動したよ'] },
+  { id: 'drug', name: 'ドラッグストア', noun: 'ドラッグストア', icon: '💊', suffix: '棚', hue: 150, signText: '💊 DRUG',
+    desc: '薬・美容・日用品をそろえる健康の味方。氷と工業のブロックが得意。',
+    fams: ['cold', 'industrial'], ex: ['daily', 'drink', 'snack'],
+    items: [['medicine', 'かぜ薬', '💊', 780, 350, 0], ['mask', 'マスク', '😷', 400, 160, 0], ['shampoo', 'シャンプー', '🧼', 680, 300, 0], ['supplement', 'サプリメント', '🧪', 1200, 520, 0], ['cosme', 'コスメ', '💄', 1500, 650, 1], ['baby', 'ベビー用品', '🍼', 1300, 580, 2]],
+    eq: ['調剤・小分け室', '🧪', 3000, 0.22, '薬や化粧品を小分けして仕入れを効率化。'],
+    combos: [['dg_cold', 'かぜ対策コーナー', 'medicine', 'mask', 0.22, 'shelf_medicine', 'shelf_mask'], ['dg_beauty', 'ビューティーコーナー', 'shampoo', 'cosme', 0.22, 'shelf_shampoo', 'shelf_cosme'], ['dg_health', '健康サポート', 'supplement', 'drink', 0.18, 'shelf_supplement', 'shelf_drink'], ['dg_mama', 'ママ応援コーナー', 'baby', 'daily', 0.20, 'shelf_baby', 'shelf_daily']],
+    voices: ['ポイントがたまるから、ついここで買っちゃうんだよね', '薬剤師さんに相談できて安心だよ', '日用品もまとめて買えて助かるわ'] },
+  { id: 'book', name: '書店', noun: '書店', icon: '📚', suffix: 'ラック', hue: 215, signText: '📚 BOOKS',
+    desc: '本と文房具で知的なお客さんを集める。和風と高級ブロックが得意。',
+    fams: ['wa', 'luxury'], ex: ['magazine', 'coffee', 'drink'],
+    items: [['novel', '小説', '📖', 700, 320, 0], ['comic', 'コミック', '📕', 500, 230, 0], ['stationery', '文房具', '✏️', 300, 130, 0], ['picturebook', 'えほん', '📘', 1100, 500, 0], ['calendar', '手帳・カレンダー', '📓', 1400, 630, 1], ['artbook', '画集・写真集', '🎨', 2200, 1000, 3]],
+    eq: ['取次直送ルート', '📦', 3000, 0.15, '問屋から直接仕入れて本の原価を抑える。'],
+    combos: [['bo_cafe', 'ブックカフェ', 'novel', 'coffee', 0.22, 'shelf_novel', 'shelf_coffee'], ['bo_comic', 'マンガ立ち読み', 'comic', 'magazine', 0.20, 'shelf_comic', 'shelf_magazine'], ['bo_school', '新学期セット', 'stationery', 'picturebook', 0.18, 'shelf_stationery', 'shelf_picturebook']],
+    voices: ['新刊が並んでると、つい手に取っちゃうんだよね', 'ゆっくり立ち読みできるお店っていいよね', '探していた本がちゃんと置いてあって助かったよ'] },
+  { id: 'ramen', name: '食堂・ラーメン店', noun: '食堂', icon: '🍜', suffix: 'カウンター', hue: 12, signText: '🍜 食堂',
+    desc: 'ガッツリごはんで胃袋をつかむ。和風・炎・工業のブロックが得意。',
+    fams: ['wa', 'fire', 'industrial'], ex: ['drink', 'oden', 'salad'],
+    items: [['ramen', 'ラーメン', '🍜', 800, 320, 0], ['gyoza', 'ぎょうざ', '🥟', 400, 160, 0], ['curry', 'カレーライス', '🍛', 700, 290, 0], ['beer', 'ビール', '🍺', 500, 200, 1], ['tempura', 'てんぷら定食', '🍤', 1100, 480, 2], ['sushi', 'にぎり寿司', '🍣', 1500, 680, 3]],
+    eq: ['業務用厨房', '🍳', 3600, 0.30, '大鍋と寸胴でまとめて仕込む。料理の原価ダウン。'],
+    combos: [['rm_set', 'ラーメン餃子セット', 'ramen', 'gyoza', 0.25, 'shelf_ramen', 'shelf_gyoza'], ['rm_bar', '晩酌コーナー', 'beer', 'gyoza', 0.20, 'shelf_beer', 'shelf_gyoza'], ['rm_wa', '和の御膳', 'tempura', 'sushi', 0.20, 'shelf_tempura', 'shelf_sushi'], ['rm_curry', 'カレーとサラダ', 'curry', 'salad', 0.18, 'shelf_curry', 'shelf_salad']],
+    voices: ['スープのいい匂い…今日はここにしよう', '餃子とラーメン、これがやっぱり最強だね', '仕事帰りにガッツリ食べたくて来たよ'] },
+  { id: 'sweets', name: 'スイーツショップ', noun: 'スイーツ店', icon: '🍰', suffix: 'ショーケース', hue: 330, signText: '🍰 SWEETS',
+    desc: 'かわいい甘いものでお客さんをとりこに。ポップと氷のブロックが得意。',
+    fams: ['sweet', 'cold'], ex: ['cake', 'ice', 'snack', 'coffee', 'donut'],
+    items: [['cupcake', 'カップケーキ', '🧁', 380, 160, 0], ['chocolate', 'チョコレート', '🍫', 250, 100, 0], ['pudding', 'とろけるプリン', '🍮', 320, 135, 0], ['candy', 'キャンディ', '🍬', 200, 80, 0], ['wagashi', '和菓子', '🍡', 300, 125, 1], ['wholecake', 'ホールケーキ', '🎂', 2800, 1250, 3]],
+    eq: ['製菓工房', '🧁', 3200, 0.30, 'オーブンと冷蔵庫でお菓子を自家製に。'],
+    combos: [['sw_cute', 'きらきらスイーツ', 'cupcake', 'chocolate', 0.22, 'shelf_cupcake', 'shelf_chocolate'], ['sw_cool', 'ひんやりデザート', 'pudding', 'ice', 0.20, 'shelf_pudding', 'shelf_ice'], ['sw_tea', 'お茶と和菓子', 'wagashi', 'coffee', 0.18, 'shelf_wagashi', 'shelf_coffee'], ['sw_party', 'お祝いパーティー', 'wholecake', 'candy', 0.20, 'shelf_wholecake', 'shelf_candy']],
+    voices: ['どれもかわいくて選べないよ〜', '誕生日のケーキはここで買うって決めてるの', 'ショーケースを見てるだけで幸せになるね'] },
+  { id: 'toy', name: 'おもちゃ・ゲーム店', noun: 'おもちゃ屋', icon: '🧸', suffix: '棚', hue: 265, signText: '🧸 TOYS',
+    desc: '子どもも大人も夢中になる一軒。ポップ・ネオン・宇宙のブロックが得意。',
+    fams: ['sweet', 'neon_city', 'space'], ex: ['snack', 'drink', 'ice'],
+    items: [['plush', 'ぬいぐるみ', '🧸', 900, 410, 0], ['puzzle', 'パズル', '🧩', 600, 270, 0], ['card', 'カードパック', '🃏', 300, 120, 0], ['figure', 'フィギュア', '🦖', 1800, 820, 1], ['rc', 'ラジコンカー', '🚗', 3200, 1480, 2], ['game', 'ゲームソフト', '💿', 4800, 2250, 3], ['console', 'ゲーム機', '🎮', 9800, 4700, 4]],
+    eq: ['メーカー直送ルート', '📦', 3500, 0.12, 'メーカーと直接取引して仕入れを安く。'],
+    combos: [['ty_soft', 'ふわふわコーナー', 'plush', 'puzzle', 0.20, 'shelf_plush', 'shelf_puzzle'], ['ty_card', 'コレクターズコーナー', 'card', 'figure', 0.24, 'shelf_card', 'shelf_figure'], ['ty_game', 'ゲームコーナー', 'game', 'console', 0.25, 'shelf_game', 'shelf_console'], ['ty_snack', 'ゲームのお供', 'console', 'snack', 0.15, 'shelf_console', 'shelf_snack']],
+    voices: ['新作ゲームの発売日を待ちきれなくて来ちゃった', 'ぬいぐるみがふわふわで、つい手が伸びちゃう', 'カードパック、今日はいいの当たるかな？'] },
+  { id: 'flower', name: '花屋・園芸店', noun: '花屋', icon: '🌸', suffix: 'スタンド', hue: 335, signText: '🌸 FLOWERS',
+    desc: '季節の花と緑で街を彩る。自然とポップなブロックが得意。',
+    fams: ['nature', 'sweet'], ex: ['coffee', 'drink'],
+    items: [['bouquet', '花束', '💐', 1500, 650, 0], ['rose', 'バラ', '🌹', 600, 260, 0], ['sprout', 'ミニ観葉植物', '🌱', 900, 400, 0], ['cactus', 'サボテン', '🌵', 500, 220, 0], ['sunflower', 'ひまわり', '🌻', 450, 190, 1], ['orchid', 'ランの鉢', '🌺', 2800, 1250, 3]],
+    eq: ['小さな温室', '🌱', 3000, 0.30, '自分の温室で花を育てて仕入れゼロに近づける。'],
+    combos: [['fl_gift', '贈り物ブーケ', 'bouquet', 'rose', 0.24, 'shelf_bouquet', 'shelf_rose'], ['fl_green', 'グリーンコーナー', 'sprout', 'cactus', 0.20, 'shelf_sprout', 'shelf_cactus'], ['fl_summer', '夏のお花畑', 'sunflower', 'orchid', 0.20, 'shelf_sunflower', 'shelf_orchid']],
+    voices: ['お花があると、お部屋がぱっと明るくなるよね', '大切な人へのプレゼントを選びに来たんだ', '店先のお花がきれいで、つい立ち止まっちゃった'] },
+  { id: 'fashion', name: 'ブティック', noun: 'ブティック', icon: '👗', suffix: 'ラック', hue: 300, signText: '👗 BOUTIQUE',
+    desc: '高単価のおしゃれ商品で稼ぐ。高級とネオンのブロックが得意。',
+    fams: ['luxury', 'neon_city'], ex: ['coffee', 'drink'],
+    items: [['tshirt', 'Tシャツ', '👕', 1800, 780, 0], ['socks', 'くつ下', '🧦', 600, 260, 0], ['hat', 'ぼうし', '🧢', 1500, 650, 0], ['shoes', 'スニーカー', '👟', 3800, 1700, 0], ['dress', 'ワンピース', '👗', 4800, 2100, 1], ['bag', 'バッグ', '👜', 6800, 3000, 2], ['jewel', 'アクセサリー', '💍', 8800, 3900, 3]],
+    eq: ['直輸入ルート', '👗', 3500, 0.12, '海外ブランドと直接取引して仕入れを安く。'],
+    combos: [['fs_casual', 'カジュアルコーデ', 'tshirt', 'hat', 0.22, 'shelf_tshirt', 'shelf_hat'], ['fs_town', 'おでかけスタイル', 'dress', 'shoes', 0.24, 'shelf_dress', 'shelf_shoes'], ['fs_lux', 'おしゃれ小物コーナー', 'bag', 'jewel', 0.22, 'shelf_bag', 'shelf_jewel'], ['fs_foot', '足もとコーデ', 'socks', 'shoes', 0.18, 'shelf_socks', 'shelf_shoes']],
+    voices: ['この服、着てみたらすごく似合うって言われたの', 'セールのたびに来ちゃうんだよね', 'バッグと靴、どっちにしようか迷っちゃう'] },
+  { id: 'pet', name: 'ペットショップ', noun: 'ペットショップ', icon: '🐶', suffix: 'コーナー', hue: 40, signText: '🐶 PET',
+    desc: 'かわいい仲間とグッズの専門店。自然と工業のブロックが得意。',
+    fams: ['nature', 'industrial'], ex: ['daily'],
+    items: [['dogfood', 'ドッグフード', '🦴', 1200, 520, 0], ['catfood', 'キャットフード', '🐟', 1000, 440, 0], ['pettoy', 'ペットのおもちゃ', '🎾', 700, 300, 0], ['fish', '熱帯魚', '🐠', 1800, 800, 0], ['petclothes', 'ペットの服', '🧣', 1500, 650, 1], ['hamster', 'ハムスター', '🐹', 2800, 1250, 2], ['puppy', 'ふれあい子犬', '🐶', 9800, 4400, 4]],
+    eq: ['ブリーダー直送ルート', '🐶', 3200, 0.15, '信頼できるブリーダーと直接取引して仕入れを安く。'],
+    combos: [['pt_dog', 'わんこコーナー', 'dogfood', 'pettoy', 0.22, 'shelf_dogfood', 'shelf_pettoy'], ['pt_cat', 'にゃんこコーナー', 'catfood', 'pettoy', 0.20, 'shelf_catfood', 'shelf_pettoy'], ['pt_pretty', 'おしゃれペット', 'petclothes', 'puppy', 0.22, 'shelf_petclothes', 'shelf_puppy'], ['pt_small', 'ちいさな仲間たち', 'hamster', 'fish', 0.20, 'shelf_hamster', 'shelf_fish']],
+    voices: ['この子、見てると癒されるんだよね', 'うちのわんこのごはんを買いに来たよ', 'ハムスターがかわいくて、ずっと見てられる'] }
+];
+
+var SHOP_TYPES = {};
+var SHOP_ORDER = ['conbini'];
+var SHOP_SIGNS = new Set(['🏪 MY MART']);
+
+(function buildShopTypes() {
+  const orig = Object.keys(products);
+  SHOP_TYPES.conbini = {
+    id: 'conbini', name: 'コンビニ', noun: 'コンビニ', icon: '🏪', signText: '🏪 MY MART',
+    desc: 'なんでも少しずつ扱える万能タイプ。ブロックは全種類使える。',
+    prodList: orig.slice(), prodSet: new Set(orig), blocks: 'all', fams: ['all'], sig: new Set(), items: [],
+    start: ['shelf_onigiri', 'shelf_drink', 'shelf_snack', 'shelf_bento'], voices: []
+  };
+  const extraFresh = [], extraDrink = [], extraGoods = [];
+  const FOOD = new Set(['bakery', 'ramen']);
+  SHOP_DEF.forEach(d => {
+    SHOP_ORDER.push(d.id);
+    SHOP_SIGNS.add(d.signText);
+    const ids = d.items.map(([id, name, icon, price, cost, rank], i) => {
+      const hue = (d.hue + i * 23) % 360;
+      products[id] = { id, name, icon, basePrice: price, cost, price, quality: 1, stock: price <= 400 ? 20 : price <= 1000 ? 14 : 8, onSale: false, unlockRank: rank, color: _hsl2hex(hue, 85, 90), dot: _hsl2hex(hue, 65, 32) };
+      const cap = price <= 400 ? 10 : price <= 1000 ? 8 : price <= 3000 ? 6 : 4;
+      FACILITY_TYPES['shelf_' + id] = { type: 'shelf_' + id, cat: 'shelf', prod: id, name: name + d.suffix, icon, cost: Math.min(2400, Math.max(500, Math.round(price * 1.2 / 50) * 50)), maxCap: cap, desc: `${d.name}の「${name}」コーナー` };
+      if (['latte', 'tea', 'beer'].includes(id)) extraDrink.push(id);
+      else if (FOOD.has(d.id) || ['pancake', 'parfait', 'lunchplate', 'cupcake', 'pudding', 'wagashi', 'wholecake'].includes(id)) extraFresh.push(id);
+      else extraGoods.push(id);
+      return id;
+    });
+    const list = ids.concat(d.ex.filter(x => !ids.includes(x)));
+    const bs = new Set();
+    ['base'].concat(d.fams).forEach(f => BLOCK_FAM[f].forEach(k => bs.add('block_' + k)));
+    const rank0 = list.filter(id => products[id].unlockRank === 0);
+    SHOP_TYPES[d.id] = {
+      id: d.id, name: d.name, noun: d.noun, icon: d.icon, signText: d.signText, desc: d.desc,
+      prodList: list, prodSet: new Set(list), blocks: bs, fams: ['base'].concat(d.fams), sig: new Set(ids), items: ids,
+      start: rank0.slice(0, 4).map(id => 'shelf_' + id), voices: d.voices
+    };
+    BACK_EQUIP['eq_' + d.id] = { id: 'eq_' + d.id, name: d.eq[0], icon: d.eq[1], cost: d.eq[2], rank: 1, rate: d.eq[3], prods: ids, desc: d.eq[4] };
+    d.combos.forEach(([id, name, pa, pb, bonus, a, b]) => {
+      const A = products[pa].name, B = products[pb].name;
+      COMBO_DEFS.push({ id, name, a, b, bonusProd: [pa, pb], bonus, desc: `${A}×${B}：魅力+${Math.round(bonus * 100)}%` });
+    });
+  });
+  // 店員の担当（品出し専任）も新商品に対応
+  STAFF_ROLES.fresh.prods.push(...extraFresh);
+  STAFF_ROLES.drink.prods.push(...extraDrink);
+  STAFF_ROLES.goods.prods.push(...extraGoods);
+})();
+
+/* ---------- 現在の店のタイプ ---------- */
+function shopTypeOf(sx) { const T = window.SHOP_TYPES; return (T && sx && T[sx.type]) || (T && T.conbini) || _FALLBACK_TYPE; }
+var _FALLBACK_TYPE = { id: 'conbini', name: 'コンビニ', noun: 'コンビニ', icon: '🏪', signText: '🏪 MY MART', prodSet: null, blocks: 'all', fams: ['all'], sig: new Set(), voices: [], start: [], prodList: [] };
+function curType() { return shopTypeOf(typeof stores !== 'undefined' ? stores[curStore] : null); }
+function typeHasProd(t, pid) { return !t.prodSet || t.prodSet.has(pid); }
+function typeAllowsDef(def, t) {
+  t = t || curType();
+  if (def.cat === 'shelf') return typeHasProd(t, def.prod);
+  if (def.cat === 'block') return t.blocks === 'all' || t.blocks.has(def.type);
+  return true;
+}
+function typeProducts() { const t = curType(); return Object.values(products).filter(p => typeHasProd(t, p.id)); }
+function typeSigMul(p) { const t = curType(); return t.sig && t.sig.has(p.id) ? 1.15 : 1; }
+function typeCombos() {
+  const t = curType();
+  return COMBO_DEFS.filter(c => [c.a, c.b].every(k => { const d = FACILITY_TYPES[k]; return d && typeAllowsDef(d, t); }));
+}
+function equipRelevant(e) { const t = curType(); return e.prods === 'all' || e.prods.some(id => typeHasProd(t, id)); }
+function shelfKey(d) {
+  const t = curType();
+  if (t.id === 'conbini') return 0;
+  const p = products[d.prod];
+  return (t.sig.has(d.prod) ? 0 : 1e7) + p.unlockRank * 1e5 + d.cost;
+}
+
+/* ---------- 見た目（ランク名・看板） ---------- */
+function typeApplyCosmetic(replaceSign) {
+  const t = curType();
+  RANKS.forEach(r => { if (r.name0 === undefined) r.name0 = r.name; r.name = r.name0.replace(/コンビニ/g, t.noun); });
+  if (replaceSign && typeof sign !== 'undefined' && SHOP_SIGNS.has(sign.text)) sign.text = t.signText;
+  _rbIdx = -2;
+  try { rankHud(); } catch (e) {}
+}
+
+/* ---------- 初期レイアウト（新しいお店） ---------- */
+initDefaultStore = function () {
+  addPlacedObject('backyard', 1, 1);
+  addPlacedObject('register', 9, 2);
+  const t = curType();
+  if (t.id === 'conbini') {
+    addPlacedObject('shelf_onigiri', 4, 5, 6);
+    addPlacedObject('shelf_drink', 7, 5, 8);
+    addPlacedObject('shelf_snack', 4, 7, 6);
+    addPlacedObject('shelf_bento', 7, 7, 4);
+  } else {
+    const pos = [[4, 5], [7, 5], [4, 7], [7, 7]];
+    t.start.forEach((tp, i) => { if (pos[i]) addPlacedObject(tp, pos[i][0], pos[i][1]); });
+  }
+  recalcCombos(true);
+};
+
+/* ---------- 新店舗：タイプを選んで建てる ---------- */
+buildNewStore = function (tid) {
+  const c = newStoreCost();
+  if (state.money < c) { SFX.angry(); return setTicker(`⚠️ 新店舗の建設費 ¥${c.toLocaleString()} が足りません！`); }
+  if (typeof tid !== 'string' || !SHOP_TYPES[tid]) {
+    const btns = SHOP_ORDER.map(id => { const t = SHOP_TYPES[id]; return `<button class="kairo-btn btn-cream ty-pbtn" onclick="pickNewStoreType('${id}')"><span class="ic">${t.icon}</span><b>${t.name}</b><small>${t.desc.split('。')[0]}</small></button>`; }).join('');
+    openModal(`🏬 新しいお店のタイプを選ぼう（建設費 ¥${c.toLocaleString()}）`, `<div style="font-size:12px;margin-bottom:8px;line-height:1.6">タイプで扱える商品棚とブロックが変わります。あとから 📜メニュー →「店タイプ」で改装もできます。</div><div class="ty-pick">${btns}</div>`);
+    return;
+  }
+  state.money -= c;
+  packStore();
+  stores.push({ name: `${stores.length + 1}号店`, type: tid, placedObjects: [], nextObjUid: 1, hiredStaff: [makeManager()], candidateList: [], nextStaffId: 1, customers: [], passers: [], dirts: [], expansionLevel: 0 });
+  curStore = stores.length - 1;
+  applyStore(stores[curStore]);
+  typeApplyCosmetic(true);
+  initDefaultStore(); refreshCandidates(true);
+  cancelBuildMode(); closeInspector(); lastSig = '';
+  SFX.fanfare(); setTicker(`🎉 ${stores[curStore].name}（${curType().icon}${curType().name}）がオープン！表示中の店のみ接客し、他の店は週ごとに自動で収益が入ります。`);
+  updateHUD(); refreshAllTabs(); refreshStoreUI();
+};
+function pickNewStoreType(id) { closeModal(); buildNewStore(id); }
+
+/* ---------- 改装（店タイプの変更） ---------- */
+function _freeSpot(type) {
+  const b = getStoreBounds(), cand = [[4, 5], [7, 5], [4, 7], [7, 7], [10, 5], [10, 7], [4, 3], [7, 3]];
+  for (let y = 3; y <= 8; y++) for (let x = 3; x <= b.maxX - 1; x++) cand.push([x, y]);
+  for (const [x, y] of cand) {
+    if (x < 1 || x > b.maxX || y < 1 || y > 9) continue;
+    if (placedObjects.some(o => covers(o, x, y))) continue;
+    if (canPlaceSafely(type, x, y).ok) return [x, y];
+  }
+  return null;
+}
+async function setStoreType(id) {
+  const t = SHOP_TYPES[id], cur = curType(), sx = stores[curStore];
+  if (!t || !sx || t === cur) return;
+  const bad = placedObjects.filter(o => { const d = FACILITY_TYPES[o.type]; return d && !typeAllowsDef(d, t); });
+  const refund = bad.reduce((a, o) => a + FACILITY_TYPES[o.type].cost, 0);
+  const keepShelves = placedObjects.filter(o => !bad.includes(o) && FACILITY_TYPES[o.type].cat === 'shelf');
+  const have = new Set(keepShelves.map(o => FACILITY_TYPES[o.type].prod));
+  const starters = t.start.filter(k => !have.has(FACILITY_TYPES[k].prod)).slice(0, Math.max(0, 4 - keepShelves.length));
+  const startCost = starters.reduce((a, k) => a + FACILITY_TYPES[k].cost, 0);
+  if (state.money + refund < startCost) {
+    SFX.angry();
+    return xpAlert(`改装の資金が足りません。\n新しい商品棚の購入費 ¥${startCost.toLocaleString()} に対して、返金を含めた資金は ¥${(state.money + refund).toLocaleString()} です。`);
+  }
+  const nb = bad.filter(o => FACILITY_TYPES[o.type].cat === 'block').length, ns = bad.length - nb;
+  let msg = `「${sx.name}」を ${t.icon}${t.name} に改装します。\n\n`;
+  msg += bad.length ? `・扱えなくなる 商品棚 ${ns}台 / ブロック ${nb}個 を撤去します\n　（購入額を全額返金 +¥${refund.toLocaleString()}、棚の在庫は倉庫へ戻ります）\n` : `・撤去するものはありません\n`;
+  msg += starters.length ? `・新しい商品棚を ${starters.length}台 設置します（-¥${startCost.toLocaleString()}）\n` : '';
+  msg += '\nよろしいですか？';
+  if (!(await xpConfirm(msg))) return;
+  cancelBuildMode(); closeInspector();
+  bad.forEach(o => {
+    const d = FACILITY_TYPES[o.type];
+    if (d.cat === 'shelf' && o.stock > 0) products[d.prod].stock += o.stock;
+    const i = placedObjects.indexOf(o); if (i >= 0) placedObjects.splice(i, 1);
+  });
+  state.money += refund;
+  sx.type = id;
+  let placed = 0;
+  starters.forEach(k => {
+    const d = FACILITY_TYPES[k];
+    if (state.money < d.cost) return;
+    const sp = _freeSpot(k); if (!sp) return;
+    state.money -= d.cost; addPlacedObject(k, sp[0], sp[1]); placed++;
+  });
+  typeApplyCosmetic(true);
+  recalcCombos(true);
+  buildF.cat = 'all'; lastSig = '';
+  SFX.fanfare();
+  setTicker(`🏷 ${sx.name} が ${t.icon}${t.name} になりました！` + (placed ? `新しい棚を${placed}台置きました。` : '') + 'さっそく棚を並べよう！');
+  updateHUD(); refreshAllTabs(); refreshStoreUI();
+  if (scrollIsOpen) renderScroll(true);
+}
+
+/* ---------- 📜メニュー「店タイプ」タブ ---------- */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `
+.ty-now{display:flex;align-items:center;gap:10px;margin:2px 0 8px}.ty-now .ty-ic{font-size:40px;line-height:1}
+.ty-now b{font-size:16px;font-weight:900;display:block}.ty-now small{display:block;font-size:12px;color:#7c5a2a;font-weight:700;margin-top:2px;line-height:1.5}
+.ty-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:10px}
+.ty-card{background:rgba(255,255,255,.38);border:2px solid #c9a566;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+.ty-card.on{border-color:#b45309;background:rgba(253,230,138,.55);box-shadow:inset 0 0 0 2px #f5b700}
+.ty-card h4{margin:0;font-size:14px;font-weight:900;display:flex;align-items:center;gap:6px}.ty-card h4 i{font-style:normal;font-size:24px}
+.ty-card p{margin:0;font-size:11px;line-height:1.5;color:#5b3a12;font-weight:700}
+.ty-card .ty-pr{font-size:15px;letter-spacing:1px;line-height:1.5}
+.ty-card .ty-bl{font-size:10px;color:#7c5a2a;font-weight:800;line-height:1.5}
+.ty-card button{margin-top:auto;padding:6px;width:100%}
+.ty-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ty-pbtn{flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px;text-align:left;font-size:13px}
+.ty-pbtn .ic{font-size:24px;line-height:1.1}.ty-pbtn small{font-weight:700;font-size:10px;color:#7a6a5c;line-height:1.4}`;
+  document.head.appendChild(st);
+})();
+function scType() {
+  const cur = curType(), sx = stores[curStore];
+  const nBlk = t => Object.values(FACILITY_TYPES).filter(d => d.cat === 'block' && typeAllowsDef(d, t)).length;
+  const nShelf = t => Object.values(FACILITY_TYPES).filter(d => d.cat === 'shelf' && typeAllowsDef(d, t)).length;
+  const famTxt = t => t.fams[0] === 'all' ? '🧱ぜんぶ' : t.fams.map(f => FAM_NAME[f]).join(' ');
+  const prodIcons = (t, n) => t.prodList.slice(0, n).map(id => products[id].icon).join(' ') + (t.prodList.length > n ? ' …' : '');
+  const kv = (k, v) => `<div class="sc-kv"><span>${k}</span><b>${v}</b></div>`;
+  let h = `<div class="sc-card"><div class="sc-h">🏷 「${slEsc(sx.name)}」の店タイプ</div>` +
+    `<div class="ty-now"><span class="ty-ic">${cur.icon}</span><div><b>${cur.name}</b><small>${cur.desc}</small></div></div>` +
+    kv('🛒 扱える商品棚', `${nShelf(cur)}種類`) + kv('🧱 使えるブロック', `${nBlk(cur)}種類`) +
+    kv('⭐ 得意商品', cur.sig.size ? `${[...cur.sig].map(id => products[id].icon).join(' ')}（適正価格+15%）` : 'なし（万能タイプ）') +
+    `<div style="font-size:11px;line-height:1.6;margin-top:6px;color:#7c5a2a;font-weight:700">店タイプは<b>お店ごと</b>に設定できます（店の切り替えは画面上部のセレクト）。改装すると、扱えなくなった商品棚とブロックは<b>購入額を全額返金</b>して撤去され、必要なら新しい棚が置かれます。</div></div>` +
+    `<div class="ty-grid">`;
+  SHOP_ORDER.forEach(id => {
+    const t = SHOP_TYPES[id], on = t === cur;
+    h += `<div class="ty-card ${on ? 'on' : ''}"><h4><i>${t.icon}</i>${t.name}${on ? ' ✅' : ''}</h4><p>${t.desc}</p>` +
+      `<div class="ty-pr">${prodIcons(t, 12)}</div>` +
+      `<div class="ty-bl">🛒 ${nShelf(t)}種類の棚 ／ 🧱 ブロック: ${famTxt(t)}（${nBlk(t)}種）</div>` +
+      (on ? `<button class="kairo-btn btn-cream" disabled>現在のタイプ</button>` : `<button class="kairo-btn btn-orange" onclick="setStoreType('${id}')">🔨 この店を${t.name}にする</button>`) + `</div>`;
+  });
+  return h + `</div>`;
+}
+
+// =========================================================
 // 初期化実行（スロット対応版）
 // =========================================================
 initDefaultStore();
@@ -6926,6 +7261,1076 @@ refreshCandidates(true);
     if (!readLast() && !(await slotKeys()).length) legacyOffer();
   }
 })();
+
+
+// ===================== MOD v5: サイズ可変・機械操作アニメ・描画リニューアル =====================
+
+// =========================================================
+// MOD v4: サイズ可変（1×1 / 2×2 / 2×3 / 3×2）・機械を実際に操作するアニメ・並べるほど得になるアーケード効果
+// =========================================================
+var SZ_LIST = [[1, 1], [2, 2], [2, 3], [3, 2]];
+var SZ_CATS = { shelf: 1, machine: 1, eatin: 1, atm: 1, decor: 1 };
+var lastSz = {};
+function szArea(o) { return (o.sw || 1) * (o.sh || 1); }
+function szCapMulA(a) { return a <= 1 ? 1 : a <= 4 ? 3.6 : 5.6; }
+function szCostMulA(a) { return a <= 1 ? 1 : a <= 4 ? 3.4 : 5; }
+function capOf(o) { const d = FACILITY_TYPES[o.type]; return Math.max(1, Math.round((d.maxCap || 0) * szCapMulA(szArea(o)))); }
+function szCostOf(def, w, h) { return Math.round(def.cost * szCostMulA(w * h) / 10) * 10; }
+function restockLoad(o) { const a = szArea(o); return a >= 6 ? 10 : a >= 4 ? 8 : 4; }
+function objCenter(o) { const f = fpOf(o); return { x: (o.x + f.w / 2) * TILE, y: (o.y + f.h / 2) * TILE }; }
+function footAdjR(o, gx, gy, f) {
+  const of = fpOf(o), xo = Math.min(o.x + of.w, gx + f.w) - Math.max(o.x, gx), yo = Math.min(o.y + of.h, gy + f.h) - Math.max(o.y, gy);
+  return (xo > 0 && (o.y + of.h === gy || gy + f.h === o.y)) || (yo > 0 && (o.x + of.w === gx || gx + f.w === o.x));
+}
+function footAdj(a, b) {
+  if (FACILITY_TYPES[a.type].cat === 'neighbor' || FACILITY_TYPES[b.type].cat === 'neighbor') return false;
+  return footAdjR(a, b.x, b.y, fpOf(b));
+}
+function adjToObj(tx, ty, o) {
+  const f = fpOf(o);
+  return (tx >= o.x && tx < o.x + f.w && (ty === o.y - 1 || ty === o.y + f.h)) || (ty >= o.y && ty < o.y + f.h && (tx === o.x - 1 || tx === o.x + f.w));
+}
+function applyObjSize(o, w, h) { if (o) { o.sw = w; o.sh = h; } }
+function faceObj(c, o) {
+  if (!o) return;
+  const f = objCenter(o), dx = f.x - c.x, dy = f.y - c.y;
+  if (Math.abs(dx) > Math.abs(dy)) { c.fx = Math.sign(dx); c.fy = 0; } else { c.fx = 0; c.fy = Math.sign(dy) || 1; }
+}
+function weightedPick(arr, wf) {
+  let t = 0; const w = arr.map(o => { const v = Math.max(0.01, wf(o)); t += v; return v; });
+  let r = Math.random() * t;
+  for (let i = 0; i < arr.length; i++) { r -= w[i]; if (r <= 0) return arr[i]; }
+  return arr[arr.length - 1];
+}
+
+// ---- 占有マス(footprint)：どの設備も o.sw × o.sh マスを占める ----
+(function () {
+  const _fp = fpOf;
+  fpOf = function (a) {
+    if (typeof a === 'string') {
+      const bm = state.buildMode;
+      if (bm && bm.type === a && bm.sw) return { w: bm.sw, h: bm.sh };
+      return _fp(a);
+    }
+    if ((a.sw > 1 || a.sh > 1) && FACILITY_TYPES[a.type].cat !== 'neighbor') return { w: a.sw || 1, h: a.sh || 1 };
+    return _fp(a);
+  };
+
+  const _cps = canPlaceSafely;
+  canPlaceSafely = function (type, gx, gy, moveUid = null) {
+    const def = FACILITY_TYPES[type];
+    if (def.cat === 'fixture' || def.cat === 'neighbor') return _cps(type, gx, gy, moveUid);
+    const f = fpOf(type), z0 = inStore(gx, gy);
+    for (let yy = gy; yy < gy + f.h; yy++) for (let xx = gx; xx < gx + f.w; xx++) {
+      if (ROAD.tiles.has(WK(xx, yy))) return { ok: false, reason: '道路の上には置けません（道路ツールの「消す」で撤去できます）' };
+      if (isTileBlocked(xx, yy, moveUid)) return { ok: false, reason: f.w * f.h > 1 ? `ここには置けません（${f.w}×${f.h}マス必要）` : 'ここには置けません' };
+      if (inStore(xx, yy) !== z0) return { ok: false, reason: '店の壁をまたいでは置けません' };
+    }
+    const yard = inYard(gx, gy);
+    if (yard && (def.cat === 'register' || def.cat === 'backyard')) return { ok: false, reason: 'レジとバックヤードは店内専用です' };
+    const others = placedObjects.filter(o => o.uid !== moveUid);
+    if (def.cat === 'backyard' && others.some(o => o.type === 'backyard')) return { ok: false, reason: 'バックヤードは1つだけです' };
+    if (def.cat === 'register' && gy <= 1) return { ok: false, reason: '店員が後ろに立てるよう1マス空けてください' };
+    const occ = (x, y) => (x >= gx && x < gx + f.w && y >= gy && y < gy + f.h) || others.some(o => covers(o, x, y));
+    const okT = (x, y) => inStore(x, y) || inYard(x, y) || isRoad(y) || ROAD.tiles.has(WK(x, y));
+    let bx0 = Math.min(-3, gx - 2), bx1 = Math.max(getStoreBounds().maxX + 3, gx + f.w + 2), by0 = Math.min(-2, gy - 2), by1 = Math.max(14, gy + f.h + 2);
+    others.forEach(o => { const q = fpOf(o); bx0 = Math.min(bx0, o.x - 2); bx1 = Math.max(bx1, o.x + q.w + 2); by0 = Math.min(by0, o.y - 2); by1 = Math.max(by1, o.y + q.h + 2); });
+    const K = (x, y) => (x - bx0) * 4096 + (y - by0), visited = new Set(), qu = [];
+    const seed = (x, y) => { if (x < bx0 || x > bx1 || y < by0 || y > by1) return; if (okT(x, y) && !occ(x, y) && !visited.has(K(x, y))) { visited.add(K(x, y)); qu.push([x, y]); } };
+    seed(5, 9);
+    for (let x = bx0; x <= bx1; x++) { seed(x, 11); seed(x, 12); }
+    const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+    for (let qi = 0; qi < qu.length; qi++) { const [cx, cy] = qu[qi]; dirs.forEach(([dx, dy]) => seed(cx + dx, cy + dy)); }
+    const chk = (x, y) => okT(x, y) && visited.has(K(x, y));
+    const reachF = (ox, oy, w, h) => {
+      for (let x = ox; x < ox + w; x++) if (chk(x, oy - 1) || chk(x, oy + h)) return true;
+      for (let y = oy; y < oy + h; y++) if (chk(ox - 1, y) || chk(ox + w, y)) return true;
+      return false;
+    };
+    const need = ['shelf', 'register', 'eatin', 'atm', 'machine', 'backyard'];
+    if (need.includes(def.cat) && !reachF(gx, gy, f.w, f.h)) return { ok: false, reason: 'お客さんが近づけません！' };
+    const cut = others.find(o => { const q = fpOf(o); return need.includes(FACILITY_TYPES[o.type].cat) && !reachF(o.x, o.y, q.w, q.h); });
+    if (cut) return { ok: false, reason: `${FACILITY_TYPES[cut.type].name}に近づけなくなります！` };
+    if (def.cat === 'register' && !visited.has(K(gx, gy - 1))) return { ok: false, reason: 'レジの後ろ(上側)に店員が立てません' };
+    return { ok: true };
+  };
+
+  const _gaw = getAdjacentWalkable;
+  getAdjacentWalkable = function (tx, ty) {
+    const o = placedObjects.find(q => q.x === tx && q.y === ty && (q.sw > 1 || q.sh > 1) && FACILITY_TYPES[q.type].cat !== 'neighbor');
+    if (!o) return _gaw(tx, ty);
+    const f = fpOf(o), out = [];
+    for (let x = o.x; x < o.x + f.w; x++) out.push({ x, y: o.y - 1 }, { x, y: o.y + f.h });
+    for (let y = o.y; y < o.y + f.h; y++) out.push({ x: o.x - 1, y }, { x: o.x + f.w, y });
+    return out.filter(t => isWalkableForPath(t.x, t.y));
+  };
+})();
+
+// ---- 建築モード：サイズ選択UI（Rキーでも切替） ----
+function ensureSizeBar() {
+  if (document.getElementById('build-size')) return;
+  const bn = document.getElementById('build-banner'); if (!bn) return;
+  const el = document.createElement('span'); el.id = 'build-size';
+  el.style.cssText = 'display:none;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center';
+  bn.insertBefore(el, bn.children[1] || null);
+}
+function buildSizeList(bm) {
+  if (bm.moveUid) { const a = bm.sw * bm.sh; return SZ_LIST.filter(([w, h]) => w * h === a); }
+  return SZ_LIST;
+}
+function updateSizeBar() {
+  ensureSizeBar();
+  const el = document.getElementById('build-size'), bm = state.buildMode; if (!el) return;
+  if (!bm || !bm.sw) { el.style.display = 'none'; return; }
+  const def = FACILITY_TYPES[bm.type], list = buildSizeList(bm), msg = document.getElementById('build-banner-msg');
+  if (!bm.moveUid) msg.textContent = `🏗️「${def.name}」${bm.sw}×${bm.sh}（¥${szCostOf(def, bm.sw, bm.sh).toLocaleString()}）を置く場所をクリック！(Rキー:サイズ切替 / 右クリック終了)`;
+  else msg.textContent = `🚚「${def.name}」の新しい場所をクリック！${list.length > 1 ? '(Rキー:向きを回転) ' : ''}(右クリックで中止)`;
+  if (list.length <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '📐 ' + list.map(([w, h]) => `<button class="kairo-btn ${w === bm.sw && h === bm.sh ? 'btn-orange' : 'btn-cream'}" style="padding:3px 8px;font-size:11px" onclick="setBuildSize(${w},${h})">${w}×${h}</button>`).join('');
+}
+function setBuildSize(w, h) {
+  const bm = state.buildMode; if (!bm || !bm.sw) return;
+  bm.sw = w; bm.sh = h;
+  if (!bm.moveUid) lastSz[FACILITY_TYPES[bm.type].cat] = [w, h];
+  SFX.click(); updateSizeBar();
+}
+function cycleBuildSize() {
+  const bm = state.buildMode; if (!bm || !bm.sw) return;
+  const list = buildSizeList(bm); if (list.length <= 1) return;
+  const i = list.findIndex(([w, h]) => w === bm.sw && h === bm.sh), n = list[(i + 1) % list.length];
+  setBuildSize(n[0], n[1]);
+}
+(function () {
+  const _sbm = startBuildMode;
+  startBuildMode = function (type, moveUid = null) {
+    _sbm.apply(this, arguments);
+    const bm = state.buildMode; if (!bm) return;
+    const d = FACILITY_TYPES[type];
+    if (SZ_CATS[d.cat]) {
+      if (moveUid) { const o = placedObjects.find(q => q.uid === moveUid); bm.sw = (o && o.sw) || 1; bm.sh = (o && o.sh) || 1; }
+      else { const s = lastSz[d.cat] || [1, 1]; bm.sw = s[0]; bm.sh = s[1]; }
+    }
+    updateSizeBar();
+  };
+  const _cbm = cancelBuildMode;
+  cancelBuildMode = function () { _cbm.apply(this, arguments); updateSizeBar(); };
+  window.addEventListener('keydown', e => {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if ((e.key === 'r' || e.key === 'R') && state.buildMode && state.buildMode.sw) { cycleBuildSize(); e.preventDefault(); }
+  });
+  const _bch = buildCardHtml;
+  buildCardHtml = function (def) {
+    const h = _bch.apply(this, arguments);
+    if (!SZ_CATS[def.cat]) return h;
+    const i = h.lastIndexOf('</div>'); if (i < 0) return h;
+    return h.slice(0, i) + `<div style="font-size:10px;color:#64748b">📐 設置時に 1×1／2×2／2×3／3×2 を選べます（大きいほど高価・大容量）</div>` + h.slice(i);
+  };
+  const _ft = facilityTip;
+  facilityTip = function (d) {
+    let t = _ft.apply(this, arguments);
+    if (SZ_CATS[d.cat]) t += `\n📐 サイズ: 1×1 / 2×2 / 2×3 / 3×2（Rキーで切替）\n　大きいほど高価ですが、${d.cat === 'shelf' ? '陳列数が増えます' : d.cat === 'machine' || d.cat === 'atm' ? '同時に使える人数が増えます' : '見栄えが良くなります'}`;
+    if (d.cat === 'machine') t += '\n🎮 機械を隣り合わせに並べると「ゲームコーナー」ボーナス！';
+    return t;
+  };
+})();
+
+// ---- 機械を並べると効くアーケード効果 ----
+var ARC_TIERS = [
+  { n: 2, name: 'ミニコーナー', icon: '🎮', fee: 0.06, enter: 0.02, use: 0.03, chain: 0 },
+  { n: 3, name: 'ゲームコーナー', icon: '🕹️', fee: 0.12, enter: 0.04, use: 0.06, chain: 0.05 },
+  { n: 5, name: 'アーケード', icon: '👾', fee: 0.22, enter: 0.08, use: 0.10, chain: 0.10 },
+  { n: 7, name: 'ゲームセンター', icon: '🎰', fee: 0.35, enter: 0.12, use: 0.14, chain: 0.18 }
+];
+var _arcKey = null, _arcVal = null;
+function arcInfo() {
+  const ms = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'machine');
+  const key = ms.map(o => o.uid + o.type + ':' + o.x + ',' + o.y + ',' + (o.sw || 1) + 'x' + (o.sh || 1)).join('|');
+  if (key === _arcKey && _arcVal) return _arcVal;
+  const seen = new Set(), list = [], byUid = new Map();
+  ms.forEach(s => {
+    if (seen.has(s.uid)) return;
+    const comp = [s], st = [s]; seen.add(s.uid);
+    while (st.length) { const a = st.pop(); ms.forEach(b => { if (!seen.has(b.uid) && footAdj(a, b)) { seen.add(b.uid); comp.push(b); st.push(b); } }); }
+    let tier = -1; ARC_TIERS.forEach((t, i) => { if (comp.length >= t.n) tier = i; });
+    const kinds = new Set(comp.map(o => o.type)).size, T = tier >= 0 ? ARC_TIERS[tier] : null;
+    const feeMul = T ? 1 + T.fee + (kinds >= 4 ? 0.08 : kinds >= 3 ? 0.04 : 0) : 1;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    comp.forEach(o => { const f = fpOf(o); x0 = Math.min(x0, o.x); y0 = Math.min(y0, o.y); x1 = Math.max(x1, o.x + f.w); y1 = Math.max(y1, o.y + f.h); byUid.set(o.uid, { tier, size: comp.length, kinds, feeMul }); });
+    if (tier >= 0) list.push({ size: comp.length, tier, kinds, feeMul, x0, y0, x1, y1 });
+  });
+  list.sort((a, b) => b.tier - a.tier || b.size - a.size);
+  const b0 = list[0] && ARC_TIERS[list[0].tier], b1 = list[1] && ARC_TIERS[list[1].tier];
+  _arcKey = key;
+  return _arcVal = {
+    list, byUid,
+    enter: Math.min(0.2, (b0 ? b0.enter : 0) + (b1 ? b1.enter * 0.5 : 0)),
+    use: b0 ? b0.use : 0, chain: b0 ? b0.chain : 0
+  };
+}
+(function () {
+  const _rc = recalcCombos;
+  recalcCombos = function (silent) {
+    _rc.apply(this, arguments);
+    try {
+      const A = arcInfo(), best = A.list.length ? A.list[0].tier : -1, seen = state.arcSeen || 0;
+      if (best + 1 > seen) {
+        if (!silent) {
+          const T = ARC_TIERS[best], pts = 10 * (best + 1 - seen) * (best + 1);
+          state.points += pts; SFX.combo();
+          setTicker(`${T.icon} 【${T.name}】が誕生！機械${A.list[0].size}台の集客力で 利用料+${Math.round(T.fee * 100)}%・来客UP！（✨+${pts}P）`);
+          addFloatText(5 * TILE, 4 * TILE, `${T.icon}${T.name}!`, '#7c3aed');
+        }
+        state.arcSeen = best + 1;
+      }
+    } catch (e) { }
+  };
+  const _mf = machFee;
+  machFee = function (mc) {
+    const a = szArea(mc), sm = a >= 6 ? 1.3 : a >= 4 ? 1.15 : 1, A = arcInfo().byUid.get(mc.uid);
+    return Math.round(_mf(mc) * sm * (A ? A.feeMul : 1));
+  };
+  const _um = useMachine;
+  useMachine = function (mc, c) {
+    _um.apply(this, arguments);
+    const A = arcInfo();
+    if (!c.machineUid && A.chain > 0 && Math.random() < A.chain) {
+      const others = placedObjects.filter(o => o.uid !== mc.uid && FACILITY_TYPES[o.type].cat === 'machine');
+      if (others.length) { c.machineUid = others[Math.floor(Math.random() * others.length)].uid; addFloatText(c.x, c.y - 34, '🎮もう1回!', '#7c3aed'); }
+    }
+  };
+  const _mi = machInspectorHtml;
+  machInspectorHtml = function (obj) {
+    let h = _mi.apply(this, arguments);
+    const A = arcInfo().byUid.get(obj.uid);
+    if (A && A.tier >= 0) { const T = ARC_TIERS[A.tier]; h += `<div style="font-size:12px;font-weight:800;color:#7c3aed;margin:2px 0 4px">${T.icon} ${T.name}（連結${A.size}台・${A.kinds}種）利用料 +${Math.round((A.feeMul - 1) * 100)}%</div>`; }
+    else h += `<div style="font-size:11px;color:#64748b;margin:2px 0 4px">💡 機械を隣り合わせに2台以上並べると「ミニコーナー」。3・5・7台でさらに利用料と来客がUP！種類が多いほど+α</div>`;
+    return h;
+  };
+  const _oi = openInspector;
+  openInspector = function (obj) {
+    _oi.apply(this, arguments);
+    const d = FACILITY_TYPES[obj.type]; if (!SZ_CATS[d.cat] && d.cat !== 'atm') return;
+    const pop = document.getElementById('inspector-popup'), last = pop.lastElementChild; if (!last) return;
+    const a = szArea(obj), div = document.createElement('div');
+    div.style.cssText = 'font-size:11px;color:#475569;margin:3px 0';
+    const extra = (d.cat === 'machine' || d.cat === 'atm') ? ` ｜ 同時利用 ${machSlots(obj)}人` : d.cat === 'shelf' ? ` ｜ 陳列上限 ${capOf(obj)}個` : '';
+    div.textContent = `📐 ${obj.sw || 1}×${obj.sh || 1}マス${extra}`;
+    pop.insertBefore(div, last);
+  };
+  // 「隣り合わせ」を表示する看板（全オブジェクトの上に描く）
+  const _dro = drawRoadOverlay;
+  drawRoadOverlay = function () { _dro.apply(this, arguments); drawArcadeLabels(); };
+})();
+function drawArcadeLabels() {
+  if (!placedObjects.length) return;
+  const A = arcInfo(), t = performance.now() / 1000;
+  A.list.forEach(c => {
+    const T = ARC_TIERS[c.tier], cx = (c.x0 + c.x1) / 2 * TILE, cy = c.y0 * TILE - 7, txt = `${T.icon} ${T.name} ×${c.size}`;
+    ctx.font = '900 11px sans-serif'; const w = ctx.measureText(txt).width + 16;
+    const hue = [290, 190, 330, 50][c.tier] + Math.sin(t * 2) * 12;
+    ctx.save(); ctx.shadowColor = `hsl(${hue},95%,60%)`; ctx.shadowBlur = PERF.q() >= 1 ? 8 + Math.sin(t * 4) * 3 : 0;
+    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(cx - w / 2, cy - 9, w, 18, 9); ctx.fill();
+    ctx.strokeStyle = `hsl(${hue},95%,65%)`; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, cx, cy);
+  });
+}
+
+// ---- 利用の「枠」と選択ロジック ----
+function machSlots(o) { const a = szArea(o); return a >= 6 ? 3 : a >= 4 ? 2 : 1; }
+function liveUsers(o) {
+  if (!o.users || !o.users.length) return o.users || [];
+  const r = o.users.filter(id => customers.some(q => q.id === id && q.muUid === o.uid));
+  o.users = r; return r;
+}
+function pickMachineFor() {
+  const macs = placedObjects.filter(o => FACILITY_TYPES[o.type].cat === 'machine' && machStock(o) > 0);
+  if (!macs.length) return null;
+  const ad = machUpg.mu_ad || 0, A = arcInfo();
+  const eff = macs.reduce((a, o) => a + 1 + 0.4 * (machSlots(o) - 1), 0);
+  const p = Math.min(0.75 + 0.03 * ad + A.use, 0.3 + eff * 0.1 + 0.06 * ad + A.use);
+  if (Math.random() >= p) return null;
+  return weightedPick(macs, o => (1 + 0.5 * (machSlots(o) - 1)) * (liveUsers(o).length >= machSlots(o) ? 0.35 : 1)).uid;
+}
+function pickAtmFor() {
+  const a = placedObjects.filter(o => o.type === 'atm'); if (!a.length) return null;
+  return weightedPick(a, o => (1 + 0.5 * (machSlots(o) - 1)) * (liveUsers(o).length >= machSlots(o) ? 0.3 : 1));
+}
+function pickEatinFor() {
+  const a = placedObjects.filter(o => o.type === 'eatin'); if (!a.length) return null;
+  return weightedPick(a, o => szArea(o));
+}
+function eatPts(c) { const o = placedObjects.find(q => q.uid === c.currentObjId), a = o ? szArea(o) : 1; return 2 + (a >= 6 ? 2 : a >= 4 ? 1 : 0); }
+function altUseTarget(c, obj, isAtm) {
+  const pool = placedObjects.filter(o => o.uid !== obj.uid && (isAtm ? o.type === 'atm' : (FACILITY_TYPES[o.type].cat === 'machine' && machStock(o) > 0)) && liveUsers(o).length < machSlots(o));
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+}
+
+// 機械ごとの「使い方」：kind=動きの種類, d=所要秒数
+var MK = {
+  machine_gacha: { k: 'gacha', d: 2.8 }, machine_lottery: { k: 'drum', d: 3.2 }, machine_fortune: { k: 'fortune', d: 2.8 },
+  machine_claw: { k: 'claw', d: 5.6 }, machine_copy: { k: 'copy', d: 3.8 }, machine_locker: { k: 'locker', d: 2.6 },
+  machine_photo: { k: 'photo', d: 4.8 }, machine_sticker: { k: 'photo', d: 4.4, v: 'sticker' },
+  machine_ticket: { k: 'kiosk', d: 2.3, v: 'ticket' }, machine_change: { k: 'kiosk', d: 2.2, v: 'change' },
+  machine_charge: { k: 'kiosk', d: 4.2, v: 'charge' }, machine_scale: { k: 'kiosk', d: 3.2, v: 'scale' },
+  machine_coffeevm: { k: 'kiosk', d: 3.6, v: 'coffee' }, machine_icecream: { k: 'kiosk', d: 3.8, v: 'icecream' },
+  machine_ramen: { k: 'kiosk', d: 4.2, v: 'ramen' }, machine_flower: { k: 'kiosk', d: 2.8, v: 'flower' },
+  machine_massage: { k: 'massage', d: 6.2 }, machine_laundry: { k: 'laundry', d: 5.6 }, machine_karaoke: { k: 'karaoke', d: 6.4 },
+  machine_vr: { k: 'vr', d: 5.8 }, machine_robot: { k: 'robot', d: 4.8 }, machine_drone: { k: 'drone', d: 4.4 },
+  machine_petbot: { k: 'pet', d: 4.8 }, machine_rocket: { k: 'rocket', d: 6.4 }
+};
+var HIDE_KINDS = { photo: 1, massage: 1, karaoke: 1 };   // 筐体の中に入る機械（客は筐体の絵の中に描く）
+var USE_VERB = { gacha: 'ガチャを回し中', drum: 'くじを回し中', fortune: '占い中', claw: 'クレーン操作中', copy: 'コピー中', locker: '荷物を預け中', photo: '撮影中', kiosk: '操作中', massage: 'マッサージ中', laundry: '洗濯中', karaoke: '熱唱中', vr: 'VR体験中', robot: 'ラテを待っている', drone: '荷物を待っている', pet: 'ふれあい中', rocket: '宇宙旅行中', atm: '操作中' };
+
+function stepUse(c, dt) {
+  const obj = placedObjects.find(o => o.uid === c.currentObjId), isAtm = c.state === 'atm';
+  if (!obj) { c.mu = null; c.muUid = null; c.hidden = false; return assignCustomerNextTarget(c); }
+  if (!c.mu) {
+    faceObj(c, obj);
+    if (!isAtm && FACILITY_TYPES[obj.type].cat === 'machine' && machStock(obj) <= 0) {   // アイテム切れ：使えずに次へ
+      c.emote = '💦'; c.emoteTimer = 1.3; addFloatText(c.x, c.y - 20, '品切れ…', '#e5484d');
+      assignCustomerNextTarget(c); return;
+    }
+    const us = liveUsers(obj);
+    if (us.length >= machSlots(obj)) {   // 満員：少し待って、空いている別の機械へ／あきらめる
+      c.muWait = (c.muWait || 0) + dt; c.muWaitT = (c.muWaitT || 0) + dt;
+      if (!c.emote) { c.emote = '⏳'; c.emoteTimer = 0.9; }
+      if (c.muWait > 3) {
+        c.muWait = 0;
+        const alt = altUseTarget(c, obj, isAtm);
+        if (alt) {
+          const ad = getAdjacentWalkable(alt.x, alt.y);
+          if (ad.length) { const a = ad[Math.floor(Math.random() * ad.length)]; c.currentObjId = alt.uid; c.path = findPath(Math.floor(c.x / TILE), Math.floor(c.y / TILE), a.x, a.y); return; }
+        }
+      }
+      if (c.muWaitT > 9) { c.muWaitT = 0; c.emote = '😓'; c.emoteTimer = 1.2; assignCustomerNextTarget(c); }
+      return;
+    }
+    obj.users = us; obj.users.push(c.id); c.muUid = obj.uid; c.muWait = 0; c.muWaitT = 0;
+    const m = isAtm ? { k: 'atm', d: 2.6 } : (MK[obj.type] || { k: 'kiosk', d: 3 });
+    c.mu = { t: 0, dur: m.d * (0.9 + Math.random() * 0.3), kind: m.k, v: m.v };
+    c.hidden = !!HIDE_KINDS[m.k]; SFX.click();
+    return;
+  }
+  c.mu.t += dt;
+  if (obj.users && obj.users[0] === c.id) obj.prog = Math.min(1, c.mu.t / c.mu.dur);
+  obj.who = c.shirt; obj.whoHair = c.hair;
+  if (c.mu.t >= c.mu.dur) {
+    obj.users = (obj.users || []).filter(id => id !== c.id);
+    if (!obj.users.length) obj.prog = -1;
+    c.hidden = false; c.mu = null; c.muUid = null;
+    if (isAtm) {
+      const fee = Math.round(120 * (1 + 0.2 * (machSlots(obj) - 1)));
+      state.money += fee; state.monthStats.extra += fee; state.points += 1;
+      SFX.cash(); addFloatText(c.x, c.y - 20, '🏧+¥' + fee, '#2596be');
+      machineFlash.set(obj.uid, performance.now() + 600);
+    } else useMachine(obj, c);
+    assignCustomerNextTarget(c);
+  }
+}
+
+
+// ---- コンボ判定：大きい設備は占有マスが接していれば隣り合わせ ----
+function comboAdj(a, b, manhattan) {
+  const ca = FACILITY_TYPES[a.type].cat, cb = FACILITY_TYPES[b.type].cat;
+  if (ca === 'neighbor' || cb === 'neighbor' || ca === 'fixture' || cb === 'fixture') return manhattan === 1;
+  return footAdjR(a, b.x, b.y, fpOf(b));
+}
+function comboAdjPrev(o, type, gx, gy) {
+  const co = FACILITY_TYPES[o.type].cat, ct = FACILITY_TYPES[type].cat;
+  if (co === 'neighbor' || ct === 'neighbor' || co === 'fixture' || ct === 'fixture') return Math.abs(o.x - gx) + Math.abs(o.y - gy) === 1;
+  return footAdjR(o, gx, gy, fpOf(type));
+}
+
+
+// =========================================================
+// MOD v4: 描画の全面リニューアル（棚・機械・ATM・イートイン・レジ・植物）＋客の操作モーション
+// =========================================================
+var _mxSc = {};
+function mxShade(c, a) {
+  const k = c + a; if (_mxSc[k]) return _mxSc[k];
+  if (!/^#/.test(c)) return c;
+  let h = c.slice(1); if (h.length === 3) h = h.split('').map(v => v + v).join('');
+  const n = parseInt(h, 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const f = a >= 0 ? v => Math.round(v + (255 - v) * a) : v => Math.round(v * (1 + a));
+  return _mxSc[k] = `rgb(${f(r)},${f(g)},${f(b)})`;
+}
+function mxRR(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, Math.max(0, w), Math.max(0, h), r); }
+function mxFill(x, y, w, h, r, c1, c2, horiz) {
+  const g = horiz ? ctx.createLinearGradient(x, 0, x + w, 0) : ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, c1); g.addColorStop(1, c2 || c1); ctx.fillStyle = g; mxRR(x, y, w, h, r); ctx.fill();
+}
+function mxStroke(x, y, w, h, r, col, lw) { ctx.strokeStyle = col || 'rgba(15,23,42,.85)'; ctx.lineWidth = lw || 1.5; mxRR(x, y, w, h, r); ctx.stroke(); }
+function mxCab(x, y, w, h, col, r) {
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; mxRR(x + 2, y + h - 4, w, 6, 3); ctx.fill();
+  mxFill(x, y, w, h - 2, r || 4, mxShade(col, .32), mxShade(col, -.24), true);
+  mxStroke(x, y, w, h - 2, r || 4);
+  ctx.fillStyle = 'rgba(255,255,255,.42)'; mxRR(x + 2, y + 1.5, w - 4, 2, 1); ctx.fill();
+}
+function mxScreen(x, y, w, h, col, on) {
+  ctx.fillStyle = '#0b1220'; mxRR(x, y, w, h, 2); ctx.fill();
+  if (on !== false) mxFill(x + 1, y + 1, w - 2, h - 2, 1.5, col, mxShade(col, -.45));
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w * .55, y); ctx.lineTo(x + w * .25, y + h); ctx.lineTo(x, y + h); ctx.fill(); ctx.restore();
+  mxStroke(x, y, w, h, 2, '#020617', 1);
+}
+function mxGlass(x, y, w, h) {
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.moveTo(x + w * .08, y + h); ctx.lineTo(x + w * .42, y); ctx.lineTo(x + w * .58, y); ctx.lineTo(x + w * .24, y + h); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.beginPath(); ctx.moveTo(x + w * .66, y + h); ctx.lineTo(x + w * .86, y); ctx.lineTo(x + w * .92, y); ctx.lineTo(x + w * .72, y + h); ctx.fill();
+  ctx.restore();
+}
+function mxLed(x, y, r, col) {
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.arc(x - r * .3, y - r * .3, r * .38, 0, 7); ctx.fill();
+}
+function mxCirc(x, y, r, fill, stroke, lw) { ctx.beginPath(); ctx.arc(x, y, Math.max(0.1, r), 0, 7); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); } }
+function mxPh(p, a, b) { return p < 0 ? 0 : Math.max(0, Math.min(1, (p - a) / (b - a))); }
+function mxText(t, x, y, size, col, align) { ctx.font = '900 ' + size + 'px sans-serif'; ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = col; ctx.fillText(t, x, y); }
+function mxEmoji(t, x, y, size) { ctx.font = size + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(t, x, y); }
+function mxSteam(x, y, h, t, n, a) {
+  ctx.strokeStyle = `rgba(255,255,255,${a || .7})`; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+  for (let i = 0; i < n; i++) { const ph = (t * .9 + i / n) % 1, sx = x + (i - (n - 1) / 2) * 4; ctx.globalAlpha = (1 - ph) * (a || .7); ctx.beginPath(); ctx.moveTo(sx, y - ph * h); ctx.quadraticCurveTo(sx + Math.sin(t * 3 + i) * 3, y - ph * h - h * .25, sx, y - ph * h - h * .5); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+}
+function mxCapsule(x, y, r, col, ang) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang || 0);
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, r, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(15,23,42,.55)'; ctx.lineWidth = .9; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.arc(-r * .35, -r * .4, r * .22, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function mxPlush(x, y, r, col) {
+  mxCirc(x - r * .62, y - r * .75, r * .32, col); mxCirc(x + r * .62, y - r * .75, r * .32, col);
+  mxCirc(x, y, r, col, 'rgba(15,23,42,.4)', .8);
+  ctx.fillStyle = '#1e293b'; ctx.fillRect(x - r * .42, y - r * .2, r * .2, r * .26); ctx.fillRect(x + r * .22, y - r * .2, r * .2, r * .26);
+  mxCirc(x, y + r * .32, r * .18, '#fda4af');
+}
+
+// ---------- 商品のミニ絵 ----------
+function mxProd(id, x, y, s, p, i) {
+  const d = p.dot, g = ctx;
+  g.lineWidth = Math.max(.7, s * .07); g.strokeStyle = 'rgba(30,41,59,.75)'; g.lineJoin = 'round';
+  switch (id) {
+    case 'onigiri':
+      g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x + s * .5, y + s * .08); g.lineTo(x + s * .94, y + s * .9); g.lineTo(x + s * .06, y + s * .9); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#1e293b'; g.fillRect(x + s * .3, y + s * .66, s * .4, s * .24); break;
+    case 'drink':
+      mxFill(x + s * .3, y + s * .3, s * .4, s * .62, s * .1, mxShade(d, .25), d); g.fillStyle = '#e5e7eb'; g.fillRect(x + s * .38, y + s * .1, s * .24, s * .22);
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(x + s * .3, y + s * .52, s * .4, s * .16); break;
+    case 'snack':
+      g.fillStyle = d; g.fillRect(x + s * .14, y + s * .12, s * .72, s * .78); g.strokeRect(x + s * .14, y + s * .12, s * .72, s * .78);
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(x + s * .5, y + s * .52, s * .2, 0, 7); g.fill();
+      g.fillStyle = mxShade(d, -.3); for (let k = 0; k < 4; k++) g.fillRect(x + s * (.16 + k * .17), y + s * .06, s * .09, s * .1); break;
+    case 'bento':
+      g.fillStyle = '#7c2d12'; mxRR(x + s * .06, y + s * .24, s * .88, s * .62, s * .1); g.fill(); g.stroke();
+      g.fillStyle = '#fff'; g.fillRect(x + s * .12, y + s * .32, s * .36, s * .44); g.fillStyle = '#ef4444'; g.fillRect(x + s * .54, y + s * .32, s * .16, s * .2);
+      g.fillStyle = '#22c55e'; g.fillRect(x + s * .72, y + s * .32, s * .16, s * .2); g.fillStyle = '#facc15'; g.fillRect(x + s * .54, y + s * .56, s * .34, s * .2); break;
+    case 'chicken':
+      g.strokeStyle = '#fff'; g.lineWidth = s * .13; g.beginPath(); g.moveTo(x + s * .4, y + s * .62); g.lineTo(x + s * .14, y + s * .9); g.stroke();
+      mxCirc(x + s * .6, y + s * .4, s * .3, '#c2410c', 'rgba(30,41,59,.75)', s * .07); mxCirc(x + s * .52, y + s * .32, s * .08, 'rgba(255,255,255,.5)'); break;
+    case 'ice':
+      g.fillStyle = '#d97706'; g.beginPath(); g.moveTo(x + s * .24, y + s * .5); g.lineTo(x + s * .76, y + s * .5); g.lineTo(x + s * .5, y + s * .94); g.closePath(); g.fill(); g.stroke();
+      mxCirc(x + s * .5, y + s * .34, s * .27, d, 'rgba(30,41,59,.75)', s * .07); mxCirc(x + s * .42, y + s * .27, s * .07, 'rgba(255,255,255,.6)'); break;
+    case 'magazine': {
+      const cl = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#a855f7', '#ec4899'][((i || 0) * 7 + 3) % 6];
+      g.fillStyle = cl; g.fillRect(x + s * .16, y + s * .1, s * .68, s * .82); g.strokeRect(x + s * .16, y + s * .1, s * .68, s * .82);
+      g.fillStyle = '#fff'; g.fillRect(x + s * .24, y + s * .18, s * .52, s * .2); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(x + s * .24, y + s * .48, s * .3, s * .08); g.fillRect(x + s * .24, y + s * .62, s * .42, s * .08); break;
+    }
+    case 'daily':
+      mxFill(x + s * .26, y + s * .32, s * .48, s * .6, s * .12, '#c4b5fd', '#7c3aed'); g.fillStyle = '#334155'; g.fillRect(x + s * .42, y + s * .12, s * .16, s * .22); g.fillRect(x + s * .42, y + s * .1, s * .34, s * .08);
+      g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(x + s * .26, y + s * .55, s * .48, s * .14); break;
+    case 'noodle':
+      g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x + s * .12, y + s * .28); g.lineTo(x + s * .88, y + s * .28); g.lineTo(x + s * .74, y + s * .92); g.lineTo(x + s * .26, y + s * .92); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#ef4444'; g.fillRect(x + s * .2, y + s * .5, s * .6, s * .2); g.fillStyle = '#fde68a'; g.fillRect(x + s * .1, y + s * .18, s * .8, s * .12); break;
+    case 'sandwich':
+      g.fillStyle = '#fde68a'; g.beginPath(); g.moveTo(x + s * .1, y + s * .86); g.lineTo(x + s * .9, y + s * .86); g.lineTo(x + s * .5, y + s * .14); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#4ade80'; g.fillRect(x + s * .26, y + s * .56, s * .48, s * .08); g.fillStyle = '#fb7185'; g.fillRect(x + s * .3, y + s * .66, s * .4, s * .08); break;
+    case 'coffee':
+      g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x + s * .18, y + s * .34); g.lineTo(x + s * .72, y + s * .34); g.lineTo(x + s * .62, y + s * .88); g.lineTo(x + s * .28, y + s * .88); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#78350f'; g.fillRect(x + s * .22, y + s * .4, s * .46, s * .14); g.strokeStyle = 'rgba(30,41,59,.75)'; g.beginPath(); g.arc(x + s * .78, y + s * .56, s * .13, -1.4, 1.4); g.stroke(); break;
+    case 'oden':
+      g.strokeStyle = '#a16207'; g.lineWidth = s * .08; g.beginPath(); g.moveTo(x + s * .5, y + s * .06); g.lineTo(x + s * .5, y + s * .94); g.stroke();
+      mxCirc(x + s * .5, y + s * .26, s * .17, '#fff7ed', 'rgba(30,41,59,.6)', s * .05); mxCirc(x + s * .5, y + s * .52, s * .17, '#fbbf24', 'rgba(30,41,59,.6)', s * .05); mxCirc(x + s * .5, y + s * .78, s * .17, '#92400e', 'rgba(30,41,59,.6)', s * .05); break;
+    case 'salad':
+      g.fillStyle = '#e2e8f0'; g.beginPath(); g.arc(x + s * .5, y + s * .5, s * .42, 0, Math.PI); g.fill(); g.stroke();
+      mxCirc(x + s * .34, y + s * .48, s * .16, '#22c55e'); mxCirc(x + s * .56, y + s * .44, s * .17, '#86efac'); mxCirc(x + s * .5, y + s * .52, s * .1, '#ef4444'); break;
+    case 'cake':
+      g.fillStyle = '#fbcfe8'; g.beginPath(); g.moveTo(x + s * .1, y + s * .86); g.lineTo(x + s * .92, y + s * .86); g.lineTo(x + s * .92, y + s * .4); g.lineTo(x + s * .1, y + s * .68); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#fff'; g.fillRect(x + s * .1, y + s * .62, s * .82, s * .08); mxCirc(x + s * .66, y + s * .32, s * .11, '#ef4444'); break;
+    default:
+      mxFill(x + s * .14, y + s * .14, s * .72, s * .76, s * .14, mxShade(d, .3), d); mxStroke(x + s * .14, y + s * .14, s * .72, s * .76, s * .14, 'rgba(30,41,59,.7)', s * .07);
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(x + s * .24, y + s * .24, s * .2, s * .1);
+  }
+}
+function mxShelfStyle(pid) {
+  if (['drink', 'ice', 'salad', 'sandwich', 'cake'].includes(pid)) return 'cooler';
+  if (['chicken', 'oden', 'coffee'].includes(pid)) return 'warmer';
+  if (pid === 'magazine') return 'rack';
+  return 'wood';
+}
+
+// ---------- 商品棚 ----------
+function drawShelfArt(o, def, x, y, W, H) {
+  const p = products[def.prod], st = mxShelfStyle(def.prod), cap = capOf(o), now = performance.now() / 1000, q = PERF.q();
+  x += 2; y += 2; W -= 4; H -= 5;
+  const pal = st === 'cooler' ? { f1: '#e2e8f0', f2: '#94a3b8', in1: '#f0f9ff', in2: '#bae6fd', brd: '#64748b' }
+    : st === 'warmer' ? { f1: '#fdba74', f2: '#9a3412', in1: '#fffbeb', in2: '#fed7aa', brd: '#7c2d12' }
+    : st === 'rack' ? { f1: '#cbd5e1', f2: '#475569', in1: '#f8fafc', in2: '#e2e8f0', brd: '#475569' }
+    : { f1: '#c58a50', f2: '#6b3f1d', in1: '#fff7e0', in2: '#fde9b0', brd: '#6b3f1d' };
+  ctx.fillStyle = 'rgba(0,0,0,.24)'; mxRR(x + 3, y + H - 3, W, 6, 3); ctx.fill();
+  mxFill(x, y, W, H, 4, pal.f1, pal.f2, true); mxStroke(x, y, W, H, 4, 'rgba(15,23,42,.85)', 1.6);
+  const hh = Math.max(9, Math.min(16, H * .17));
+  mxFill(x + 1.5, y + 1.5, W - 3, hh, 3, mxShade(p.dot, .15), mxShade(p.dot, -.25));
+  if (W >= 62) { mxText(p.name, x + W / 2 + 5, y + 1.5 + hh / 2, Math.min(11, hh * .72), '#fff'); mxEmoji(p.icon, x + 9, y + 1.5 + hh / 2, hh * .85); }
+  else mxEmoji(p.icon, x + W / 2, y + 1.5 + hh / 2 + .5, hh * .88);
+  if (p.onSale) { ctx.save(); ctx.translate(x + W - 3, y + 2); ctx.rotate(.18); ctx.fillStyle = '#ef4444'; mxRR(-16, -1, 18, 10, 3); ctx.fill(); mxText('特売', -7, 4, 7.5, '#fff'); ctx.restore(); }
+  const ix = x + 4, iy = y + hh + 3, iw = W - 8, ih = H - hh - 8;
+  mxFill(ix, iy, iw, ih, 2, pal.in1, pal.in2);
+  const rows = Math.max(2, Math.min(5, Math.round(ih / 15))), rh = ih / rows, is = Math.max(6, Math.min(15, rh * .8)), cols = Math.max(2, Math.floor(iw / (is + 1.2))), slots = rows * cols;
+  let fill = o.stock <= 0 ? 0 : Math.max(1, Math.round(Math.min(1, o.stock / cap) * slots));
+  const gapX = (iw - cols * is) / (cols + 1);
+  for (let r = 0; r < rows; r++) {
+    const by = iy + (r + 1) * rh;
+    ctx.fillStyle = pal.brd; ctx.fillRect(ix, by - 1.6, iw, 2.2);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(ix, by - 1.6, iw, .8);
+    for (let c = 0; c < cols; c++) {
+      const idx = (rows - 1 - r) * cols + c;
+      if (idx < fill) mxProd(def.prod, ix + gapX + c * (is + gapX), by - is - 1.2, is, p, idx);
+    }
+  }
+  if (st === 'cooler') {
+    mxGlass(ix, iy, iw, ih); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1; ctx.strokeRect(ix + .5, iy + .5, iw - 1, ih - 1);
+    if (W >= 70) { ctx.strokeStyle = 'rgba(100,116,139,.7)'; ctx.beginPath(); ctx.moveTo(x + W / 2, iy); ctx.lineTo(x + W / 2, iy + ih); ctx.stroke(); }
+    if (q >= 1) { ctx.fillStyle = 'rgba(255,255,255,.85)'; for (let k = 0; k < Math.floor(W / 12); k++) { const a = .4 + .5 * Math.sin(now * 3 + k * 2.1); ctx.globalAlpha = a; ctx.fillRect(ix + 3 + k * 12 + (k * 7) % 5, iy + 2 + (k * 5) % 6, 1.6, 1.6); } ctx.globalAlpha = 1; }
+  } else if (st === 'warmer') {
+    const gl = ctx.createLinearGradient(0, iy, 0, iy + ih * .5); gl.addColorStop(0, 'rgba(251,146,60,.55)'); gl.addColorStop(1, 'rgba(251,146,60,0)'); ctx.fillStyle = gl; ctx.fillRect(ix, iy, iw, ih * .5);
+    mxGlass(ix, iy, iw, ih); if (q >= 1 && fill > 0) mxSteam(ix + iw * .3, iy + 4, 9, now, 2, .8), mxSteam(ix + iw * .72, iy + 4, 9, now + .4, 2, .8);
+  } else if (st === 'rack') {
+    ctx.fillStyle = 'rgba(0,0,0,.1)'; for (let r = 1; r < rows; r++) ctx.fillRect(ix, iy + r * rh - 5, iw, 3);
+  }
+  const bw = W - 8, ratio = Math.min(1, o.stock / cap);
+  ctx.fillStyle = 'rgba(15,23,42,.55)'; ctx.fillRect(x + 4, y + H - 4.5, bw, 3);
+  ctx.fillStyle = ratio > .3 ? '#4ade80' : '#f87171'; ctx.fillRect(x + 4, y + H - 4.5, bw * ratio, 3);
+  const lab = '' + o.stock, tw = Math.max(13, lab.length * 6 + 6);
+  ctx.fillStyle = o.stock === 0 ? '#dc2626' : 'rgba(15,23,42,.82)'; mxRR(x + W - tw - 2, y + H - 15, tw, 10, 4); ctx.fill();
+  mxText(lab, x + W - tw / 2 - 2, y + H - 9.8, 8, '#fff');
+  if (o.stock === 0) mxText('品切れ', x + W / 2, iy + ih / 2, Math.min(12, W / 6), '#dc2626');
+}
+
+// ---------- 機械：種類ごとの絵 ----------
+function mkGacha(x, y, w, h, c) {
+  const col = c.col; mxCab(x, y + h * .36, w, h * .64, col, 4);
+  const cx = x + w / 2, gr = Math.min(w * .46, h * .33), cy = y + gr + h * .05;
+  mxFill(cx - gr * .5, y + h * .01, gr, h * .08, 3, mxShade(col, -.1), mxShade(col, -.45)); mxStroke(cx - gr * .5, y + h * .01, gr, h * .08, 3, null, 1.2);
+  mxCirc(cx, cy, gr, 'rgba(236,254,255,.75)');
+  const cols = ['#f87171', '#fbbf24', '#60a5fa', '#34d399', '#c084fc', '#fb7185', '#f97316'], N = Math.round(8 + c.big * 3);
+  for (let i = 0; i < N; i++) {
+    const a = i * 2.399, rr = gr * .72 * Math.sqrt((i + .5) / N), j = c.busy ? Math.sin(c.t * 16 + i * 1.7) * gr * .09 : 0;
+    mxCapsule(cx + Math.cos(a) * rr + j, cy + Math.sin(a) * rr * .9 + (c.busy ? Math.cos(c.t * 13 + i) * gr * .09 : 0), gr * .2, cols[i % 7], a);
+  }
+  mxCirc(cx, cy, gr, null, 'rgba(15,23,42,.75)', 1.5); mxGlass(cx - gr, cy - gr, gr * 2, gr * 2);
+  const dy = y + h * .67, dr = Math.min(w * .17, h * .13);
+  mxCirc(cx, dy, dr, '#e2e8f0', '#334155', 1.4);
+  const an = c.busy ? c.p * Math.PI * 6 : 0; ctx.strokeStyle = '#334155'; ctx.lineWidth = Math.max(2, dr * .36); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx - Math.cos(an) * dr * .7, dy - Math.sin(an) * dr * .7); ctx.lineTo(cx + Math.cos(an) * dr * .7, dy + Math.sin(an) * dr * .7); ctx.stroke();
+  mxCirc(cx + Math.cos(an) * dr * .7, dy + Math.sin(an) * dr * .7, dr * .22, '#ef4444');
+  const ty = y + h * .84; mxFill(cx - w * .24, ty, w * .48, h * .11, 3, '#0f172a', '#1e293b');
+  if (c.busy) { const f = mxPh(c.p, .55, .9); if (f > 0 && f < 1) mxCapsule(cx, y + h * .75 + f * (ty - y - h * .75 + h * .04), gr * .2, cols[c.uid % 7], f * 6); else if (f >= 1) mxCapsule(cx, ty + h * .05, gr * .2, cols[c.uid % 7], .3); }
+  mxLed(x + w * .16, y + h * .5, Math.max(1.5, w * .035), Math.floor(c.t * 3) % 2 ? '#f43f5e' : '#fde047');
+}
+function mkDrum(x, y, w, h, c) {
+  mxCab(x, y + h * .3, w, h * .7, c.col, 4);
+  const cx = x + w / 2, cy = y + h * .36, R = Math.min(w * .4, h * .26), ang = c.t * (c.busy ? 9 : .5);
+  mxCirc(cx, cy, R * 1.12, '#475569', '#0f172a', 1.4);
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang); ctx.fillStyle = 'rgba(224,242,254,.85)'; ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + Math.PI / 8; ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R); } ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(100,116,139,.6)'; ctx.beginPath(); for (let k = 0; k < 4; k++) { ctx.moveTo(Math.cos(k * Math.PI / 4) * R, Math.sin(k * Math.PI / 4) * R); ctx.lineTo(-Math.cos(k * Math.PI / 4) * R, -Math.sin(k * Math.PI / 4) * R); } ctx.stroke();
+  const bc = ['#f87171', '#fff', '#fbbf24', '#fff', '#60a5fa', '#f472b6']; for (let k = 0; k < 6; k++) mxCirc(Math.cos(k * 1.9) * R * .55, Math.sin(k * 1.9) * R * .5, R * .15, bc[k]); ctx.restore();
+  mxCirc(cx, cy, R * .12, '#1e293b');
+  mxFill(x + w * .12, y + h * .66, w * .76, h * .13, 3, '#fff7ed', '#fed7aa'); mxText('くじ', cx, y + h * .725, Math.max(6, h * .1), '#be123c');
+  mxFill(cx - w * .2, y + h * .85, w * .4, h * .1, 3, '#0f172a', '#1e293b');
+  if (c.busy) { const f = mxPh(c.p, .7, .98); if (f > 0) { ctx.fillStyle = '#fff'; ctx.strokeStyle = '#be123c'; ctx.lineWidth = 1; mxRR(cx - w * .08, y + h * .84 - f * h * .04, w * .16, h * .1, 1); ctx.fill(); ctx.stroke(); } }
+}
+function mkFortune(x, y, w, h, c) {
+  mxCab(x, y + h * .16, w, h * .84, '#7c3aed', 5);
+  const cx = x + w / 2, gl = .55 + .35 * Math.sin(c.t * (c.busy ? 9 : 2)), R = Math.min(w * .3, h * .2), cy = y + h * .36;
+  ctx.fillStyle = '#1e1b4b'; ctx.fillRect(x + w * .14, y + h * .2, w * .72, h * .4);
+  const rg = ctx.createRadialGradient(cx, cy, 1, cx, cy, R * 1.9); rg.addColorStop(0, `rgba(216,180,254,${gl})`); rg.addColorStop(1, 'rgba(168,85,247,0)'); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, R * 1.9, 0, 7); ctx.fill();
+  const bg = ctx.createRadialGradient(cx - R * .3, cy - R * .3, 1, cx, cy, R); bg.addColorStop(0, '#f5d0fe'); bg.addColorStop(.6, '#a855f7'); bg.addColorStop(1, '#4c1d95'); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill(); ctx.strokeStyle = '#1e1b4b'; ctx.lineWidth = 1.2; ctx.stroke();
+  mxFill(cx - R * .8, cy + R * .85, R * 1.6, R * .4, 2, '#facc15', '#a16207');
+  for (let k = 0; k < 6; k++) { const a = c.t * (c.busy ? 3 : .6) + k * 1.05, sr = R * (1.3 + .2 * Math.sin(c.t * 2 + k)); ctx.fillStyle = `rgba(254,240,138,${.5 + .5 * Math.sin(c.t * 5 + k)})`; ctx.fillRect(cx + Math.cos(a) * sr - 1, cy + Math.sin(a) * sr * .7 - 1, 2.4, 2.4); }
+  mxText('占', cx, y + h * .73, h * .15, '#fde047'); mxFill(cx - w * .2, y + h * .86, w * .4, h * .08, 2, '#0f172a', '#1e293b');
+  if (c.busy) { const f = mxPh(c.p, .7, .98); if (f > 0) { ctx.fillStyle = '#fff'; ctx.fillRect(cx - w * .06, y + h * .86 - f * h * .07, w * .12, h * .1); } }
+}
+function mkClaw(x, y, w, h, c) {
+  const col = c.col; mxCab(x, y, w, h, col, 4);
+  mxFill(x + w * .05, y + h * .03, w * .9, h * .12, 3, '#f472b6', '#be185d');
+  for (let k = 0; k < Math.max(4, Math.round(w / 9)); k++) mxCirc(x + w * .1 + k * (w * .8) / Math.max(3, Math.round(w / 9) - 1), y + h * .09, Math.max(1.2, w * .02), (Math.floor(c.t * 4) + k) % 2 ? '#fde047' : '#fff');
+  const wx = x + w * .1, wy = y + h * .19, ww = w * .8, wh = h * .46;
+  mxFill(wx, wy, ww, wh, 3, '#e0f2fe', '#7dd3fc');
+  const pc = ['#fb7185', '#fbbf24', '#a78bfa', '#34d399', '#60a5fa', '#f9a8d4'], n = Math.max(3, Math.round(w / 12));
+  for (let k = 0; k < n; k++) mxPlush(wx + ww * (k + .5) / n, wy + wh - ww * .09, ww * .1, pc[(k + c.uid) % 6]);
+  for (let k = 0; k < n - 1; k++) mxPlush(wx + ww * (k + 1) / n, wy + wh - ww * .2, ww * .09, pc[(k + c.uid + 2) % 6]);
+  const mid = wx + ww / 2, tgt = wx + ww * (.2 + ((c.uid * 37) % 60) / 100), rail = wy + wh * .07, tip = wy + wh * .9;
+  let cx = mid + Math.sin(c.t * .8) * ww * .18, cy = wy + wh * .34, open = 1, carry = false;
+  if (c.busy) {
+    const p = c.p;
+    if (p < .25) { cx = mid + (tgt - mid) * (p / .25); }
+    else if (p < .5) { cx = tgt; cy = wy + wh * .34 + (tip - (wy + wh * .34) - ww * .12) * ((p - .25) / .25); }
+    else if (p < .6) { cx = tgt; cy = wy + wh * .34 + (tip - (wy + wh * .34) - ww * .12); open = 1 - (p - .5) / .1; }
+    else if (p < .8) { cx = tgt; const f = (p - .6) / .2; cy = (tip - ww * .12) + (wy + wh * .34 - (tip - ww * .12)) * f; open = 0; carry = true; }
+    else { const f = mxPh(p, .8, .95); cx = tgt + (wx + ww * .12 - tgt) * f; cy = wy + wh * .34; open = 0; carry = f < 1; if (f >= 1) open = mxPh(p, .95, 1); }
+  }
+  ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(wx + 2, rail); ctx.lineTo(wx + ww - 2, rail); ctx.stroke();
+  ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(cx, rail); ctx.lineTo(cx, cy); ctx.stroke();
+  const cr = ww * .085; mxFill(cx - cr * .7, cy - cr * .2, cr * 1.4, cr * .5, 1.5, '#94a3b8', '#475569');
+  ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.7; ctx.lineCap = 'round';
+  for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + sg * cr * .6, cy + cr * .3); ctx.quadraticCurveTo(cx + sg * cr * (1.3 * open + .3), cy + cr * .9, cx + sg * cr * (.5 + .6 * open), cy + cr * 1.7); ctx.stroke(); }
+  if (carry) mxPlush(cx, cy + cr * 1.9, ww * .09, pc[(c.uid + 1) % 6]);
+  mxGlass(wx, wy, ww, wh); mxStroke(wx, wy, ww, wh, 3, '#334155', 1.2);
+  const py = y + h * .72; mxFill(x + w * .06, py, w * .88, h * .2, 3, '#334155', '#1e293b');
+  const jx = x + w * .3, jy = py + h * .1, tilt = c.busy ? Math.sin(c.t * 5) * 2.2 : 0; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx + tilt, jy - h * .06); ctx.stroke(); mxCirc(jx + tilt, jy - h * .065, Math.max(1.8, w * .045), '#ef4444');
+  mxCirc(x + w * .62, py + h * .1, Math.max(1.8, w * .04), '#22c55e'); mxCirc(x + w * .74, py + h * .1, Math.max(1.8, w * .04), c.busy ? '#fde047' : '#f43f5e');
+  mxFill(x + w * .08, y + h * .9, w * .3, h * .07, 2, '#0f172a', '#1e293b');
+}
+function mkCopy(x, y, w, h, c) {
+  mxCab(x, y + h * .12, w, h * .88, c.col, 4);
+  mxFill(x + w * .04, y + h * .02, w * .92, h * .24, 4, mxShade(c.col, .25), mxShade(c.col, -.3), true); mxStroke(x + w * .04, y + h * .02, w * .92, h * .24, 4, null, 1.4);
+  const gx = x + w * .12, gy = y + h * .08, gw = w * .76, gh = h * .12; mxFill(gx, gy, gw, gh, 2, '#7dd3fc', '#0369a1');
+  const lp = c.busy ? (Math.sin(c.t * 5.5) + 1) / 2 : (Math.sin(c.t * .8) + 1) / 2 * .3;
+  ctx.save(); ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip(); ctx.fillStyle = c.busy ? 'rgba(190,242,100,.95)' : 'rgba(255,255,255,.35)'; ctx.fillRect(gx + lp * (gw - 3), gy, 3, gh); if (c.busy) { ctx.fillStyle = 'rgba(190,242,100,.3)'; ctx.fillRect(gx, gy, lp * gw, gh); } ctx.restore();
+  mxScreen(x + w * .14, y + h * .32, w * .34, h * .14, c.busy ? '#4ade80' : '#38bdf8');
+  for (let k = 0; k < 3; k++) mxCirc(x + w * (.58 + k * .12), y + h * .39, Math.max(1.4, w * .03), ['#22c55e', '#f59e0b', '#ef4444'][k]);
+  for (let k = 0; k < 2; k++) { const dy = y + h * (.52 + k * .21); mxFill(x + w * .1, dy, w * .8, h * .17, 2, mxShade(c.col, .1), mxShade(c.col, -.2)); mxStroke(x + w * .1, dy, w * .8, h * .17, 2, 'rgba(15,23,42,.6)', 1); mxFill(x + w * .4, dy + h * .06, w * .2, h * .035, 1, '#475569', '#1e293b'); }
+  const ox = x + w * .62, oy = y + h * .86; mxFill(ox, oy, w * .34, h * .1, 2, '#475569', '#1e293b');
+  ctx.fillStyle = '#fff'; for (let k = 0; k < 3; k++) ctx.fillRect(ox + 2, oy - 1 - k * 1.5, w * .3, 1.6);
+  if (c.busy) { const f = (c.t * 2.2) % 1; ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(71,85,105,.7)'; ctx.lineWidth = .8; const pw = w * .26, ph = h * .14; ctx.fillRect(ox + w * .04, oy - ph * f - 1, pw, ph); ctx.strokeRect(ox + w * .04, oy - ph * f - 1, pw, ph); ctx.fillStyle = '#94a3b8'; ctx.fillRect(ox + w * .07, oy - ph * f + 1, pw * .6, 1); }
+}
+function mkLocker(x, y, w, h, c) {
+  mxCab(x, y, w, h, c.col, 3);
+  mxScreen(x + w * .1, y + h * .06, w * .8, h * .12, c.busy ? '#4ade80' : '#38bdf8');
+  const cols = Math.max(2, Math.round(w / 16)), rows = Math.max(3, Math.round(h / 17)), gx = x + w * .08, gy = y + h * .24, gw = w * .84, gh = h * .7, cw = gw / cols, rh = gh / rows;
+  const open = c.busy ? c.uid % (cols * rows) : -1;
+  for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
+    const i = r * cols + k, dx = gx + k * cw + 1, dy = gy + r * rh + 1, dw = cw - 2, dh = rh - 2;
+    const col = ['#bfdbfe', '#fde68a', '#fecaca', '#bbf7d0'][(i + c.uid) % 4];
+    if (i === open) {
+      const f = c.p < .2 ? c.p / .2 : c.p > .8 ? (1 - c.p) / .2 : 1;
+      ctx.fillStyle = '#0f172a'; ctx.fillRect(dx, dy, dw, dh);
+      if (c.p > .35 && c.p < .75) { ctx.fillStyle = '#c08457'; ctx.fillRect(dx + dw * .2, dy + dh * .25, dw * .6, dh * .6); ctx.fillStyle = '#e5c8a5'; ctx.fillRect(dx + dw * .2, dy + dh * .25, dw * .6, dh * .12); }
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx + dw * (1 - f * .72), dy + dh * .08 * f); ctx.lineTo(dx + dw * (1 - f * .72), dy + dh * (1 - .08 * f)); ctx.lineTo(dx, dy + dh); ctx.fill();
+    } else { mxFill(dx, dy, dw, dh, 1.5, mxShade(col, .3), col); mxStroke(dx, dy, dw, dh, 1.5, 'rgba(30,41,59,.6)', .9); mxCirc(dx + dw * .8, dy + dh * .5, Math.max(.9, dw * .06), '#475569'); }
+  }
+}
+function mkPhoto(x, y, w, h, c) {
+  const st = c.v === 'sticker', base = st ? '#f472b6' : '#2563eb', cx = x + w / 2;
+  mxCab(x, y, w, h, base, 4);
+  mxFill(x + w * .06, y + h * .03, w * .88, h * .13, 3, st ? '#fff1f2' : '#fde68a', st ? '#fecdd3' : '#fbbf24'); mxEmoji(st ? '🖼' : '📸', x + w * .24, y + h * .095, h * .1);
+  mxText(st ? 'STICKER' : 'PHOTO', x + w * .6, y + h * .1, Math.max(5, h * .075), st ? '#be185d' : '#78350f');
+  const fl = c.busy && [.38, .55, .72].some(a => c.p > a && c.p < a + .06); mxCirc(x + w * .86, y + h * .1, Math.max(1.6, w * .035), fl ? '#fff' : '#fde047');
+  const dx = x + w * .12, dy = y + h * .2, dw = w * .76, dh = h * .7;
+  if (c.busy) {
+    const open = c.p < .1 ? 1 - c.p / .1 : c.p > .92 ? (c.p - .92) / .08 : 0;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(dx, dy, dw, dh);
+    const cw = dw * (1 - open * .8); mxFill(dx, dy, cw, dh * .88, 2, st ? '#be185d' : '#1e3a8a', st ? '#9d174d' : '#172554', true);
+    ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1; for (let k = 1; k < 5; k++) { ctx.beginPath(); ctx.moveTo(dx + cw * k / 5, dy); ctx.lineTo(dx + cw * k / 5, dy + dh * .88); ctx.stroke(); }
+    const sx = dx + dw / 2 + (Math.sin(c.t * 9) * .8); ctx.fillStyle = c.who || '#60a5fa'; mxRR(sx - dw * .26, dy + dh * .88 - 1, dw * .52, 1, 0); ctx.fillRect(sx - dw * .2, dy + dh * .88, dw * .14, dh * .12); ctx.fillRect(sx + dw * .06, dy + dh * .88, dw * .14, dh * .12);
+    if (fl) { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(dx, dy, dw, dh); }
+  } else { mxFill(dx, dy, dw, dh * .88, 2, '#f8fafc', '#cbd5e1'); mxFill(dx, dy, dw * .22, dh * .88, 2, st ? '#be185d' : '#1e3a8a', st ? '#9d174d' : '#172554', true); mxFill(dx + dw * .34, dy + dh * .5, dw * .3, dh * .12, 2, '#94a3b8', '#64748b'); }
+  if (c.busy && c.p > .84) { const f = mxPh(c.p, .84, 1); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#334155'; ctx.lineWidth = .8; ctx.fillRect(x + w * .82, y + h * .9 + f * h * .04 - h * .1, w * .14, h * .14); ctx.strokeRect(x + w * .82, y + h * .9 + f * h * .04 - h * .1, w * .14, h * .14); ctx.fillStyle = '#93c5fd'; ctx.fillRect(x + w * .84, y + h * .82 + f * h * .04, w * .1, h * .035); }
+}
+function mkKiosk(x, y, w, h, c) {
+  const v = c.v || '', cx = x + w / 2, col = c.col;
+  mxCab(x, y, w, h, col, 4);
+  mxFill(x + w * .06, y + h * .03, w * .88, h * .1, 3, mxShade(col, -.3), mxShade(col, -.55));
+  mxEmoji(c.icon, x + w * .18, y + h * .08, h * .085); ctx.fillStyle = Math.floor(c.t * 3) % 2 ? '#22c55e' : '#16a34a'; ctx.fillRect(x + w * .66, y + h * .06, w * .24, h * .04);
+  const sx = x + w * .12, sy = y + h * .17, sw = w * .76, sh = h * .3;
+  mxScreen(sx, sy, sw, sh, v === 'scale' ? '#bef264' : '#38bdf8');
+  const mx = sx + sw / 2, my = sy + sh / 2, p = c.p;
+  if (v === 'ticket') { for (let k = 0; k < 3; k++) { ctx.fillStyle = ['#fde047', '#fb7185', '#4ade80'][k]; ctx.fillRect(sx + sw * .1, sy + sh * (.14 + k * .27), sw * .8, sh * .2); } }
+  else if (v === 'change') { mxCirc(mx, my, Math.min(sw, sh) * .36, '#facc15', '#a16207', 1.2); mxText('¥', mx, my + .5, sh * .4, '#a16207'); }
+  else if (v === 'charge') { const f = c.busy ? p : (Math.sin(c.t) + 1) / 4; ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.4; ctx.strokeRect(sx + sw * .16, sy + sh * .26, sw * .6, sh * .48); ctx.fillStyle = '#0f172a'; ctx.fillRect(sx + sw * .76, sy + sh * .42, sw * .06, sh * .16); ctx.fillStyle = f > .7 ? '#16a34a' : '#f59e0b'; ctx.fillRect(sx + sw * .2, sy + sh * .31, (sw * .52) * f, sh * .38); if (c.busy) mxText('⚡', mx, my, sh * .5, '#fde047'); }
+  else if (v === 'scale') { const num = c.busy ? (p < .75 ? (40 + Math.floor((Math.sin(c.t * 30) + 1) * 15 + c.t * 7) % 40) : 52 + c.uid % 20) : '0.0'; mxText('' + num, mx, my, sh * .5, '#14532d'); }
+  else if (v === 'coffee' || v === 'ramen') { mxText(v === 'coffee' ? '☕' : '🍜', mx, my, sh * .6); }
+  else if (v === 'icecream') { mxText('🍦', mx, my, sh * .6); }
+  else if (v === 'flower') { mxText('💐', mx, my, sh * .6); }
+  else mxEmoji(c.icon, mx, my, sh * .62);
+  const by = y + h * .52;
+  for (let r = 0; r < 2; r++) for (let k = 0; k < 3; k++) mxFill(x + w * (.18 + k * .22), by + r * h * .085, w * .16, h * .06, 1.5, '#e2e8f0', '#94a3b8');
+  const oy = y + h * .74, oh = h * .2; mxFill(x + w * .14, oy, w * .72, oh, 3, '#0f172a', '#1e293b'); mxStroke(x + w * .14, oy, w * .72, oh, 3, null, 1);
+  const f = c.busy ? p : 0;
+  if (v === 'ticket' && f > .5) { const g = mxPh(f, .5, .9); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = .8; ctx.fillRect(cx - w * .12, oy + oh * .1 - (1 - g) * oh, w * .24, oh * .9 * g + oh * .1); ctx.fillStyle = '#ef4444'; ctx.fillRect(cx - w * .12, oy + oh * .12, w * .24, oh * .15); }
+  else if (v === 'change' && f > .45) { for (let k = 0; k < 4; k++) { const g = mxPh(f, .45 + k * .08, .75 + k * .05); if (g > 0) mxCirc(cx + (k - 1.5) * w * .12, oy + oh * (.1 + .6 * Math.min(1, g)), Math.max(1.5, w * .04), '#facc15', '#a16207', .8); } }
+  else if (v === 'coffee') { const lv = mxPh(f, .15, .8); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(cx - w * .12, oy + oh * .3); ctx.lineTo(cx + w * .12, oy + oh * .3); ctx.lineTo(cx + w * .08, oy + oh * .95); ctx.lineTo(cx - w * .08, oy + oh * .95); ctx.fill(); ctx.fillStyle = '#78350f'; ctx.fillRect(cx - w * .1, oy + oh * (.95 - .6 * lv), w * .2, oh * .6 * lv); if (c.busy) mxSteam(cx, oy + oh * .3, h * .1, c.t, 2, .8); }
+  else if (v === 'ramen') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, oy + oh * .45, w * .15, 0, Math.PI); ctx.fill(); if (f > .3) { ctx.fillStyle = '#fde68a'; ctx.fillRect(cx - w * .12, oy + oh * .35, w * .24, oh * .12); mxSteam(cx, oy + oh * .35, h * .12, c.t, 3, .85); } }
+  else if (v === 'icecream') { const lv = Math.floor(mxPh(f, .2, .9) * 4); ctx.fillStyle = '#d97706'; ctx.beginPath(); ctx.moveTo(cx - w * .1, oy + oh * .45); ctx.lineTo(cx + w * .1, oy + oh * .45); ctx.lineTo(cx, oy + oh * .98); ctx.fill(); for (let k = 0; k < lv; k++) { ctx.fillStyle = k % 2 ? '#fbcfe8' : '#fff'; ctx.beginPath(); ctx.ellipse(cx, oy + oh * (.42 - k * .1), w * (.11 - k * .015), oh * .08, 0, 0, 7); ctx.fill(); } }
+  else if (v === 'flower' && f > .4) { const g = mxPh(f, .4, .9); ['#f472b6', '#fb7185', '#fbbf24'].forEach((cl, k) => { mxCirc(cx + (k - 1) * w * .1, oy + oh * (.7 - .45 * g), Math.max(2, w * .05), cl); }); ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(cx, oy + oh); ctx.lineTo(cx, oy + oh * (.7 - .45 * g)); ctx.stroke(); }
+  mxLed(x + w * .84, by + h * .02, Math.max(1.4, w * .03), c.busy ? '#fde047' : Math.floor(c.t * 2) % 2 ? '#f43f5e' : '#64748b');
+}
+function mkMassage(x, y, w, h, c) {
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; mxRR(x + 3, y + h - 5, w - 2, 6, 3); ctx.fill();
+  const cx = x + w / 2, col = c.col, sh = c.busy ? Math.sin(c.t * 28) * .5 : 0;
+  mxFill(x + w * .16 + sh, y + h * .04, w * .68, h * .56, w * .16, mxShade(col, .2), mxShade(col, -.3)); mxStroke(x + w * .16 + sh, y + h * .04, w * .68, h * .56, w * .16, null, 1.5);
+  mxFill(x + w * .08, y + h * .46, w * .16, h * .3, 3, mxShade(col, -.1), mxShade(col, -.45)); mxFill(x + w * .76, y + h * .46, w * .16, h * .3, 3, mxShade(col, -.1), mxShade(col, -.45));
+  mxFill(x + w * .22, y + h * .54, w * .56, h * .26, 4, mxShade(col, .15), mxShade(col, -.35)); mxStroke(x + w * .22, y + h * .54, w * .56, h * .26, 4, null, 1.4);
+  mxFill(x + w * .26, y + h * .82, w * .48, h * .12, 3, mxShade(col, -.2), mxShade(col, -.5));
+  const ry = y + h * (.2 + (c.busy ? (Math.sin(c.t * 3) + 1) / 2 * .26 : .12)); mxCirc(cx - w * .1, ry, w * .06, '#fde68a', '#92400e', 1); mxCirc(cx + w * .1, ry, w * .06, '#fde68a', '#92400e', 1);
+  if (c.busy) {
+    const hr = Math.max(3, w * .16); mxFill(cx - w * .2, y + h * .32, w * .4, h * .32, w * .1, c.who || '#60a5fa', mxShade(c.who || '#60a5fa', -.3)); mxCirc(cx, y + h * .26, hr, '#fde68a', '#2d241e', 1.3);
+    ctx.fillStyle = c.hair || '#3b2d22'; ctx.beginPath(); ctx.arc(cx, y + h * .24, hr, Math.PI, 7); ctx.fill(); ctx.fillStyle = '#1e293b'; ctx.fillRect(cx - hr * .5, y + h * .27, 1.8, 1.2); ctx.fillRect(cx + hr * .3, y + h * .27, 1.8, 1.2);
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(x + w * (.12 + k * .02), y + h * (.2 + k * .12) + Math.sin(c.t * 20 + k) * 1.2); ctx.lineTo(x + w * (.12 + k * .02) + 3, y + h * (.2 + k * .12) + Math.sin(c.t * 20 + k) * 1.2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x + w * (.88 - k * .02), y + h * (.2 + k * .12) - Math.sin(c.t * 20 + k) * 1.2); ctx.lineTo(x + w * (.88 - k * .02) - 3, y + h * (.2 + k * .12) - Math.sin(c.t * 20 + k) * 1.2); ctx.stroke(); }
+  } else { mxFill(x + w * .34, y + h * .02, w * .32, h * .1, 2, '#e2e8f0', '#94a3b8'); mxLed(x + w * .5, y + h * .07, Math.max(1.2, w * .03), '#22c55e'); }
+}
+function mkLaundry(x, y, w, h, c) {
+  mxCab(x, y, w, h, c.col, 4);
+  mxFill(x + w * .06, y + h * .04, w * .88, h * .16, 3, '#e0f2fe', '#7dd3fc'); mxScreen(x + w * .1, y + h * .07, w * .36, h * .1, c.busy ? '#4ade80' : '#38bdf8');
+  mxCirc(x + w * .64, y + h * .12, Math.max(2, w * .07), '#e2e8f0', '#475569', 1); mxLed(x + w * .84, y + h * .12, Math.max(1.4, w * .03), c.busy ? '#22c55e' : '#f43f5e');
+  const R = Math.min(w * .36, h * .3), cx = x + w / 2 + (c.busy ? Math.sin(c.t * 40) * .6 : 0), cy = y + h * .57;
+  mxCirc(cx, cy, R * 1.1, '#f1f5f9', '#475569', 1.6); mxCirc(cx, cy, R * .92, '#1e3a8a');
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R * .92, 0, 7); ctx.clip();
+  const gl = ctx.createRadialGradient(cx - R * .3, cy - R * .3, 1, cx, cy, R); gl.addColorStop(0, '#93c5fd'); gl.addColorStop(1, '#1e40af'); ctx.fillStyle = gl; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+  const sp = c.t * (c.busy ? 7 : .25), cl = ['#fb7185', '#fde047', '#fff', '#a78bfa'];
+  for (let k = 0; k < 4; k++) { const a = sp + k * 1.6, rr = R * .45; mxCirc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, R * .24, cl[k]); }
+  if (c.busy) for (let k = 0; k < 4; k++) mxCirc(cx + Math.sin(c.t * 2 + k * 2) * R * .6, cy + R * .8 - ((c.t * 18 + k * 9) % (R * 1.6)), R * .09, 'rgba(255,255,255,.7)');
+  ctx.restore(); mxGlass(cx - R, cy - R, R * 2, R * 2); mxCirc(cx, cy, R * .92, null, '#0f172a', 1.2);
+  mxFill(x + w * .3, y + h * .9, w * .4, h * .05, 2, '#94a3b8', '#64748b');
+}
+function mkKaraoke(x, y, w, h, c) {
+  const hue = (c.t * 60 + c.uid * 40) % 360;
+  mxCab(x, y, w, h, '#312e81', 5);
+  ctx.strokeStyle = `hsl(${hue},95%,62%)`; ctx.lineWidth = 2; mxRR(x + 2, y + 2, w - 4, h - 6, 4); ctx.stroke();
+  mxText('KARAOKE', x + w / 2, y + h * .09, Math.max(5, h * .085), `hsl(${hue + 60},95%,72%)`);
+  const wx = x + w * .12, wy = y + h * .17, ww = w * .76, wh = h * .55; mxFill(wx, wy, ww, wh, 3, c.busy ? '#c026d3' : '#4c1d95', c.busy ? '#4c1d95' : '#1e1b4b');
+  if (c.busy) {
+    const cx = wx + ww / 2 + Math.sin(c.t * 4) * ww * .06; mxCirc(cx, wy + wh * .38, ww * .13, '#0f172a'); ctx.fillStyle = '#0f172a'; mxRR(cx - ww * .17, wy + wh * .5, ww * .34, wh * .5, 4); ctx.fill();
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + ww * .15, wy + wh * .58); ctx.lineTo(cx + ww * .27, wy + wh * .3 + Math.sin(c.t * 7) * 2); ctx.stroke(); mxCirc(cx + ww * .27, wy + wh * .28 + Math.sin(c.t * 7) * 2, ww * .04, '#e2e8f0');
+    for (let k = 0; k < 3; k++) { const f = (c.t * .8 + k / 3) % 1; ctx.globalAlpha = 1 - f; mxText('♪♫♬'[k], wx + ww * (.2 + k * .3), wy + wh * (.8 - f * .7), Math.max(6, h * .1), `hsl(${hue + k * 80},95%,75%)`); ctx.globalAlpha = 1; }
+  }
+  mxGlass(wx, wy, ww, wh);
+  const n = Math.max(5, Math.round(w / 6)); for (let k = 0; k < n; k++) { const bh = h * .13 * (c.busy ? (.35 + .65 * Math.abs(Math.sin(c.t * 8 + k * 1.3))) : .2); ctx.fillStyle = `hsl(${hue + k * 18},95%,60%)`; ctx.fillRect(x + w * .1 + k * (w * .8 / n), y + h * .93 - bh, w * .8 / n - 1.2, bh); }
+}
+function mkVr(x, y, w, h, c) {
+  const cx = x + w / 2, R = Math.min(w * .42, h * .24), py = y + h * .74;
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx + 2, py + R * .45, R * 1.15, R * .5, 0, 0, 7); ctx.fill();
+  const pg = ctx.createLinearGradient(0, py - R * .4, 0, py + R * .5); pg.addColorStop(0, '#475569'); pg.addColorStop(1, '#1e293b'); ctx.fillStyle = pg; ctx.beginPath(); ctx.ellipse(cx, py, R * 1.1, R * .5, 0, 0, 7); ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
+  const pulse = c.busy ? .6 + .4 * Math.sin(c.t * 8) : .25; ctx.strokeStyle = `rgba(34,211,238,${pulse})`; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.ellipse(cx, py, R * .85, R * .36, 0, 0, 7); ctx.stroke();
+  mxFill(x + w * .08, y + h * .02, w * .84, h * .08, 3, '#0f172a', '#1e293b'); mxText('VR', cx, y + h * .06, Math.max(5, h * .07), '#22d3ee');
+  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x + w * .16, y + h * .1); ctx.lineTo(x + w * .16, y + h * .6); ctx.moveTo(x + w * .84, y + h * .1); ctx.lineTo(x + w * .84, y + h * .6); ctx.stroke();
+  if (c.busy) {
+    const hy = y + h * .3, s = R * .5;
+    for (let k = 0; k < 3; k++) { const a = c.t * (1.5 + k * .4) + k * 2.1; ctx.save(); ctx.translate(cx + Math.cos(a) * R * .8, hy + Math.sin(a * 1.3) * h * .1); ctx.rotate(a); ctx.strokeStyle = ['#22d3ee', '#f0abfc', '#fde047'][k]; ctx.lineWidth = 1.4; ctx.strokeRect(-s * .3, -s * .3, s * .6, s * .6); ctx.restore(); }
+  } else { mxFill(cx - w * .14, y + h * .22, w * .28, h * .12, 3, '#111827', '#1f2937'); mxFill(cx - w * .1, y + h * .245, w * .2, h * .06, 2, '#22d3ee', '#0e7490'); ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(cx, y + h * .1); ctx.lineTo(cx, y + h * .22); ctx.stroke(); }
+}
+function mkRobot(x, y, w, h, c) {
+  mxCab(x, y, w, h, '#7c3aed', 5); const cx = x + w / 2;
+  mxScreen(x + w * .1, y + h * .06, w * .8, h * .5, '#312e81');
+  const bx = cx, by = y + h * .5; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = Math.max(2.5, w * .07); ctx.lineCap = 'round';
+  const a1 = c.busy ? Math.sin(c.t * 3) * .5 : Math.sin(c.t) * .15, a2 = c.busy ? Math.cos(c.t * 3.3) * .6 + .4 : .5, L = h * .22;
+  const ex = bx + Math.sin(a1) * L, ey = by - Math.cos(a1) * L, hx = ex + Math.sin(a1 + a2) * L * .9, hy = ey - Math.cos(a1 + a2) * L * .9;
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(ex, ey); ctx.lineTo(hx, hy); ctx.stroke(); mxCirc(bx, by, w * .07, '#64748b'); mxCirc(ex, ey, w * .05, '#94a3b8'); mxCirc(hx, hy, w * .06, '#fde68a');
+  mxCirc(cx, y + h * .17, w * .12, '#e2e8f0', '#334155', 1); mxLed(cx - w * .05, y + h * .17, Math.max(1.2, w * .02), '#22d3ee'); mxLed(cx + w * .05, y + h * .17, Math.max(1.2, w * .02), '#22d3ee');
+  mxGlass(x + w * .1, y + h * .06, w * .8, h * .5);
+  const oy = y + h * .66, oh = h * .28; mxFill(x + w * .14, oy, w * .72, oh, 3, '#0f172a', '#1e293b');
+  const cup = (cx2, cy2) => { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(cx2 - w * .1, cy2); ctx.lineTo(cx2 + w * .1, cy2); ctx.lineTo(cx2 + w * .07, cy2 + oh * .6); ctx.lineTo(cx2 - w * .07, cy2 + oh * .6); ctx.fill(); };
+  if (c.busy) { cup(cx, oy + oh * .3); const lv = mxPh(c.p, .2, .7); ctx.fillStyle = '#92400e'; ctx.fillRect(cx - w * .09, oy + oh * (.9 - .5 * lv), w * .18, oh * .5 * lv); if (c.p > .7) { mxText('♥', cx, oy + oh * .36, w * .12, '#fff'); mxSteam(cx, oy + oh * .3, h * .1, c.t, 2, .8); } }
+  else mxText('☕', cx, oy + oh * .5, h * .12);
+}
+function mkDrone(x, y, w, h, c) {
+  const cx = x + w / 2, cy = y + h * .6, R = Math.min(w, h) * .42;
+  ctx.fillStyle = '#334155'; mxRR(x + w * .06, y + h * .12, w * .88, h * .8, 6); ctx.fill(); mxStroke(x + w * .06, y + h * .12, w * .88, h * .8, 6, '#0f172a', 1.5);
+  ctx.strokeStyle = '#fde047'; ctx.lineWidth = 1.6; ctx.setLineDash([4, 3]); mxRR(x + w * .12, y + h * .18, w * .76, h * .68, 4); ctx.stroke(); ctx.setLineDash([]);
+  mxCirc(cx, cy, R * .62, null, '#22d3ee', 1.6); mxText('H', cx, cy + .5, R * .8, '#22d3ee');
+  const lift = c.busy ? Math.sin(Math.min(1, c.p) * Math.PI) * h * .22 : 0, dx = cx + (c.busy ? Math.sin(c.t * 2) * 1.5 : 0), dy = cy - lift - h * .03;
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(cx + lift * .15, cy + R * .45, R * (.5 - lift / h * .5), R * .16, 0, 0, 7); ctx.fill();
+  mxFill(dx - R * .3, dy - R * .14, R * .6, R * .28, R * .1, '#e2e8f0', '#94a3b8'); mxLed(dx, dy, Math.max(1.2, R * .07), c.busy ? '#22c55e' : '#f43f5e');
+  for (const sg of [-1, 1]) { ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(dx + sg * R * .3, dy - R * .08); ctx.lineTo(dx + sg * R * .6, dy - R * .2); ctx.stroke(); const bl = R * .5 * (c.busy ? Math.abs(Math.cos(c.t * 40)) : 1); ctx.fillStyle = 'rgba(226,232,240,.8)'; ctx.fillRect(dx + sg * R * .6 - bl, dy - R * .24, bl * 2, 1.6); }
+  if (c.busy && c.p > .3 && c.p < .85) { ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(dx, dy + R * .14); ctx.lineTo(dx, dy + R * .4); ctx.stroke(); ctx.fillStyle = '#c08457'; ctx.fillRect(dx - R * .16, dy + R * .4, R * .32, R * .28); ctx.fillStyle = '#e5c8a5'; ctx.fillRect(dx - R * .16, dy + R * .4, R * .32, R * .07); }
+}
+function mkPet(x, y, w, h, c) {
+  mxCab(x, y, w, h, c.col, 5); const cx = x + w / 2, wx = x + w * .1, wy = y + h * .1, ww = w * .8, wh = h * .62;
+  mxFill(wx, wy, ww, wh, 3, '#ecfccb', '#bef264');
+  const hop = c.busy ? Math.abs(Math.sin(c.t * 7)) * wh * .1 : 0, by = wy + wh * .66 - hop;
+  ctx.save(); ctx.beginPath(); ctx.rect(wx, wy, ww, wh); ctx.clip();
+  ctx.fillStyle = '#cbd5e1'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; mxRR(cx - ww * .22, by - wh * .08, ww * .4, wh * .26, 5); ctx.fill(); ctx.stroke();
+  mxCirc(cx + ww * .22, by - wh * .1, ww * .15, '#e2e8f0', '#334155', 1.2); ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.ellipse(cx + ww * .34, by - wh * .2, ww * .05, ww * .09, .5, 0, 7); ctx.fill(); mxLed(cx + ww * .25, by - wh * .12, Math.max(1.2, ww * .028), '#22d3ee'); mxCirc(cx + ww * .36, by - wh * .08, Math.max(1, ww * .03), '#0f172a');
+  const tw = c.busy ? Math.sin(c.t * 16) * .7 : Math.sin(c.t * 2) * .2; ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - ww * .22, by); ctx.lineTo(cx - ww * .22 - Math.cos(tw) * ww * .12, by - Math.sin(tw + .6) * wh * .2); ctx.stroke();
+  for (const dx of [-.12, .06]) { ctx.fillStyle = '#94a3b8'; ctx.fillRect(cx + ww * dx, by + wh * .14, ww * .06, wh * .12 + hop * .3); }
+  if (c.busy) for (let k = 0; k < 3; k++) { const f = (c.t * .9 + k / 3) % 1; ctx.globalAlpha = 1 - f; mxText('♥', cx + ww * (.05 + k * .12), by - wh * (.3 + f * .4), ww * .1, '#f43f5e'); ctx.globalAlpha = 1; }
+  ctx.restore(); mxGlass(wx, wy, ww, wh);
+  mxFill(x + w * .14, y + h * .78, w * .72, h * .14, 3, '#166534', '#14532d'); mxText('PET', cx, y + h * .85, Math.max(5, h * .09), '#bbf7d0');
+}
+function mkRocket(x, y, w, h, c) {
+  const cx = x + w / 2, sh = c.busy ? Math.sin(c.t * 45) * .9 : 0;
+  mxCab(x + sh, y + h * .04, w, h * .86, '#6366f1', w * .24);
+  const R = Math.min(w * .34, h * .22), cy = y + h * .34;
+  mxCirc(cx + sh, cy, R * 1.12, '#e2e8f0', '#334155', 1.5); mxCirc(cx + sh, cy, R, '#020617');
+  ctx.save(); ctx.beginPath(); ctx.arc(cx + sh, cy, R, 0, 7); ctx.clip();
+  for (let k = 0; k < 12; k++) { const sp = c.busy ? 70 : 8, yy = ((k * 37 + c.t * sp) % (R * 2)) - R, xx = ((k * 53) % 100) / 100 * R * 1.8 - R * .9; ctx.fillStyle = k % 3 ? '#fff' : '#fde047'; ctx.fillRect(cx + sh + xx, cy + yy, c.busy ? 1 : 1.5, c.busy ? 4 : 1.5); }
+  mxCirc(cx + sh - R * .3, cy + R * .3, R * .35, '#fb923c'); mxCirc(cx + sh - R * .3, cy + R * .3, R * .35, null, '#c2410c', 1); ctx.restore();
+  mxGlass(cx + sh - R, cy - R, R * 2, R * 2);
+  mxFill(x + w * .16 + sh, y + h * .64, w * .68, h * .12, 3, '#312e81', '#1e1b4b'); mxText('SPACE', cx + sh, y + h * .7, Math.max(5, h * .085), '#a5b4fc');
+  if (c.busy) { const fl = h * (.07 + .04 * Math.abs(Math.sin(c.t * 30))); const fg = ctx.createLinearGradient(0, y + h * .88, 0, y + h * .88 + fl); fg.addColorStop(0, '#fde047'); fg.addColorStop(1, 'rgba(249,115,22,0)'); ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(cx - w * .2, y + h * .88); ctx.lineTo(cx + w * .2, y + h * .88); ctx.lineTo(cx, y + h * .88 + fl); ctx.fill(); }
+}
+var MK_DRAW = { gacha: mkGacha, drum: mkDrum, fortune: mkFortune, claw: mkClaw, copy: mkCopy, locker: mkLocker, photo: mkPhoto, kiosk: mkKiosk, massage: mkMassage, laundry: mkLaundry, karaoke: mkKaraoke, vr: mkVr, robot: mkRobot, drone: mkDrone, pet: mkPet, rocket: mkRocket };
+
+function drawMachineArt(o, def, x, y, W, H) {
+  const now = performance.now() / 1000, fe = machineFlash.get(o.uid) || 0, fl = fe > performance.now(), q = PERF.q(), fx = settings.fxMachine !== false;
+  const us = liveUsers(o), busy = us.length > 0, m = MK[o.type] || { k: 'kiosk' };
+  const c = { t: now + o.uid * .37, p: busy ? (o.prog == null || o.prog < 0 ? 0 : o.prog) : -1, busy, col: def.color, icon: def.icon, lv: o.lv || 1, who: o.who, hair: o.whoHair, uid: o.uid, v: m.v, big: W * H / (TILE * TILE) };
+  x += 2; y += 1; W -= 4; H -= 3;
+  if (fx && q >= 1 && c.lv >= 3) { ctx.fillStyle = c.lv >= 5 ? 'rgba(250,204,21,.26)' : 'rgba(125,211,252,.2)'; mxRR(x - 3, y - 3, W + 6, H + 6, 8); ctx.fill(); }
+  if (busy && fx && q >= 1) { ctx.fillStyle = `rgba(253,224,71,${.12 + .08 * Math.sin(now * 8)})`; mxRR(x - 2, y - 2, W + 4, H + 4, 7); ctx.fill(); }
+  const fn = MK_DRAW[m.k] || mkKiosk, n = Math.max(1, Math.round(W / (H * .9))), uw = W / n;
+  for (let i = 0; i < n; i++) { const cc = n > 1 ? Object.assign({}, c, { uid: c.uid + i * 3, busy: busy && (i === 0 || us.length > i), p: busy && (i === 0 || us.length > i) ? c.p : -1 }) : c; fn(x + i * uw + (n > 1 ? 1 : 0), y, uw - (n > 1 ? 2 : 0), H, cc); }
+  if (c.lv >= 5) { ctx.strokeStyle = 'rgba(250,204,21,.9)'; ctx.lineWidth = 2; mxRR(x - 1, y - 1, W + 2, H + 2, 5); ctx.stroke(); }
+  ctx.fillStyle = c.lv >= 5 ? '#facc15' : '#fbbf24'; for (let i = 0; i < c.lv; i++) { ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = .8; ctx.fillRect(x + 3 + i * 6, y + H - 5, 4, 4); ctx.strokeRect(x + 3 + i * 6, y + H - 5, 4, 4); }
+  if (busy) { mxFill(x + W / 2 - 15, y - 9, 30, 8, 4, 'rgba(15,23,42,.88)', 'rgba(15,23,42,.88)'); ctx.fillStyle = '#22c55e'; mxRR(x + W / 2 - 13.5, y - 7.5, 27 * Math.max(.05, c.p), 5, 2.5); ctx.fill(); }
+  drawMachStockUI(o, x, y, W, H, now);
+  if (fl) {
+    mxEmoji('🪙', x + W / 2, y - 6 - (1 - (fe - performance.now()) / 600) * 10, 13);
+    if (fx && q >= 1) { const t = (fe - performance.now()) / 600; for (let k = 0; k < 3; k++) { ctx.fillStyle = `rgba(250,204,21,${t.toFixed(2)})`; ctx.beginPath(); ctx.arc(x + W * (.25 + k * .25), y + 8 - (1 - t) * 22 - k * 3, 2.5, 0, 7); ctx.fill(); } }
+  }
+}
+
+// ---------- ATM ----------
+function mkAtm(x, y, w, h, c) {
+  mxCab(x, y, w, h, '#1e3a8a', 4); const cx = x + w / 2;
+  mxFill(x + w * .08, y + h * .04, w * .84, h * .1, 3, '#facc15', '#ca8a04'); mxText('ATM', cx, y + h * .09, Math.max(6, h * .08), '#422006');
+  mxScreen(x + w * .12, y + h * .18, w * .76, h * .3, '#38bdf8');
+  const sx = x + w * .12, sy = y + h * .18, sw = w * .76, sh = h * .3;
+  if (c.busy) { const k = Math.floor(c.t * 3) % 4; mxText('お取扱中' + '.'.repeat(k), sx + sw / 2, sy + sh * .35, Math.max(5, sh * .22), '#0c4a6e'); ctx.fillStyle = '#0c4a6e'; ctx.fillRect(sx + sw * .1, sy + sh * .62, sw * .8, sh * .14); ctx.fillStyle = '#22c55e'; ctx.fillRect(sx + sw * .1, sy + sh * .62, sw * .8 * Math.max(.05, c.p), sh * .14); }
+  else { mxText('¥', sx + sw * .3, sy + sh * .5, sh * .6, '#0369a1'); mxText('お引出し', sx + sw * .66, sy + sh * .5, Math.max(5, sh * .2), '#0c4a6e'); }
+  for (let r = 0; r < 3; r++) for (let k = 0; k < 3; k++) mxFill(x + w * (.14 + k * .13), y + h * (.54 + r * .07), w * .1, h * .05, 1, '#e2e8f0', '#94a3b8');
+  mxFill(x + w * .58, y + h * .54, w * .3, h * .08, 2, '#0f172a', '#1e293b'); mxLed(x + w * .62, y + h * .58, Math.max(1.1, w * .025), c.busy ? '#22c55e' : '#f59e0b');
+  const oy = y + h * .78, oh = h * .15; mxFill(x + w * .14, oy, w * .72, oh, 2, '#0f172a', '#1e293b');
+  if (c.busy && c.p > .55) { const g = mxPh(c.p, .55, .95); for (let k = 0; k < 3; k++) { ctx.fillStyle = '#86efac'; ctx.strokeStyle = '#166534'; ctx.lineWidth = .7; const bx = x + w * (.2 + k * .06), by2 = oy + oh * .1 - g * oh * .55 + k; ctx.fillRect(bx, by2, w * .4, oh * .7); ctx.strokeRect(bx, by2, w * .4, oh * .7); } }
+}
+function drawAtmArt(o, def, x, y, W, H) {
+  const us = liveUsers(o), busy = us.length > 0, now = performance.now() / 1000, n = Math.max(1, Math.round(W / (H * .9))), uw = (W - 4) / n;
+  for (let i = 0; i < n; i++) { const b = busy && (i === 0 || us.length > i); mkAtm(x + 2 + i * uw + (n > 1 ? 1 : 0), y + 1, uw - (n > 1 ? 2 : 0), H - 3, { t: now + o.uid, busy: b, p: b ? (o.prog < 0 || o.prog == null ? 0 : o.prog) : -1 }); }
+  const fe = machineFlash.get(o.uid) || 0; if (fe > performance.now()) mxEmoji('💴', x + W / 2, y - 6 - (1 - (fe - performance.now()) / 600) * 10, 13);
+  if (busy) { mxFill(x + W / 2 - 15, y - 9, 30, 8, 4, 'rgba(15,23,42,.88)', 'rgba(15,23,42,.88)'); ctx.fillStyle = '#22c55e'; mxRR(x + W / 2 - 13.5, y - 7.5, 27 * Math.max(.05, o.prog || 0), 5, 2.5); ctx.fill(); }
+}
+
+// ---------- イートイン ----------
+function drawEatinArt(o, def, x, y, W, H) {
+  const now = performance.now() / 1000, eaters = customers.filter(q => q.state === 'eatin' && q.currentObjId === o.uid && (!q.path || !q.path.length));
+  const f = fpOf(o), pad = TILE * .22, tx = x + pad, ty = y + pad, tw = W - pad * 2, th = H - pad * 2;
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; mxRR(tx + 3, ty + 5, tw, th, 8); ctx.fill();
+  const seats = [], sx = f.w * 2, sy = f.h * 2;
+  for (let k = 0; k < sx; k++) { seats.push([tx + tw * (k + .5) / sx, ty - 2, 0]); seats.push([tx + tw * (k + .5) / sx, ty + th + 2, 1]); }
+  if (f.w * f.h > 1) for (let k = 0; k < f.h; k++) { seats.push([tx - 2, ty + th * (k + .5) / f.h, 2]); seats.push([tx + tw + 2, ty + th * (k + .5) / f.h, 3]); }
+  const cols = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+  seats.forEach(([sx2, sy2, dir], i) => { const r = Math.max(4, TILE * .13); mxFill(sx2 - r, sy2 - r * .9, r * 2, r * 1.8, r * .7, mxShade(cols[(i + o.uid) % 5], .25), mxShade(cols[(i + o.uid) % 5], -.25)); mxStroke(sx2 - r, sy2 - r * .9, r * 2, r * 1.8, r * .7, 'rgba(15,23,42,.65)', 1); });
+  mxFill(tx, ty, tw, th, 7, '#e8b86d', '#a16207'); mxStroke(tx, ty, tw, th, 7, '#5b3a12', 1.6);
+  ctx.strokeStyle = 'rgba(120,53,15,.28)'; ctx.lineWidth = 1; for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(tx + 5, ty + th * k / 4); ctx.lineTo(tx + tw - 5, ty + th * k / 4); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(255,255,255,.28)'; mxRR(tx + 3, ty + 2.5, tw - 6, 3, 2); ctx.fill();
+  const items = ['☕', '🍙', '🥤', '🍰', '🍜', '🥪'], n = Math.max(1, Math.min(6, Math.round(f.w * f.h * 1.2)));
+  for (let k = 0; k < n; k++) { const ix = tx + tw * ((k % Math.max(1, f.w * 2) + .5) / Math.max(1, f.w * 2)), iy = ty + th * (.3 + .4 * ((Math.floor(k / Math.max(1, f.w * 2))) % 2)); mxCirc(ix, iy + 2, TILE * .12, 'rgba(255,255,255,.55)'); mxEmoji(items[(k + o.uid) % 6], ix, iy + 1, Math.max(9, TILE * .27)); }
+  if (eaters.length) { const ex = tx + tw / 2; mxSteam(ex, ty + th * .3, TILE * .35, now, 3, .8); }
+}
+
+// ---------- レジ ----------
+function drawRegisterArt(o, def, x, y, W, H) {
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; mxRR(x + 4, y + H - 5, W - 4, 6, 3); ctx.fill();
+  mxFill(x + 2, y + H * .32, W - 4, H * .64, 4, '#38bdf8', '#075985', false); mxStroke(x + 2, y + H * .32, W - 4, H * .64, 4);
+  mxFill(x + 2, y + H * .24, W - 4, H * .14, 3, '#f1f5f9', '#cbd5e1'); mxStroke(x + 2, y + H * .24, W - 4, H * .14, 3, 'rgba(15,23,42,.7)', 1.2);
+  mxFill(x + W * .2, y + H * .04, W * .4, H * .24, 3, '#e2e8f0', '#94a3b8'); mxScreen(x + W * .24, y + H * .07, W * .32, H * .13, o.progress > 0 ? '#4ade80' : '#a7f3d0');
+  for (let r = 0; r < 2; r++) for (let k = 0; k < 3; k++) { ctx.fillStyle = '#475569'; ctx.fillRect(x + W * (.66 + k * .1), y + H * (.08 + r * .09), W * .07, H * .06); }
+  const bx = x + 5, by = y + H * .47, bw = W - 10, bh = H * .22; mxFill(bx, by, bw, bh, 2, '#334155', '#0f172a');
+  const off = o.progress > 0 ? (performance.now() / 40) % 8 : 0; ctx.save(); ctx.beginPath(); ctx.rect(bx, by, bw, bh); ctx.clip(); ctx.fillStyle = 'rgba(255,255,255,.2)'; for (let k = -1; k < bw / 8 + 1; k++) ctx.fillRect(bx + k * 8 + off, by, 2, bh); ctx.restore();
+  if (o.progress > 0) { mxFill(bx + bw * .5 - 4, by + 1, 8, bh - 2, 2, '#f59e0b', '#b45309'); mxLed(x + W * .5, y + H * .7, 1.6, '#22c55e'); }
+  ctx.fillStyle = '#e2e8f0'; ctx.fillRect(x + W * .12, y + H * .76, W * .76, 2.4);
+  ctx.strokeStyle = 'rgba(44,182,125,.75)'; ctx.lineWidth = 2; ctx.strokeRect(x + 8, y - H + 8, W - 16, H - 16);
+  if (o.progress > 0) { ctx.fillStyle = '#1e293b'; ctx.fillRect(x + 4, y - 5, W - 8, 5); ctx.fillStyle = '#2cb67d'; ctx.fillRect(x + 5, y - 4, (W - 10) * o.progress, 3); }
+}
+
+// ---------- 植物・装飾 ----------
+function drawPlantArt(o, def, x, y, W, H) {
+  const now = performance.now() / 1000, sw = Math.sin(now * 1.4 + o.uid) * 1.4, big = Math.min(W, H) >= TILE * 2, cx = x + W / 2;
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(cx + 2, y + H - 5, W * .36, 5, 0, 0, 7); ctx.fill();
+  const cn = big ? Math.round(W / TILE * 2) : 1;
+  for (let k = 0; k < cn; k++) {
+    const px = big ? x + W * (k + .5) / cn : cx, pw = big ? W / cn * .62 : W * .4, ph = pw * .72, py = y + H - 6 - ph;
+    mxFill(px - pw / 2, py, pw, ph, 3, '#d97706', '#7c2d12', true); mxStroke(px - pw / 2, py, pw, ph, 3, 'rgba(15,23,42,.7)', 1.2); ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(px - pw / 2 + 2, py + 2, pw - 4, 2);
+    ctx.fillStyle = '#5b3a1b'; ctx.fillRect(px - pw / 2 + 1, py - 1, pw - 2, 3);
+    const lc = ['#15803d', '#22c55e', '#4ade80', '#16a34a'], lh = (big ? H * .55 : H * .5) * (k % 2 ? .85 : 1);
+    for (let l = 0; l < 6; l++) { const a = -Math.PI / 2 + (l - 2.5) * .46 + sw * .03 * (l % 2 ? 1 : -1), len = lh * (.8 + (l % 3) * .12); ctx.save(); ctx.translate(px, py); ctx.rotate(a + Math.PI / 2); ctx.fillStyle = lc[l % 4]; ctx.strokeStyle = '#14532d'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(0, -len / 2, pw * .22, len / 2, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.moveTo(0, -len * .1); ctx.lineTo(0, -len * .9); ctx.stroke(); ctx.restore(); }
+  }
+}
+function drawDecorArt(o, def, x, y, W, H) {
+  if (def.type === 'plant') return drawPlantArt(o, def, x, y, W, H);
+  const now = performance.now() / 1000, s = Math.min(W, H);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x + W / 2 + 2, y + H - 6, s * .34, 5, 0, 0, 7); ctx.fill();
+  const bob = Math.sin(now * 1.6 + o.uid) * (s > TILE ? 1.5 : .8);
+  mxEmoji(def.icon, x + W / 2, y + H / 2 - 1 + bob, s * (W * H > TILE * TILE * 1.5 ? .78 : .62));
+}
+
+// ---------- 設備描画の本体（棚・機械などを新デザインに差し替え） ----------
+(function () {
+  const _prev = drawFacility;
+  drawFacility = function (obj) {
+    const def = FACILITY_TYPES[obj.type], cat = def.cat;
+    if (SKIN[obj.type] || !(cat === 'shelf' || cat === 'machine' || cat === 'atm' || cat === 'eatin' || cat === 'register' || cat === 'decor')) return _prev.apply(this, arguments);
+    const f = fpOf(obj), px = obj.x * TILE, py = obj.y * TILE, W = f.w * TILE, H = f.h * TILE;
+    if (obj.inCombo) { ctx.strokeStyle = (Math.floor(performance.now() / 350) % 2 === 0) ? '#f5b700' : '#fef08a'; ctx.lineWidth = 3; ctx.strokeRect(px + 1, py + 1, W - 2, H - 2); }
+    if (cat === 'shelf') drawShelfArt(obj, def, px, py, W, H);
+    else if (cat === 'machine') drawMachineArt(obj, def, px, py, W, H);
+    else if (cat === 'atm') drawAtmArt(obj, def, px, py, W, H);
+    else if (cat === 'eatin') drawEatinArt(obj, def, px, py, W, H);
+    else if (cat === 'register') drawRegisterArt(obj, def, px, py, W, H);
+    else drawDecorArt(obj, def, px, py, W, H);
+    if (state.selectedObjId === obj.uid) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.strokeRect(px, py, W, H); }
+  };
+})();
+
+// ---------- 客の動き：商品を手に取る・機械を操作する・食べる ----------
+function mxHand(x, y) { ctx.fillStyle = '#fde68a'; ctx.strokeStyle = '#2d241e'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); ctx.stroke(); }
+function drawCustomerBody(c, lean) {
+  if (c.hidden) return;
+  const now = performance.now() / 1000, fx = c.fx || 0, fy = c.fy || 0;
+  const x = c.x + fx * lean, y = c.y + fy * lean * .6;
+  if (c.mu) {
+    const k = c.mu.kind, t = c.mu.t, bob = t * (k === 'vr' ? 5 : 3);
+    drawChibi(x, y, c.shirt, c.hair, bob, false);
+    const px = -fy, py = fx, dxx = fx || 0, dyy = fy || 1;
+    let h1 = [x + dxx * 10 + px * 5, y + 2 + dyy * 3 * .6 + py * 2], h2 = [x + dxx * 10 - px * 5, y + 2 + dyy * 3 * .6 - py * 2];
+    const wig = Math.sin(t * 9) * 2, sl = Math.sin(t * 6);
+    if (k === 'gacha' || k === 'drum') { const a = t * 8; h1 = [x + dxx * 10 + Math.cos(a) * 3, y - 1 + Math.sin(a) * 3]; }
+    else if (k === 'claw') { h1 = [x + dxx * 10 + px * 4, y + 1 + wig * .4]; h2 = [x + dxx * 10 - px * 4 + Math.sin(t * 3) * 2, y + 4]; }
+    else if (k === 'vr') { h1 = [x - 12, y - 6 - Math.abs(sl) * 8]; h2 = [x + 12, y - 6 - Math.abs(Math.cos(t * 6)) * 8]; ctx.fillStyle = '#0f172a'; mxRR(x - 7, y - 11 + Math.abs(Math.sin(bob)) * -3, 14, 6, 2); ctx.fill(); ctx.fillStyle = '#22d3ee'; ctx.fillRect(x - 5, y - 9.5 + Math.abs(Math.sin(bob)) * -3, 10, 2); }
+    else if (k === 'laundry') { h1 = [x + dxx * 9 + px * 5, y + 5 + Math.sin(t * 4) * 2]; }
+    else if (k === 'copy') { h1 = [x + dxx * 10, y + wig * .5]; }
+    else if (k === 'drone' || k === 'robot') { h1 = [x + 11, y + 4]; h2 = [x - 11, y + 4]; if (k === 'drone') { ctx.fillStyle = '#1e293b'; ctx.fillRect(x - 1, y - 20 + Math.abs(Math.sin(bob)) * -3, 2, 3); } }
+    else if (k === 'pet') { h1 = [x + dxx * 10 + px * 5, y + 4 + Math.abs(sl) * 2]; h2 = [x + dxx * 10 - px * 5, y + 4 + Math.abs(Math.cos(t * 6)) * 2]; }
+    else if (k === 'rocket') { h1 = [x - 11, y - 3 + wig]; h2 = [x + 11, y - 3 - wig]; }
+    mxHand(h1[0], h1[1]); mxHand(h2[0], h2[1]);
+    if (!c.emote) {
+      const r = c.mu.t / c.mu.dur; ctx.strokeStyle = 'rgba(15,23,42,.45)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y - 27, 6, 0, 7); ctx.stroke();
+      ctx.strokeStyle = '#22c55e'; ctx.beginPath(); ctx.arc(x, y - 27, 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * r); ctx.stroke();
+    }
+    return;
+  }
+  if (c.state === 'picking') {
+    drawChibi(x, y, c.shirt, c.hair, c.bounce, false);
+    const total = c.browse || 2, r = Math.max(0, Math.min(1, 1 - c.waitTimer / total)), px = -fy, py = fx;
+    const reach = Math.sin(Math.min(1, r * 2) * Math.PI) * 5, ox = fx * (8 + reach), oy = fy * (6 + reach) * .6 + 3;
+    const hx = x + ox + px * 5, hy = y + oy + py * 2, sh = placedObjects.find(o => o.uid === c.currentObjId), pid = sh && FACILITY_TYPES[sh.type].prod, pp = pid && products[pid];
+    if (pp && r > .22) {   // 取り上げた商品を目の高さまで持ち上げて眺める
+      const up = Math.min(1, (r - .22) / .3), look = r > .55 ? Math.sin(now * 5 + c.id * 9) * 1.2 : 0;
+      mxProd(pid, hx - 5, hy - 5 - up * 9 + look, 11, pp, 0);
+    }
+    mxHand(hx, hy); if (r > .55) mxHand(x + fx * 6 - px * 5, y + 3 + fy * 4 - py * 2);
+    return;
+  }
+  if (c.state === 'eatin' && (!c.path || !c.path.length)) {
+    drawChibi(x, y + 1, c.shirt, c.hair, 0, false);
+    const mouthY = y - 4, f = (now * 2.2) % 1, up = Math.sin(f * Math.PI);
+    mxHand(x + 6, y + 3 - up * 7); mxEmoji(['🍙', '☕', '🥪', '🍰'][Math.floor(c.id * 4) % 4], x + 7, y + 1 - up * 8, 9);
+    if (c.eatDur && c.waitTimer > 0) { ctx.strokeStyle = 'rgba(15,23,42,.45)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y - 27, 5, 0, 7); ctx.stroke(); ctx.strokeStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(x, y - 27, 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - c.waitTimer / c.eatDur)); ctx.stroke(); }
+    return;
+  }
+  drawChibi(x, y, c.shirt, c.hair, c.bounce, false);
+}
+function ensureBuildBannerSize() { ensureSizeBar(); }
+ensureBuildBannerSize();
+
+
+// ===================== MOD v6: 機械のアイテム数・警告ランプ・補充 =====================
+var MACH_REFILL_COST = 500;
+function machCap(o) { return Math.max(1, Math.round(15 * szCapMulA(szArea(o)))); }
+function machStock(o) { const cap = machCap(o); if (o.ms == null) o.ms = cap; return Math.max(0, Math.min(o.ms, cap)); }
+function machLow(o) { return machStock(o) <= machCap(o) * 0.3; }
+function drawMachStockUI(o, x, y, W, H, now) {
+  const cap = machCap(o), st = machStock(o), low = st <= cap * 0.3, empty = st <= 0;
+  if (empty) { ctx.fillStyle = 'rgba(15,23,42,.38)'; mxRR(x, y, W, H, 4); ctx.fill(); mxText('品切れ', x + W / 2, y + H / 2, Math.min(12, W / 5), '#fecaca'); }
+  const lab = empty ? '空' : '残' + st, tw = Math.max(18, lab.length * 6 + 6);
+  ctx.fillStyle = empty ? '#dc2626' : low ? '#b45309' : 'rgba(15,23,42,.82)'; mxRR(x + W - tw - 2, y + H - 15, tw, 10, 4); ctx.fill();
+  mxText(lab, x + W - tw / 2 - 2, y + H - 9.8, 8, '#fff');
+  if (low) {   // 3割以下：赤い警告ランプが点滅（空のときは点灯したまま）
+    const on = empty || Math.floor(now * 3) % 2 === 0, lx = x + W - 8, ly = y + 8;
+    ctx.save();
+    if (on && PERF.q() >= 1) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 14; }
+    ctx.fillStyle = on ? '#ef4444' : '#7f1d1d'; ctx.beginPath(); ctx.arc(lx, ly, 4.8, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(15,23,42,.85)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(lx, ly, 4.8, 0, 7); ctx.stroke();
+    ctx.fillStyle = on ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(lx - 1.5, ly - 1.6, 1.4, 0, 7); ctx.fill();
+    if (on) { ctx.strokeStyle = 'rgba(248,113,113,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lx, ly, 7.5 + Math.sin(now * 9) * 1.2, 0, 7); ctx.stroke(); }
+  }
+}
+function refillMachine(uid) {
+  const o = placedObjects.find(q => q.uid === uid); if (!o || FACILITY_TYPES[o.type].cat !== 'machine') return;
+  const cap = machCap(o);
+  if (machStock(o) >= cap) return setTicker('📦 すでに満タンです');
+  if (state.money < MACH_REFILL_COST) { SFX.angry(); return setTicker(`⚠️ 補充費用(¥${MACH_REFILL_COST})が足りません！`); }
+  state.money -= MACH_REFILL_COST; state.monthStats.cost += MACH_REFILL_COST;
+  o.ms = cap; o.lowWarned = false;
+  SFX.place(); machineFlash.set(o.uid, performance.now() + 600);
+  const cc = objCenter(o); addFloatText(cc.x, o.y * TILE, '🔧補充完了!', '#2596be');
+  setTicker(`🔧 ${FACILITY_TYPES[o.type].name} を全補充しました（-¥${MACH_REFILL_COST}）`);
+  openInspector(o); updateHUD();
+}
+(function () {
+  const _um = useMachine;
+  useMachine = function (mc, c) {
+    _um.apply(this, arguments);
+    const cap = machCap(mc), before = machStock(mc), d = FACILITY_TYPES[mc.type];
+    const used = Math.random() < machUseRate(mc);   // 機械によっては毎回は減らない（景品が出たときだけ等）
+    mc.ms = used ? Math.max(0, before - 1) : before;
+    if (used && mc.type === 'machine_claw') addFloatText(c.x, c.y - 34, '🧸景品ゲット!', '#b45309');
+    if (!used) return;
+    if (mc.ms === 0) { SFX.angry(); setTicker(`🚫 ${d.name} のアイテムが空になりました！補充してください`); mc.lowWarned = true; }
+    else if (before > cap * 0.3 && mc.ms <= cap * 0.3 && !mc.lowWarned) { mc.lowWarned = true; setTicker(`⚠️ ${d.name} の残りが3割以下です！（補充 ¥${MACH_REFILL_COST}）`); }
+  };
+  const _mi = machInspectorHtml;
+  machInspectorHtml = function (obj) {
+    let h = _mi.apply(this, arguments);
+    const cap = machCap(obj), st = machStock(obj), low = st <= cap * 0.3, full = st >= cap, r = Math.max(0, Math.min(1, st / cap));
+    h += `<div style="font-size:12px;margin:3px 0 2px">📦 残りアイテム <b style="color:${low ? '#dc2626' : '#15803d'}">${st}/${cap}</b>${low ? ' ⚠️ 少なくなっています' : ''}</div>${machUseRate(obj) < 1 ? `<div style="font-size:10px;color:#64748b">🎲 1回の利用でアイテムが減る確率 ${Math.round(machUseRate(obj) * 100)}%</div>` : ''}
+      <div style="height:7px;background:#1e293b;border-radius:4px;overflow:hidden;margin-bottom:5px"><div style="height:100%;width:${Math.round(r * 100)}%;background:${low ? '#ef4444' : '#4ade80'}"></div></div>
+      <button class="kairo-btn btn-blue" style="width:100%;margin-bottom:5px;" onclick="refillMachine(${obj.uid})" ${full || state.money < MACH_REFILL_COST ? 'disabled' : ''}>🔧 この機械を全補充（¥${MACH_REFILL_COST}）</button>`;
+    return h;
+  };
+  const _ft = facilityTip;
+  facilityTip = function (d) {
+    let t = _ft.apply(this, arguments);
+    if (d.cat === 'machine') t += `\n📦 アイテム在庫あり：使われると減り（機械により減る確率が違う。クレーンは約30%）、3割以下で警告ランプ点灯\n　補充は1回¥${MACH_REFILL_COST}でその機械だけ全補充`;
+    return t;
+  };
+})();
+
+
+// ---- アイテムが減る確率（景品が出たときだけ減る機械など） ----
+var MACH_USE_RATE = { machine_claw: 0.3, machine_locker: 0.5, machine_vr: 0.4, machine_karaoke: 0.4, machine_massage: 0.4, machine_laundry: 0.6, machine_drone: 0.6 };
+function machUseRate(o) { const r = MACH_USE_RATE[o.type]; return r == null ? 1 : r; }
+
+// ---- 店員も機械を補充する（1回¥500・清掃係は除く） ----
+function staffMachineRefill(st, stx, sty, urgentOnly) {
+  if (st.role === 'cleaner') return false;
+  let o = placedObjects.find(q => q.uid === st.mUid && FACILITY_TYPES[q.type].cat === 'machine');
+  if (o && machStock(o) >= machCap(o)) { st.mUid = null; o = null; }
+  if (!o) {
+    st.mUid = null;
+    if (state.money < MACH_REFILL_COST + 300) return false;
+    const cand = placedObjects.filter(q => FACILITY_TYPES[q.type].cat === 'machine' && (urgentOnly ? machStock(q) <= 0 : machLow(q)) && !hiredStaff.some(s => s !== st && s.mUid === q.uid))
+      .sort((a, b) => machStock(a) / machCap(a) - machStock(b) / machCap(b));
+    if (!cand.length) return false;
+    o = cand[0]; st.mUid = o.uid;
+  }
+  if (adjToObj(stx, sty, o)) {
+    if (state.money < MACH_REFILL_COST) { st.mUid = null; return false; }
+    state.money -= MACH_REFILL_COST; state.monthStats.cost += MACH_REFILL_COST;
+    o.ms = machCap(o); o.lowWarned = false; st.mUid = null; st.cooldown = 0.7;
+    machineFlash.set(o.uid, performance.now() + 600); SFX.place();
+    addFloatText(objCenter(o).x, o.y * TILE, '🔧補充!', '#2596be');
+    setTicker(`🔧 ${st.name ? st.name.split(' ')[1] || st.name : '店員'}が ${FACILITY_TYPES[o.type].name} を補充しました（-¥${MACH_REFILL_COST}）`);
+    return true;
+  }
+  const ad = getAdjacentWalkable(o.x, o.y).sort((a, b) => Math.abs(a.x - stx) + Math.abs(a.y - sty) - Math.abs(b.x - stx) - Math.abs(b.y - sty));
+  if (ad.length) { const p = findPath(stx, sty, ad[0].x, ad[0].y); if (p.length) { st.path = p; return true; } }
+  st.mUid = null; return false;
+}
 
 </script>
 </body>
