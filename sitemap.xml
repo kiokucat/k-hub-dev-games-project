@@ -3,217 +3,283 @@
   <url>
     <loc>https://k-hub.pages.dev/</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>daily</changefreq>
+    <changefreq>ハブ - k-hub(kioku-hub)</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/backrooms/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>バックルームズ - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/sushida-typing/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>寿司タイピング - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/sushida-pvp/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>寿司タイピングPVP - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/online-action/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>オンラインアクション - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/ai-taikos/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>太鼓風ゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/blockcraft-blue/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>blockcraft-blue(classic) - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/tetris/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>テトリス - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/osero-ivory/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>オセロCPU - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/runner-game/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>ローカルランナー - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/dual-lock-multi/tetris.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>コントローラーテトリス - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/survivalbattle/survival_battle.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>サバイバルバトル - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/monstersurvival/monster_survival/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>モンスターサバイバル - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/stock-simulator/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>株シュミレーター - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/clicker-game/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>クリッカーゲーム(classic) - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/clicker-v2/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>クリッカーゲーム v2 - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/taiko/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>太鼓風ゲーム(classic) - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/mobilegames/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>モバイルゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/sugoroku/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>すごろくゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/niconicommentMaker/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>ニコニコメントメーカー - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/danmaku-o/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>弾幕 - o - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/danmaku-s/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>弾幕 - s - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/stickman%20dungeon/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>スティックマンダンジョンズ - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/index.creator/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>インデックスクリエイター - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/gun/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>銃を撃つゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/gold/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>金シュミレーター - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/pin/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>ピンボールゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/fps/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>fps風ゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/star-clicker/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>スタークリッカー - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/nyanko/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>にゃんこ戦記 - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/airplane/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>飛行機操縦ゲーム - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/contrail-duel/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>飛行機操縦バトル - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/litle-onigokko/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://k-hub.pages.dev/files/minecraft/index.html</loc>
-    <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>リトル東京鬼ごっこ - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/voiceMagic/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>詠唱の魔導士(maker:ponzu) - k-hub(kioku-hub)</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://k-hub.pages.dev/files/clock/index.html</loc>
     <lastmod>2026-11-10</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>時計 - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/airhocker/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>エアホッケー2P - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/BlockVerse/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>マイクラ風ゲーム - BlockVerse - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/cardgame/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>カードゲーム - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/konbini/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>コンビニ経営ゲーム(おすすめ) - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/parapar/parapara_manga.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>パラパラ漫画ビューワー - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/poke/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>ポケモン風2P - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/poke-retro/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>ポケモン風2P(retro) - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/ponzucraft/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>ぽんずクラフト(remixed by BlockVerse) - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/shouten/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>商店経営ゲーム - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/soccer/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>サッカーゲーム - NIGHT LEAGUE - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/files/suica/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>スイカ風ゲーム - k-hub(kioku-hub)</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://k-hub.pages.dev/help/index.html</loc>
+    <lastmod>2026-11-27</lastmod>
+    <changefreq>k-hub(kioku-hub)ヘルプページ</changefreq>
     <priority>0.6</priority>
   </url>
 </urlset>
