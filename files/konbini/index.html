@@ -264,6 +264,17 @@ function skinShelfSlots(o,x,y){
   for(let v=0;v<R;v++){const I=h+(v+1)*k;for(let c=0;c<C;c++){if((R-1-v)*C+c<M)r.push([m+w+c*(g+w)-.5,I-g-1.2-.5,g+1,g+1])}}
   return{rects:r,M,L,cy:h+b/2};
 }
+const _skComp=new WeakMap();let _skCompN=0;
+function skinShelfComp(img,em,sl){
+  let e=_skComp.get(img);if(!e||e.em!==em){e={em,m:new Map()};_skComp.set(img,e)}
+  let c=e.m.get(sl.M);if(c)return c;
+  if(++_skCompN>1500){_skCompN=0;e.m.clear()}   /* 上限を超えたら作り直し */
+  const W=img.naturalWidth,H=img.naturalHeight,k=W/40;
+  c=document.createElement("canvas");c.width=W;c.height=H;
+  const g=c.getContext("2d");g.drawImage(em,0,0);
+  if(sl.rects.length){g.save();g.beginPath();for(const q of sl.rects)g.rect(q[0]*k,q[1]*k,q[2]*k,q[3]*k);g.clip();g.drawImage(img,0,0);g.restore()}
+  e.m.set(sl.M,c);return c;
+}
 function skinShelfUI(o,x,y){
   const n=x+2,a=y+2,w=36,h=35,cap=capOf(o),fr=Math.min(1,o.stock/cap);
   ctx.fillStyle="rgba(15,23,42,.55)";ctx.fillRect(n+4,a+h-4.5,w-8,3);
@@ -285,6 +296,12 @@ function skinMachUI(o,x,y){
   for(let k=0;k<lv;k++){ctx.strokeStyle="rgba(0,0,0,.5)";ctx.lineWidth=.8;ctx.fillRect(n+3+k*6,a+h-5,4,4);ctx.strokeRect(n+3+k*6,a+h-5,4,4)}
   if(FACILITY_TYPES[o.type].cat==="machine")drawMachStockUI(o,n,a,w,h,performance.now()/1e3);
 }
+const _skAvg=new WeakMap();
+function skinAvg(img){
+  let c=_skAvg.get(img);if(c)return c;
+  try{const t=document.createElement("canvas");t.width=t.height=1;const g=t.getContext("2d");g.drawImage(img,0,0,1,1);const d=g.getImageData(0,0,1,1).data;c="rgb("+d[0]+","+d[1]+","+d[2]+")"}catch(e){c="#94a3b8"}
+  _skAvg.set(img,c);return c;
+}
 function skinDraw(o){
   if(settings.useSkin===false)return false;
   const d=FACILITY_TYPES[o.type];if(!d||d.cat==="backyard")return false;
@@ -292,18 +309,24 @@ function skinDraw(o){
   if(settings.cull!==false&&!view3D&&(x+w<cam.x-24||x>cam.x+viewW()+24||y+h<cam.y-24||y>cam.y+viewH()+24))return true;
   if(!skinUsable(o,d,fp))return false;
   const img=skinPick(o.type);if(!img)return false;
-  const c=d.cat;
-  if(c==="machine")skinMachGlow(o,x,y);
-  const sm=ctx.imageSmoothingEnabled;ctx.imageSmoothingEnabled=true;
+  const c=d.cat,px=40*cam.scale;
+  if(px<=9&&c!=="block"&&c!=="neighbor"){        /* 超ズームアウト：平均色の塗りだけ */
+    ctx.fillStyle=skinAvg(img);ctx.fillRect(x+1,y+1,w-2,h-2);
+    if(state.selectedObjId===o.uid){ctx.strokeStyle="#ef4444";ctx.lineWidth=3;ctx.strokeRect(x,y,w,h)}
+    return true;
+  }
+  const full=px>22;                                 /* 小さいときは在庫バー・星・光彩を省略 */
+  if(full&&c==="machine")skinMachGlow(o,x,y);
+  const sm=ctx.imageSmoothingEnabled;if(!sm)ctx.imageSmoothingEnabled=true;
   if(c==="shelf"){
-    const em=skinPick(o.type+"_empty"),sl=skinShelfSlots(o,x,y);
-    ctx.drawImage(em,x,y,w,h);
-    if(sl.rects.length){ctx.save();ctx.beginPath();for(const q of sl.rects)ctx.rect(q[0],q[1],q[2],q[3]);ctx.clip();ctx.drawImage(img,x,y,w,h);ctx.restore()}
-    if(o.stock<=0)mxText("品切れ",x+20,sl.cy,Math.min(12,36/6),"#dc2626");
+    const em=skinPick(o.type+"_empty"),sl=skinShelfSlots(o,0,0);
+    ctx.drawImage(skinShelfComp(img,em,sl),x,y,w,h);
+    if(full&&o.stock<=0)mxText("品切れ",x+20,sl.cy,Math.min(12,36/6),"#dc2626");
   }else ctx.drawImage(img,x,y,w,h);
-  ctx.imageSmoothingEnabled=sm;
+  if(!sm)ctx.imageSmoothingEnabled=sm;
   if(o.inCombo){ctx.strokeStyle=Math.floor(performance.now()/350)%2===0?"#f5b700":"#fef08a";ctx.lineWidth=3;ctx.strokeRect(x+1,y+1,w-2,h-2)}
-  if(c==="shelf")skinShelfUI(o,x,y);
+  if(!full){}
+  else if(c==="shelf")skinShelfUI(o,x,y);
   else if(c==="machine"||c==="atm")skinMachUI(o,x,y);
   else if(c==="register"){ctx.strokeStyle="rgba(44,182,125,.75)";ctx.lineWidth=2;ctx.strokeRect(x+8,y-40+8,24,24)}
   if(state.selectedObjId===o.uid){ctx.strokeStyle="#ef4444";ctx.lineWidth=3;ctx.strokeRect(x,y,w,h)}
@@ -431,7 +454,7 @@ function __bgChunk(cx,cy,maxX,q,chk,B){
   const key=cx+","+cy+","+maxX+","+q+","+(chk?1:0);
   let c=__BG.cache.get(key);
   if(c)return c;
-  if(__BG.cache.size>80)__BG.cache.clear();
+  if(__BG.cache.size>Math.max(80,(__BG.need||0)*2))__BG.cache.clear();
   const sz=__BG.CH*40,W=sz+2,px=Math.ceil(W*B),W2=px/B,cv=document.createElement("canvas");
   cv.width=cv.height=px;
   const g=cv.getContext("2d"),ox=cx*sz-1,oy=cy*sz-1;
@@ -466,7 +489,7 @@ function __bgChunk(cx,cy,maxX,q,chk,B){
 function __bgDraw(e,t,n,a,o){
   const q=PERF.q(),B=__bgBucket(),chk=q>=1&&(n-t)*(o-a)<3e3,S=__BG.CH*40;
   const x0=Math.floor(t*40/S),x1=Math.floor((n+1)*40/S),y0=Math.floor(a*40/S),y1=Math.floor((o+1)*40/S);
-  for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){
+  __BG.need=(x1-x0+1)*(y1-y0+1);for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){
     const c=__bgChunk(cx,cy,e.maxX,q,chk,B);
     /* デバイスpx格子に吸着させて、にじみと継ぎ目を防ぐ */
     const k=cam.scale,wx=cx*S-1,wy=cy*S-1,
