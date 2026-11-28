@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コイン掘りクリッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Dela+Gothic+One&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=swap" rel="stylesheet">
+<style>
+:root { --accent:#4ade80; --bg:#0b1020; --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.12); --muted:#93a4c3; --gold:#ffd54a; }
+* { box-sizing: border-box; }
+body {
+  margin:0; min-height:100vh; color:#e8eefc;
+  font-family:"Zen Maru Gothic","Hiragino Sans","Yu Gothic",sans-serif; font-weight:500;
+  background:
+    radial-gradient(900px 500px at 15% 10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    radial-gradient(800px 500px at 90% 90%, rgba(96,165,250,.18), transparent 60%), var(--bg);
+  transition: background .6s;
+}
+.ms { font-family:"Material Symbols Rounded"; font-weight:normal; font-style:normal; line-height:1; display:inline-block;
+  letter-spacing:normal; text-transform:none; white-space:nowrap; -webkit-font-feature-settings:"liga"; font-feature-settings:"liga";
+  vertical-align:middle; user-select:none; }
+.app { display:grid; grid-template-columns:1.1fr 1fr 1.1fr; gap:14px; height:100vh; padding:14px; }
+.panel { background:var(--card); border:1px solid var(--line); border-radius:22px; backdrop-filter:blur(8px); overflow:auto; position:relative; }
+h2 { margin:0 0 10px; font-size:14px; color:var(--muted); letter-spacing:.12em; display:flex; align-items:center; gap:6px; }
+
+/* ===== 左: 掘る ===== */
+#left { display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:20px; overflow:hidden; user-select:none; }
+.badge { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:99px; background:rgba(0,0,0,.3); border:1px solid var(--line); font-weight:900; }
+.badge .ms { color:var(--accent); }
+#mine {
+  position:relative; width:min(72%,300px); aspect-ratio:1; border:none; border-radius:50%; cursor:pointer; color:#fff;
+  background: radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--accent) 70%, #fff), var(--accent) 45%, color-mix(in srgb, var(--accent) 35%, #000) 100%);
+  box-shadow: 0 0 0 10px rgba(255,255,255,.05), 0 0 60px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 -14px 30px rgba(0,0,0,.35);
+  transition: transform .08s; -webkit-tap-highlight-color:transparent;
+}
+#mine:active, #mine.hit { transform:scale(.94) rotate(-2deg); }
+#mine .ms { font-size:min(34vw,150px); filter:drop-shadow(0 6px 8px rgba(0,0,0,.35)); }
+#mine::after { content:""; position:absolute; inset:-14px; border-radius:50%; border:2px solid var(--accent); opacity:.5; animation:ring 2.4s ease-out infinite; pointer-events:none; }
+@keyframes ring { from { transform:scale(.96); opacity:.6; } to { transform:scale(1.18); opacity:0; } }
+.hint { color:var(--muted); font-size:13px; }
+.fx { position:absolute; pointer-events:none; font-family:"Dela Gothic One"; font-size:22px; color:var(--gold); text-shadow:0 2px 0 rgba(0,0,0,.5); z-index:5; white-space:nowrap; }
+.fx.crit { font-size:34px; color:#ff6b9d; }
+.dot { position:absolute; width:9px; height:9px; border-radius:50%; background:var(--accent); pointer-events:none; }
+#star { position:absolute; z-index:6; border:none; background:none; color:var(--gold); cursor:pointer; font-size:54px; display:none; filter:drop-shadow(0 0 14px var(--gold)); animation:bob 1s ease-in-out infinite; }
+@keyframes bob { 50% { transform:translateY(-10px) scale(1.12); } }
+
+/* ===== 中央: 統計 ===== */
+#center { padding:20px; display:flex; flex-direction:column; gap:14px; }
+.title { font-family:"Dela Gothic One"; font-size:22px; display:flex; align-items:center; gap:8px; justify-content:center; }
+.title .ms { color:var(--accent); font-size:30px; }
+.wallet { text-align:center; padding:16px; border-radius:18px; background:rgba(0,0,0,.28); border:1px solid var(--line); }
+.wallet .lbl { color:var(--muted); font-size:13px; }
+#coins { font-family:"Dela Gothic One"; font-size:clamp(32px,4.4vw,52px); color:var(--gold); text-shadow:0 0 24px rgba(255,213,74,.35); word-break:break-all; }
+#coins .ms { font-size:.8em; margin-right:4px; }
+.sub { color:var(--muted); font-size:14px; margin-top:2px; }
+.sub b { color:#fff; }
+.stage { padding:14px; border-radius:18px; background:rgba(0,0,0,.28); border:1px solid var(--line); }
+.stage h3 { margin:0 0 4px; font-size:17px; }
+.bar { height:14px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden; margin:10px 0 6px; }
+.bar i { display:block; height:100%; width:0; border-radius:99px; background:linear-gradient(90deg, var(--accent), #fff); transition:width .2s; }
+#nextStage {
+  width:100%; margin-top:8px; padding:12px; border:none; border-radius:14px; font:inherit; font-weight:900; font-size:16px; cursor:pointer;
+  background:var(--gold); color:#3a2500; display:flex; align-items:center; justify-content:center; gap:6px;
+}
+#nextStage:disabled { background:rgba(255,255,255,.1); color:var(--muted); cursor:not-allowed; }
+#nextStage.ready { animation:glow 1s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow:0 0 0 6px rgba(255,213,74,.25), 0 0 30px rgba(255,213,74,.6); } }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.stat { padding:10px 12px; border-radius:14px; background:var(--card); border:1px solid var(--line); }
+.stat small { color:var(--muted); display:flex; align-items:center; gap:4px; font-size:12px; }
+.stat b { font-size:18px; font-family:"Dela Gothic One"; font-weight:normal; }
+.row { display:flex; gap:8px; }
+.row button { flex:1; padding:10px 6px; border:none; border-radius:12px; font:inherit; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; }
+#save { background:#facc15; color:#422006; } #load { background:#34d399; color:#052e16; } #reset { background:#f87171; color:#450a0a; }
+.note { text-align:center; color:var(--muted); font-size:12px; }
+
+.top { width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; }
+.top .wallet { width:100%; }
+
+/* ===== 中央: ニュース & ロボットの稼働レーン ===== */
+.news { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:14px; background:rgba(0,0,0,.35); border:1px solid var(--line); overflow:hidden; }
+.news > .ms { color:var(--accent); flex:none; }
+.news .vp { overflow:hidden; flex:1; }
+#news { display:inline-block; white-space:nowrap; padding-left:100%; font-size:13.5px; animation:tick 18s linear infinite; }
+@keyframes tick { from { transform:translateX(0); } to { transform:translateX(-100%); } }
+#lanes { display:flex; flex-direction:column; gap:10px; }
+.lane { border-radius:16px; overflow:hidden; border:1px solid var(--line); background:rgba(0,0,0,.28); }
+.lhead { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:14px; background:rgba(0,0,0,.4); }
+.lhead > .ms { color:var(--accent); }
+.lhead b { font-weight:900; }
+.lhead .cnt { font-family:"Dela Gothic One"; color:var(--gold); }
+.lhead .rate { color:var(--muted); font-size:12px; margin-left:auto; }
+.lhead button { border:1px solid var(--line); background:rgba(255,255,255,.08); color:var(--muted); font:inherit; font-size:11px; border-radius:8px; padding:3px 8px; cursor:pointer; }
+.strip {
+  position:relative; height:96px; overflow:hidden;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.1) 0 14px, transparent 14px 28px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--accent) 28%, #0b1a3a) 0 38%, color-mix(in srgb, var(--accent) 40%, #2a1a0a) 38% 100%);
+  transition:background .6s;
+}
+.strip .deco { position:absolute; right:8px; top:2px; font-size:64px; opacity:.14; }
+.strip .inner { position:absolute; inset:0; }
+.empty { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:13px; text-align:center; padding:0 12px; }
+.w { position:absolute; left:2%; display:flex; align-items:flex-end; animation:walk 8s linear infinite alternate; }
+.w .ms { font-size:24px; }
+.w .bot { color:#fff; animation:bob .5s ease-in-out infinite alternate; }
+.w .pick { color:var(--gold); font-size:16px; transform-origin:bottom left; animation:swing .6s ease-in-out infinite alternate; }
+@keyframes walk { from { left:2%; } to { left:88%; } }
+@keyframes bob { to { transform:translateY(-3px); } }
+@keyframes swing { from { transform:rotate(-25deg); } to { transform:rotate(35deg); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+.slots { position:absolute; inset:0; padding:6px 10px 8px; display:flex; flex-wrap:wrap; gap:4px; align-items:flex-end; align-content:flex-end; }
+.slots .ms { font-size:26px; color:#fff; }
+.slots .spin { color:var(--accent); animation:spin 1.2s linear infinite; }
+.slots .swing { color:var(--gold); transform-origin:bottom left; animation:swing .7s ease-in-out infinite alternate; }
+.more { position:absolute; right:10px; top:8px; font-family:"Dela Gothic One"; font-size:13px; background:rgba(0,0,0,.55); padding:2px 8px; border-radius:99px; }
+.pop { position:absolute; font-family:"Dela Gothic One"; color:var(--gold); font-size:14px; text-shadow:0 1px 0 #000; pointer-events:none; }
+
+/* ===== 右: アップグレード ===== */
+#right { padding:20px; display:flex; flex-direction:column; gap:10px; }
+.up {
+  display:grid; grid-template-columns:54px 1fr auto; gap:12px; align-items:center; text-align:left; width:100%;
+  padding:12px; border-radius:16px; border:1px solid var(--line); background:var(--card); color:inherit; font:inherit; cursor:pointer;
+  transition:transform .1s, border-color .2s, background .2s;
+}
+.up:not(:disabled):hover { transform:translateX(-3px); border-color:var(--accent); background:rgba(255,255,255,.1); }
+.up:disabled { opacity:.45; cursor:not-allowed; }
+.up .icon { width:54px; height:54px; border-radius:14px; display:grid; place-items:center; background:color-mix(in srgb, var(--accent) 25%, #000); color:var(--accent); }
+.up .icon .ms { font-size:32px; }
+.up .nm { font-weight:900; font-size:16px; }
+.up .ds { color:var(--muted); font-size:12.5px; }
+.up .lv { color:var(--accent); font-size:12.5px; font-weight:700; }
+.up .cost { font-family:"Dela Gothic One"; color:var(--gold); font-size:15px; text-align:right; white-space:nowrap; }
+.up .cost .ms { font-size:16px; }
+
+#toast {
+  position:fixed; left:50%; bottom:24px; transform:translate(-50%,40px); opacity:0; pointer-events:none; z-index:50;
+  background:rgba(10,14,28,.92); border:1px solid var(--accent); padding:12px 20px; border-radius:99px; font-weight:900;
+  display:flex; align-items:center; gap:8px; transition:.3s;
+}
+#toast.show { opacity:1; transform:translate(-50%,0); }
+#toast .ms { color:var(--accent); }
+
+#ups { display:flex; flex-direction:column; gap:8px; }
+#ups h2.cat { margin:12px 0 0; padding-bottom:4px; border-bottom:1px solid var(--line); }
+#ups h2.cat:first-child { margin-top:0; }
+.modal { position:fixed; inset:0; background:rgba(0,0,0,.65); display:none; place-items:center; z-index:100; padding:16px; }
+.modal.show { display:grid; }
+.modal .card { width:min(420px,100%); text-align:center; padding:24px; border-radius:22px; background:#141c33; border:1px solid var(--accent); box-shadow:0 0 50px color-mix(in srgb, var(--accent) 35%, transparent); }
+.modal .card > .ms { font-size:48px; color:var(--accent); }
+.modal h3 { margin:6px 0 10px; font-family:"Dela Gothic One"; font-weight:normal; font-size:22px; }
+.modal p { margin:0 0 16px; color:var(--muted); line-height:1.8; }
+.modal .big { font-family:"Dela Gothic One"; color:var(--gold); font-size:28px; margin-top:6px; }
+.modal button { padding:10px 40px; border:none; border-radius:12px; background:var(--accent); color:#06210f; font:inherit; font-weight:900; font-size:16px; cursor:pointer; }
+
+@media (max-width:900px) {
+  .app { grid-template-columns:1fr; height:auto; }
+  #left { min-height:70vh; gap:16px; }
+  .panel { overflow:visible; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 左: 掘る -->
+  <section class="panel" id="left">
+    <div class="top">
+      <div class="badge"><span class="ms" id="stageIcon">grass</span><span id="stageBadge">ステージ 1</span></div>
+      <div class="wallet">
+        <div class="lbl">所持コイン</div>
+        <div id="coins"><span class="ms">paid</span>0</div>
+        <div class="sub"><b id="income">0</b> コイン/秒</div>
+      </div>
+    </div>
+    <button id="mine" aria-label="掘る"><span class="ms" id="oreIcon">grass</span></button>
+    <div class="hint">タップ / クリックで掘る　金の星を見つけたらチャンス！</div>
+    <button id="star" aria-label="ボーナス"><span class="ms">star</span></button>
+  </section>
+
+  <!-- 中央: 統計 -->
+  <section class="panel" id="center">
+    <div class="title"><span class="ms" id="titleIcon">diamond</span><span id="title">コイン掘りクリッカー</span></div>
+
+    <div class="news"><span class="ms">campaign</span><div class="vp"><span id="news"></span></div></div>
+
+    <div id="lanes"></div>
+
+    <div class="stage">
+      <h2><span class="ms">flag</span>現在のステージ</h2>
+      <h3 id="stageName">ステージ 1：草原の鉱山</h3>
+      <div class="bar"><i id="progress"></i></div>
+      <div class="sub">目標 <b id="stageGoal">100</b> コイン ／ 報酬: クリック力 +<span id="rwC">1</span>、ロボット +<span id="rwR">1</span></div>
+      <button id="nextStage"><span class="ms">flag</span><span id="nextText">次のステージへ！</span></button>
+    </div>
+
+    <div>
+      <h2><span class="ms">bar_chart</span>ステータス</h2>
+      <div class="grid">
+        <div class="stat"><small><span class="ms">hardware</span>クリック力</small><b id="clickPower">1</b></div>
+        <div class="stat"><small><span class="ms">smart_toy</span>ロボット</small><b id="robots">0</b></div>
+        <div class="stat"><small><span class="ms">bolt</span>クリティカル率</small><b id="critRate">0%</b></div>
+        <div class="stat"><small><span class="ms">precision_manufacturing</span>生産倍率</small><b id="mult">x1.0</b></div>
+        <div class="stat"><small><span class="ms">touch_app</span>総クリック</small><b id="clicks">0</b></div>
+        <div class="stat"><small><span class="ms">savings</span>総獲得</small><b id="total">0</b></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="save"><span class="ms">save</span>セーブ</button>
+      <button id="load"><span class="ms">folder_open</span>ロード</button>
+      <button id="reset"><span class="ms">restart_alt</span>リセット</button>
+    </div>
+    <div class="note">セーブは5秒ごとに自動で行われます。<br>ゲームを閉じている間も、最大6時間分のコインがたまります。</div>
+  </section>
+
+  <!-- 右: アップグレード -->
+  <section class="panel" id="right">
+    <h2><span class="ms">upgrade</span>アップグレード</h2>
+    <div id="ups"></div>
+  </section>
+</div>
+<div id="offline" class="modal">
+  <div class="card">
+    <span class="ms">bedtime</span>
+    <h3>おかえりなさい！</h3>
+    <p id="offText"></p>
+    <button id="offOk" type="button">OK</button>
+  </div>
+</div>
+<div id="toast"><span class="ms" id="toastIcon">info</span><span id="toastText"></span></div>
+
+<script>
+const SAVE_KEY = "coinClickerSave";
+
+const stages = [
+  { name:"草原の鉱山",   icon:"grass",         goal:100,    clickBonus:1,  robotBonus:1,  color:"#4ade80" },
+  { name:"森の洞窟",     icon:"forest",        goal:500,    clickBonus:2,  robotBonus:2,  color:"#2dd4bf" },
+  { name:"雪山の坑道",   icon:"ac_unit",       goal:2000,   clickBonus:4,  robotBonus:4,  color:"#7dd3fc" },
+  { name:"火山の深層",   icon:"volcano",       goal:8000,   clickBonus:8,  robotBonus:8,  color:"#fb923c" },
+  { name:"伝説の宝庫",   icon:"diamond",       goal:30000,  clickBonus:16, robotBonus:16, color:"#c084fc" },
+  { name:"星空の遺跡",   icon:"auto_awesome",  goal:100000, clickBonus:32, robotBonus:32, color:"#f472b6" }
+];
+
+// セーブデータ(旧バージョンのキーもそのまま使えます)
+const init = () => ({ coins:0, clickPower:1, robots:0, stage:0, upgradeCost:10, robotCost:25,
+  crit:0, critCost:150, drill:0, drillCost:300, clicks:0, total:0, hidden:{}, lv:{}, last:0 });
+let s = init();
+const lvl = id => (s.lv && s.lv[id]) || 0;
+
+const $ = id => document.getElementById(id);
+const ms = n => `<span class="ms">${n}</span>`;
+
+function fmt(n) {
+  n = Math.floor(n);
+  if (n >= 1e12) return (n/1e12).toFixed(2) + "兆";
+  if (n >= 1e8)  return (n/1e8).toFixed(2) + "億";
+  if (n >= 1e5)  return (n/1e4).toFixed(1) + "万";
+  return n.toLocaleString();
+}
+const mult   = () => (1 + s.drill * 0.1) * (1 + 0.05 * lvl("oil") + 0.03 * lvl("solar") + 0.1 * lvl("motor") + 0.2 * lvl("aichip")) * (1 + 0.05 * lvl("manager"));
+const income = () => robotInc() + autoInc();
+const robotInc = () => s.robots * mult();
+const clickVal = () => (s.clickPower + 2 * lvl("gloves")) * (1 + 0.1 * lvl("pick2") + 0.25 * lvl("tnt"));
+const critMul  = () => 5 + 0.5 * lvl("critdmg");
+const autoInc  = () => clickVal() * 0.2 * lvl("auto");
+const interest = () => Math.min(s.coins * 0.0005 * lvl("interest"), Math.max(income(), clickVal()) * 5);
+const price    = u => Math.max(1, Math.floor((u.costKey ? s[u.costKey] : Math.floor(u.base * Math.pow(u.factor, lvl(u.id)))) * (1 - 0.02 * lvl("discount"))));
+
+const ups = [
+  { icon:"hardware", name:"ツール強化", costKey:"upgradeCost", factor:1.5,
+    desc:()=>"クリック力 +1", lv:()=>`クリック力 ${s.clickPower}`, buy(){ s.clickPower += 1; } },
+  { icon:"smart_toy", name:"ロボットを雇う", costKey:"robotCost", factor:1.4,
+    desc:()=>"自動で 1コイン/秒 掘ってくれる", lv:()=>`所持 ${s.robots} 台`, buy(){ s.robots += 1; } },
+  { icon:"bolt", name:"クリティカル訓練", costKey:"critCost", factor:1.7, max:()=>s.crit >= 50,
+    desc:()=>"クリティカル率 +2%（5倍ダメージ・最大50%）", lv:()=>`現在 ${s.crit}%`, buy(){ s.crit += 2; } },
+  { icon:"precision_manufacturing", name:"採掘ドリル", costKey:"drillCost", factor:2,
+    desc:()=>"ロボットの生産量 +10%", lv:()=>`Lv ${s.drill}`, buy(){ s.drill += 1; } }
+];
+
+// ---------- 新アップグレード ----------
+const N = (id, cat, icon, name, base, factor, max, desc, cur) => ({
+  id, cat, icon, name, base, factor,
+  desc: () => desc,
+  lv: () => `Lv ${lvl(id)}${max ? "/" + max : ""}　${cur()}`,
+  max: () => !!max && lvl(id) >= max,
+  buy() { s.lv[id] = lvl(id) + 1; }
+});
+ups[0].cat = ups[2].cat = "クリック";
+ups[1].cat = ups[3].cat = "自動生産";
+ups.push(
+  N("gloves", "クリック", "back_hand", "革の手袋", 60, 1.45, 0, "クリック力 +2", () => `+${2 * lvl("gloves")}`),
+  N("pick2", "クリック", "construction", "ミスリルのつるはし", 500, 1.9, 0, "クリック力 +10%", () => `+${10 * lvl("pick2")}%`),
+  N("tnt", "クリック", "local_fire_department", "ダイナマイト", 5000, 2.1, 0, "クリック力 +25%", () => `+${25 * lvl("tnt")}%`),
+  N("critdmg", "クリック", "target", "会心の極意", 800, 1.8, 20, "クリティカル倍率 +0.5", () => `x${critMul()}`),
+  N("lucky", "クリック", "casino", "ラッキーヒット", 1200, 1.9, 20, "クリック時 3%の確率でコイン2倍", () => `${3 * lvl("lucky")}%`),
+  N("oil", "自動生産", "oil_barrel", "潤滑油", 150, 1.6, 0, "ロボットの生産量 +5%", () => `+${5 * lvl("oil")}%`),
+  N("solar", "自動生産", "solar_power", "ソーラーパネル", 600, 1.7, 0, "ロボットの生産量 +3%", () => `+${3 * lvl("solar")}%`),
+  N("motor", "自動生産", "settings", "高性能モーター", 1500, 1.8, 0, "ロボットの生産量 +10%", () => `+${10 * lvl("motor")}%`),
+  N("manager", "自動生産", "engineering", "現場監督", 4000, 1.9, 0, "全体の生産倍率 +5%", () => `+${5 * lvl("manager")}%`),
+  N("auto", "自動生産", "mouse", "自動掘り機", 800, 1.8, 0, "毎秒、クリック力の20%を自動で掘る", () => `${fmt(autoInc())} コイン/秒`),
+  N("aichip", "自動生産", "memory", "AIチップ", 15000, 2.0, 25, "ロボットの生産量 +20%", () => `+${20 * lvl("aichip")}%`),
+  N("interest", "特殊", "account_balance", "コイン銀行", 5000, 2.0, 10, "毎秒、所持コインの0.05%が利息になる", () => `${(0.05 * lvl("interest")).toFixed(2)}%/秒`),
+  N("discount", "特殊", "sell", "値引き交渉", 3000, 2.2, 20, "全アップグレードの価格 -2%", () => `-${2 * lvl("discount")}%`),
+  N("radar", "特殊", "radar", "星レーダー", 2500, 1.9, 15, "金の星の出現間隔 -4%", () => `-${4 * lvl("radar")}%`),
+  N("starb", "特殊", "stars", "星の恵み", 4000, 1.9, 20, "金の星のボーナス +20%", () => `+${20 * lvl("starb")}%`),
+  N("stagebonus", "特殊", "flag", "開拓者の心得", 6000, 2.0, 10, "ステージ報酬 +10%", () => `+${10 * lvl("stagebonus")}%`),
+  N("offeff", "オフライン", "bedtime", "自動充電器", 2000, 2.2, 10, "オフライン時の収益効率 +5%（基本50%）", () => `${50 + 5 * lvl("offeff")}%`)
+);
+
+// ---------- オフライン収益(最大6時間) ----------
+const OFFLINE_MAX = 6 * 3600;
+const offRate = () => 0.5 + 0.05 * lvl("offeff");
+const fmtTime = sec => { const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return (h ? h + "時間" : "") + m + "分"; };
+let lastTick = Date.now();
+function offline() {
+  if (!s.last) return;
+  const away = (Date.now() - s.last) / 1000;
+  if (away < 60) return;
+  const g = income() * Math.min(away, OFFLINE_MAX) * offRate();
+  if (g < 1) return;
+  s.coins += g; s.total += g;
+  $("offText").innerHTML = `離れていた時間: <b>${fmtTime(away)}</b>${away > OFFLINE_MAX ? "（最大6時間まで）" : ""}<br>収益効率: <b>${Math.round(offRate() * 100)}%</b><div class="big">+${fmt(g)} コイン</div>`;
+  $("offline").classList.add("show");
+}
+$("offOk").addEventListener("click", () => $("offline").classList.remove("show"));
+addEventListener("pagehide", () => saveGame(false));
+document.addEventListener("visibilitychange", () => { if (document.hidden) saveGame(false); });
+
+// ---------- UI構築 ----------
+const upsEl = $("ups");
+const CATS = ["クリック", "自動生産", "特殊", "オフライン"];
+ups.sort((a, b) => CATS.indexOf(a.cat) - CATS.indexOf(b.cat));
+let lastCat;
+ups.forEach((u, i) => {
+  const b = document.createElement("button");
+  if (u.cat !== lastCat) {
+    lastCat = u.cat;
+    const h = document.createElement("h2");
+    h.className = "cat";
+    h.textContent = u.cat;
+    upsEl.appendChild(h);
+  }
+  b.className = "up";
+  b.innerHTML = `<div class="icon">${ms(u.icon)}</div>
+    <div><div class="nm">${u.name}</div><div class="ds">${u.desc()}</div><div class="lv" id="lv${i}"></div></div>
+    <div class="cost" id="cost${i}"></div>`;
+  b.addEventListener("click", () => buyUp(i));
+  upsEl.appendChild(b);
+  u.el = b;
+});
+
+function buyUp(i) {
+  const u = ups[i], cost = price(u);
+  if (s.coins < cost || (u.max && u.max())) return;
+  s.coins -= cost;
+  u.buy();
+  if (u.costKey) s[u.costKey] = Math.floor(s[u.costKey] * u.factor);
+  update(); saveGame(false);
+}
+
+function update() {
+  const st = stages[s.stage];
+  document.documentElement.style.setProperty("--accent", st.color);
+
+  $("coins").innerHTML = ms("paid") + fmt(s.coins);
+  $("income").textContent = income().toFixed(1).replace(/\.0$/, "");
+  $("clickPower").textContent = fmt(clickVal());
+  $("robots").textContent = fmt(s.robots);
+  $("critRate").textContent = s.crit + "%";
+  $("mult").textContent = "x" + mult().toFixed(1);
+  $("clicks").textContent = fmt(s.clicks);
+  $("total").textContent = fmt(s.total);
+
+  $("stageName").textContent = `ステージ ${s.stage + 1}：${st.name}`;
+  $("stageBadge").textContent = `ステージ ${s.stage + 1}：${st.name}`;
+  $("stageIcon").textContent = st.icon;
+  $("oreIcon").textContent = st.icon;
+  $("stageGoal").textContent = fmt(st.goal);
+  $("rwC").textContent = st.clickBonus;
+  $("rwR").textContent = st.robotBonus;
+  $("progress").style.width = Math.min(100, s.coins / st.goal * 100) + "%";
+
+  const last = s.stage >= stages.length - 1;
+  const ready = !last && s.coins >= st.goal;
+  const nb = $("nextStage");
+  nb.disabled = !ready;
+  nb.classList.toggle("ready", ready);
+  $("nextText").textContent = last ? "最終ステージ" : (ready ? "次のステージへ！" : "目標まであと " + fmt(st.goal - s.coins));
+
+  lanes.forEach(L => {
+    const hid = !!s.hidden[L.k];
+    L.strip.style.display = hid ? "none" : "";
+    L.btn.textContent = hid ? "表示" : "非表示";
+    $("lc_" + L.k).textContent = "×" + fmt(L.n());
+    $("lr_" + L.k).textContent = L.rate();
+    if (!hid) renderLane(L);
+  });
+  document.querySelectorAll(".deco").forEach(e => { if (e.textContent !== st.icon) e.textContent = st.icon; });
+
+  $("title").textContent = last ? "全ステージ制覇！" : "コイン掘りクリッカー";
+  $("titleIcon").textContent = last ? "workspace_premium" : "diamond";
+
+  ups.forEach((u, i) => {
+    const maxed = u.max && u.max();
+    u.el.disabled = maxed || s.coins < price(u);
+    $("lv" + i).textContent = u.lv();
+    $("cost" + i).innerHTML = maxed ? "MAX" : ms("paid") + " " + fmt(price(u));
+  });
+}
+
+// ---------- メッセージ ----------
+let toastTimer;
+function showMessage(text, icon = "info") {
+  $("toastText").textContent = text;
+  $("toastIcon").textContent = icon;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2500);
+}
+
+// ---------- セーブ/ロード ----------
+function saveGame(msg = true) {
+  s.last = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+  if (msg) showMessage("セーブしました！", "save");
+}
+function loadGame(msg = true) {
+  const saved = localStorage.getItem(SAVE_KEY);
+  if (!saved) { if (msg) showMessage("セーブデータはありません", "block"); return; }
+  try { s = Object.assign(init(), JSON.parse(saved)); }
+  catch (e) { if (msg) showMessage("ロードに失敗しました", "error"); return; }
+  update();
+  if (msg) showMessage("ロードしました！", "folder_open");
+}
+function resetGame() {
+  if (!confirm("本当に最初からやり直しますか？")) return;
+  localStorage.removeItem(SAVE_KEY);
+  s = init();
+  update();
+  showMessage("リセットしました", "restart_alt");
+}
+
+// ---------- 演出 ----------
+const left = $("left");
+function fx(x, y, text, crit) {
+  const r = left.getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "fx" + (crit ? " crit" : "");
+  el.textContent = text;
+  el.style.left = (x - r.left - 20) + "px";
+  el.style.top = (y - r.top - 20) + "px";
+  left.appendChild(el);
+  el.animate([{ transform:"translateY(0)", opacity:1 }, { transform:"translateY(-80px)", opacity:0 }],
+    { duration:crit ? 900 : 700, easing:"ease-out" }).onfinish = () => el.remove();
+  for (let i = 0; i < (crit ? 10 : 5); i++) {
+    const d = document.createElement("div");
+    d.className = "dot";
+    d.style.left = (x - r.left) + "px";
+    d.style.top = (y - r.top) + "px";
+    left.appendChild(d);
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 60;
+    d.animate([{ transform:"translate(0,0)", opacity:1 }, { transform:`translate(${Math.cos(a)*v}px,${Math.sin(a)*v}px)`, opacity:0 }],
+      { duration:500, easing:"ease-out" }).onfinish = () => d.remove();
+  }
+}
+
+// ---------- 掘る ----------
+$("mine").addEventListener("click", e => {
+  const b = $("mine").getBoundingClientRect();
+  const x = e.clientX || b.left + b.width / 2;
+  const y = e.clientY || b.top + b.height / 2;
+  const crit = Math.random() * 100 < s.crit;
+  let gain = clickVal() * (crit ? critMul() : 1);
+  if (Math.random() < 0.03 * lvl("lucky")) gain *= 2;
+  s.coins += gain; s.total += gain; s.clicks++;
+  fx(x, y, "+" + fmt(gain) + (crit ? " !!" : ""), crit);
+  update();
+});
+
+$("nextStage").addEventListener("click", () => {
+  const st = stages[s.stage];
+  if (s.stage >= stages.length - 1 || s.coins < st.goal) return;
+  s.coins -= st.goal;
+  const sb = 1 + 0.1 * lvl("stagebonus");
+  s.clickPower += Math.floor(st.clickBonus * sb);
+  s.robots += Math.floor(st.robotBonus * sb);
+  s.stage++;
+  update(); saveGame(false);
+  showMessage("ステージクリア！強化ボーナス獲得！", "celebration");
+});
+
+// ---------- 金の星(ボーナス) ----------
+const star = $("star");
+let starTimer;
+function spawnStar() {
+  const r = left.getBoundingClientRect();
+  star.style.left = (40 + Math.random() * (r.width - 140)) + "px";
+  star.style.top  = (70 + Math.random() * (r.height - 220)) + "px";
+  star.style.display = "block";
+  clearTimeout(starTimer);
+  starTimer = setTimeout(() => star.style.display = "none", 6000);
+}
+star.addEventListener("click", () => {
+  star.style.display = "none";
+  const bonus = Math.floor(Math.max(100, income() * 30 + clickVal() * 50) * (1 + 0.2 * lvl("starb")));
+  s.coins += bonus; s.total += bonus;
+  update();
+  showMessage(`金の星ボーナス！ +${fmt(bonus)} コイン`, "star");
+});
+(function schedule() {
+  setTimeout(() => { spawnStar(); schedule(); }, (20000 + Math.random() * 25000) * (1 - 0.04 * lvl("radar")));
+})();
+
+// ---------- 中央: 稼働レーン ----------
+const lanes = [
+  { k:"hand",  icon:"hardware", name:"ツール", cap:14, anim:"swing", n:()=>s.clickPower,
+    rate:()=>`1クリック ${fmt(clickVal())} コイン`, empty:"" },
+  { k:"robot", icon:"smart_toy", name:"ロボット", cap:22, walk:true, n:()=>s.robots,
+    rate:()=>`${fmt(robotInc())} コイン/秒`, empty:"ロボットはまだいません。右のアップグレードで雇おう" },
+  { k:"drill", icon:"precision_manufacturing", name:"採掘ドリル", cap:20, anim:"spin", n:()=>s.drill,
+    rate:()=>`生産量 x${mult().toFixed(1)}`, empty:"ドリルは未設置です" }
+];
+
+lanes.forEach(L => {
+  const d = document.createElement("div");
+  d.className = "lane";
+  d.innerHTML = `<div class="lhead">${ms(L.icon)}<b>${L.name}</b><span class="cnt" id="lc_${L.k}"></span>
+    <span class="rate" id="lr_${L.k}"></span><button type="button">非表示</button></div>
+    <div class="strip"><span class="ms deco"></span><div class="inner"></div></div>`;
+  L.strip = d.querySelector(".strip");
+  L.inner = d.querySelector(".inner");
+  L.btn = d.querySelector("button");
+  L.btn.addEventListener("click", () => { s.hidden[L.k] = !s.hidden[L.k]; update(); saveGame(false); });
+  $("lanes").appendChild(d);
+});
+
+function renderLane(L) {
+  const n = L.n(), shown = Math.min(n, L.cap), key = shown + "|" + (n > L.cap);
+  if (L.key === key) return;
+  L.key = key;
+  let h = "";
+  if (!n) {
+    h = L.empty ? `<div class="empty">${L.empty}</div>` : "";
+  } else if (L.walk) {
+    for (let i = 0; i < shown; i++) {
+      const r = k => ((Math.sin(i * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1;
+      h += `<div class="w" style="top:${30 + (i % 4) * 12}px;animation-duration:${(6 + r(1) * 8).toFixed(1)}s;animation-delay:-${(r(2) * 14).toFixed(1)}s">
+        <span class="ms bot">smart_toy</span><span class="ms pick">hardware</span></div>`;
+    }
+  } else {
+    h = `<div class="slots">` + `<span class="ms ${L.anim}">${L.icon}</span>`.repeat(shown) + `</div>`;
+  }
+  if (n > L.cap) h += `<div class="more">+${fmt(n - L.cap)}</div>`;
+  L.inner.innerHTML = h;
+}
+
+// 毎秒の収穫をロボットレーンにポップアップ
+setInterval(() => {
+  const L = lanes[1];
+  if (!s.robots || s.hidden.robot) return;
+  const p = document.createElement("div");
+  p.className = "pop";
+  p.textContent = "+" + fmt(income());
+  p.style.left = (10 + Math.random() * 75) + "%";
+  p.style.top = "44px";
+  L.strip.appendChild(p);
+  p.animate([{ transform:"translateY(0)", opacity:1 }, { transform:"translateY(-34px)", opacity:0 }],
+    { duration:900 }).onfinish = () => p.remove();
+}, 1000);
+
+// ---------- ニュース ----------
+const stageNews = [
+  "草原のウサギが鉱山の見学に来ています。",
+  "森の洞窟で光るキノコが大量発生しています！",
+  "雪山の坑道で、コインでできたかまくらが見つかりました。",
+  "火山の深層で、コインが溶けないか心配されています。",
+  "伝説の宝庫に、伝説のコインが眠っているという噂です。",
+  "星空の遺跡で、星がコインを落としたとの目撃情報があります。"
+];
+const generalNews = [
+  "鉱山のカナリアが「そろそろ掘って」と鳴いています。",
+  "専門家「クリティカルの秘訣は気合い」と語る。",
+  "金の星を見つけると、いいことがあるらしいです。",
+  "ドリル業界、回転数が右肩上がりだそうです。"
+];
+const newsEl = $("news");
+let lastNews = "";
+function nextNews() {
+  const pool = [...generalNews, stageNews[s.stage], stageNews[s.stage],
+    s.robots > 0 ? `ロボット ${fmt(s.robots)} 台が「${stages[s.stage].name}」で黙々と採掘中です。`
+                 : "ロボットはまだ0台。そろそろ雇ってみてはどうでしょう？"];
+  let t;
+  do { t = pool[Math.floor(Math.random() * pool.length)]; } while (t === lastNews && pool.length > 1);
+  lastNews = t;
+  newsEl.textContent = "ニュース：" + t;
+}
+newsEl.addEventListener("animationiteration", nextNews);
+nextNews();
+
+// ---------- ループ ----------
+setInterval(() => {
+  const now = Date.now();
+  let dt = (now - lastTick) / 1000;
+  lastTick = now;
+  if (dt > 60) dt = Math.min(dt, OFFLINE_MAX) * offRate();
+  const g = (income() + interest()) * dt;
+  s.coins += g; s.total += g;
+  update();
+}, 100);
+setInterval(() => saveGame(false), 5000);
+
+$("save").addEventListener("click", () => saveGame());
+$("load").addEventListener("click", () => loadGame());
+$("reset").addEventListener("click", resetGame);
+
+loadGame(false);
+offline();
+update();
+</script>
+</body>
+</html>
